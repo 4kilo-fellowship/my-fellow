@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import Octicons from "@expo/vector-icons/Octicons";
 import { Tabs } from "expo-router";
 
 export default function TabLayout() {
@@ -28,12 +29,19 @@ export default function TabLayout() {
         },
 
         tabBarIcon: ({ focused, color }) => {
+          if (route.name === "index") {
+            return (
+              <Octicons
+                name={focused ? "home-fill" : "home"}
+                size={focused ? 32 : 26}
+                color={color}
+              />
+            );
+          }
+
           let iconName: keyof typeof Ionicons.glyphMap;
 
           switch (route.name) {
-            case "index":
-              iconName = focused ? "home" : "home-outline";
-              break;
             case "devotions":
               iconName = focused ? "book" : "book-outline";
               break;
@@ -51,11 +59,7 @@ export default function TabLayout() {
           }
 
           return (
-            <Ionicons
-              name={iconName}
-              size={focused ? 32 : 26} // BIG ICONS
-              color={color}
-            />
+            <Ionicons name={iconName} size={focused ? 32 : 26} color={color} />
           );
         },
       })}
