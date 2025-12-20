@@ -8,11 +8,11 @@ export default function TabLayout() {
         headerShown: false,
 
         tabBarActiveTintColor: "#000",
-        tabBarInactiveTintColor: "#9CA3AF",
+        tabBarInactiveTintColor: "rgba(0,0,0,0)",
 
         tabBarStyle: {
           backgroundColor: "#fff",
-          height: 78,
+          height: 80,
           borderTopWidth: 0,
           elevation: 0,
         },
@@ -20,11 +20,11 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: "600",
-          marginBottom: 8,
+          marginBottom: 6,
         },
 
         tabBarItemStyle: {
-          paddingVertical: 10,
+          paddingVertical: 12,
         },
 
         tabBarIcon: ({ focused, color }) => {
@@ -51,7 +51,11 @@ export default function TabLayout() {
           }
 
           return (
-            <Ionicons name={iconName} size={focused ? 30 : 26} color={color} />
+            <Ionicons
+              name={iconName}
+              size={focused ? 32 : 26} // BIG ICONS
+              color={color}
+            />
           );
         },
       })}
