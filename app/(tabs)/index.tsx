@@ -9,7 +9,7 @@ const Home = () => {
       <View className="flex-row justify-between items-center px-6 pt-6 pb-1 bg-white shadow-sm">
         <View className="flex-row items-center">
           <Image
-            source={require("../../assets/images/header1.png")}
+            source={require("../../assets/images/header.png")}
             className="w-20 h-20"
             resizeMode="contain"
           />
