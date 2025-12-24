@@ -2,8 +2,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import { Appearance } from "react-native";
@@ -19,6 +21,8 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setTheme] = useState<Theme>("light");
+  // 1. Add a loading state to prevent the "Flash of Light Mode"
+  const [isThemeLoaded, setIsThemeLoaded] = useState(false);
 
   useEffect(() => {
     const loadTheme = async () => {
@@ -27,23 +31,22 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         if (storedTheme === "light" || storedTheme === "dark") {
           setTheme(storedTheme);
         } else {
-          // If no stored theme, use system preference
           const systemTheme = Appearance.getColorScheme();
           setTheme(systemTheme === "dark" ? "dark" : "light");
         }
       } catch (error) {
         console.error("Error loading theme:", error);
-        // Fallback to system theme on error
-        const systemTheme = Appearance.getColorScheme();
-        setTheme(systemTheme === "dark" ? "dark" : "light");
+      } finally {
+        // Mark loading as complete regardless of success/failure
+        setIsThemeLoaded(true);
       }
     };
+
     loadTheme();
 
-    // Listen to system theme changes
     const subscription = Appearance.addChangeListener(({ colorScheme }) => {
-      // Only update if user hasn't set a custom theme
       AsyncStorage.getItem("theme").then((storedTheme) => {
+        // Only follow system if user has NOT manually set a preference
         if (!storedTheme) {
           setTheme(colorScheme === "dark" ? "dark" : "light");
         }
@@ -53,20 +56,31 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.remove();
   }, []);
 
-  const toggleTheme = async () => {
-    const newTheme: Theme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    try {
-      await AsyncStorage.setItem("theme", newTheme);
-    } catch (error) {
-      console.error("Error saving theme:", error);
-    }
-  };
+  // 2. Memoize the toggle function
+  const toggleTheme = useCallback(async () => {
+    // Use functional state update to ensure we have the current theme
+    setTheme((prevTheme) => {
+      const newTheme = prevTheme === "light" ? "dark" : "light";
+
+      // Fire and forget storage update (don't await it to block UI)
+      AsyncStorage.setItem("theme", newTheme).catch((e) =>
+        console.error("Error saving theme:", e)
+      );
+
+      return newTheme;
+    });
+  }, []);
+
+  // 3. Memoize the context value object
+  const value = useMemo(() => ({ theme, toggleTheme }), [theme, toggleTheme]);
+
+  // 4. Don't render children until the theme is known
+  if (!isThemeLoaded) {
+    return null; // Or return a <SplashScreen />
+  }
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
 };
 

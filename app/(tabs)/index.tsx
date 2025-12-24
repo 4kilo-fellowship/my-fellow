@@ -1,26 +1,39 @@
-import { Ionicons } from "@expo/vector-icons"; // Expo icons
+import { useTheme } from "@/context/ThemeContext";
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
 const Home = () => {
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === "dark";
+
   return (
-    <View className="flex-1 bg-white">
+    <View className={`flex-1 ${isDark ? "bg-gray-900" : "bg-white"}`}>
       {/* HEADER */}
-      <View className="flex-row justify-between items-center px-6 pt-6 pb-2 h-28 bg-white shadow-sm">
+      <View
+        className={`flex-row justify-between items-center px-6 pt-6 pb-2 h-28 ${
+          isDark ? "bg-gray-800" : "bg-white"
+        } shadow-sm`}
+      >
         <Image
           source={require("../../assets/images/header.png")}
           className="w-24 h-24"
           resizeMode="contain"
         />
-
-        <TouchableOpacity>
-          <Ionicons name="person-circle-outline" size={36} color="#1e293b" />
+        <TouchableOpacity onPress={toggleTheme} activeOpacity={0.8}>
+          <Ionicons
+            name="person-circle-outline"
+            size={36}
+            color={isDark ? "#f1f5f9" : "#1e293b"}
+          />
         </TouchableOpacity>
       </View>
 
       {/* BODY */}
       <View className="flex-1 items-center justify-center">
-        <Text className="text-gray-400">Content</Text>
+        <Text className={isDark ? "text-gray-300" : "text-gray-400"}>
+          Content
+        </Text>
       </View>
     </View>
   );
