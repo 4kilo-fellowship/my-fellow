@@ -8,11 +8,11 @@ const Home = () => {
   const isDark = theme === "dark";
 
   return (
-    <View className={`flex-1 ${isDark ? "bg-gray-900" : "bg-white"}`}>
+    <View className={`flex-1 ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}>
       {/* HEADER */}
       <View
         className={`flex-row justify-between items-center px-6 pt-6 pb-2 h-28 ${
-          isDark ? "bg-gray-800" : "bg-white"
+          isDark ? "bg-[#1A1A1B]" : "bg-white"
         } shadow-sm`}
       >
         <Image
