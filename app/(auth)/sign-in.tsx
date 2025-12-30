@@ -41,15 +41,18 @@ export default function SignIn() {
             }}
             showsVerticalScrollIndicator={false}
           >
-            {/* Header */}
+            {/* Header - Centered & Consistent with Sign Up */}
             <Animated.View
               entering={FadeInDown.delay(200).duration(500)}
-              className="mb-10"
+              className="items-center mb-10"
             >
-              <Text className="text-3xl font-extrabold text-slate-900">
+              <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">
+                <Ionicons name="log-in" size={32} color="#4F46E5" />
+              </View>
+              <Text className="text-3xl font-extrabold text-slate-900 text-center">
                 Welcome Back
               </Text>
-              <Text className="text-slate-500 mt-2 text-base font-medium">
+              <Text className="text-slate-500 mt-2 text-base font-medium text-center leading-6 max-w-[80%]">
                 Sign in to grow, connect, and walk together in Christ
               </Text>
             </Animated.View>
@@ -60,12 +63,12 @@ export default function SignIn() {
               className="space-y-5"
             >
               <View>
-                <Text className="text-slate-600 font-semibold mb-2 ml-1">
+                <Text className="text-slate-700 font-semibold mb-2 ml-1">
                   Full Name
                 </Text>
                 <TextInput
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-900 focus:border-primary focus:bg-white"
-                  placeholder="Natnael Zerihun"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-900 text-base focus:border-primary focus:bg-white"
+                  placeholder="e.g., Natnael Zerihun"
                   placeholderTextColor="#94a3b8"
                   value={name}
                   onChangeText={setName}
@@ -74,12 +77,12 @@ export default function SignIn() {
               </View>
 
               <View>
-                <Text className="text-slate-600 font-semibold mb-2 ml-1">
+                <Text className="text-slate-700 font-semibold mb-2 ml-1">
                   Password
                 </Text>
                 <View className="flex-row items-center w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 focus:border-primary focus:bg-white">
                   <TextInput
-                    className="flex-1 py-4 text-slate-900"
+                    className="flex-1 py-4 text-slate-900 text-base"
                     placeholder="Enter your password"
                     placeholderTextColor="#94a3b8"
                     value={password}
@@ -89,11 +92,12 @@ export default function SignIn() {
                   <TouchableOpacity
                     onPress={() => setShowPassword((prev) => !prev)}
                     activeOpacity={0.7}
+                    className="p-2"
                   >
                     <Ionicons
                       name={showPassword ? "eye-off-outline" : "eye-outline"}
                       size={22}
-                      color="#0f172a"
+                      color="#64748b"
                     />
                   </TouchableOpacity>
                 </View>

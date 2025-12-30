@@ -35,6 +35,8 @@ export default function SignUpStep1() {
   };
 
   const handleBackToLogin = () => {
+    // UX Improvement: Check if we can go back first.
+    // This creates a smooth "slide back" animation instead of pushing a new screen.
     if (router.canGoBack()) {
       router.back();
     } else {
