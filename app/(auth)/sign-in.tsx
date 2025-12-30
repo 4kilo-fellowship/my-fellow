@@ -5,12 +5,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignIn() {
   const router = useRouter();
-  const [name, setName] = useState<string | null>("");
-  const [password, setPassword] = useState<string | null>("");
+  const [name, setName] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
 
-  const handleSignIn = () => {
+  const handleSignIn = (): void => {
     // Add auth logic here
-    console.log("Sign In", email, password);
+    console.log("Sign In", name, password);
     // router.replace('/(tabs)/home');
   };
 
@@ -78,6 +78,20 @@ export default function SignIn() {
             <Text className="text-primary font-bold">Register</Text>
           </TouchableOpacity>
         </Link>
+      </View>
+      {/* Terms & Privacy */}
+      <View className="mt-6 px-4">
+        <Text className="text-center text-xs text-slate-500 leading-5">
+          By signing in, you agree to our{" "}
+          <Link href="/terms" asChild>
+            <Text className="text-primary font-medium">Terms of Use</Text>
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" asChild>
+            <Text className="text-primary font-medium">Privacy Policy</Text>
+          </Link>
+          .
+        </Text>
       </View>
     </SafeAreaView>
   );
