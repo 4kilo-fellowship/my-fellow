@@ -6,9 +6,9 @@ export default function AuthLayout() {
     <View className="flex-1 bg-white">
       <Stack
         screenOptions={{
-          headerShown: false, // We will build custom headers for a premium feel
+          headerShown: false,
           contentStyle: { backgroundColor: "white" },
-          animation: "slide_from_right", // Smooth transitions
+          animation: "slide_from_right",
         }}
       >
         <Stack.Screen name="sign-in" />

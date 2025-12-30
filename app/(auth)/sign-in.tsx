@@ -5,8 +5,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignIn() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState<string | null>("");
+  const [password, setPassword] = useState<string | null>("");
 
   const handleSignIn = () => {
     // Add auth logic here
@@ -16,13 +16,11 @@ export default function SignIn() {
 
   return (
     <SafeAreaView className="flex-1 bg-white px-6 justify-center">
-      {/* Header */}
+      {/* header */}
       <View className="mb-10">
-        <Text className="text-3xl font-bold text-slate-900">
-          Let's Sign you in.
-        </Text>
+        <Text className="text-3xl font-bold text-slate-900">Welcome Back</Text>
         <Text className="text-slate-500 mt-2 text-base">
-          Welcome back. You've been missed!
+          Sign in to grow, connect, and walk together in Christ
         </Text>
       </View>
 
