@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -7,6 +8,7 @@ export default function SignIn() {
   const router = useRouter();
   const [name, setName] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const handleSignIn = (): void => {
     // Add auth logic here
@@ -42,14 +44,28 @@ export default function SignIn() {
 
         <View>
           <Text className="text-slate-600 font-medium mb-2 ml-1">Password</Text>
-          <TextInput
-            className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-900 focus:border-primary focus:bg-white"
-            placeholder="Enter your password"
-            placeholderTextColor="#94a3b8"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
+
+          <View className="flex-row items-center w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 focus:border-primary focus:bg-white">
+            <TextInput
+              className="flex-1 py-4 text-slate-900"
+              placeholder="Enter your password"
+              placeholderTextColor="#94a3b8"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+            />
+
+            <TouchableOpacity
+              onPress={() => setShowPassword((prev) => !prev)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={showPassword ? "eye-off-outline" : "eye-outline"}
+                size={22}
+                color="#0f172a"
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <TouchableOpacity className="items-end">
