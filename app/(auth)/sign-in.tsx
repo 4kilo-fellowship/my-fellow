@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignIn() {
   const router = useRouter();
-  const [email, setEmail] = useState<string | null>("");
+  const [name, setName] = useState<string | null>("");
   const [password, setPassword] = useState<string | null>("");
 
   const handleSignIn = () => {
@@ -27,14 +27,16 @@ export default function SignIn() {
       {/* Form */}
       <View className="space-y-5">
         <View>
-          <Text className="text-slate-600 font-medium mb-2 ml-1">Email</Text>
+          <Text className="text-slate-600 font-medium mb-2 ml-1">
+            Full Name
+          </Text>
           <TextInput
             className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-900 focus:border-primary focus:bg-white"
-            placeholder="name@example.com"
+            placeholder="Natnael Zerihun"
             placeholderTextColor="#94a3b8"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
+            value={name}
+            onChangeText={setName}
+            autoCapitalize="words"
           />
         </View>
 
@@ -58,8 +60,9 @@ export default function SignIn() {
       {/* Action Buttons */}
       <View className="mt-10">
         <TouchableOpacity
+          activeOpacity={0.8}
           onPress={handleSignIn}
-          className="w-full bg-primary py-4 rounded-2xl shadow-sm shadow-primary/30 active:opacity-90"
+          className="w-full bg-primary py-4 rounded-2xl shadow-sm shadow-primary/30"
         >
           <Text className="text-white text-center font-bold text-lg">
             Sign In
