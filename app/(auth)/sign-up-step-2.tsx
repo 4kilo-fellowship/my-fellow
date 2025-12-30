@@ -1,7 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import React from "react";
+import * as ImagePicker from "expo-image-picker";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
+  Alert,
+  Image,
   ScrollView,
   Text,
   TextInput,
@@ -12,103 +15,154 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignUpStep2() {
   const router = useRouter();
+  const params = useLocalSearchParams(); // Data from Step 1
+
+  const [image, setImage] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    team: "",
+    department: "",
+    year: "",
+    telegram: "",
+  });
+
+  // Image Picker Logic
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
 
   const handleComplete = () => {
-    // 1. Validate inputs
-    // 2. Combine data from Step 1 and Step 2
-    // 3. API Call
-    alert("Sign Up Completed!");
-    // router.replace('/(tabs)'); // Navigate to home
+    // Combine Step 1 (params) and Step 2 (form)
+    const finalData = {
+      ...params,
+      ...form,
+      profileImage: image,
+    };
+
+    console.log("Registration Data:", finalData);
+    Alert.alert("Success", "Account created successfully!");
+    // router.replace('/(tabs)/home');
   };
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 24 }}>
-        {/* Navigation Header */}
-        <TouchableOpacity onPress={() => router.back()} className="mb-6">
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
+      <ScrollView className="flex-1 px-6">
+        {/* Header Navigation */}
+        <View className="mt-4 mb-6">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-10 h-10 bg-slate-50 rounded-full items-center justify-center"
+          >
+            <Ionicons name="arrow-back" size={24} color="#1e293b" />
+          </TouchableOpacity>
+        </View>
 
         <View className="mb-8">
-          <Text className="text-3xl font-bold text-gray-900">
-            Academic Info
+          <Text className="text-3xl font-bold text-slate-900">
+            Finish Profile
           </Text>
-          <Text className="text-gray-500 mt-2">
-            Step 2 of 2: Team & Department
+          <Text className="text-slate-500 mt-2 text-base">
+            Step 2 of 2: Additional Info
           </Text>
         </View>
 
-        {/* Form Fields */}
-        <View className="space-y-6">
-          {/* Department */}
-          <View>
-            <Text className="text-gray-700 font-medium mb-1">Department</Text>
-            <View className="relative">
+        {/* Image Upload - Premium Feel */}
+        <View className="items-center mb-8">
+          <TouchableOpacity onPress={pickImage} className="relative">
+            <View className="w-28 h-28 rounded-full bg-slate-100 items-center justify-center border-2 border-dashed border-slate-300 overflow-hidden">
+              {image ? (
+                <Image source={{ uri: image }} className="w-full h-full" />
+              ) : (
+                <View className="items-center">
+                  <Ionicons name="camera" size={32} color="#94a3b8" />
+                  <Text className="text-xs text-slate-400 mt-1">Upload</Text>
+                </View>
+              )}
+            </View>
+            <View className="absolute bottom-0 right-0 bg-primary p-2 rounded-full border-2 border-white">
+              <Ionicons name="add" size={16} color="white" />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Form */}
+        <View className="space-y-5">
+          <View className="flex-row space-x-4">
+            <View className="flex-1">
+              <Text className="text-slate-600 font-medium mb-2 ml-1">
+                Team Name
+              </Text>
               <TextInput
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 focus:border-primary pr-10"
-                placeholder="Software Engineering"
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-900 focus:border-primary focus:bg-white"
+                placeholder="e.g. Alpha"
+                value={form.team}
+                onChangeText={(t) => setForm({ ...form, team: t })}
               />
-              <Ionicons
-                name="school-outline"
-                size={20}
-                color="#9CA3AF"
-                className="absolute right-4 top-4"
+            </View>
+            <View className="flex-1">
+              <Text className="text-slate-600 font-medium mb-2 ml-1">
+                Year of Study
+              </Text>
+              <TextInput
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-900 focus:border-primary focus:bg-white"
+                placeholder="e.g. 3rd"
+                value={form.year}
+                onChangeText={(t) => setForm({ ...form, year: t })}
               />
             </View>
           </View>
 
-          {/* Team */}
           <View>
-            <Text className="text-gray-700 font-medium mb-1">Team Name</Text>
-            <View className="relative">
-              <TextInput
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 focus:border-primary pr-10"
-                placeholder="Alpha Squad"
-              />
-              <Ionicons
-                name="people-outline"
-                size={20}
-                color="#9CA3AF"
-                className="absolute right-4 top-4"
-              />
-            </View>
-          </View>
-
-          {/* Year of Study */}
-          <View>
-            <Text className="text-gray-700 font-medium mb-1">
-              Year of Study
+            <Text className="text-slate-600 font-medium mb-2 ml-1">
+              Department
             </Text>
-            <View className="flex-row space-x-3">
-              {["1", "2", "3", "4", "5+"].map((year) => (
-                <TouchableOpacity
-                  key={year}
-                  className="flex-1 bg-gray-50 border border-gray-200 py-3 rounded-lg items-center active:bg-primary/10 active:border-primary"
-                >
-                  <Text className="text-gray-700 font-medium">{year}</Text>
-                </TouchableOpacity>
-              ))}
+            <TextInput
+              className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-900 focus:border-primary focus:bg-white"
+              placeholder="Computer Science"
+              value={form.department}
+              onChangeText={(t) => setForm({ ...form, department: t })}
+            />
+          </View>
+
+          <View>
+            <Text className="text-slate-600 font-medium mb-2 ml-1">
+              Telegram Username
+            </Text>
+            <View className="relative justify-center">
+              <TextInput
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 pl-12 text-slate-900 focus:border-primary focus:bg-white"
+                placeholder="@username"
+                value={form.telegram}
+                onChangeText={(t) => setForm({ ...form, telegram: t })}
+              />
+              <View className="absolute left-4">
+                <Ionicons
+                  name="paper-plane-outline"
+                  size={20}
+                  color="#64748b"
+                />
+              </View>
             </View>
           </View>
         </View>
 
         {/* Complete Button */}
-        <View className="mt-auto pt-8">
+        <View className="mt-10 mb-10">
           <TouchableOpacity
-            className="w-full bg-primary py-4 rounded-xl shadow-md shadow-primary/40 flex-row justify-center items-center"
             onPress={handleComplete}
+            className="w-full bg-primary py-4 rounded-2xl shadow-sm shadow-primary/30"
           >
-            <Text className="text-white font-bold text-lg mr-2">
-              Complete Registration
+            <Text className="text-white text-center font-bold text-lg">
+              Complete Sign Up
             </Text>
-            <Ionicons name="checkmark-circle-outline" size={24} color="white" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="w-full py-4 mt-2 items-center"
-            onPress={() => router.back()}
-          >
-            <Text className="text-gray-500 font-medium">Back to Step 1</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

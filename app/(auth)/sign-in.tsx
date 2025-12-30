@@ -1,81 +1,83 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import React from "react";
-import {
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Link, useRouter } from "expo-router";
+import React, { useState } from "react";
+import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignIn() {
   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSignIn = () => {
+    // Add auth logic here
+    console.log("Sign In", email, password);
+    // router.replace('/(tabs)/home');
+  };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          padding: 24,
-          justifyContent: "center",
-        }}
-      >
-        <View className="items-center mb-8">
-          <View className="h-16 w-16 bg-primary/10 rounded-full items-center justifyContent-center mb-4">
-            <Ionicons name="log-in" size={32} color="#4F46E5" />
-          </View>
-          <Text className="text-3xl font-bold text-gray-900">Welcome Back</Text>
-          <Text className="text-gray-500 mt-2 text-center">
-            Sign in to access your team dashboard
+    <SafeAreaView className="flex-1 bg-white px-6 justify-center">
+      {/* Header */}
+      <View className="mb-10">
+        <Text className="text-3xl font-bold text-slate-900">
+          Let's Sign you in.
+        </Text>
+        <Text className="text-slate-500 mt-2 text-base">
+          Welcome back. You've been missed!
+        </Text>
+      </View>
+
+      {/* Form */}
+      <View className="space-y-5">
+        <View>
+          <Text className="text-slate-600 font-medium mb-2 ml-1">Email</Text>
+          <TextInput
+            className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-900 focus:border-primary focus:bg-white"
+            placeholder="name@example.com"
+            placeholderTextColor="#94a3b8"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+          />
+        </View>
+
+        <View>
+          <Text className="text-slate-600 font-medium mb-2 ml-1">Password</Text>
+          <TextInput
+            className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-900 focus:border-primary focus:bg-white"
+            placeholder="Enter your password"
+            placeholderTextColor="#94a3b8"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+        </View>
+
+        <TouchableOpacity className="items-end">
+          <Text className="text-primary font-medium">Forgot Password?</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Action Buttons */}
+      <View className="mt-10">
+        <TouchableOpacity
+          onPress={handleSignIn}
+          className="w-full bg-primary py-4 rounded-2xl shadow-sm shadow-primary/30 active:opacity-90"
+        >
+          <Text className="text-white text-center font-bold text-lg">
+            Sign In
           </Text>
-        </View>
+        </TouchableOpacity>
+      </View>
 
-        <View className="space-y-4">
-          <View>
-            <Text className="text-gray-700 font-medium mb-1">
-              Telegram or Phone
-            </Text>
-            <TextInput
-              placeholder="@username or +1234..."
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-gray-800 focus:border-primary focus:border-2"
-              placeholderTextColor="#9CA3AF"
-            />
-          </View>
-
-          <View>
-            <Text className="text-gray-700 font-medium mb-1">Password</Text>
-            <TextInput
-              placeholder="••••••••"
-              secureTextEntry
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-gray-800 focus:border-primary focus:border-2"
-              placeholderTextColor="#9CA3AF"
-            />
-            <TouchableOpacity className="self-end mt-2">
-              <Text className="text-primary font-medium text-sm">
-                Forgot Password?
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            className="w-full bg-primary py-4 rounded-xl shadow-md shadow-primary/40 mt-4 active:opacity-90"
-            onPress={() => alert("Login Logic Here")}
-          >
-            <Text className="text-center text-white font-bold text-lg">
-              Sign In
-            </Text>
+      {/* Footer */}
+      <View className="flex-row justify-center mt-8">
+        <Text className="text-slate-500">Don't have an account? </Text>
+        <Link href="/sign-up-step-1" asChild>
+          <TouchableOpacity>
+            <Text className="text-primary font-bold">Register</Text>
           </TouchableOpacity>
-        </View>
-
-        <View className="flex-row justify-center mt-8">
-          <Text className="text-gray-500">Don't have an account? </Text>
-          <TouchableOpacity onPress={() => router.push("/sign-up-step-1")}>
-            <Text className="text-primary font-bold">Sign Up</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+        </Link>
+      </View>
     </SafeAreaView>
   );
 }
