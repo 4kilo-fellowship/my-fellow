@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  Dimensions,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -14,6 +15,9 @@ import {
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+const HEADER_HEIGHT = SCREEN_HEIGHT * 0.4;
 
 export default function SignUpStep1() {
   const router = useRouter();
@@ -51,123 +55,164 @@ export default function SignUpStep1() {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           className="flex-1"
         >
+          {/* Header Background with rounded bottom corners */}
+          <View
+            className="bg-primary"
+            style={{
+              height: HEADER_HEIGHT,
+              borderBottomLeftRadius: 40,
+              borderBottomRightRadius: 40,
+            }}
+          >
+            <View
+              className="flex-1 justify-center items-center px-6"
+              style={{ paddingTop: 60 }}
+            >
+              {/* Back Button */}
+              <Animated.View
+                entering={FadeInDown.delay(100).duration(400)}
+                className="absolute top-4 left-6"
+              >
+                <TouchableOpacity
+                  onPress={handleBackToLogin}
+                  className="w-12 h-12 bg-white/20 rounded-full items-center justify-center border border-white/30 shadow-lg"
+                >
+                  <Ionicons name="arrow-back" size={24} color="white" />
+                </TouchableOpacity>
+              </Animated.View>
+
+              {/* Header Section */}
+              <Animated.View
+                entering={FadeInDown.delay(200).duration(500)}
+                className="items-center"
+              >
+                <Text className="text-4xl font-black text-white text-center mb-3 tracking-tight">
+                  Join 4kilo-ECSF
+                </Text>
+                <Text className="text-white/90 text-base font-medium text-center leading-6 max-w-[85%]">
+                  Grow in faith, fellowship, and purpose together
+                </Text>
+              </Animated.View>
+            </View>
+          </View>
+
           <ScrollView
-            contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24 }}
+            contentContainerStyle={{
+              flexGrow: 1,
+            }}
             showsVerticalScrollIndicator={false}
           >
-            {/* Back Button */}
-            <Animated.View
-              entering={FadeInDown.delay(100).duration(400)}
-              className="mt-4 items-start"
-            >
-              <TouchableOpacity
-                onPress={handleBackToLogin}
-                className="w-10 h-10 bg-slate-50 rounded-full items-center justify-center border border-slate-100"
+            {/* Form Container */}
+            <View className="flex-1 bg-white pt-8 px-6">
+              {/* Form Fields */}
+              <Animated.View
+                entering={FadeInUp.delay(300).duration(500)}
+                className="space-y-5"
               >
-                <Ionicons name="arrow-back" size={20} color="#334155" />
-              </TouchableOpacity>
-            </Animated.View>
-
-            {/* Header Section */}
-            <Animated.View
-              entering={FadeInDown.delay(200).duration(500)}
-              className="mt-8 mb-10 items-center"
-            >
-              <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">
-                <Ionicons name="people" size={32} color="#4F46E5" />
-              </View>
-              <Text className="text-3xl font-extrabold text-slate-900 text-center tracking-tight">
-                Join the Fellowship
-              </Text>
-              <Text className="text-slate-500 mt-3 text-base text-center font-medium leading-6 max-w-[80%]">
-                Grow in faith, fellowship, and purpose together
-              </Text>
-            </Animated.View>
-
-            {/* Form Fields */}
-            <Animated.View
-              entering={FadeInDown.delay(300).duration(500)}
-              className="space-y-6"
-            >
-              <View>
-                <Text className="text-slate-700 font-semibold mb-2 ml-1">
-                  Full Name
-                </Text>
-                <TextInput
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-900 text-base focus:border-primary focus:bg-white"
-                  placeholder="e.g. Grace Hopper"
-                  placeholderTextColor="#94a3b8"
-                  value={form.fullName}
-                  onChangeText={(t) => setForm({ ...form, fullName: t })}
-                  autoCapitalize="words"
-                />
-              </View>
-
-              <View>
-                <Text className="text-slate-700 font-semibold mb-2 ml-1">
-                  Phone Number
-                </Text>
-                <TextInput
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-900 text-base focus:border-primary focus:bg-white"
-                  placeholder="+1 234 567 890"
-                  placeholderTextColor="#94a3b8"
-                  keyboardType="phone-pad"
-                  value={form.phone}
-                  onChangeText={(t) => setForm({ ...form, phone: t })}
-                />
-              </View>
-
-              <View>
-                <Text className="text-slate-700 font-semibold mb-2 ml-1">
-                  Password
-                </Text>
-                <View className="relative">
-                  <TextInput
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 pr-12 text-slate-900 text-base focus:border-primary focus:bg-white"
-                    placeholder="Create a strong password"
-                    placeholderTextColor="#94a3b8"
-                    secureTextEntry={!showPassword}
-                    value={form.password}
-                    onChangeText={(t) => setForm({ ...form, password: t })}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-4"
-                  >
-                    <Ionicons
-                      name={showPassword ? "eye-off-outline" : "eye-outline"}
-                      size={22}
-                      color="#64748b"
+                <View>
+                  <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
+                    Full Name
+                  </Text>
+                  <View className="relative">
+                    <TextInput
+                      className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 pl-12 text-slate-900 text-base focus:border-primary focus:bg-white"
+                      placeholder="e.g. Grace Hopper"
+                      placeholderTextColor="#94a3b8"
+                      value={form.fullName}
+                      onChangeText={(t) => setForm({ ...form, fullName: t })}
+                      autoCapitalize="words"
                     />
+                    <View className="absolute left-4 top-4">
+                      <Ionicons
+                        name="person-outline"
+                        size={22}
+                        color="#64748b"
+                      />
+                    </View>
+                  </View>
+                </View>
+
+                <View>
+                  <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
+                    Phone Number
+                  </Text>
+                  <View className="relative">
+                    <TextInput
+                      className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 pl-12 text-slate-900 text-base focus:border-primary focus:bg-white"
+                      placeholder="+1 234 567 890"
+                      placeholderTextColor="#94a3b8"
+                      keyboardType="phone-pad"
+                      value={form.phone}
+                      onChangeText={(t) => setForm({ ...form, phone: t })}
+                    />
+                    <View className="absolute left-4 top-4">
+                      <Ionicons name="call-outline" size={22} color="#64748b" />
+                    </View>
+                  </View>
+                </View>
+
+                <View>
+                  <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
+                    Password
+                  </Text>
+                  <View className="relative">
+                    <TextInput
+                      className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 pl-12 pr-12 text-slate-900 text-base focus:border-primary focus:bg-white"
+                      placeholder="Create a strong password"
+                      placeholderTextColor="#94a3b8"
+                      secureTextEntry={!showPassword}
+                      value={form.password}
+                      onChangeText={(t) => setForm({ ...form, password: t })}
+                    />
+                    <View className="absolute left-4 top-4">
+                      <Ionicons
+                        name="lock-closed-outline"
+                        size={22}
+                        color="#64748b"
+                      />
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => setShowPassword(!showPassword)}
+                      activeOpacity={0.7}
+                      className="absolute right-4 top-4"
+                    >
+                      <Ionicons
+                        name={showPassword ? "eye-off-outline" : "eye-outline"}
+                        size={22}
+                        color="#64748b"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Animated.View>
+
+              {/* Footer / Button */}
+              <Animated.View
+                entering={FadeInUp.delay(400).duration(500)}
+                className="mt-8 mb-6"
+              >
+                <TouchableOpacity
+                  onPress={handleNext}
+                  className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 flex-row justify-center items-center space-x-2 active:scale-[0.98]"
+                >
+                  <Text className="text-white font-bold text-lg tracking-wide">
+                    Continue
+                  </Text>
+                  <Ionicons name="arrow-forward" size={22} color="white" />
+                </TouchableOpacity>
+
+                <View className="flex-row justify-center mt-6">
+                  <Text className="text-slate-600 font-medium text-base">
+                    Already have an account?{" "}
+                  </Text>
+                  <TouchableOpacity onPress={handleBackToLogin}>
+                    <Text className="text-primary font-bold text-base">
+                      Log In
+                    </Text>
                   </TouchableOpacity>
                 </View>
-              </View>
-            </Animated.View>
-
-            {/* Footer / Button */}
-            <Animated.View
-              entering={FadeInUp.delay(500).duration(500)}
-              className="mt-auto pt-10 pb-6"
-            >
-              <TouchableOpacity
-                onPress={handleNext}
-                className="w-full bg-primary py-4 rounded-2xl shadow-lg shadow-primary/40 flex-row justify-center items-center space-x-2 active:scale-[0.98]"
-              >
-                <Text className="text-white font-bold text-lg tracking-wide">
-                  Continue
-                </Text>
-                <Ionicons name="arrow-forward" size={20} color="white" />
-              </TouchableOpacity>
-
-              <View className="flex-row justify-center mt-6">
-                <Text className="text-slate-500 font-medium">
-                  Already have an account?{" "}
-                </Text>
-                <TouchableOpacity onPress={handleBackToLogin}>
-                  <Text className="text-primary font-bold">Log In</Text>
-                </TouchableOpacity>
-              </View>
-            </Animated.View>
+              </Animated.View>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>

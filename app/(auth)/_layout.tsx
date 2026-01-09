@@ -5,13 +5,14 @@ import { View } from "react-native";
 export default function AuthLayout() {
   return (
     <View className="flex-1 bg-white">
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
       <Stack
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: "white" },
-          // animation: "ios",
+          animation: "slide_from_right",
           gestureEnabled: true,
+          animationDuration: 300,
         }}
       >
         <Stack.Screen name="sign-in" />
