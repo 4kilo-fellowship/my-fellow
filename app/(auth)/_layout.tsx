@@ -5,7 +5,7 @@ import { View } from "react-native";
 export default function AuthLayout() {
   return (
     <View className="flex-1 bg-white">
-      <StatusBar style="light" />
+      <StatusBar style="auto" />
       <Stack
         screenOptions={{
           headerShown: false,

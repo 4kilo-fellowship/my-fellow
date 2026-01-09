@@ -21,7 +21,7 @@ import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-const HEADER_HEIGHT = SCREEN_HEIGHT * 0.4;
+const HEADER_HEIGHT = SCREEN_HEIGHT * 0.08;
 
 // --- Data Lists ---
 const TEAMS = [
@@ -155,7 +155,7 @@ export default function SignUpStep2() {
         >
           {/* Header Background with rounded bottom corners */}
           <View
-            className="bg-primary"
+            className="bg-white"
             style={{
               height: HEADER_HEIGHT,
               borderBottomLeftRadius: 40,
@@ -175,7 +175,7 @@ export default function SignUpStep2() {
                   onPress={() => router.back()}
                   className="w-12 h-12 bg-white/20 rounded-full items-center justify-center border border-white/30 shadow-lg"
                 >
-                  <Ionicons name="arrow-back" size={24} color="white" />
+                  <Ionicons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
               </Animated.View>
 
@@ -183,14 +183,7 @@ export default function SignUpStep2() {
               <Animated.View
                 entering={FadeInDown.delay(200).duration(500)}
                 className="items-center"
-              >
-                <Text className="text-4xl font-black text-white text-center mb-3 tracking-tight">
-                  Join 4kilo-ECSF
-                </Text>
-                <Text className="text-white/90 text-base font-medium text-center leading-6 max-w-[85%]">
-                  Tell us a bit more about yourself
-                </Text>
-              </Animated.View>
+              ></Animated.View>
             </View>
           </View>
 
