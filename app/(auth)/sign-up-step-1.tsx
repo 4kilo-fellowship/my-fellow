@@ -13,7 +13,6 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -69,30 +68,24 @@ export default function SignUpStep1() {
               style={{ paddingTop: 60 }}
             >
               {/* Back Button */}
-              <Animated.View
-                entering={FadeInDown.delay(100).duration(400)}
-                className="absolute top-4 left-6"
-              >
+              <View className="absolute top-4 left-6">
                 <TouchableOpacity
                   onPress={handleBackToLogin}
                   className="w-12 h-12 bg-white/20 rounded-full items-center justify-center border border-white/30 shadow-lg"
                 >
                   <Ionicons name="arrow-back" size={24} color="white" />
                 </TouchableOpacity>
-              </Animated.View>
+              </View>
 
               {/* Header Section */}
-              <Animated.View
-                entering={FadeInDown.delay(200).duration(500)}
-                className="items-center"
-              >
+              <View className="items-center">
                 <Text className="text-4xl font-black text-white text-center mb-3 tracking-tight">
                   Join 4kilo-ECSF
                 </Text>
                 <Text className="text-white/90 text-base font-medium text-center leading-6 max-w-[85%]">
                   Grow in faith, fellowship, and purpose together
                 </Text>
-              </Animated.View>
+              </View>
             </View>
           </View>
 
@@ -105,10 +98,7 @@ export default function SignUpStep1() {
             {/* Form Container */}
             <View className="flex-1 bg-white pt-8 px-6">
               {/* Form Fields */}
-              <Animated.View
-                entering={FadeInUp.delay(300).duration(500)}
-                className="space-y-5"
-              >
+              <View className="space-y-5">
                 <View>
                   <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
                     Full Name
@@ -184,13 +174,10 @@ export default function SignUpStep1() {
                     </TouchableOpacity>
                   </View>
                 </View>
-              </Animated.View>
+              </View>
 
               {/* Footer / Button */}
-              <Animated.View
-                entering={FadeInUp.delay(400).duration(500)}
-                className="mt-8 mb-6"
-              >
+              <View className="mt-8 mb-6">
                 <TouchableOpacity
                   onPress={handleNext}
                   className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 flex-row justify-center items-center space-x-2 active:scale-[0.98]"
@@ -211,7 +198,7 @@ export default function SignUpStep1() {
                     </Text>
                   </TouchableOpacity>
                 </View>
-              </Animated.View>
+              </View>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>

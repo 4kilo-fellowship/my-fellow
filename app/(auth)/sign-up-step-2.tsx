@@ -17,7 +17,6 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -167,23 +166,17 @@ export default function SignUpStep2() {
               style={{ paddingTop: 60 }}
             >
               {/* Back Button */}
-              <Animated.View
-                entering={FadeInDown.delay(100).duration(400)}
-                className="absolute top-4 left-6"
-              >
+              <View className="absolute top-4 left-6">
                 <TouchableOpacity
                   onPress={() => router.back()}
                   className="w-12 h-12 bg-white/20 rounded-full items-center justify-center border border-white/30 shadow-lg"
                 >
                   <Ionicons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
-              </Animated.View>
+              </View>
 
               {/* Header Section */}
-              <Animated.View
-                entering={FadeInDown.delay(200).duration(500)}
-                className="items-center"
-              ></Animated.View>
+              <View className="items-center"></View>
             </View>
           </View>
 
@@ -196,10 +189,7 @@ export default function SignUpStep2() {
             {/* Form Container */}
             <View className="flex-1 bg-white pt-8 px-6">
               {/* Image Picker */}
-              <Animated.View
-                entering={FadeInUp.delay(300).duration(500).springify()}
-                className="items-center mb-6"
-              >
+              <View className="items-center mb-6">
                 <TouchableOpacity
                   onPress={pickImage}
                   className="relative shadow-xl shadow-slate-200"
@@ -227,13 +217,10 @@ export default function SignUpStep2() {
                     />
                   </View>
                 </TouchableOpacity>
-              </Animated.View>
+              </View>
 
               {/* Form Fields */}
-              <Animated.View
-                entering={FadeInUp.delay(400).duration(500)}
-                className="space-y-5"
-              >
+              <View className="space-y-5">
                 {/* Team Dropdown */}
                 <View>
                   <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
@@ -323,13 +310,10 @@ export default function SignUpStep2() {
                     </View>
                   </View>
                 </View>
-              </Animated.View>
+              </View>
 
               {/* Footer Button */}
-              <Animated.View
-                entering={FadeInUp.delay(500).duration(500)}
-                className="mt-8 mb-6"
-              >
+              <View className="mt-8 mb-6">
                 <TouchableOpacity
                   onPress={handleComplete}
                   className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 active:scale-[0.98]"
@@ -338,7 +322,7 @@ export default function SignUpStep2() {
                     Finish Registration
                   </Text>
                 </TouchableOpacity>
-              </Animated.View>
+              </View>
             </View>
           </ScrollView>
 

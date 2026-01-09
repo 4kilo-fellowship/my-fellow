@@ -13,7 +13,6 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -50,14 +49,11 @@ export default function SignIn() {
               style={{ paddingTop: 60 }}
             >
               {/* Header Section */}
-              <Animated.View
-                entering={FadeInDown.delay(200).duration(500)}
-                className="items-center"
-              >
+              <View className="items-center">
                 <Text className="text-white text-5xl font-black text-center tracking-tight">
                   4kilo-ECSF
                 </Text>
-              </Animated.View>
+              </View>
             </View>
           </View>
 
@@ -70,10 +66,7 @@ export default function SignIn() {
             {/* Form Container */}
             <View className="flex-1 bg-white pt-8 px-6">
               {/* Form Fields */}
-              <Animated.View
-                entering={FadeInUp.delay(300).duration(500)}
-                className="space-y-5"
-              >
+              <View className="space-y-5">
                 <View>
                   <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
                     Phone Number
@@ -133,13 +126,10 @@ export default function SignIn() {
                     Forgot Password?
                   </Text>
                 </TouchableOpacity>
-              </Animated.View>
+              </View>
 
               {/* Action Buttons */}
-              <Animated.View
-                entering={FadeInUp.delay(400).duration(500)}
-                className="mt-8 mb-6"
-              >
+              <View className="mt-8 mb-6">
                 <TouchableOpacity
                   activeOpacity={0.8}
                   onPress={handleSignIn}
@@ -176,7 +166,7 @@ export default function SignIn() {
                     .
                   </Text>
                 </View>
-              </Animated.View>
+              </View>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
