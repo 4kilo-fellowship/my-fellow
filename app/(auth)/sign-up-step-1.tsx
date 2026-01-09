@@ -13,7 +13,6 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const HEADER_HEIGHT = SCREEN_HEIGHT * 0.4;
@@ -28,7 +27,6 @@ export default function SignUpStep1() {
   });
 
   const handleNext = () => {
-    // Basic validation
     if (!form.fullName || !form.password) return;
 
     router.push({
@@ -38,8 +36,6 @@ export default function SignUpStep1() {
   };
 
   const handleBackToLogin = () => {
-    // UX Improvement: Check if we can go back first.
-    // This creates a smooth "slide back" animation instead of pushing a new screen.
     if (router.canGoBack()) {
       router.back();
     } else {
@@ -48,7 +44,7 @@ export default function SignUpStep1() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <View className="flex-1 bg-white">
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -68,7 +64,7 @@ export default function SignUpStep1() {
               style={{ paddingTop: 60 }}
             >
               {/* Back Button */}
-              <View className="absolute top-4 left-6">
+              <View className="absolute top-4 left-6 pt-6">
                 <TouchableOpacity
                   onPress={handleBackToLogin}
                   className="w-12 h-12 bg-white/20 rounded-full items-center justify-center border border-white/30 shadow-lg"
@@ -203,6 +199,6 @@ export default function SignUpStep1() {
           </ScrollView>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
-    </SafeAreaView>
+    </View>
   );
 }

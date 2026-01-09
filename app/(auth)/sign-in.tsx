@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
+
 import React, { useState } from "react";
 import {
   Dimensions,
@@ -7,13 +8,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const HEADER_HEIGHT = SCREEN_HEIGHT * 0.4;
@@ -25,17 +26,19 @@ export default function SignIn() {
 
   const handleSignIn = (): void => {
     console.log("Sign In", phoneNumber, password);
-    // router.replace('/(tabs)/home');
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <View className="flex-1 bg-white">
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
+          keyboardVerticalOffset={
+            Platform.OS === "ios" ? 80 : (StatusBar.currentHeight ?? 0)
+          }
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           className="flex-1"
         >
-          {/* Header Background with rounded bottom corners */}
+          {/* head */}
           <View
             className="bg-primary"
             style={{
@@ -60,8 +63,11 @@ export default function SignIn() {
           <ScrollView
             contentContainerStyle={{
               flexGrow: 1,
+              paddingBottom: 24,
             }}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
           >
             {/* Form Container */}
             <View className="flex-1 bg-white pt-8 px-6">
@@ -74,7 +80,7 @@ export default function SignIn() {
                   <View className="relative">
                     <TextInput
                       className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 pl-12 text-slate-900 text-base focus:border-primary focus:bg-white"
-                      placeholder="Enter your phone number"
+                      placeholder="e.g. 0994627985"
                       placeholderTextColor="#94a3b8"
                       value={phoneNumber}
                       onChangeText={setPhoneNumber}
@@ -97,6 +103,7 @@ export default function SignIn() {
                       placeholder="Enter your password"
                       placeholderTextColor="#94a3b8"
                       value={password}
+                      keyboardType="default"
                       onChangeText={setPassword}
                       secureTextEntry={!showPassword}
                     />
@@ -121,7 +128,10 @@ export default function SignIn() {
                   </View>
                 </View>
 
-                <TouchableOpacity className="items-end mt-2">
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  className="items-end mt-2"
+                >
                   <Text className="text-primary font-bold text-base">
                     Forgot Password?
                   </Text>
@@ -131,7 +141,7 @@ export default function SignIn() {
               {/* Action Buttons */}
               <View className="mt-8 mb-6">
                 <TouchableOpacity
-                  activeOpacity={0.8}
+                  activeOpacity={0.9}
                   onPress={handleSignIn}
                   className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 items-center justify-center active:scale-[0.98]"
                 >
@@ -146,7 +156,7 @@ export default function SignIn() {
                     Don&apos;t have an account?{" "}
                   </Text>
                   <Link href="/sign-up-step-1" asChild>
-                    <TouchableOpacity>
+                    <TouchableOpacity activeOpacity={0.9}>
                       <Text className="text-primary font-bold text-base">
                         Register
                       </Text>
@@ -171,6 +181,6 @@ export default function SignIn() {
           </ScrollView>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
-    </SafeAreaView>
+    </View>
   );
 }
