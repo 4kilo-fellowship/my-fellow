@@ -62,9 +62,9 @@ export default function SignIn() {
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
           >
-            {/* Form Container */}
+            {/* form */}
             <View className="flex-1 bg-white pt-8 px-6">
-              {/* Form Fields */}
+              {/* fields*/}
               <View className="space-y-5">
                 <View>
                   <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
