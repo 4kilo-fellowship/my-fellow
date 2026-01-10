@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
@@ -32,9 +31,6 @@ export default function SignIn() {
     <View className="flex-1 bg-white">
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
-          keyboardVerticalOffset={
-            Platform.OS === "ios" ? 80 : (StatusBar.currentHeight ?? 0)
-          }
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           className="flex-1"
         >
@@ -47,10 +43,7 @@ export default function SignIn() {
               borderBottomRightRadius: 40,
             }}
           >
-            <View
-              className="flex-1 justify-center items-center px-6"
-              style={{ paddingTop: 60 }}
-            >
+            <View className="flex-1 justify-center items-center px-6">
               {/* Header Section */}
               <View className="items-center">
                 <Text className="text-white text-5xl font-black text-center tracking-tight">
