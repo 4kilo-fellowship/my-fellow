@@ -1,7 +1,7 @@
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
 const Home = () => {
   const { theme, toggleTheme } = useTheme();
@@ -15,11 +15,6 @@ const Home = () => {
           isDark ? "bg-[#1A1A1B]" : "bg-white"
         } shadow-sm`}
       >
-        <Image
-          source={require("../../assets/images/header.png")}
-          className="w-24 h-24"
-          resizeMode="contain"
-        />
         <TouchableOpacity onPress={toggleTheme} activeOpacity={0.8}>
           <Ionicons
             name="person-circle-outline"

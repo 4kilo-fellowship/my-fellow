@@ -1,8 +1,11 @@
+import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   Keyboard,
   KeyboardAvoidingView,
@@ -22,9 +25,32 @@ export default function SignIn() {
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const { login } = useAuth();
 
-  const handleSignIn = (): void => {
-    console.log("Sign In", phoneNumber, password);
+  const handleSignIn = async () => {
+    // Basic validation
+    if (!phoneNumber.trim() || !password.trim()) {
+      Alert.alert("Validation Error", "Please enter both phone number and password.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await login(phoneNumber.trim(), password);
+      // Navigation will be handled by AuthProvider/auth state
+    } catch (error: any) {
+      console.error("Login error:", error);
+      Alert.alert(
+        "Login Failed",
+        error.response?.data?.message ||
+          error.message ||
+          "Invalid phone number or password. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -136,11 +162,16 @@ export default function SignIn() {
                 <TouchableOpacity
                   activeOpacity={0.9}
                   onPress={handleSignIn}
-                  className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 items-center justify-center active:scale-[0.98]"
+                  disabled={loading}
+                  className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 items-center justify-center active:scale-[0.98] flex-row"
                 >
-                  <Text className="text-white text-center font-bold text-lg">
-                    Sign In
-                  </Text>
+                  {loading ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text className="text-white text-center font-bold text-lg">
+                      Sign In
+                    </Text>
+                  )}
                 </TouchableOpacity>
 
                 {/* Footer */}

@@ -1,8 +1,10 @@
+import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Dimensions,
   Image,
@@ -107,7 +109,9 @@ const SelectionModal = ({
 export default function SignUpStep2() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { signup } = useAuth();
   const [image, setImage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   // Dropdown States
   const [modalType, setModalType] = useState<
@@ -131,7 +135,8 @@ export default function SignUpStep2() {
     if (!result.canceled) setImage(result.assets[0].uri);
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
+    // Validate required fields
     if (!form.team || !form.department || !form.year) {
       Alert.alert(
         "Missing Information",
@@ -139,10 +144,49 @@ export default function SignUpStep2() {
       );
       return;
     }
-    const finalData = { ...params, ...form, profileImage: image };
-    console.log("Registration Success:", finalData);
-    Alert.alert("Welcome!", "Profile setup complete.");
-    // router.replace('/(tabs)/home');
+
+    // Validate step 1 data
+    if (!params.fullName || !params.phone || !params.password) {
+      Alert.alert(
+        "Missing Information",
+        "Please complete all required fields."
+      );
+      router.back();
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Prepare registration data
+      const registrationData = {
+        fullName: params.fullName as string,
+        phone: params.phone as string,
+        password: params.password as string,
+        team: form.team,
+        department: form.department,
+        year: form.year,
+        telegram: form.telegram || undefined,
+        profileImage: image || undefined,
+      };
+
+      // Call signup service
+      await signup(registrationData);
+
+      // Success - navigation will be handled by AuthProvider/auth state
+      Alert.alert("Welcome!", "Your account has been created successfully.");
+      router.replace("/(tabs)");
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      Alert.alert(
+        "Registration Failed",
+        error.response?.data?.message ||
+          error.message ||
+          "Something went wrong. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -316,11 +360,16 @@ export default function SignUpStep2() {
               <View className="mt-8 mb-6">
                 <TouchableOpacity
                   onPress={handleComplete}
-                  className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 active:scale-[0.98]"
+                  disabled={loading}
+                  className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 active:scale-[0.98] flex-row justify-center items-center"
                 >
-                  <Text className="text-white text-center font-bold text-lg">
-                    Finish Registration
-                  </Text>
+                  {loading ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text className="text-white text-center font-bold text-lg">
+                      Finish Registration
+                    </Text>
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
