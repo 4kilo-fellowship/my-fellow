@@ -1,70 +1,46 @@
 import { useRouter } from "expo-router";
-import React, { useEffect, useRef } from "react";
-import { Animated, Dimensions } from "react-native";
-
-const { width, height } = Dimensions.get("window");
+import React, { useEffect, useState } from "react";
+import { Image, View } from "react-native";
 
 export default function SplashScreen() {
   const router = useRouter();
-  const backgroundAnim = useRef(new Animated.Value(0)).current; // 0 = primary, 1 = white
+  const [isWhite, setIsWhite] = useState(false);
 
   useEffect(() => {
-    Animated.sequence([
-      Animated.delay(2000), // wait 2s
-      Animated.timing(backgroundAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: false,
-      }),
-      Animated.delay(1000), // wait 1s
-    ]).start(() => {
-      router.replace("/(tabs)"); // Navigate to home screen
-    });
+    // After 2s → switch background & logo instantly
+    const t1 = setTimeout(() => {
+      setIsWhite(true);
+    }, 2000);
+
+    // After another 1s → navigate
+    const t2 = setTimeout(() => {
+      router.replace("/(tabs)");
+    }, 3000);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, []);
 
-  const backgroundColor = backgroundAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["#1D4ED8", "#FFFFFF"], // Tailwind 'primary' color → white
-  });
-
   return (
-    <Animated.View
+    <View
       style={{
         flex: 1,
-        backgroundColor,
+        backgroundColor: isWhite ? "#FFFFFF" : "#1D4ED8", // primary → white
         justifyContent: "center",
         alignItems: "center",
       }}
     >
-      {/* White Logo */}
-      <Animated.Image
-        source={require("../assets/images/logo-white.png")}
-        style={{
-          width: 200,
-          height: 200,
-          position: "absolute",
-          opacity: backgroundAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [1, 0],
-          }),
-        }}
+      <Image
+        source={
+          isWhite
+            ? require("../assets/images/logo-primary.png")
+            : require("../assets/images/logo-white.png")
+        }
+        style={{ width: 200, height: 200 }}
         resizeMode="contain"
       />
-
-      {/* Primary Logo */}
-      <Animated.Image
-        source={require("../assets/images/logo-primary.png")}
-        style={{
-          width: 200,
-          height: 200,
-          position: "absolute",
-          opacity: backgroundAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, 1],
-          }),
-        }}
-        resizeMode="contain"
-      />
-    </Animated.View>
+    </View>
   );
 }
