@@ -1,25 +1,26 @@
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Image, View } from "react-native";
+import { View } from "react-native";
+
+const PRIMARY = "#ff6719";
 
 export default function SplashScreen() {
   const router = useRouter();
-  const [isWhite, setIsWhite] = useState(false);
+  const [phase, setPhase] = useState<"primary" | "white">("primary");
 
   useEffect(() => {
-    // After 2s → switch background & logo instantly
-    const t1 = setTimeout(() => {
-      setIsWhite(true);
+    const changeTimeout = setTimeout(() => {
+      setPhase("white");
     }, 2000);
 
-    // After another 1s → navigate
-    const t2 = setTimeout(() => {
+    const navTimeout = setTimeout(() => {
       router.replace("/(tabs)");
     }, 3000);
 
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
+      clearTimeout(changeTimeout);
+      clearTimeout(navTimeout);
     };
   }, []);
 
@@ -27,19 +28,21 @@ export default function SplashScreen() {
     <View
       style={{
         flex: 1,
-        backgroundColor: isWhite ? "#FFFFFF" : "#1D4ED8", // primary → white
+        backgroundColor: phase === "primary" ? PRIMARY : "#fff",
         justifyContent: "center",
         alignItems: "center",
       }}
     >
       <Image
         source={
-          isWhite
-            ? require("../assets/images/logo-primary.png")
-            : require("../assets/images/logo-white.png")
+          phase === "primary"
+            ? require("../assets/images/logo-white.png")
+            : require("../assets/images/logo-primary.png")
         }
-        style={{ width: 200, height: 200 }}
-        resizeMode="contain"
+        style={{ width: 500, height: 500 }}
+        contentFit="contain"
+        transition={0}
+        cachePolicy="memory"
       />
     </View>
   );
