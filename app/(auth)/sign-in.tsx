@@ -31,7 +31,10 @@ export default function SignIn() {
   const handleSignIn = async () => {
     // Basic validation
     if (!phoneNumber.trim() || !password.trim()) {
-      Alert.alert("Validation Error", "Please enter both phone number and password.");
+      Alert.alert(
+        "Validation Error",
+        "Please enter both phone number and password."
+      );
       return;
     }
 
