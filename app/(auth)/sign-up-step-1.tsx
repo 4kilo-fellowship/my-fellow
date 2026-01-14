@@ -26,7 +26,7 @@ const signUpStep1Schema = z
     phone: z
       .string()
       .min(1, "Phone number is required")
-      .regex(/^\d{9,15}$/, "Enter a valid phone number"),
+      .regex(/^(09|07)\d{8}$/, "Enter a valid phone number"),
     password: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
   })
