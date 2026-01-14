@@ -4,7 +4,7 @@ import { View } from "react-native";
 
 export default function AuthLayout() {
   return (
-    <View className="flex-1 bg-white">
+    <>
       <StatusBar style="auto" />
       <Stack
         screenOptions={{
@@ -19,6 +19,6 @@ export default function AuthLayout() {
         <Stack.Screen name="sign-up-step-1" />
         <Stack.Screen name="sign-up-step-2" />
       </Stack>
-    </View>
+    </>
   );
 }

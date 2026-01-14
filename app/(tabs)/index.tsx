@@ -29,6 +29,9 @@ const Home = () => {
         <Text className={isDark ? "text-gray-300" : "text-gray-400"}>
           Content
         </Text>
+        <TouchableOpacity>
+          <Text>Click here</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

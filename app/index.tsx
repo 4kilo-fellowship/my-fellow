@@ -11,11 +11,12 @@ export default function SplashScreen() {
   useEffect(() => {
     const changeTimeout = setTimeout(() => {
       setPhase("white");
-    }, 2000);
+    }, 3000);
 
     const navTimeout = setTimeout(() => {
-      router.replace("/(tabs)");
-    }, 3000);
+      // After the splash screen, navigate into the auth flow
+      router.replace("/(auth)/sign-in");
+    }, 4000);
 
     return () => {
       clearTimeout(changeTimeout);

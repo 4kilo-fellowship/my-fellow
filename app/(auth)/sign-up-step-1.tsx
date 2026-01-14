@@ -104,7 +104,7 @@ export default function SignUpStep1() {
                     <View className="relative">
                       <TextInput
                         className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 pl-12 text-slate-900 text-base focus:border-primary focus:bg-white"
-                        placeholder="e.g. Grace Hopper"
+                        placeholder="e.g. Natnael Zerihun"
                         placeholderTextColor="#94a3b8"
                         value={form.fullName}
                         onChangeText={(t) => setForm({ ...form, fullName: t })}
@@ -127,7 +127,7 @@ export default function SignUpStep1() {
                     <View className="relative">
                       <TextInput
                         className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 pl-12 text-slate-900 text-base focus:border-primary focus:bg-white"
-                        placeholder="+1 234 567 890"
+                        placeholder="0994627985"
                         placeholderTextColor="#94a3b8"
                         keyboardType="phone-pad"
                         value={form.phone}
