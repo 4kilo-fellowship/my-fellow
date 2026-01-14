@@ -14,7 +14,7 @@ export type SignUpData = {
   fullName: string;
   phone: string;
   password: string;
-  confirmPassword: string;
+  confirmPassword?: string;
   team?: string;
   department?: string;
   year?: string;

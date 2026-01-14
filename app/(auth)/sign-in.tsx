@@ -1,7 +1,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
-
+import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -17,31 +17,48 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { Controller, useForm } from "react-hook-form";
+import { z } from "zod";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const HEADER_HEIGHT = SCREEN_HEIGHT * 0.4;
 
+const signInSchema = z.object({
+  phoneNumber: z
+    .string()
+    .min(1, "Phone number is required")
+    .regex(/^\d{9,15}$/, "Enter a valid phone number"),
+  password: z
+    .string()
+    .min(6, "Password must be at least 6 characters"),
+});
+
+type SignInFormValues = z.infer<typeof signInSchema>;
+
 export default function SignIn() {
-  const [phoneNumber, setPhoneNumber] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const { login } = useAuth();
 
-  const handleSignIn = async () => {
-    // Basic validation
-    if (!phoneNumber.trim() || !password.trim()) {
-      Alert.alert(
-        "Validation Error",
-        "Please enter both phone number and password."
-      );
-      return;
-    }
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignInFormValues>({
+    resolver: zodResolver(signInSchema),
+    defaultValues: {
+      phoneNumber: "",
+      password: "",
+    },
+  });
+
+  const onSubmit = async ({ phoneNumber, password }: SignInFormValues) => {
+    const trimmedPhone = phoneNumber.trim();
 
     setLoading(true);
 
     try {
-      await login(phoneNumber.trim(), password);
+      await login(trimmedPhone, password);
       // Navigation will be handled by AuthProvider/auth state
     } catch (error: any) {
       console.error("Login error:", error);
@@ -99,55 +116,93 @@ export default function SignIn() {
                   <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
                     Phone Number
                   </Text>
-                  <View className="relative">
-                    <TextInput
-                      className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 pl-12 text-slate-900 text-base focus:border-primary focus:bg-white"
-                      placeholder="e.g. 0994627985"
-                      placeholderTextColor="#94a3b8"
-                      value={phoneNumber}
-                      onChangeText={setPhoneNumber}
-                      keyboardType="phone-pad"
-                      autoCapitalize="none"
-                    />
-                    <View className="absolute left-4 top-4">
-                      <Ionicons name="call-outline" size={22} color="#64748b" />
-                    </View>
-                  </View>
+                  <Controller
+                    control={control}
+                    name="phoneNumber"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <View className="relative">
+                        <TextInput
+                          className={`w-full bg-slate-50 border-2 rounded-2xl p-4 pl-12 text-slate-900 text-base focus:bg-white ${
+                            errors.phoneNumber
+                              ? "border-red-500"
+                              : "border-slate-200 focus:border-primary"
+                          }`}
+                          placeholder="e.g. 0994627985"
+                          placeholderTextColor="#94a3b8"
+                          value={value}
+                          onChangeText={onChange}
+                          onBlur={onBlur}
+                          keyboardType="phone-pad"
+                          autoCapitalize="none"
+                        />
+                        <View className="absolute left-4 top-4">
+                          <Ionicons
+                            name="call-outline"
+                            size={22}
+                            color="#64748b"
+                          />
+                        </View>
+                      </View>
+                    )}
+                  />
+                  {errors.phoneNumber?.message ? (
+                    <Text className="text-red-500 text-xs mt-1 ml-1">
+                      {errors.phoneNumber.message}
+                    </Text>
+                  ) : null}
                 </View>
 
                 <View>
                   <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
                     Password
                   </Text>
-                  <View className="relative">
-                    <TextInput
-                      className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 pl-12 pr-12 text-slate-900 text-base focus:border-primary focus:bg-white"
-                      placeholder="Enter your password"
-                      placeholderTextColor="#94a3b8"
-                      value={password}
-                      keyboardType="default"
-                      onChangeText={setPassword}
-                      secureTextEntry={!showPassword}
-                    />
-                    <View className="absolute left-4 top-4">
-                      <Ionicons
-                        name="lock-closed-outline"
-                        size={22}
-                        color="#64748b"
-                      />
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => setShowPassword((prev) => !prev)}
-                      activeOpacity={0.7}
-                      className="absolute right-4 top-4"
-                    >
-                      <Ionicons
-                        name={showPassword ? "eye-off-outline" : "eye-outline"}
-                        size={22}
-                        color="#64748b"
-                      />
-                    </TouchableOpacity>
-                  </View>
+                  <Controller
+                    control={control}
+                    name="password"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <View className="relative">
+                        <TextInput
+                          className={`w-full bg-slate-50 border-2 rounded-2xl p-4 pl-12 pr-12 text-slate-900 text-base focus:bg-white ${
+                            errors.password
+                              ? "border-red-500"
+                              : "border-slate-200 focus:border-primary"
+                          }`}
+                          placeholder="Enter your password"
+                          placeholderTextColor="#94a3b8"
+                          value={value}
+                          keyboardType="default"
+                          onChangeText={onChange}
+                          onBlur={onBlur}
+                          secureTextEntry={!showPassword}
+                        />
+                        <View className="absolute left-4 top-4">
+                          <Ionicons
+                            name="lock-closed-outline"
+                            size={22}
+                            color="#64748b"
+                          />
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => setShowPassword((prev) => !prev)}
+                          activeOpacity={0.7}
+                          className="absolute right-4 top-4"
+                        >
+                          <Ionicons
+                            name={
+                              showPassword ? "eye-off-outline" : "eye-outline"
+                            }
+                            size={22}
+                            color="#64748b"
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  />
+                  {errors.password?.message ? (
+                    <Text className="text-red-500 text-xs mt-1 ml-1">
+                      {errors.password.message}
+                    </Text>
+                  ) : null}
                 </View>
 
                 <TouchableOpacity
@@ -164,7 +219,7 @@ export default function SignIn() {
               <View className="mt-8 mb-6">
                 <TouchableOpacity
                   activeOpacity={0.9}
-                  onPress={handleSignIn}
+                  onPress={handleSubmit(onSubmit)}
                   disabled={loading}
                   className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 items-center justify-center active:scale-[0.98] flex-row"
                 >

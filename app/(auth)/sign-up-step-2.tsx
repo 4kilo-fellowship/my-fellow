@@ -1,8 +1,10 @@
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
   Alert,
@@ -20,6 +22,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { z } from "zod";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const HEADER_HEIGHT = SCREEN_HEIGHT * 0.08;
@@ -56,6 +59,21 @@ const YEARS = [
   "5th Year",
   "GC",
 ];
+
+const signUpStep2Schema = z.object({
+  team: z.string().min(1, "Team is required"),
+  department: z.string().min(1, "Department is required"),
+  year: z.string().min(1, "Year is required"),
+  telegram: z
+    .string()
+    .transform((val) => val.trim())
+    .refine(
+      (val) => val === "" || /^@?[a-zA-Z0-9_]{3,32}$/.test(val),
+      "Enter a valid Telegram handle"
+    ),
+});
+
+type SignUpStep2FormValues = z.infer<typeof signUpStep2Schema>;
 
 // --- Reusable Dropdown Modal Component ---
 const SelectionModal = ({
@@ -118,11 +136,19 @@ export default function SignUpStep2() {
     "team" | "department" | "year" | null
   >(null);
 
-  const [form, setForm] = useState({
-    team: "",
-    department: "",
-    year: "",
-    telegram: "",
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<SignUpStep2FormValues>({
+    resolver: zodResolver(signUpStep2Schema),
+    defaultValues: {
+      team: "",
+      department: "",
+      year: "",
+      telegram: "",
+    },
   });
 
   const pickImage = async () => {
@@ -135,17 +161,10 @@ export default function SignUpStep2() {
     if (!result.canceled) setImage(result.assets[0].uri);
   };
 
-  const handleComplete = async () => {
-    // Validate required fields
-    if (!form.team || !form.department || !form.year) {
-      Alert.alert(
-        "Missing Information",
-        "Please select your Team, Department, and Year."
-      );
-      return;
-    }
-
-    // Validate step 1 data
+  const handleComplete: (data: SignUpStep2FormValues) => Promise<void> = async (
+    data
+  ) => {
+    // Validate step 1 data from params
     if (!params.fullName || !params.phone || !params.password) {
       Alert.alert(
         "Missing Information",
@@ -163,10 +182,11 @@ export default function SignUpStep2() {
         fullName: params.fullName as string,
         phone: params.phone as string,
         password: params.password as string,
-        team: form.team,
-        department: form.department,
-        year: form.year,
-        telegram: form.telegram || undefined,
+        confirmPassword: params.password as string,
+        team: data.team,
+        department: data.department,
+        year: data.year,
+        telegram: data.telegram || undefined,
         profileImage: image || undefined,
       };
 
@@ -270,21 +290,40 @@ export default function SignUpStep2() {
                   <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
                     Team
                   </Text>
-                  <TouchableOpacity
-                    onPress={() => setModalType("team")}
-                    className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 flex-row justify-between items-center"
-                  >
-                    <Text
-                      className={
-                        form.team
-                          ? "text-slate-900 text-base"
-                          : "text-slate-400 text-base"
-                      }
-                    >
-                      {form.team || "Select your team"}
-                    </Text>
-                    <Ionicons name="chevron-down" size={20} color="#94a3b8" />
-                  </TouchableOpacity>
+                  <Controller
+                    control={control}
+                    name="team"
+                    render={({ field: { value } }) => (
+                      <>
+                        <TouchableOpacity
+                          onPress={() => setModalType("team")}
+                          className={`w-full bg-slate-50 border-2 rounded-2xl p-4 flex-row justify-between items-center ${
+                            errors.team ? "border-red-500" : "border-slate-200"
+                          }`}
+                        >
+                          <Text
+                            className={
+                              value
+                                ? "text-slate-900 text-base"
+                                : "text-slate-400 text-base"
+                            }
+                          >
+                            {value || "Select your team"}
+                          </Text>
+                          <Ionicons
+                            name="chevron-down"
+                            size={20}
+                            color="#94a3b8"
+                          />
+                        </TouchableOpacity>
+                        {errors.team?.message ? (
+                          <Text className="text-red-500 text-xs mt-1 ml-1">
+                            {errors.team.message}
+                          </Text>
+                        ) : null}
+                      </>
+                    )}
+                  />
                 </View>
 
                 {/* Department Dropdown */}
@@ -292,21 +331,42 @@ export default function SignUpStep2() {
                   <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
                     Department
                   </Text>
-                  <TouchableOpacity
-                    onPress={() => setModalType("department")}
-                    className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 flex-row justify-between items-center"
-                  >
-                    <Text
-                      className={
-                        form.department
-                          ? "text-slate-900 text-base"
-                          : "text-slate-400 text-base"
-                      }
-                    >
-                      {form.department || "Select your department"}
-                    </Text>
-                    <Ionicons name="chevron-down" size={20} color="#94a3b8" />
-                  </TouchableOpacity>
+                  <Controller
+                    control={control}
+                    name="department"
+                    render={({ field: { value } }) => (
+                      <>
+                        <TouchableOpacity
+                          onPress={() => setModalType("department")}
+                          className={`w-full bg-slate-50 border-2 rounded-2xl p-4 flex-row justify-between items-center ${
+                            errors.department
+                              ? "border-red-500"
+                              : "border-slate-200"
+                          }`}
+                        >
+                          <Text
+                            className={
+                              value
+                                ? "text-slate-900 text-base"
+                                : "text-slate-400 text-base"
+                            }
+                          >
+                            {value || "Select your department"}
+                          </Text>
+                          <Ionicons
+                            name="chevron-down"
+                            size={20}
+                            color="#94a3b8"
+                          />
+                        </TouchableOpacity>
+                        {errors.department?.message ? (
+                          <Text className="text-red-500 text-xs mt-1 ml-1">
+                            {errors.department.message}
+                          </Text>
+                        ) : null}
+                      </>
+                    )}
+                  />
                 </View>
 
                 {/* Year Dropdown */}
@@ -314,21 +374,40 @@ export default function SignUpStep2() {
                   <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
                     Year
                   </Text>
-                  <TouchableOpacity
-                    onPress={() => setModalType("year")}
-                    className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 flex-row justify-between items-center"
-                  >
-                    <Text
-                      className={
-                        form.year
-                          ? "text-slate-900 text-base"
-                          : "text-slate-400 text-base"
-                      }
-                    >
-                      {form.year || "Select your academic year"}
-                    </Text>
-                    <Ionicons name="chevron-down" size={20} color="#94a3b8" />
-                  </TouchableOpacity>
+                  <Controller
+                    control={control}
+                    name="year"
+                    render={({ field: { value } }) => (
+                      <>
+                        <TouchableOpacity
+                          onPress={() => setModalType("year")}
+                          className={`w-full bg-slate-50 border-2 rounded-2xl p-4 flex-row justify-between items-center ${
+                            errors.year ? "border-red-500" : "border-slate-200"
+                          }`}
+                        >
+                          <Text
+                            className={
+                              value
+                                ? "text-slate-900 text-base"
+                                : "text-slate-400 text-base"
+                            }
+                          >
+                            {value || "Select your academic year"}
+                          </Text>
+                          <Ionicons
+                            name="chevron-down"
+                            size={20}
+                            color="#94a3b8"
+                          />
+                        </TouchableOpacity>
+                        {errors.year?.message ? (
+                          <Text className="text-red-500 text-xs mt-1 ml-1">
+                            {errors.year.message}
+                          </Text>
+                        ) : null}
+                      </>
+                    )}
+                  />
                 </View>
 
                 {/* Telegram Input */}
@@ -336,30 +415,46 @@ export default function SignUpStep2() {
                   <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
                     Telegram Handle
                   </Text>
-                  <View className="relative justify-center">
-                    <TextInput
-                      className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 pl-12 text-slate-900 text-base focus:border-primary focus:bg-white"
-                      placeholder="@username"
-                      placeholderTextColor="#94a3b8"
-                      value={form.telegram}
-                      onChangeText={(t) => setForm({ ...form, telegram: t })}
-                      autoCapitalize="none"
-                    />
-                    <View className="absolute left-4">
-                      <Ionicons
-                        name="paper-plane-outline"
-                        size={22}
-                        color="#64748b"
-                      />
-                    </View>
-                  </View>
+                  <Controller
+                    control={control}
+                    name="telegram"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <View className="relative justify-center">
+                        <TextInput
+                          className={`w-full bg-slate-50 border-2 rounded-2xl p-4 pl-12 text-slate-900 text-base focus:bg-white ${
+                            errors.telegram
+                              ? "border-red-500"
+                              : "border-slate-200 focus:border-primary"
+                          }`}
+                          placeholder="@username"
+                          placeholderTextColor="#94a3b8"
+                          value={value}
+                          onChangeText={onChange}
+                          onBlur={onBlur}
+                          autoCapitalize="none"
+                        />
+                        <View className="absolute left-4">
+                          <Ionicons
+                            name="paper-plane-outline"
+                            size={22}
+                            color="#64748b"
+                          />
+                        </View>
+                      </View>
+                    )}
+                  />
+                  {errors.telegram?.message ? (
+                    <Text className="text-red-500 text-xs mt-1 ml-1">
+                      {errors.telegram.message}
+                    </Text>
+                  ) : null}
                 </View>
               </View>
 
               {/* Footer Button */}
               <View className="mt-8 mb-6">
                 <TouchableOpacity
-                  onPress={handleComplete}
+                  onPress={handleSubmit(handleComplete)}
                   disabled={loading}
                   className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 active:scale-[0.98] flex-row justify-center items-center"
                 >
@@ -381,21 +476,23 @@ export default function SignUpStep2() {
             onClose={() => setModalType(null)}
             title="Select Team"
             options={TEAMS}
-            onSelect={(val) => setForm({ ...form, team: val })}
+            onSelect={(val) => setValue("team", val, { shouldValidate: true })}
           />
           <SelectionModal
             visible={modalType === "department"}
             onClose={() => setModalType(null)}
             title="Select Department"
             options={DEPARTMENTS}
-            onSelect={(val) => setForm({ ...form, department: val })}
+            onSelect={(val) =>
+              setValue("department", val, { shouldValidate: true })
+            }
           />
           <SelectionModal
             visible={modalType === "year"}
             onClose={() => setModalType(null)}
             title="Select Year"
             options={YEARS}
-            onSelect={(val) => setForm({ ...form, year: val })}
+            onSelect={(val) => setValue("year", val, { shouldValidate: true })}
           />
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
