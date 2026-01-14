@@ -216,7 +216,7 @@ export default function SignUpStep2() {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           className="flex-1"
         >
-          {/* Header Background with rounded bottom corners */}
+          {/* header */}
           <View
             className="bg-white"
             style={{
@@ -229,18 +229,16 @@ export default function SignUpStep2() {
               className="flex-1 justify-center items-center px-6"
               style={{ paddingTop: 60 }}
             >
-              {/* Back Button */}
+              {/* back */}
               <View className="absolute top-4 left-6">
                 <TouchableOpacity
+                  activeOpacity={0.9}
                   onPress={() => router.back()}
                   className="w-12 h-12 bg-white/20 rounded-full items-center justify-center border border-white/30 shadow-lg"
                 >
                   <Ionicons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
               </View>
-
-              {/* Header Section */}
-              <View className="items-center"></View>
             </View>
           </View>
 
@@ -250,12 +248,13 @@ export default function SignUpStep2() {
             }}
             showsVerticalScrollIndicator={false}
           >
-            {/* Form Container */}
+            {/* Form */}
             <View className="flex-1 bg-white pt-8 px-6">
               {/* Image Picker */}
               <View className="items-center mb-6">
                 <TouchableOpacity
                   onPress={pickImage}
+                  activeOpacity={0.8}
                   className="relative shadow-xl shadow-slate-200"
                 >
                   <View className="w-32 h-32 rounded-full bg-slate-50 items-center justify-center border-2 border-dashed border-slate-300 overflow-hidden">
