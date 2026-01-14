@@ -39,7 +39,7 @@ type SignUpStep1FormValues = z.infer<typeof signUpStep1Schema>;
 
 export default function SignUpStep1() {
   const router = useRouter();
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const {
     control,
