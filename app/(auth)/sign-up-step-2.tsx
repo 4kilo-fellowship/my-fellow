@@ -1,4 +1,5 @@
 import { useAuth } from "@/context/AuthContext";
+import { uploadImageToCloudinary } from "@/services/cloudinaryService";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
@@ -98,13 +99,14 @@ const SelectionModal = ({
       <View className="bg-white w-full max-h-[70%] rounded-3xl overflow-hidden p-6 shadow-2xl">
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-xl font-bold text-slate-900">{title}</Text>
-          <TouchableOpacity onPress={onClose}>
+          <TouchableOpacity activeOpacity={0.8} onPress={onClose}>
             <Ionicons name="close-circle" size={28} color="#94a3b8" />
           </TouchableOpacity>
         </View>
         <ScrollView showsVerticalScrollIndicator={false}>
           {options.map((option, index) => (
             <TouchableOpacity
+              activeOpacity={0.8}
               key={index}
               onPress={() => {
                 onSelect(option);
@@ -153,7 +155,7 @@ export default function SignUpStep2() {
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: "images",
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -177,6 +179,26 @@ export default function SignUpStep2() {
     setLoading(true);
 
     try {
+      let profileImageUrl: string | undefined;
+
+      // Upload image to Cloudinary if provided
+      if (image) {
+        try {
+          profileImageUrl = await uploadImageToCloudinary(
+            image,
+            "profile-images"
+          );
+        } catch (uploadError: any) {
+          console.error("Image upload error:", uploadError);
+          Alert.alert(
+            "Upload Failed",
+            uploadError.message || "Failed to upload image. Please try again."
+          );
+          setLoading(false);
+          return;
+        }
+      }
+
       // Prepare registration data
       const registrationData = {
         fullName: params.fullName as string,
@@ -187,7 +209,7 @@ export default function SignUpStep2() {
         department: data.department,
         year: data.year,
         telegram: data.telegram || undefined,
-        profileImage: image || undefined,
+        profileImage: profileImageUrl || undefined,
       };
 
       // Call signup service
@@ -295,6 +317,7 @@ export default function SignUpStep2() {
                     render={({ field: { value } }) => (
                       <>
                         <TouchableOpacity
+                          activeOpacity={0.8}
                           onPress={() => setModalType("team")}
                           className={`w-full bg-slate-50 border-2 rounded-2xl p-4 flex-row justify-between items-center ${
                             errors.team ? "border-red-500" : "border-slate-200"
@@ -336,6 +359,7 @@ export default function SignUpStep2() {
                     render={({ field: { value } }) => (
                       <>
                         <TouchableOpacity
+                          activeOpacity={0.8}
                           onPress={() => setModalType("department")}
                           className={`w-full bg-slate-50 border-2 rounded-2xl p-4 flex-row justify-between items-center ${
                             errors.department
@@ -379,6 +403,7 @@ export default function SignUpStep2() {
                     render={({ field: { value } }) => (
                       <>
                         <TouchableOpacity
+                          activeOpacity={0.8}
                           onPress={() => setModalType("year")}
                           className={`w-full bg-slate-50 border-2 rounded-2xl p-4 flex-row justify-between items-center ${
                             errors.year ? "border-red-500" : "border-slate-200"
@@ -453,6 +478,7 @@ export default function SignUpStep2() {
               {/* Footer Button */}
               <View className="mt-8 mb-6">
                 <TouchableOpacity
+                  activeOpacity={0.9}
                   onPress={handleSubmit(handleComplete)}
                   disabled={loading}
                   className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 active:scale-[0.98] flex-row justify-center items-center"
@@ -477,6 +503,7 @@ export default function SignUpStep2() {
             options={TEAMS}
             onSelect={(val) => setValue("team", val, { shouldValidate: true })}
           />
+
           <SelectionModal
             visible={modalType === "department"}
             onClose={() => setModalType(null)}

@@ -22,37 +22,23 @@ export const authService = {
 
   /**
    * Sign up with user data
+   * Note: profileImage should be a Cloudinary URL string (uploaded via cloudinaryService)
    */
   signup: async (data: SignUpData): Promise<SignUpResponse> => {
-    // Create FormData for file upload support
-    const formData = new FormData();
+    // Prepare registration data as JSON (since image is already uploaded to Cloudinary)
+    const registrationData = {
+      fullName: data.fullName,
+      phone: data.phone,
+      password: data.password,
+      ...(data.team && { team: data.team }),
+      ...(data.department && { department: data.department }),
+      ...(data.year && { year: data.year }),
+      ...(data.telegram && { telegram: data.telegram }),
+      ...(data.profileImage && { profileImage: data.profileImage }),
+    };
 
-    // Append text fields
-    formData.append("fullName", data.fullName);
-    formData.append("phone", data.phone);
-    formData.append("password", data.password);
-    
-    if (data.team) formData.append("team", data.team);
-    if (data.department) formData.append("department", data.department);
-    if (data.year) formData.append("year", data.year);
-    if (data.telegram) formData.append("telegram", data.telegram);
-
-    // Append profile image if provided
-    if (data.profileImage) {
-      const filename = data.profileImage.split("/").pop() || "profile.jpg";
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : "image/jpeg";
-
-      formData.append("profileImage", {
-        uri: data.profileImage,
-        name: filename,
-        type,
-      } as any);
-    }
-
-    // Note: For React Native FormData, don't set Content-Type header
-    // axios will automatically set it with the correct boundary
-    const response = await api.post<SignUpResponse>("/register", formData);
+    // Send as JSON (image is already uploaded to Cloudinary as a URL)
+    const response = await api.post<SignUpResponse>("/register", registrationData);
 
     return response.data;
   },
