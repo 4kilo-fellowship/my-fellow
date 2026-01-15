@@ -7,10 +7,9 @@ export const signUpStep2Schema = z.object({
   telegram: z
     .string()
     .transform((val) => val.trim())
-    .refine(
-      (val) => val === "" || /^@?[a-zA-Z0-9_]{3,32}$/.test(val),
-      "Enter a valid Telegram handle"
-    ),
+    .refine((val) => /^@?[a-zA-Z0-9_]{3,32}$/.test(val), {
+      message: "Enter a valid Telegram handle",
+    }),
 });
 
 export type SignUpStep2FormValues = z.infer<typeof signUpStep2Schema>;
