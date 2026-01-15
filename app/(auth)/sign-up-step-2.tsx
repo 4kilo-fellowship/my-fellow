@@ -1,5 +1,6 @@
 import { DEPARTMENTS, TEAMS, YEARS } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
+import { SignUpStep2FormValues, signUpStep2Schema } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
@@ -23,27 +24,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { z } from "zod";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const HEADER_HEIGHT = SCREEN_HEIGHT * 0.08;
 
-const signUpStep2Schema = z.object({
-  team: z.string().min(1, "Team is required"),
-  department: z.string().min(1, "Department is required"),
-  year: z.string().min(1, "Year is required"),
-  telegram: z
-    .string()
-    .transform((val) => val.trim())
-    .refine(
-      (val) => val === "" || /^@?[a-zA-Z0-9_]{3,32}$/.test(val),
-      "Enter a valid Telegram handle"
-    ),
-});
-
-type SignUpStep2FormValues = z.infer<typeof signUpStep2Schema>;
-
-// --- Reusable Dropdown Modal Component ---
 const SelectionModal = ({
   visible,
   onClose,
