@@ -1,4 +1,4 @@
-import { TEAMS } from "@/constants";
+import { DEPARTMENTS, TEAMS, YEARS } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,27 +25,6 @@ import { z } from "zod";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const HEADER_HEIGHT = SCREEN_HEIGHT * 0.08;
-
-const DEPARTMENTS = [
-  "Computer Science",
-  "Software Engineering",
-  "Electrical Engineering",
-  "Civil Engineering",
-  "Mechanical Engineering",
-  "Architecture",
-  "Medicine",
-  "Business & Econ",
-  "Other",
-];
-
-const YEARS = [
-  "1st Year",
-  "2nd Year",
-  "3rd Year",
-  "4th Year",
-  "5th Year",
-  "GC",
-];
 
 const signUpStep2Schema = z.object({
   team: z.string().min(1, "Team is required"),
