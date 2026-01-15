@@ -5,6 +5,6 @@ export const TEAMS = [
   "I4U Team",
   "Prayer Team",
   "Literature and Media Team",
-  "No Team",
+  "Freshman",
   "Other",
 ] as const;
