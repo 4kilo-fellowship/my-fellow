@@ -2,6 +2,7 @@ import { DEPARTMENTS, TEAMS, YEARS } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
+import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -9,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -64,14 +66,13 @@ const SelectionModal = ({
       <View className="bg-white w-full max-h-[70%] rounded-3xl overflow-hidden p-6 shadow-2xl">
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-xl font-bold text-slate-900">{title}</Text>
-          <TouchableOpacity activeOpacity={0.8} onPress={onClose}>
+          <TouchableOpacity onPress={onClose}>
             <Ionicons name="close-circle" size={28} color="#94a3b8" />
           </TouchableOpacity>
         </View>
         <ScrollView showsVerticalScrollIndicator={false}>
           {options.map((option, index) => (
             <TouchableOpacity
-              activeOpacity={0.8}
               key={index}
               onPress={() => {
                 onSelect(option);
@@ -95,6 +96,7 @@ export default function SignUpStep2() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { signup } = useAuth();
+  const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Dropdown States
@@ -116,6 +118,16 @@ export default function SignUpStep2() {
       telegram: "",
     },
   });
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled) setImage(result.assets[0].uri);
+  };
 
   const handleComplete: (data: SignUpStep2FormValues) => Promise<void> = async (
     data
@@ -143,6 +155,7 @@ export default function SignUpStep2() {
         department: data.department,
         year: data.year,
         telegram: data.telegram || undefined,
+        profileImage: image || undefined,
       };
 
       // Call signup service
@@ -205,6 +218,38 @@ export default function SignUpStep2() {
           >
             {/* Form */}
             <View className="flex-1 bg-white pt-8 px-6">
+              {/* Image Picker */}
+              <View className="items-center mb-6">
+                <TouchableOpacity
+                  onPress={pickImage}
+                  activeOpacity={0.8}
+                  className="relative shadow-xl shadow-slate-200"
+                >
+                  <View className="w-32 h-32 rounded-full bg-slate-50 items-center justify-center border-2 border-dashed border-slate-300 overflow-hidden">
+                    {image ? (
+                      <Image
+                        source={{ uri: image }}
+                        className="w-full h-full"
+                      />
+                    ) : (
+                      <View className="items-center">
+                        <Ionicons name="camera" size={32} color="#94a3b8" />
+                        <Text className="text-[10px] text-slate-400 mt-1 font-bold uppercase tracking-wider">
+                          Upload
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <View className="absolute bottom-1 right-1 bg-primary p-2.5 rounded-full border-[3px] border-white shadow-md">
+                    <Ionicons
+                      name={image ? "pencil" : "add"}
+                      size={16}
+                      color="white"
+                    />
+                  </View>
+                </TouchableOpacity>
+              </View>
+
               {/* Form Fields */}
               <View className="space-y-5">
                 {/* Team Dropdown */}
@@ -218,7 +263,6 @@ export default function SignUpStep2() {
                     render={({ field: { value } }) => (
                       <>
                         <TouchableOpacity
-                          activeOpacity={0.8}
                           onPress={() => setModalType("team")}
                           className={`w-full bg-slate-50 border-2 rounded-2xl p-4 flex-row justify-between items-center ${
                             errors.team ? "border-red-500" : "border-slate-200"
@@ -260,7 +304,6 @@ export default function SignUpStep2() {
                     render={({ field: { value } }) => (
                       <>
                         <TouchableOpacity
-                          activeOpacity={0.8}
                           onPress={() => setModalType("department")}
                           className={`w-full bg-slate-50 border-2 rounded-2xl p-4 flex-row justify-between items-center ${
                             errors.department
@@ -304,7 +347,6 @@ export default function SignUpStep2() {
                     render={({ field: { value } }) => (
                       <>
                         <TouchableOpacity
-                          activeOpacity={0.8}
                           onPress={() => setModalType("year")}
                           className={`w-full bg-slate-50 border-2 rounded-2xl p-4 flex-row justify-between items-center ${
                             errors.year ? "border-red-500" : "border-slate-200"
@@ -379,7 +421,6 @@ export default function SignUpStep2() {
               {/* Footer Button */}
               <View className="mt-8 mb-6">
                 <TouchableOpacity
-                  activeOpacity={0.9}
                   onPress={handleSubmit(handleComplete)}
                   disabled={loading}
                   className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 active:scale-[0.98] flex-row justify-center items-center"
@@ -404,7 +445,6 @@ export default function SignUpStep2() {
             options={TEAMS}
             onSelect={(val) => setValue("team", val, { shouldValidate: true })}
           />
-
           <SelectionModal
             visible={modalType === "department"}
             onClose={() => setModalType(null)}
