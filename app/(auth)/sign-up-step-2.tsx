@@ -1,3 +1,4 @@
+import { TEAMS } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,18 +25,6 @@ import { z } from "zod";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const HEADER_HEIGHT = SCREEN_HEIGHT * 0.08;
-
-// --- Data Lists ---
-const TEAMS = [
-  "Bible Study Team",
-  "Action Team",
-  "Worship Team",
-  "I4U",
-  "Prayer Team",
-  "Evangelism",
-  "Literature",
-  "Media",
-];
 
 const DEPARTMENTS = [
   "Computer Science",
