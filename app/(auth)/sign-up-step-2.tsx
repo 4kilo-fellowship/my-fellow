@@ -1,8 +1,6 @@
 import { useAuth } from "@/context/AuthContext";
-import { uploadImageToCloudinary } from "@/services/cloudinaryService";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -10,7 +8,6 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
-  Image,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -130,7 +127,6 @@ export default function SignUpStep2() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { signup } = useAuth();
-  const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Dropdown States
@@ -153,16 +149,6 @@ export default function SignUpStep2() {
     },
   });
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: "images",
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    if (!result.canceled) setImage(result.assets[0].uri);
-  };
-
   const handleComplete: (data: SignUpStep2FormValues) => Promise<void> = async (
     data
   ) => {
@@ -179,26 +165,6 @@ export default function SignUpStep2() {
     setLoading(true);
 
     try {
-      let profileImageUrl: string | undefined;
-
-      // Upload image to Cloudinary if provided
-      if (image) {
-        try {
-          profileImageUrl = await uploadImageToCloudinary(
-            image,
-            "profile-images"
-          );
-        } catch (uploadError: any) {
-          console.error("Image upload error:", uploadError);
-          Alert.alert(
-            "Upload Failed",
-            uploadError.message || "Failed to upload image. Please try again."
-          );
-          setLoading(false);
-          return;
-        }
-      }
-
       // Prepare registration data
       const registrationData = {
         fullName: params.fullName as string,
@@ -209,7 +175,6 @@ export default function SignUpStep2() {
         department: data.department,
         year: data.year,
         telegram: data.telegram || undefined,
-        profileImage: profileImageUrl || undefined,
       };
 
       // Call signup service
@@ -272,38 +237,6 @@ export default function SignUpStep2() {
           >
             {/* Form */}
             <View className="flex-1 bg-white pt-8 px-6">
-              {/* Image Picker */}
-              <View className="items-center mb-6">
-                <TouchableOpacity
-                  onPress={pickImage}
-                  activeOpacity={0.8}
-                  className="relative shadow-xl shadow-slate-200"
-                >
-                  <View className="w-32 h-32 rounded-full bg-slate-50 items-center justify-center border-2 border-dashed border-slate-300 overflow-hidden">
-                    {image ? (
-                      <Image
-                        source={{ uri: image }}
-                        className="w-full h-full"
-                      />
-                    ) : (
-                      <View className="items-center">
-                        <Ionicons name="camera" size={32} color="#94a3b8" />
-                        <Text className="text-[10px] text-slate-400 mt-1 font-bold uppercase tracking-wider">
-                          Upload
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                  <View className="absolute bottom-1 right-1 bg-primary p-2.5 rounded-full border-[3px] border-white shadow-md">
-                    <Ionicons
-                      name={image ? "pencil" : "add"}
-                      size={16}
-                      color="white"
-                    />
-                  </View>
-                </TouchableOpacity>
-              </View>
-
               {/* Form Fields */}
               <View className="space-y-5">
                 {/* Team Dropdown */}

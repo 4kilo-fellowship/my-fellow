@@ -327,7 +327,10 @@ export default function SignUpStep1() {
                   <Text className="text-slate-600 font-medium text-base">
                     Already have an account?{" "}
                   </Text>
-                  <TouchableOpacity onPress={handleBackToLogin}>
+                  <TouchableOpacity
+                    onPress={handleBackToLogin}
+                    activeOpacity={0.9}
+                  >
                     <Text className="text-primary font-bold text-base">
                       Log In
                     </Text>
