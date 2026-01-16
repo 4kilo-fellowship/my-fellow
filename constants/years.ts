@@ -5,4 +5,4 @@ export const YEARS = [
   "4th Year",
   "5th Year",
   "Other",
-] as const;
+];

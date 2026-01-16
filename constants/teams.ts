@@ -7,4 +7,4 @@ export const TEAMS = [
   "Literature and Media Team",
   "Freshman",
   "Other",
-] as const;
+];

@@ -55,6 +55,7 @@ export default function SignUpStep2() {
       telegram: "",
     },
   });
+
   // image picker for the profile picture
   const pickImage = async () => {
     // Ask for gallery library permission
@@ -167,7 +168,7 @@ export default function SignUpStep2() {
               <View className="items-center mb-6">
                 <TouchableOpacity
                   onPress={pickImage}
-                  activeOpacity={0.8}
+                  activeOpacity={1}
                   className="relative shadow-xl shadow-slate-200"
                 >
                   <View className="w-32 h-32 rounded-full bg-slate-50 items-center justify-center border-2 border-dashed border-slate-300 overflow-hidden">
@@ -208,6 +209,7 @@ export default function SignUpStep2() {
                     render={({ field: { value } }) => (
                       <>
                         <TouchableOpacity
+                          activeOpacity={0.8}
                           onPress={() => setModalType("team")}
                           className={`w-full bg-slate-50 border-2 rounded-2xl p-4 flex-row justify-between items-center ${
                             errors.team ? "border-red-500" : "border-slate-200"
@@ -249,6 +251,7 @@ export default function SignUpStep2() {
                     render={({ field: { value } }) => (
                       <>
                         <TouchableOpacity
+                          activeOpacity={0.8}
                           onPress={() => setModalType("department")}
                           className={`w-full bg-slate-50 border-2 rounded-2xl p-4 flex-row justify-between items-center ${
                             errors.department
@@ -292,6 +295,7 @@ export default function SignUpStep2() {
                     render={({ field: { value } }) => (
                       <>
                         <TouchableOpacity
+                          activeOpacity={0.8}
                           onPress={() => setModalType("year")}
                           className={`w-full bg-slate-50 border-2 rounded-2xl p-4 flex-row justify-between items-center ${
                             errors.year ? "border-red-500" : "border-slate-200"

@@ -9,4 +9,4 @@ export const DEPARTMENTS = [
   "Engineering(5 Kilo)",
   "Social Science(6 Kilo)",
   "Other",
-] as const;
+];

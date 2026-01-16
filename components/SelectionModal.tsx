@@ -26,7 +26,7 @@ const SelectionModal = ({
       <View className="bg-white w-full max-h-[70%] rounded-3xl overflow-hidden p-6 shadow-2xl">
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-xl font-bold text-slate-900">{title}</Text>
-          <TouchableOpacity onPress={onClose}>
+          <TouchableOpacity activeOpacity={0.9} onPress={onClose}>
             <Ionicons name="close-circle" size={28} color="#94a3b8" />
           </TouchableOpacity>
         </View>
@@ -34,6 +34,7 @@ const SelectionModal = ({
           {options.map((option, index) => (
             <TouchableOpacity
               key={index}
+              activeOpacity={0.9}
               onPress={() => {
                 onSelect(option);
                 onClose();
