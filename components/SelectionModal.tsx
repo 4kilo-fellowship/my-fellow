@@ -16,7 +16,8 @@ const SelectionModal = ({
   options: string[];
   onSelect: (val: string) => void;
 }) => (
-  <Modal visible={visible} transparent animationType="fade">
+  // here animation was face
+  <Modal visible={visible} transparent animationType="none">
     <TouchableOpacity
       activeOpacity={1}
       onPress={onClose}
