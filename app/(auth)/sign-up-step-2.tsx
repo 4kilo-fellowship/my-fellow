@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
+
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
@@ -35,7 +36,7 @@ export default function SignUpStep2() {
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Dropdown States
+  // state variables for the drop down
   const [modalType, setModalType] = useState<
     "team" | "department" | "year" | null
   >(null);
@@ -54,15 +55,23 @@ export default function SignUpStep2() {
       telegram: "",
     },
   });
-
+  // image picker for the profile picture
   const pickImage = async () => {
+    // Ask for gallery library permission
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) return;
+
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
     });
-    if (!result.canceled) setImage(result.assets[0].uri);
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
   };
 
   const handleComplete: (data: SignUpStep2FormValues) => Promise<void> = async (
