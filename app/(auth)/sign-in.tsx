@@ -1,11 +1,11 @@
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
-import { Link } from "expo-router";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Link, useRouter } from "expo-router";
 import React, { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   Keyboard,
   KeyboardAvoidingView,
@@ -17,7 +17,6 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -28,9 +27,7 @@ const signInSchema = z.object({
     .string()
     .min(1, "Phone number is required")
     .regex(/^\d{9,15}$/, "Enter a valid phone number"),
-  password: z
-    .string()
-    .min(6, "Password must be at least 6 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 type SignInFormValues = z.infer<typeof signInSchema>;
@@ -39,6 +36,8 @@ export default function SignIn() {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const { login } = useAuth();
+  const router = useRouter();
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const {
     control,
@@ -56,18 +55,18 @@ export default function SignIn() {
     const trimmedPhone = phoneNumber.trim();
 
     setLoading(true);
+    setLoginError(null);
 
     try {
       await login(trimmedPhone, password);
-      // Navigation will be handled by AuthProvider/auth state
+      // Navigate to tabs on successful login
+      router.replace("/(tabs)");
     } catch (error: any) {
-      console.error("Login error:", error);
-      Alert.alert(
-        "Login Failed",
-        error.response?.data?.message ||
-          error.message ||
-          "Invalid phone number or password. Please try again."
-      );
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Invalid phone number or password. Please try again.";
+      setLoginError(message);
     } finally {
       setLoading(false);
     }
@@ -204,6 +203,13 @@ export default function SignIn() {
                     </Text>
                   ) : null}
                 </View>
+
+                {/* Login error from server (invalid credentials) */}
+                {loginError ? (
+                  <Text className="text-red-500 text-sm mt-3 ml-1">
+                    {loginError}
+                  </Text>
+                ) : null}
 
                 <TouchableOpacity
                   activeOpacity={0.9}

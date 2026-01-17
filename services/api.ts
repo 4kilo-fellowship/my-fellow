@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import * as SecureStore from "expo-secure-store";
 
-const API_URL: string = "http://10.17.176.187:4000/api";
+const API_URL = "http://10.138.90.187:3000/api";
 
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
@@ -9,7 +9,7 @@ const api: AxiosInstance = axios.create({
 
 api.interceptors.request.use(
   async (
-    config: InternalAxiosRequestConfig
+    config: InternalAxiosRequestConfig,
   ): Promise<InternalAxiosRequestConfig> => {
     const token: string | null = await SecureStore.getItemAsync("userToken");
 
@@ -18,7 +18,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error: unknown): Promise<never> => Promise.reject(error)
+  (error: unknown): Promise<never> => Promise.reject(error),
 );
 
 export default api;

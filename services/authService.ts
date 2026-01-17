@@ -1,4 +1,5 @@
 import { LoginResponse, SignUpData, SignUpResponse, User } from "@/types/types";
+import { isAxiosError } from "axios";
 import api from "./api";
 
 /**
@@ -12,20 +13,28 @@ export const authService = {
    */
   login: async (
     phoneNumber: string,
-    password: string
+    password: string,
   ): Promise<LoginResponse> => {
-    const response = await api.post<LoginResponse>("/auth/signin", {
-      phoneNumber,
-      password,
-    });
-    return response.data;
+    try {
+      // Note: headers must be passed as the 3rd arg to axios.post —
+      // previously headers were accidentally included inside the body.
+      // Send both `phoneNumber` and `phone` to be compatible with different API shapes
+      const response = await api.post<LoginResponse>("/auth/signin", {
+        phoneNumber,
+        phone: phoneNumber,
+        password,
+      });
+      return response.data;
+    } catch (error) {
+      if (isAxiosError(error)) {
+        throw new Error(
+          `Login failed: ${error.response?.status || "network error"}`,
+        );
+      }
+      throw error;
+    }
   },
 
-  /**
-   * Sign up with user data
-   * POST /api/auth/signup
-   * Content-Type: multipart/form-data
-   */
   signup: async (data: SignUpData): Promise<SignUpResponse> => {
     // Create FormData for multipart/form-data
     const formData = new FormData();
@@ -69,13 +78,30 @@ export const authService = {
     }
 
     // Send as multipart/form-data
-    const response = await api.post<SignUpResponse>("/auth/signup", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    // React Native + Expo sometimes has trouble with axios + FormData. Use fetch which handles FormData reliably.
+    try {
+      const base = (api.defaults.baseURL ?? "").replace(/\/$/, "");
+      const url = `${base}/auth/signup`;
 
-    return response.data;
+      const res = await fetch(url, {
+        method: "POST",
+        // Let fetch set the Content-Type with boundary automatically
+        body: formData as any,
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Registration failed: ${res.status} ${text}`);
+      }
+
+      const json = (await res.json()) as SignUpResponse;
+      return json;
+    } catch {
+      // fetch/network errors will end up here
+      throw new Error(
+        "Registration failed: Network Error. Check API base URL and device/network reachability.",
+      );
+    }
   },
 
   /**
@@ -84,8 +110,17 @@ export const authService = {
    * Requires Authorization: Bearer <token>
    */
   getCurrentUser: async (): Promise<User> => {
-    const response = await api.get<User>("/auth/me");
-    return response.data;
+    try {
+      const response = await api.get<User>("/auth/me");
+      return response.data;
+    } catch (error) {
+      if (isAxiosError(error)) {
+        throw new Error(
+          `getCurrentUser failed: ${error.response?.status || "network error"}`,
+        );
+      }
+      throw error;
+    }
   },
 
   /**
