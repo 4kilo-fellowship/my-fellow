@@ -5,9 +5,21 @@ export type AuthState = {
   authenticated: boolean | null;
 };
 
+export type User = {
+  id: string;
+  fullName: string;
+  phoneNumber: string;
+  team?: string | null;
+  department?: string | null;
+  yearOfStudy?: string | null;
+  telegramUserName?: string | null;
+  image?: string | null;
+  [key: string]: unknown;
+};
+
 export type LoginResponse = {
   token: string;
-  user?: unknown;
+  user?: User;
 };
 
 export type SignUpData = {
@@ -24,7 +36,7 @@ export type SignUpData = {
 
 export type SignUpResponse = {
   token: string;
-  user?: unknown;
+  user?: User;
 };
 
 export type AuthContextType = {
@@ -32,6 +44,7 @@ export type AuthContextType = {
   login: (phoneNumber: string, password: string) => Promise<LoginResponse>;
   signup: (data: SignUpData) => Promise<SignUpResponse>;
   logout: () => Promise<void>;
+  getCurrentUser: () => Promise<User>;
 };
 
 export type AuthProviderProps = {

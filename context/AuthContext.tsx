@@ -7,11 +7,12 @@ import {
   LoginResponse,
   SignUpData,
   SignUpResponse,
+  User,
 } from "@/types/types";
 import * as SecureStore from "expo-secure-store";
 import { createContext, useContext, useEffect, useState } from "react";
 
-// creat a context for the auth
+// create a context for the auth
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = (): AuthContextType => {
@@ -74,10 +75,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  /**
-   * Signup function
-   * Registers new user and stores token
-   */
+  // Sign up
   const signup = async (data: SignUpData): Promise<SignUpResponse> => {
     try {
       const response = await authService.signup(data);
@@ -121,8 +119,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  /**
+   * Get current authenticated user
+   * GET /api/auth/me
+   */
+  const getCurrentUser = async (): Promise<User> => {
+    try {
+      const user = await authService.getCurrentUser();
+      return user;
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ authState, login, signup, logout }}>
+    <AuthContext.Provider value={{ authState, login, signup, logout, getCurrentUser }}>
       {children}
     </AuthContext.Provider>
   );
