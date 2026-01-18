@@ -1,4 +1,6 @@
-import DevotionCard from "@/components/DevotionCard";
+import { AnnouncementCard } from "@/components";
+import { DevotionCard } from "@/components/DevotionCard";
+
 import { ANNOUNCEMENTS, DEVOTIONS, QUICK_ACTIONS, VIDEOS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,78 +21,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width, height } = Dimensions.get("window");
-
-/* -------------------------- ANNOUNCEMENT CARD ----------------------------- */
-const AnnouncementCard: React.FC<any> = ({ item, isDark }) => {
-  return (
-    <View
-      style={{
-        marginRight: 16,
-        overflow: "hidden",
-        borderRadius: 20,
-        width: width - 48,
-        height: 200,
-        shadowColor: "#000",
-        shadowOpacity: 0.15,
-        shadowRadius: 10,
-        elevation: 5,
-      }}
-    >
-      <View style={{ flex: 1 }}>
-        <Image
-          source={{ uri: item.image }}
-          style={StyleSheet.absoluteFill}
-          resizeMode="cover"
-        />
-        <View style={[StyleSheet.absoluteFill]}>
-          <LinearGradient
-            colors={["rgba(0,0,0,0.35)", "rgba(0,0,0,0.45)"]}
-            style={{ flex: 1 }}
-          />
-        </View>
-
-        <View style={{ flex: 1, justifyContent: "flex-end", padding: 16 }}>
-          <Text
-            style={{
-              color: "#fff",
-              fontSize: 20,
-              fontWeight: "800",
-              marginBottom: 4,
-            }}
-          >
-            {item.title}
-          </Text>
-          <Text
-            style={{
-              color: "rgba(255,255,255,0.9)",
-              fontSize: 13,
-              marginBottom: 12,
-            }}
-          >
-            {item.subtitle}
-          </Text>
-
-          <TouchableOpacity
-            style={{
-              backgroundColor: "#14B8A6",
-              paddingHorizontal: 14,
-              paddingVertical: 8,
-              borderRadius: 999,
-              alignSelf: "flex-start",
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ color: "#fff", fontWeight: "600", marginRight: 8 }}>
-              {item.cta}
-            </Text>
-            <Ionicons name={item.ctaIcon} size={16} color="white" />
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
-};
 
 /* ----------------------------- QUICK ACTION ------------------------------- */
 const QuickAction: React.FC<any> = ({ item, isDark }) => (
