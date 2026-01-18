@@ -1,7 +1,6 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import * as SecureStore from "expo-secure-store";
-
-const API_URL = "http://10.138.90.187:3000/api";
+import {API_URL} from "@/constants"
 
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
