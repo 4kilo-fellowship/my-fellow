@@ -14,16 +14,21 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const Home: React.FC = () => {
+const Home = () => {
+  const { top } = useSafeAreaInsets();
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
   const [activeIndex, setActiveIndex] = useState(0);
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: isDark ? "#0F0F10" : "#f8fafc" }}
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: isDark ? "#000" : "#fff",
+        paddingTop: top,
+      }}
     >
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
@@ -34,9 +39,6 @@ const Home: React.FC = () => {
       <View
         style={{
           paddingHorizontal: 16,
-          borderBottomWidth: 1,
-          borderBottomColor: isDark ? "#1f2937" : "#e5e7eb",
-          backgroundColor: isDark ? "#111827" : "#ffffff",
         }}
       >
         <View
@@ -220,7 +222,7 @@ const Home: React.FC = () => {
           ))}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
