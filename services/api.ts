@@ -1,12 +1,13 @@
+import { API_URL } from "@/constants";
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import * as SecureStore from "expo-secure-store";
-import {API_URL} from "@/constants"
 
+// create axios instance
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
 });
 
-// add authoraization
+// add authorization
 api.interceptors.request.use(
   async (
     config: InternalAxiosRequestConfig,
