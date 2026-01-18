@@ -1,4 +1,4 @@
-import { QUICK_ACTIONS, VIDEOS } from "@/constants";
+import { ANNOUNCEMENTS, DEVOTIONS, QUICK_ACTIONS, VIDEOS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -19,222 +19,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width, height } = Dimensions.get("window");
-
-/* --------------------------------- DATA ----------------------------------- */
-const ANNOUNCEMENTS = [
-  {
-    id: "1",
-    title: "Annual Youth Camp",
-    subtitle: "Join us for 3 days of worship.",
-    cta: "Register",
-    ctaIcon: "log-in-outline",
-    image:
-      "https://images.unsplash.com/photo-1523580494863-6f3031224c94?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: "2",
-    title: "Charity Drive",
-    subtitle: "Help us reach our goal.",
-    cta: "Donate",
-    ctaIcon: "heart-outline",
-    image:
-      "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-  },
-];
-
-const DEVOTIONS = [
-  {
-    id: "1",
-    title: "Finding Peace",
-    date: "Jan 12",
-    views: "1.2k",
-    likes: "340",
-    image:
-      "https://images.unsplash.com/photo-1490730141103-6cac27aaab94?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: "2",
-    title: "Morning Prayer",
-    date: "Jan 10",
-    views: "900",
-    likes: "210",
-    image:
-      "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-  },
-];
-
-/* ------------------------- SHIMMER / SKELETON ----------------------------- */
-const ShimmerSkeleton: React.FC<{ isDark: boolean }> = ({ isDark }) => {
-  const shimmer = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.timing(shimmer, {
-        toValue: 1,
-        duration: 1100,
-        useNativeDriver: true,
-      }),
-    ).start();
-  }, [shimmer]);
-
-  const translateX = shimmer.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-width, width],
-  });
-
-  const bg = isDark ? "#2A2A2B" : "#E6E6E9";
-  const highlight = isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.7)";
-
-  return (
-    <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 16 }}>
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 20,
-        }}
-      >
-        <View
-          style={{
-            height: 44,
-            width: 140,
-            borderRadius: 8,
-            overflow: "hidden",
-            backgroundColor: bg,
-          }}
-        >
-          <Animated.View
-            style={[styles.shimmerGradient, { transform: [{ translateX }] }]}
-          >
-            <LinearGradient
-              start={[0, 0.5]}
-              end={[1, 0.5]}
-              colors={[bg, highlight, bg]}
-              style={{ flex: 1 }}
-            />
-          </Animated.View>
-        </View>
-
-        <View
-          style={{
-            height: 44,
-            width: 44,
-            borderRadius: 44,
-            overflow: "hidden",
-            backgroundColor: bg,
-          }}
-        >
-          <Animated.View
-            style={[styles.shimmerGradient, { transform: [{ translateX }] }]}
-          >
-            <LinearGradient
-              start={[0, 0.5]}
-              end={[1, 0.5]}
-              colors={[bg, highlight, bg]}
-              style={{ flex: 1 }}
-            />
-          </Animated.View>
-        </View>
-      </View>
-
-      <View
-        style={{
-          height: 200,
-          borderRadius: 20,
-          overflow: "hidden",
-          marginBottom: 20,
-          backgroundColor: bg,
-        }}
-      >
-        <Animated.View
-          style={[styles.shimmerGradient, { transform: [{ translateX }] }]}
-        >
-          <LinearGradient
-            start={[0, 0.5]}
-            end={[1, 0.5]}
-            colors={[bg, highlight, bg]}
-            style={{ flex: 1 }}
-          />
-        </Animated.View>
-      </View>
-
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          marginBottom: 20,
-        }}
-      >
-        {[1, 2, 3, 4].map((i) => (
-          <View
-            key={i}
-            style={{
-              height: 56,
-              width: 56,
-              borderRadius: 12,
-              overflow: "hidden",
-              backgroundColor: bg,
-            }}
-          >
-            <Animated.View
-              style={[styles.shimmerGradient, { transform: [{ translateX }] }]}
-            >
-              <LinearGradient
-                start={[0, 0.5]}
-                end={[1, 0.5]}
-                colors={[bg, highlight, bg]}
-                style={{ flex: 1 }}
-              />
-            </Animated.View>
-          </View>
-        ))}
-      </View>
-
-      <View
-        style={{
-          height: 96,
-          borderRadius: 12,
-          overflow: "hidden",
-          marginBottom: 12,
-          backgroundColor: bg,
-        }}
-      >
-        <Animated.View
-          style={[styles.shimmerGradient, { transform: [{ translateX }] }]}
-        >
-          <LinearGradient
-            start={[0, 0.5]}
-            end={[1, 0.5]}
-            colors={[bg, highlight, bg]}
-            style={{ flex: 1 }}
-          />
-        </Animated.View>
-      </View>
-
-      <View
-        style={{
-          height: 96,
-          borderRadius: 12,
-          overflow: "hidden",
-          marginBottom: 12,
-          backgroundColor: bg,
-        }}
-      >
-        <Animated.View
-          style={[styles.shimmerGradient, { transform: [{ translateX }] }]}
-        >
-          <LinearGradient
-            start={[0, 0.5]}
-            end={[1, 0.5]}
-            colors={[bg, highlight, bg]}
-            style={{ flex: 1 }}
-          />
-        </Animated.View>
-      </View>
-    </View>
-  );
-};
 
 /* -------------------------- ANNOUNCEMENT CARD ----------------------------- */
 const AnnouncementCard: React.FC<any> = ({ item, index, scrollX, isDark }) => {
@@ -725,172 +509,163 @@ const Home: React.FC = () => {
       </Animated.View>
 
       {/* CONTENT */}
-      {loading ? (
-        <ShimmerSkeleton isDark={isDark} />
-      ) : (
-        <Animated.ScrollView
-          ref={(r) => (scrollRef.current = r as any)}
-          onScroll={onScrollMain}
-          scrollEventThrottle={16}
-          contentContainerStyle={{ paddingBottom: 140 }}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Announcements */}
-          <View style={{ marginTop: 20 }}>
-            <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "800",
-                  color: isDark ? "#fff" : "#0f172a",
-                }}
-              >
-                Upcoming Events
-              </Text>
-            </View>
-
-            <Animated.FlatList
-              data={ANNOUNCEMENTS}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              keyExtractor={(i: any) => i.id}
-              contentContainerStyle={{ paddingHorizontal: 20 }}
-              snapToInterval={width - 48}
-              decelerationRate="fast"
-              onScroll={onAnnouncementScroll}
-              scrollEventThrottle={16}
-              renderItem={({ item, index }: any) => (
-                <AnnouncementCard
-                  item={item}
-                  index={index}
-                  scrollX={announceScrollX}
-                  isDark={isDark}
-                />
-              )}
-              style={{ paddingTop: 4 }}
-            />
-
-            {/* Pagination */}
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "center",
-                marginTop: 12,
-              }}
-            >
-              {ANNOUNCEMENTS.map((_, i) => (
-                <View
-                  key={i}
-                  style={[
-                    {
-                      height: 8,
-                      borderRadius: 8,
-                      marginHorizontal: 6,
-                    },
-                    i === activeIndex
-                      ? { width: 36, backgroundColor: "#06b6d4" }
-                      : {
-                          width: 8,
-                          backgroundColor: isDark ? "#2b2b2b" : "#e6e7ea",
-                        },
-                  ]}
-                />
-              ))}
-            </View>
-          </View>
-
-          {/* Quick Actions */}
-          <View style={{ marginTop: 20 }}>
-            <Animated.ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 20 }}
-            >
-              {QUICK_ACTIONS.map((action) => (
-                <QuickAction key={action.id} item={action} isDark={isDark} />
-              ))}
-            </Animated.ScrollView>
-          </View>
-
-          {/* Devotions */}
-          <View style={{ marginTop: 20 }}>
-            <View
-              style={{
-                paddingHorizontal: 20,
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 12,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "800",
-                  color: isDark ? "#fff" : "#0f172a",
-                }}
-              >
-                Recent Devotions
-              </Text>
-              <TouchableOpacity
-                style={{ flexDirection: "row", alignItems: "center" }}
-              >
-                <Text
-                  style={{
-                    color: "#14B8A6",
-                    fontWeight: "600",
-                    marginRight: 8,
-                  }}
-                >
-                  View All
-                </Text>
-                <Ionicons
-                  name="arrow-forward"
-                  size={16}
-                  color={isDark ? "#60a5fa" : "#0369A1"}
-                />
-              </TouchableOpacity>
-            </View>
-
-            <Animated.ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 20 }}
-            >
-              {DEVOTIONS.map((d, idx) => (
-                <DevotionCard
-                  key={d.id}
-                  item={d}
-                  isDark={isDark}
-                  anim={devotionAnims[idx]}
-                />
-              ))}
-            </Animated.ScrollView>
-          </View>
-
-          {/* Videos */}
-          <View style={{ marginTop: 20, paddingHorizontal: 20 }}>
+      <Animated.ScrollView
+        ref={(r) => (scrollRef.current = r as any)}
+        onScroll={onScrollMain}
+        scrollEventThrottle={16}
+        contentContainerStyle={{ paddingBottom: 140 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Announcements */}
+        <View style={{ marginTop: 20 }}>
+          <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
             <Text
               style={{
                 fontSize: 18,
                 fontWeight: "800",
-                marginBottom: 12,
                 color: isDark ? "#fff" : "#0f172a",
               }}
             >
-              Latest Sermons
+              Upcoming Events
             </Text>
-            {VIDEOS.map((v, i) => (
-              <VideoItem
-                key={v.id}
-                item={v}
+          </View>
+
+          <Animated.FlatList
+            data={ANNOUNCEMENTS}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(i: any) => i.id}
+            contentContainerStyle={{ paddingHorizontal: 20 }}
+            snapToInterval={width - 48}
+            decelerationRate="fast"
+            onScroll={onAnnouncementScroll}
+            scrollEventThrottle={16}
+            renderItem={({ item, index }: any) => (
+              <AnnouncementCard
+                item={item}
+                index={index}
+                scrollX={announceScrollX}
                 isDark={isDark}
-                anim={itemAnim[i]}
+              />
+            )}
+            style={{ paddingTop: 4 }}
+          />
+
+          {/* Pagination */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "center",
+              marginTop: 12,
+            }}
+          >
+            {ANNOUNCEMENTS.map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  {
+                    height: 8,
+                    borderRadius: 8,
+                    marginHorizontal: 6,
+                  },
+                  i === activeIndex
+                    ? { width: 36, backgroundColor: "#06b6d4" }
+                    : {
+                        width: 8,
+                        backgroundColor: isDark ? "#2b2b2b" : "#e6e7ea",
+                      },
+                ]}
               />
             ))}
           </View>
-        </Animated.ScrollView>
-      )}
+        </View>
+
+        {/* Quick Actions */}
+        <View style={{ marginTop: 20 }}>
+          <Animated.ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20 }}
+          >
+            {QUICK_ACTIONS.map((action) => (
+              <QuickAction key={action.id} item={action} isDark={isDark} />
+            ))}
+          </Animated.ScrollView>
+        </View>
+
+        {/* Devotions */}
+        <View style={{ marginTop: 20 }}>
+          <View
+            style={{
+              paddingHorizontal: 20,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 12,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "800",
+                color: isDark ? "#fff" : "#0f172a",
+              }}
+            >
+              Recent Devotions
+            </Text>
+            <TouchableOpacity
+              style={{ flexDirection: "row", alignItems: "center" }}
+            >
+              <Text
+                style={{
+                  color: "#14B8A6",
+                  fontWeight: "600",
+                  marginRight: 8,
+                }}
+              >
+                View All
+              </Text>
+              <Ionicons
+                name="arrow-forward"
+                size={16}
+                color={isDark ? "#60a5fa" : "#0369A1"}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <Animated.ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20 }}
+          >
+            {DEVOTIONS.map((d, idx) => (
+              <DevotionCard
+                key={d.id}
+                item={d}
+                isDark={isDark}
+                anim={devotionAnims[idx]}
+              />
+            ))}
+          </Animated.ScrollView>
+        </View>
+
+        {/* Videos */}
+        <View style={{ marginTop: 20, paddingHorizontal: 20 }}>
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "800",
+              marginBottom: 12,
+              color: isDark ? "#fff" : "#0f172a",
+            }}
+          >
+            Latest Sermons
+          </Text>
+          {VIDEOS.map((v, i) => (
+            <VideoItem key={v.id} item={v} isDark={isDark} anim={itemAnim[i]} />
+          ))}
+        </View>
+      </Animated.ScrollView>
 
       {/* Scroll to bottom FAB */}
       {showScrollToBottom && (
@@ -908,9 +683,6 @@ const Home: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  shimmerGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
   playIconWrap: {
     position: "absolute",
     left: 8,
