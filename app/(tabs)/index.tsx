@@ -1,14 +1,10 @@
-import QuickAction, { AnnouncementCard } from "@/components";
+import { AnnouncementCard, QuickAction, VideoItem } from "@/components";
 import { DevotionCard } from "@/components/DevotionCard";
-
 import { ANNOUNCEMENTS, DEVOTIONS, QUICK_ACTIONS, VIDEOS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
 import {
-  Dimensions,
   Image,
   Platform,
   ScrollView,
@@ -20,97 +16,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const { width, height } = Dimensions.get("window");
-
-/* ----------------------------- VIDEO ITEM -------------------------------- */
-const VideoItem: React.FC<any> = ({ item, isDark }) => {
-  return (
-    <View
-      style={{
-        backgroundColor: isDark ? "#111" : "#fff",
-        borderRadius: 12,
-        marginBottom: 16,
-        flexDirection: "row",
-        padding: 12,
-        borderWidth: 1,
-        borderColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)",
-      }}
-    >
-      <View style={{ flex: 1, paddingRight: 8, justifyContent: "center" }}>
-        <Text
-          style={{
-            fontWeight: "700",
-            color: isDark ? "#fff" : "#111",
-            fontSize: 16,
-            marginBottom: 6,
-          }}
-        >
-          {item.title}
-        </Text>
-        <Text
-          style={{
-            color: isDark ? "#94a3b8" : "#64748b",
-            fontSize: 13,
-            marginBottom: 8,
-          }}
-          numberOfLines={2}
-        >
-          {item.desc}
-        </Text>
-
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Ionicons
-            name="time-outline"
-            size={12}
-            color={isDark ? "#94a3b8" : "#64748b"}
-          />
-          <Text
-            style={{
-              marginLeft: 8,
-              fontSize: 12,
-              color: isDark ? "#94a3b8" : "#64748b",
-            }}
-          >
-            {item.duration}
-          </Text>
-        </View>
-      </View>
-
-      <View
-        style={{ width: 110, height: 70, borderRadius: 8, overflow: "hidden" }}
-      >
-        <Image
-          source={{ uri: item.thumbnail }}
-          style={{ width: "100%", height: "100%" }}
-        />
-        <View style={StyleSheet.absoluteFill}>
-          <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.25)"]}
-            style={{ flex: 1 }}
-          />
-        </View>
-        <View style={styles.playIconWrap}>
-          <Ionicons name="play-circle" size={28} color="white" />
-        </View>
-      </View>
-    </View>
-  );
-};
-
-/* --------------------------------- MAIN ----------------------------------- */
 const Home: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
-
-  // For "scroll to bottom" button visibility
-  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
-
-  // Active announcement index for dots
   const [activeIndex, setActiveIndex] = useState(0);
-
-  const scrollToBottom = () => {
-    // This would need to be implemented differently without a ref
-  };
 
   return (
     <SafeAreaView
@@ -122,47 +31,21 @@ const Home: React.FC = () => {
         backgroundColor="transparent"
       />
 
-      {/* Fixed Header */}
       <View
         style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: 0,
-          zIndex: 20,
           paddingHorizontal: 16,
-          borderBottomLeftRadius: 20,
-          borderBottomRightRadius: 20,
-          height: 118,
-          paddingTop: Platform.OS === "ios" ? 38 : 6,
-          backgroundColor: isDark
-            ? "rgba(20,20,21,0.4)"
-            : "rgba(255,255,255,0.7)",
-          ...Platform.select({
-            ios: {
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.08,
-              shadowRadius: 10,
-            },
-            android: {
-              elevation: 8,
-            },
-          }),
+          borderBottomWidth: 1,
+          borderBottomColor: isDark ? "#1f2937" : "#e5e7eb",
+          backgroundColor: isDark ? "#111827" : "#ffffff",
         }}
       >
-        <BlurView
-          intensity={30}
-          style={StyleSheet.absoluteFill}
-          tint={isDark ? "dark" : "light"}
-        />
-
         <View
           style={{
-            flex: 1,
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            paddingTop: Platform.OS === "ios" ? 8 : 12,
+            paddingBottom: 16,
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -204,13 +87,11 @@ const Home: React.FC = () => {
         </View>
       </View>
 
-      {/* CONTENT */}
       <ScrollView
         contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Announcements */}
-        <View style={{ marginTop: 20 }}>
+        <View style={{ marginTop: 32, marginBottom: 8 }}>
           <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
             <Text
               style={{
@@ -233,7 +114,6 @@ const Home: React.FC = () => {
             ))}
           </ScrollView>
 
-          {/* Pagination */}
           <View
             style={{
               flexDirection: "row",
@@ -262,8 +142,7 @@ const Home: React.FC = () => {
           </View>
         </View>
 
-        {/* Quick Actions */}
-        <View style={{ marginTop: 20 }}>
+        <View style={{ marginTop: 28 }}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -275,8 +154,7 @@ const Home: React.FC = () => {
           </ScrollView>
         </View>
 
-        {/* Devotions */}
-        <View style={{ marginTop: 20 }}>
+        <View style={{ marginTop: 28 }}>
           <View
             style={{
               paddingHorizontal: 20,
@@ -326,8 +204,7 @@ const Home: React.FC = () => {
           </ScrollView>
         </View>
 
-        {/* Videos */}
-        <View style={{ marginTop: 20, paddingHorizontal: 20 }}>
+        <View style={{ marginTop: 28, paddingHorizontal: 20 }}>
           <Text
             style={{
               fontSize: 18,
@@ -343,18 +220,6 @@ const Home: React.FC = () => {
           ))}
         </View>
       </ScrollView>
-
-      {/* Scroll to bottom FAB */}
-      {showScrollToBottom && (
-        <View style={styles.fabWrap}>
-          <TouchableOpacity onPress={scrollToBottom} style={styles.fabInner}>
-            <Ionicons name="chevrons-down" size={20} color="white" />
-            <Text style={{ color: "#fff", marginLeft: 8, fontWeight: "700" }}>
-              Bottom
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </SafeAreaView>
   );
 };
@@ -367,24 +232,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.28)",
     padding: 6,
     borderRadius: 20,
-  },
-  fabWrap: {
-    position: "absolute",
-    right: 18,
-    bottom: 28,
-    zIndex: 50,
-  },
-  fabInner: {
-    backgroundColor: "#06b6d4",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    flexDirection: "row",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 6,
   },
 });
 
