@@ -1,3 +1,4 @@
+import { QUICK_ACTIONS, VIDEOS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -41,15 +42,6 @@ const ANNOUNCEMENTS = [
   },
 ];
 
-const QUICK_ACTIONS = [
-  { id: "1", label: "Teams", icon: "people" },
-  { id: "2", label: "Gifts", icon: "gift" },
-  { id: "3", label: "Programs", icon: "calendar" },
-  { id: "4", label: "Events", icon: "easel" },
-  { id: "5", label: "Locations", icon: "location" },
-  { id: "6", label: "Leaders", icon: "ribbon" },
-];
-
 const DEVOTIONS = [
   {
     id: "1",
@@ -68,33 +60,6 @@ const DEVOTIONS = [
     likes: "210",
     image:
       "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-  },
-];
-
-const VIDEOS = [
-  {
-    id: "1",
-    title: "Sunday Service Highlights",
-    desc: "A recap of this Sunday's powerful message.",
-    duration: "12 min",
-    thumbnail:
-      "https://images.unsplash.com/photo-1516280440614-6697288d5d38?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: "2",
-    title: "Worship Session Live",
-    desc: "Intimate worship moments from the team.",
-    duration: "8 min",
-    thumbnail:
-      "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: "3",
-    title: "Pastor's Message",
-    desc: "Weekly wisdom for your walk.",
-    duration: "15 min",
-    thumbnail:
-      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
   },
 ];
 
