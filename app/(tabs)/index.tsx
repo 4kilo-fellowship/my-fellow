@@ -1,40 +1,977 @@
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Animated,
+  Dimensions,
+  Image,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const Home = () => {
-  const { theme, toggleTheme } = useTheme();
-  const isDark = theme === "dark";
+const { width, height } = Dimensions.get("window");
+
+/* --------------------------------- DATA ----------------------------------- */
+const ANNOUNCEMENTS = [
+  {
+    id: "1",
+    title: "Annual Youth Camp",
+    subtitle: "Join us for 3 days of worship.",
+    cta: "Register",
+    ctaIcon: "log-in-outline",
+    image:
+      "https://images.unsplash.com/photo-1523580494863-6f3031224c94?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    id: "2",
+    title: "Charity Drive",
+    subtitle: "Help us reach our goal.",
+    cta: "Donate",
+    ctaIcon: "heart-outline",
+    image:
+      "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+  },
+];
+
+const QUICK_ACTIONS = [
+  { id: "1", label: "Teams", icon: "people" },
+  { id: "2", label: "Gifts", icon: "gift" },
+  { id: "3", label: "Programs", icon: "calendar" },
+  { id: "4", label: "Events", icon: "easel" },
+  { id: "5", label: "Locations", icon: "location" },
+  { id: "6", label: "Leaders", icon: "ribbon" },
+];
+
+const DEVOTIONS = [
+  {
+    id: "1",
+    title: "Finding Peace",
+    date: "Jan 12",
+    views: "1.2k",
+    likes: "340",
+    image:
+      "https://images.unsplash.com/photo-1490730141103-6cac27aaab94?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    id: "2",
+    title: "Morning Prayer",
+    date: "Jan 10",
+    views: "900",
+    likes: "210",
+    image:
+      "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+  },
+];
+
+const VIDEOS = [
+  {
+    id: "1",
+    title: "Sunday Service Highlights",
+    desc: "A recap of this Sunday's powerful message.",
+    duration: "12 min",
+    thumbnail:
+      "https://images.unsplash.com/photo-1516280440614-6697288d5d38?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    id: "2",
+    title: "Worship Session Live",
+    desc: "Intimate worship moments from the team.",
+    duration: "8 min",
+    thumbnail:
+      "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    id: "3",
+    title: "Pastor's Message",
+    desc: "Weekly wisdom for your walk.",
+    duration: "15 min",
+    thumbnail:
+      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+  },
+];
+
+/* ------------------------- SHIMMER / SKELETON ----------------------------- */
+const ShimmerSkeleton: React.FC<{ isDark: boolean }> = ({ isDark }) => {
+  const shimmer = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(shimmer, {
+        toValue: 1,
+        duration: 1100,
+        useNativeDriver: true,
+      }),
+    ).start();
+  }, [shimmer]);
+
+  const translateX = shimmer.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-width, width],
+  });
+
+  const bg = isDark ? "#2A2A2B" : "#E6E6E9";
+  const highlight = isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.7)";
 
   return (
-    <View className={`flex-1 ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}>
-      {/* HEADER */}
+    <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 16 }}>
       <View
-        className={`flex-row justify-between items-center px-6 pt-6 pb-2 h-28 ${
-          isDark ? "bg-[#1A1A1B]" : "bg-white"
-        } shadow-sm`}
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 20,
+        }}
       >
-        <TouchableOpacity onPress={toggleTheme} activeOpacity={0.8}>
-          <Ionicons
-            name="person-circle-outline"
-            size={36}
-            color={isDark ? "#f1f5f9" : "#1e293b"}
-          />
-        </TouchableOpacity>
+        <View
+          style={{
+            height: 44,
+            width: 140,
+            borderRadius: 8,
+            overflow: "hidden",
+            backgroundColor: bg,
+          }}
+        >
+          <Animated.View
+            style={[styles.shimmerGradient, { transform: [{ translateX }] }]}
+          >
+            <LinearGradient
+              start={[0, 0.5]}
+              end={[1, 0.5]}
+              colors={[bg, highlight, bg]}
+              style={{ flex: 1 }}
+            />
+          </Animated.View>
+        </View>
+
+        <View
+          style={{
+            height: 44,
+            width: 44,
+            borderRadius: 44,
+            overflow: "hidden",
+            backgroundColor: bg,
+          }}
+        >
+          <Animated.View
+            style={[styles.shimmerGradient, { transform: [{ translateX }] }]}
+          >
+            <LinearGradient
+              start={[0, 0.5]}
+              end={[1, 0.5]}
+              colors={[bg, highlight, bg]}
+              style={{ flex: 1 }}
+            />
+          </Animated.View>
+        </View>
       </View>
 
-      {/* BODY */}
-      <View className="flex-1 items-center justify-center">
-        <Text className={isDark ? "text-gray-300" : "text-gray-400"}>
-          Content
-        </Text>
-        <TouchableOpacity>
-          <Text>Click here</Text>
-        </TouchableOpacity>
+      <View
+        style={{
+          height: 200,
+          borderRadius: 20,
+          overflow: "hidden",
+          marginBottom: 20,
+          backgroundColor: bg,
+        }}
+      >
+        <Animated.View
+          style={[styles.shimmerGradient, { transform: [{ translateX }] }]}
+        >
+          <LinearGradient
+            start={[0, 0.5]}
+            end={[1, 0.5]}
+            colors={[bg, highlight, bg]}
+            style={{ flex: 1 }}
+          />
+        </Animated.View>
+      </View>
+
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          marginBottom: 20,
+        }}
+      >
+        {[1, 2, 3, 4].map((i) => (
+          <View
+            key={i}
+            style={{
+              height: 56,
+              width: 56,
+              borderRadius: 12,
+              overflow: "hidden",
+              backgroundColor: bg,
+            }}
+          >
+            <Animated.View
+              style={[styles.shimmerGradient, { transform: [{ translateX }] }]}
+            >
+              <LinearGradient
+                start={[0, 0.5]}
+                end={[1, 0.5]}
+                colors={[bg, highlight, bg]}
+                style={{ flex: 1 }}
+              />
+            </Animated.View>
+          </View>
+        ))}
+      </View>
+
+      <View
+        style={{
+          height: 96,
+          borderRadius: 12,
+          overflow: "hidden",
+          marginBottom: 12,
+          backgroundColor: bg,
+        }}
+      >
+        <Animated.View
+          style={[styles.shimmerGradient, { transform: [{ translateX }] }]}
+        >
+          <LinearGradient
+            start={[0, 0.5]}
+            end={[1, 0.5]}
+            colors={[bg, highlight, bg]}
+            style={{ flex: 1 }}
+          />
+        </Animated.View>
+      </View>
+
+      <View
+        style={{
+          height: 96,
+          borderRadius: 12,
+          overflow: "hidden",
+          marginBottom: 12,
+          backgroundColor: bg,
+        }}
+      >
+        <Animated.View
+          style={[styles.shimmerGradient, { transform: [{ translateX }] }]}
+        >
+          <LinearGradient
+            start={[0, 0.5]}
+            end={[1, 0.5]}
+            colors={[bg, highlight, bg]}
+            style={{ flex: 1 }}
+          />
+        </Animated.View>
       </View>
     </View>
   );
 };
+
+/* -------------------------- ANNOUNCEMENT CARD ----------------------------- */
+const AnnouncementCard: React.FC<any> = ({ item, index, scrollX, isDark }) => {
+  const inputRange = [
+    (index - 1) * (width - 48),
+    index * (width - 48),
+    (index + 1) * (width - 48),
+  ];
+  const translateX = scrollX.interpolate({
+    inputRange,
+    outputRange: [width * 0.2, 0, -width * 0.2],
+    extrapolate: "clamp",
+  });
+
+  return (
+    <Animated.View
+      style={{
+        marginRight: 16,
+        overflow: "hidden",
+        borderRadius: 20,
+        width: width - 48,
+        height: 200,
+        shadowColor: "#000",
+        shadowOpacity: 0.15,
+        shadowRadius: 10,
+        elevation: 5,
+      }}
+    >
+      <View style={{ flex: 1 }}>
+        <Animated.Image
+          source={{ uri: item.image }}
+          style={[StyleSheet.absoluteFill, { transform: [{ translateX }] }]}
+          resizeMode="cover"
+        />
+        <View style={[StyleSheet.absoluteFill]}>
+          <LinearGradient
+            colors={["rgba(0,0,0,0.35)", "rgba(0,0,0,0.45)"]}
+            style={{ flex: 1 }}
+          />
+        </View>
+
+        <View style={{ flex: 1, justifyContent: "flex-end", padding: 16 }}>
+          <Text
+            style={{
+              color: "#fff",
+              fontSize: 20,
+              fontWeight: "800",
+              marginBottom: 4,
+            }}
+          >
+            {item.title}
+          </Text>
+          <Text
+            style={{
+              color: "rgba(255,255,255,0.9)",
+              fontSize: 13,
+              marginBottom: 12,
+            }}
+          >
+            {item.subtitle}
+          </Text>
+
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#14B8A6",
+              paddingHorizontal: 14,
+              paddingVertical: 8,
+              borderRadius: 999,
+              alignSelf: "flex-start",
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "600", marginRight: 8 }}>
+              {item.cta}
+            </Text>
+            <Ionicons name={item.ctaIcon} size={16} color="white" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Animated.View>
+  );
+};
+
+/* ----------------------------- QUICK ACTION ------------------------------- */
+const QuickAction: React.FC<any> = ({ item, isDark }) => (
+  <TouchableOpacity style={{ alignItems: "center", marginRight: 16 }}>
+    <View
+      style={{
+        width: 56,
+        height: 56,
+        borderRadius: 12,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: isDark ? "#262626" : "#f1f5f9",
+      }}
+    >
+      <Ionicons
+        name={item.icon}
+        size={22}
+        color={isDark ? "#60A5FA" : "#0369A1"}
+      />
+    </View>
+    <Text
+      style={{
+        marginTop: 8,
+        fontSize: 12,
+        color: isDark ? "#cbd5e1" : "#475569",
+      }}
+    >
+      {item.label}
+    </Text>
+  </TouchableOpacity>
+);
+
+/* ---------------------------- DEVOTION CARD ------------------------------- */
+const DevotionCard: React.FC<any> = ({ item, isDark, anim }) => {
+  const translateY = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [18, 0],
+  });
+  const opacity = anim;
+
+  return (
+    <Animated.View
+      style={{
+        marginRight: 12,
+        borderRadius: 12,
+        overflow: "hidden",
+        width: 160,
+        borderWidth: 1,
+        borderColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)",
+        transform: [{ translateY }],
+        opacity,
+        backgroundColor: isDark ? "#111" : "#fff",
+      }}
+    >
+      <Image
+        source={{ uri: item.image }}
+        style={{ width: "100%", height: 96 }}
+      />
+      <View style={{ padding: 12 }}>
+        <Text
+          style={{
+            fontWeight: "700",
+            color: isDark ? "#fff" : "#111",
+            marginBottom: 6,
+          }}
+          numberOfLines={1}
+        >
+          {item.title}
+        </Text>
+        <Text style={{ color: "#14B8A6", fontSize: 12, marginBottom: 8 }}>
+          {item.date}
+        </Text>
+
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons
+              name="eye-outline"
+              size={12}
+              color={isDark ? "#94a3b8" : "#64748b"}
+            />
+            <Text
+              style={{
+                marginLeft: 8,
+                fontSize: 12,
+                color: isDark ? "#94a3b8" : "#64748b",
+              }}
+            >
+              {item.views}
+            </Text>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons
+              name="heart-outline"
+              size={12}
+              color={isDark ? "#94a3b8" : "#64748b"}
+            />
+            <Text
+              style={{
+                marginLeft: 8,
+                fontSize: 12,
+                color: isDark ? "#94a3b8" : "#64748b",
+              }}
+            >
+              {item.likes}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </Animated.View>
+  );
+};
+
+/* ----------------------------- VIDEO ITEM -------------------------------- */
+const VideoItem: React.FC<any> = ({ item, isDark, anim }) => {
+  const translateY = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [18, 0],
+  });
+  const opacity = anim;
+
+  return (
+    <Animated.View
+      style={{
+        backgroundColor: isDark ? "#111" : "#fff",
+        borderRadius: 12,
+        marginBottom: 16,
+        flexDirection: "row",
+        padding: 12,
+        transform: [{ translateY }],
+        opacity,
+        borderWidth: 1,
+        borderColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)",
+      }}
+    >
+      <View style={{ flex: 1, paddingRight: 8, justifyContent: "center" }}>
+        <Text
+          style={{
+            fontWeight: "700",
+            color: isDark ? "#fff" : "#111",
+            fontSize: 16,
+            marginBottom: 6,
+          }}
+        >
+          {item.title}
+        </Text>
+        <Text
+          style={{
+            color: isDark ? "#94a3b8" : "#64748b",
+            fontSize: 13,
+            marginBottom: 8,
+          }}
+          numberOfLines={2}
+        >
+          {item.desc}
+        </Text>
+
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Ionicons
+            name="time-outline"
+            size={12}
+            color={isDark ? "#94a3b8" : "#64748b"}
+          />
+          <Text
+            style={{
+              marginLeft: 8,
+              fontSize: 12,
+              color: isDark ? "#94a3b8" : "#64748b",
+            }}
+          >
+            {item.duration}
+          </Text>
+        </View>
+      </View>
+
+      <View
+        style={{ width: 110, height: 70, borderRadius: 8, overflow: "hidden" }}
+      >
+        <Image
+          source={{ uri: item.thumbnail }}
+          style={{ width: "100%", height: "100%" }}
+        />
+        <View style={StyleSheet.absoluteFill}>
+          <LinearGradient
+            colors={["transparent", "rgba(0,0,0,0.25)"]}
+            style={{ flex: 1 }}
+          />
+        </View>
+        <View style={styles.playIconWrap}>
+          <Ionicons name="play-circle" size={28} color="white" />
+        </View>
+      </View>
+    </Animated.View>
+  );
+};
+
+/* --------------------------------- MAIN ----------------------------------- */
+const Home: React.FC = () => {
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === "dark";
+
+  // Animations for DEVOTIONS
+  const devotionAnims = useMemo(
+    () => DEVOTIONS.map(() => new Animated.Value(0)),
+    [],
+  );
+
+  // Loading State
+  const [loading, setLoading] = useState(true);
+
+  // Animation refs
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const announceScrollX = useRef(new Animated.Value(0)).current;
+  const scrollRef = useRef<ScrollView | null>(null);
+
+  // For "scroll to bottom" button visibility
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+
+  // For fade-in sequence (VIDEOS)
+  const itemAnim = useMemo(() => VIDEOS.map(() => new Animated.Value(0)), []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      Animated.stagger(
+        80,
+        devotionAnims.map((a) =>
+          Animated.timing(a, {
+            toValue: 1,
+            duration: 420,
+            useNativeDriver: true,
+          }),
+        ),
+      ).start();
+    }
+  }, [loading, devotionAnims]);
+
+  useEffect(() => {
+    if (!loading) {
+      Animated.stagger(
+        100,
+        itemAnim.map((a) =>
+          Animated.timing(a, {
+            toValue: 1,
+            duration: 450,
+            useNativeDriver: true,
+          }),
+        ),
+      ).start();
+    }
+  }, [loading, itemAnim]);
+
+  // Header animation values
+  const headerHeight = scrollY.interpolate({
+    inputRange: [0, 140],
+    outputRange: [118, 72],
+    extrapolate: "clamp",
+  });
+
+  const headerPaddingTop = scrollY.interpolate({
+    inputRange: [0, 140],
+    outputRange: [38, Platform.OS === "ios" ? 18 : 6],
+    extrapolate: "clamp",
+  });
+
+  const headerShadowOpacity = scrollY.interpolate({
+    inputRange: [0, 140],
+    outputRange: [0, 0.12],
+    extrapolate: "clamp",
+  });
+
+  // Active announcement index for dots
+  const [activeIndex, setActiveIndex] = useState(0);
+  const onAnnouncementScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { x: announceScrollX } } }],
+    {
+      useNativeDriver: true,
+      listener: (e: any) => {
+        const x = e.nativeEvent.contentOffset.x;
+        const idx = Math.round(x / (width - 48));
+        setActiveIndex(idx);
+      },
+    },
+  );
+
+  // Scroll event for main scroll view
+  const onScrollMain = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+    {
+      useNativeDriver: true,
+      listener: (e: any) => {
+        const y = e.nativeEvent.contentOffset.y;
+        setShowScrollToBottom(y > height * 0.45);
+      },
+    },
+  );
+
+  const scrollToBottom = () => {
+    if (scrollRef.current) {
+      // @ts-ignore - scrollToEnd available
+      (scrollRef.current as any).scrollToEnd({ animated: true });
+    }
+  };
+
+  return (
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: isDark ? "#0F0F10" : "#f8fafc" }}
+    >
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        translucent
+        backgroundColor="transparent"
+      />
+
+      {/* Animated Header */}
+      <Animated.View
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 0,
+          zIndex: 20,
+          paddingHorizontal: 16,
+          borderBottomLeftRadius: 20,
+          borderBottomRightRadius: 20,
+          height: headerHeight,
+          paddingTop: headerPaddingTop,
+          shadowOpacity: headerShadowOpacity,
+          backgroundColor: isDark
+            ? "rgba(20,20,21,0.4)"
+            : "rgba(255,255,255,0.7)",
+          ...Platform.select({
+            ios: {
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.08,
+              shadowRadius: 10,
+            },
+            android: {
+              elevation: 8,
+            },
+          }),
+        }}
+      >
+        <BlurView
+          intensity={30}
+          style={StyleSheet.absoluteFill}
+          tint={isDark ? "dark" : "light"}
+        />
+
+        <View
+          style={{
+            flex: 1,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Image
+              source={require("@/assets/images/logo-primary.png")}
+              style={{ width: 140, height: 36 }}
+              resizeMode="contain"
+            />
+          </View>
+
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <TouchableOpacity onPress={toggleTheme} style={{ marginRight: 12 }}>
+              <Ionicons
+                name={isDark ? "sunny" : "moon"}
+                size={22}
+                color={isDark ? "#fff" : "#111827"}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity>
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: isDark ? "#1f2937" : "#f1f5f9",
+                }}
+              >
+                <Ionicons
+                  name="person"
+                  size={18}
+                  color={isDark ? "#94a3b8" : "#64748b"}
+                />
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Animated.View>
+
+      {/* CONTENT */}
+      {loading ? (
+        <ShimmerSkeleton isDark={isDark} />
+      ) : (
+        <Animated.ScrollView
+          ref={(r) => (scrollRef.current = r as any)}
+          onScroll={onScrollMain}
+          scrollEventThrottle={16}
+          contentContainerStyle={{ paddingBottom: 140 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Announcements */}
+          <View style={{ marginTop: 20 }}>
+            <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "800",
+                  color: isDark ? "#fff" : "#0f172a",
+                }}
+              >
+                Upcoming Events
+              </Text>
+            </View>
+
+            <Animated.FlatList
+              data={ANNOUNCEMENTS}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(i: any) => i.id}
+              contentContainerStyle={{ paddingHorizontal: 20 }}
+              snapToInterval={width - 48}
+              decelerationRate="fast"
+              onScroll={onAnnouncementScroll}
+              scrollEventThrottle={16}
+              renderItem={({ item, index }: any) => (
+                <AnnouncementCard
+                  item={item}
+                  index={index}
+                  scrollX={announceScrollX}
+                  isDark={isDark}
+                />
+              )}
+              style={{ paddingTop: 4 }}
+            />
+
+            {/* Pagination */}
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "center",
+                marginTop: 12,
+              }}
+            >
+              {ANNOUNCEMENTS.map((_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    {
+                      height: 8,
+                      borderRadius: 8,
+                      marginHorizontal: 6,
+                    },
+                    i === activeIndex
+                      ? { width: 36, backgroundColor: "#06b6d4" }
+                      : {
+                          width: 8,
+                          backgroundColor: isDark ? "#2b2b2b" : "#e6e7ea",
+                        },
+                  ]}
+                />
+              ))}
+            </View>
+          </View>
+
+          {/* Quick Actions */}
+          <View style={{ marginTop: 20 }}>
+            <Animated.ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20 }}
+            >
+              {QUICK_ACTIONS.map((action) => (
+                <QuickAction key={action.id} item={action} isDark={isDark} />
+              ))}
+            </Animated.ScrollView>
+          </View>
+
+          {/* Devotions */}
+          <View style={{ marginTop: 20 }}>
+            <View
+              style={{
+                paddingHorizontal: 20,
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 12,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "800",
+                  color: isDark ? "#fff" : "#0f172a",
+                }}
+              >
+                Recent Devotions
+              </Text>
+              <TouchableOpacity
+                style={{ flexDirection: "row", alignItems: "center" }}
+              >
+                <Text
+                  style={{
+                    color: "#14B8A6",
+                    fontWeight: "600",
+                    marginRight: 8,
+                  }}
+                >
+                  View All
+                </Text>
+                <Ionicons
+                  name="arrow-forward"
+                  size={16}
+                  color={isDark ? "#60a5fa" : "#0369A1"}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <Animated.ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20 }}
+            >
+              {DEVOTIONS.map((d, idx) => (
+                <DevotionCard
+                  key={d.id}
+                  item={d}
+                  isDark={isDark}
+                  anim={devotionAnims[idx]}
+                />
+              ))}
+            </Animated.ScrollView>
+          </View>
+
+          {/* Videos */}
+          <View style={{ marginTop: 20, paddingHorizontal: 20 }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "800",
+                marginBottom: 12,
+                color: isDark ? "#fff" : "#0f172a",
+              }}
+            >
+              Latest Sermons
+            </Text>
+            {VIDEOS.map((v, i) => (
+              <VideoItem
+                key={v.id}
+                item={v}
+                isDark={isDark}
+                anim={itemAnim[i]}
+              />
+            ))}
+          </View>
+        </Animated.ScrollView>
+      )}
+
+      {/* Scroll to bottom FAB */}
+      {showScrollToBottom && (
+        <Animated.View style={styles.fabWrap as any}>
+          <TouchableOpacity onPress={scrollToBottom} style={styles.fabInner}>
+            <Ionicons name="chevrons-down" size={20} color="white" />
+            <Text style={{ color: "#fff", marginLeft: 8, fontWeight: "700" }}>
+              Bottom
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  shimmerGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  playIconWrap: {
+    position: "absolute",
+    left: 8,
+    top: 8,
+    backgroundColor: "rgba(0,0,0,0.28)",
+    padding: 6,
+    borderRadius: 20,
+  },
+  fabWrap: {
+    position: "absolute",
+    right: 18,
+    bottom: 28,
+    zIndex: 50,
+  },
+  fabInner: {
+    backgroundColor: "#06b6d4",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+});
 
 export default Home;

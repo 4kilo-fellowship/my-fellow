@@ -15,7 +15,7 @@ export default function SplashScreen() {
 
     const navTimeout = setTimeout(() => {
       // After the splash screen, navigate into the auth flow
-      router.replace("/(auth)/sign-in");
+      router.replace("/(tabs)");
     }, 4000);
 
     return () => {
