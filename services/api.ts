@@ -6,6 +6,7 @@ const api: AxiosInstance = axios.create({
   baseURL: API_URL,
 });
 
+// add authoraization
 api.interceptors.request.use(
   async (
     config: InternalAxiosRequestConfig,
