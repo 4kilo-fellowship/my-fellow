@@ -1,4 +1,4 @@
-import { AnnouncementCard } from "@/components";
+import QuickAction, { AnnouncementCard } from "@/components";
 import { DevotionCard } from "@/components/DevotionCard";
 
 import { ANNOUNCEMENTS, DEVOTIONS, QUICK_ACTIONS, VIDEOS } from "@/constants";
@@ -21,37 +21,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width, height } = Dimensions.get("window");
-
-/* ----------------------------- QUICK ACTION ------------------------------- */
-const QuickAction: React.FC<any> = ({ item, isDark }) => (
-  <TouchableOpacity style={{ alignItems: "center", marginRight: 16 }}>
-    <View
-      style={{
-        width: 56,
-        height: 56,
-        borderRadius: 12,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: isDark ? "#262626" : "#f1f5f9",
-      }}
-    >
-      <Ionicons
-        name={item.icon}
-        size={22}
-        color={isDark ? "#60A5FA" : "#0369A1"}
-      />
-    </View>
-    <Text
-      style={{
-        marginTop: 8,
-        fontSize: 12,
-        color: isDark ? "#cbd5e1" : "#475569",
-      }}
-    >
-      {item.label}
-    </Text>
-  </TouchableOpacity>
-);
 
 /* ----------------------------- VIDEO ITEM -------------------------------- */
 const VideoItem: React.FC<any> = ({ item, isDark }) => {
