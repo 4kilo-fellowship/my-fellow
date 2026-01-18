@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Animated, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 type DevotionItem = {
   image: string;
@@ -13,21 +13,11 @@ type DevotionItem = {
 type DevotionCardProps = {
   item: DevotionItem;
   isDark: boolean;
-  anim: Animated.Value;
 };
 
-export default function DevotionCard({
-  item,
-  isDark,
-  anim,
-}: DevotionCardProps) {
-  const translateY = anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [18, 0],
-  });
-
+export default function DevotionCard({ item, isDark }: DevotionCardProps) {
   return (
-    <Animated.View
+    <View
       style={{
         marginRight: 12,
         borderRadius: 12,
@@ -35,16 +25,14 @@ export default function DevotionCard({
         width: 160,
         borderWidth: 1,
         borderColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)",
-        transform: [{ translateY }],
-        opacity: anim,
         backgroundColor: isDark ? "#111" : "#fff",
       }}
     >
       <Image
         source={item.image}
-        cachePolicy="disk" // ✅ stored on disk (fast reloads)
+        cachePolicy="disk"
         contentFit="cover"
-        transition={150} // subtle fade-in
+        transition={150}
         style={{ width: "100%", height: 96 }}
       />
 
@@ -106,6 +94,6 @@ export default function DevotionCard({
           </View>
         </View>
       </View>
-    </Animated.View>
+    </View>
   );
 }

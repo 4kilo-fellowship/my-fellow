@@ -1,11 +1,11 @@
+import DevotionCard from "@/components/DevotionCard";
 import { ANNOUNCEMENTS, DEVOTIONS, QUICK_ACTIONS, VIDEOS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useState } from "react";
 import {
-  Animated,
   Dimensions,
   Image,
   Platform,
@@ -21,20 +21,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const { width, height } = Dimensions.get("window");
 
 /* -------------------------- ANNOUNCEMENT CARD ----------------------------- */
-const AnnouncementCard: React.FC<any> = ({ item, index, scrollX, isDark }) => {
-  const inputRange = [
-    (index - 1) * (width - 48),
-    index * (width - 48),
-    (index + 1) * (width - 48),
-  ];
-  const translateX = scrollX.interpolate({
-    inputRange,
-    outputRange: [width * 0.2, 0, -width * 0.2],
-    extrapolate: "clamp",
-  });
-
+const AnnouncementCard: React.FC<any> = ({ item, isDark }) => {
   return (
-    <Animated.View
+    <View
       style={{
         marginRight: 16,
         overflow: "hidden",
@@ -48,9 +37,9 @@ const AnnouncementCard: React.FC<any> = ({ item, index, scrollX, isDark }) => {
       }}
     >
       <View style={{ flex: 1 }}>
-        <Animated.Image
+        <Image
           source={{ uri: item.image }}
-          style={[StyleSheet.absoluteFill, { transform: [{ translateX }] }]}
+          style={StyleSheet.absoluteFill}
           resizeMode="cover"
         />
         <View style={[StyleSheet.absoluteFill]}>
@@ -99,7 +88,7 @@ const AnnouncementCard: React.FC<any> = ({ item, index, scrollX, isDark }) => {
           </TouchableOpacity>
         </View>
       </View>
-    </Animated.View>
+    </View>
   );
 };
 
@@ -134,110 +123,16 @@ const QuickAction: React.FC<any> = ({ item, isDark }) => (
   </TouchableOpacity>
 );
 
-/* ---------------------------- DEVOTION CARD ------------------------------- */
-const DevotionCard: React.FC<any> = ({ item, isDark, anim }) => {
-  const translateY = anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [18, 0],
-  });
-  const opacity = anim;
-
-  return (
-    <Animated.View
-      style={{
-        marginRight: 12,
-        borderRadius: 12,
-        overflow: "hidden",
-        width: 160,
-        borderWidth: 1,
-        borderColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)",
-        transform: [{ translateY }],
-        opacity,
-        backgroundColor: isDark ? "#111" : "#fff",
-      }}
-    >
-      <Image
-        source={{ uri: item.image }}
-        style={{ width: "100%", height: 96 }}
-      />
-      <View style={{ padding: 12 }}>
-        <Text
-          style={{
-            fontWeight: "700",
-            color: isDark ? "#fff" : "#111",
-            marginBottom: 6,
-          }}
-          numberOfLines={1}
-        >
-          {item.title}
-        </Text>
-        <Text style={{ color: "#14B8A6", fontSize: 12, marginBottom: 8 }}>
-          {item.date}
-        </Text>
-
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Ionicons
-              name="eye-outline"
-              size={12}
-              color={isDark ? "#94a3b8" : "#64748b"}
-            />
-            <Text
-              style={{
-                marginLeft: 8,
-                fontSize: 12,
-                color: isDark ? "#94a3b8" : "#64748b",
-              }}
-            >
-              {item.views}
-            </Text>
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Ionicons
-              name="heart-outline"
-              size={12}
-              color={isDark ? "#94a3b8" : "#64748b"}
-            />
-            <Text
-              style={{
-                marginLeft: 8,
-                fontSize: 12,
-                color: isDark ? "#94a3b8" : "#64748b",
-              }}
-            >
-              {item.likes}
-            </Text>
-          </View>
-        </View>
-      </View>
-    </Animated.View>
-  );
-};
-
 /* ----------------------------- VIDEO ITEM -------------------------------- */
-const VideoItem: React.FC<any> = ({ item, isDark, anim }) => {
-  const translateY = anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [18, 0],
-  });
-  const opacity = anim;
-
+const VideoItem: React.FC<any> = ({ item, isDark }) => {
   return (
-    <Animated.View
+    <View
       style={{
         backgroundColor: isDark ? "#111" : "#fff",
         borderRadius: 12,
         marginBottom: 16,
         flexDirection: "row",
         padding: 12,
-        transform: [{ translateY }],
-        opacity,
         borderWidth: 1,
         borderColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)",
       }}
@@ -299,7 +194,7 @@ const VideoItem: React.FC<any> = ({ item, isDark, anim }) => {
           <Ionicons name="play-circle" size={28} color="white" />
         </View>
       </View>
-    </Animated.View>
+    </View>
   );
 };
 
@@ -308,111 +203,14 @@ const Home: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
 
-  // Animations for DEVOTIONS
-  const devotionAnims = useMemo(
-    () => DEVOTIONS.map(() => new Animated.Value(0)),
-    [],
-  );
-
-  // Loading State
-  const [loading, setLoading] = useState(true);
-
-  // Animation refs
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const announceScrollX = useRef(new Animated.Value(0)).current;
-  const scrollRef = useRef<ScrollView | null>(null);
-
   // For "scroll to bottom" button visibility
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
 
-  // For fade-in sequence (VIDEOS)
-  const itemAnim = useMemo(() => VIDEOS.map(() => new Animated.Value(0)), []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1200);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (!loading) {
-      Animated.stagger(
-        80,
-        devotionAnims.map((a) =>
-          Animated.timing(a, {
-            toValue: 1,
-            duration: 420,
-            useNativeDriver: true,
-          }),
-        ),
-      ).start();
-    }
-  }, [loading, devotionAnims]);
-
-  useEffect(() => {
-    if (!loading) {
-      Animated.stagger(
-        100,
-        itemAnim.map((a) =>
-          Animated.timing(a, {
-            toValue: 1,
-            duration: 450,
-            useNativeDriver: true,
-          }),
-        ),
-      ).start();
-    }
-  }, [loading, itemAnim]);
-
-  // Header animation values
-  const headerHeight = scrollY.interpolate({
-    inputRange: [0, 140],
-    outputRange: [118, 72],
-    extrapolate: "clamp",
-  });
-
-  const headerPaddingTop = scrollY.interpolate({
-    inputRange: [0, 140],
-    outputRange: [38, Platform.OS === "ios" ? 18 : 6],
-    extrapolate: "clamp",
-  });
-
-  const headerShadowOpacity = scrollY.interpolate({
-    inputRange: [0, 140],
-    outputRange: [0, 0.12],
-    extrapolate: "clamp",
-  });
-
   // Active announcement index for dots
   const [activeIndex, setActiveIndex] = useState(0);
-  const onAnnouncementScroll = Animated.event(
-    [{ nativeEvent: { contentOffset: { x: announceScrollX } } }],
-    {
-      useNativeDriver: true,
-      listener: (e: any) => {
-        const x = e.nativeEvent.contentOffset.x;
-        const idx = Math.round(x / (width - 48));
-        setActiveIndex(idx);
-      },
-    },
-  );
-
-  // Scroll event for main scroll view
-  const onScrollMain = Animated.event(
-    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-    {
-      useNativeDriver: true,
-      listener: (e: any) => {
-        const y = e.nativeEvent.contentOffset.y;
-        setShowScrollToBottom(y > height * 0.45);
-      },
-    },
-  );
 
   const scrollToBottom = () => {
-    if (scrollRef.current) {
-      // @ts-ignore - scrollToEnd available
-      (scrollRef.current as any).scrollToEnd({ animated: true });
-    }
+    // This would need to be implemented differently without a ref
   };
 
   return (
@@ -425,8 +223,8 @@ const Home: React.FC = () => {
         backgroundColor="transparent"
       />
 
-      {/* Animated Header */}
-      <Animated.View
+      {/* Fixed Header */}
+      <View
         style={{
           position: "absolute",
           left: 0,
@@ -436,9 +234,8 @@ const Home: React.FC = () => {
           paddingHorizontal: 16,
           borderBottomLeftRadius: 20,
           borderBottomRightRadius: 20,
-          height: headerHeight,
-          paddingTop: headerPaddingTop,
-          shadowOpacity: headerShadowOpacity,
+          height: 118,
+          paddingTop: Platform.OS === "ios" ? 38 : 6,
           backgroundColor: isDark
             ? "rgba(20,20,21,0.4)"
             : "rgba(255,255,255,0.7)",
@@ -506,13 +303,10 @@ const Home: React.FC = () => {
             </TouchableOpacity>
           </View>
         </View>
-      </Animated.View>
+      </View>
 
       {/* CONTENT */}
-      <Animated.ScrollView
-        ref={(r) => (scrollRef.current = r as any)}
-        onScroll={onScrollMain}
-        scrollEventThrottle={16}
+      <ScrollView
         contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
@@ -530,26 +324,15 @@ const Home: React.FC = () => {
             </Text>
           </View>
 
-          <Animated.FlatList
-            data={ANNOUNCEMENTS}
+          <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            keyExtractor={(i: any) => i.id}
             contentContainerStyle={{ paddingHorizontal: 20 }}
-            snapToInterval={width - 48}
-            decelerationRate="fast"
-            onScroll={onAnnouncementScroll}
-            scrollEventThrottle={16}
-            renderItem={({ item, index }: any) => (
-              <AnnouncementCard
-                item={item}
-                index={index}
-                scrollX={announceScrollX}
-                isDark={isDark}
-              />
-            )}
-            style={{ paddingTop: 4 }}
-          />
+          >
+            {ANNOUNCEMENTS.map((item, index) => (
+              <AnnouncementCard key={item.id} item={item} isDark={isDark} />
+            ))}
+          </ScrollView>
 
           {/* Pagination */}
           <View
@@ -582,7 +365,7 @@ const Home: React.FC = () => {
 
         {/* Quick Actions */}
         <View style={{ marginTop: 20 }}>
-          <Animated.ScrollView
+          <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 20 }}
@@ -590,7 +373,7 @@ const Home: React.FC = () => {
             {QUICK_ACTIONS.map((action) => (
               <QuickAction key={action.id} item={action} isDark={isDark} />
             ))}
-          </Animated.ScrollView>
+          </ScrollView>
         </View>
 
         {/* Devotions */}
@@ -633,20 +416,15 @@ const Home: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          <Animated.ScrollView
+          <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 20 }}
           >
-            {DEVOTIONS.map((d, idx) => (
-              <DevotionCard
-                key={d.id}
-                item={d}
-                isDark={isDark}
-                anim={devotionAnims[idx]}
-              />
+            {DEVOTIONS.map((d) => (
+              <DevotionCard key={d.id} item={d} isDark={isDark} />
             ))}
-          </Animated.ScrollView>
+          </ScrollView>
         </View>
 
         {/* Videos */}
@@ -661,22 +439,22 @@ const Home: React.FC = () => {
           >
             Latest Sermons
           </Text>
-          {VIDEOS.map((v, i) => (
-            <VideoItem key={v.id} item={v} isDark={isDark} anim={itemAnim[i]} />
+          {VIDEOS.map((v) => (
+            <VideoItem key={v.id} item={v} isDark={isDark} />
           ))}
         </View>
-      </Animated.ScrollView>
+      </ScrollView>
 
       {/* Scroll to bottom FAB */}
       {showScrollToBottom && (
-        <Animated.View style={styles.fabWrap as any}>
+        <View style={styles.fabWrap}>
           <TouchableOpacity onPress={scrollToBottom} style={styles.fabInner}>
             <Ionicons name="chevrons-down" size={20} color="white" />
             <Text style={{ color: "#fff", marginLeft: 8, fontWeight: "700" }}>
               Bottom
             </Text>
           </TouchableOpacity>
-        </Animated.View>
+        </View>
       )}
     </SafeAreaView>
   );
