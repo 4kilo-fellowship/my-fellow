@@ -23,8 +23,8 @@ const Home = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
   const { width } = Dimensions.get("window");
-  const cardWidth = width - 48; // keep in sync with AnnouncementCard
-  const itemWidth = cardWidth + 16; // card width + marginRight from card style
+  const cardWidth = width - 48;
+  const itemWidth = cardWidth + 16;
 
   return (
     <View className="flex-1">

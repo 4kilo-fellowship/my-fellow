@@ -24,19 +24,11 @@ interface AnnouncementItem {
 interface AnnouncementCardProps {
   item: AnnouncementItem;
   isDark?: boolean;
-  onPressDetails?: () => void;
 }
 
-const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
-  item,
-  isDark,
-}) => {
+const AnnouncementCard = ({ item, isDark }: AnnouncementCardProps) => {
   const handlePrimary = () => {
     console.log("CTA pressed:", item.title);
-  };
-
-  const handleDetails = () => {
-    console.log("Details pressed:", item.title);
   };
 
   return (
@@ -64,13 +56,13 @@ const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
           <TouchableOpacity
             activeOpacity={0.85}
             style={styles.primaryButton}
+            className="bg-primary"
             onPress={handlePrimary}
             accessibilityLabel={`Primary action for ${item.title}`}
           >
             <View style={styles.primaryTextWrapper}>
               <Text style={styles.primaryButtonText}>{item.cta}</Text>
             </View>
-            <Ionicons name={item.ctaIcon as any} size={16} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
@@ -84,7 +76,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderRadius: 20,
     width: width - 48,
-    height: 300,
+    height: 400,
     shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 10,
@@ -112,7 +104,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   primaryButton: {
-    backgroundColor: "#14B8A6",
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 999,
