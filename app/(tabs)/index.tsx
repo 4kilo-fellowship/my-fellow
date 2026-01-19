@@ -20,7 +20,7 @@ const Home = () => {
         className={`${isDark ? "bg-gray-900" : "bg-white"} absolute inset-0`}
       />
 
-      <View className="flex-1" style={{ paddingTop: top*0.95 }}>
+      <View className="flex-1" style={{ paddingTop: top }}>
         <StatusBar
           style={isDark ? "light" : "dark"}
           backgroundColor="transparent"
@@ -32,6 +32,7 @@ const Home = () => {
             source={require("@/assets/images/logo-primary.png")}
             className="w-64 h-20"
             resizeMode="contain"
+            style={{ transform: [{ scale: 2 }, { translateX: -12 }] }}
           />
 
           <TouchableOpacity>
