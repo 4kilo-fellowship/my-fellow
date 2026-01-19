@@ -23,13 +23,22 @@ interface AnnouncementItem {
 
 interface AnnouncementCardProps {
   item: AnnouncementItem;
-  isDark?: boolean; // optional if you want to handle dark mode
+  isDark?: boolean;
+  onPressDetails?: () => void;
 }
 
 const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
   item,
   isDark,
 }) => {
+  const handlePrimary = () => {
+    console.log("CTA pressed:", item.title);
+  };
+
+  const handleDetails = () => {
+    console.log("Details pressed:", item.title);
+  };
+
   return (
     <View style={styles.card}>
       <Image
@@ -39,18 +48,31 @@ const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
       />
 
       <LinearGradient
-        colors={["rgba(0,0,0,0.35)", "rgba(0,0,0,0.45)"]}
+        colors={["rgba(0,0,0,0.32)", "rgba(0,0,0,0.56)"]}
         style={StyleSheet.absoluteFill}
       />
 
       <View style={styles.content}>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.subtitle}>{item.subtitle}</Text>
+        <Text numberOfLines={2} style={styles.title}>
+          {item.title}
+        </Text>
+        <Text numberOfLines={2} style={styles.subtitle}>
+          {item.subtitle}
+        </Text>
 
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>{item.cta}</Text>
-          <Ionicons name={item.ctaIcon} size={16} color="#fff" />
-        </TouchableOpacity>
+        <View style={styles.actionsRow}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={styles.primaryButton}
+            onPress={handlePrimary}
+            accessibilityLabel={`Primary action for ${item.title}`}
+          >
+            <View style={styles.primaryTextWrapper}>
+              <Text style={styles.primaryButtonText}>{item.cta}</Text>
+            </View>
+            <Ionicons name={item.ctaIcon as any} size={16} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -62,7 +84,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderRadius: 20,
     width: width - 48,
-    height: 200,
+    height: 300,
     shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 10,
@@ -71,32 +93,55 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: "flex-end",
-    padding: 16,
+    padding: 18,
   },
   title: {
     color: "#fff",
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "800",
     marginBottom: 4,
   },
   subtitle: {
     color: "rgba(255,255,255,0.9)",
-    fontSize: 13,
-    marginBottom: 12,
+    fontSize: 14,
+    marginBottom: 14,
   },
-  button: {
+  actionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  primaryButton: {
     backgroundColor: "#14B8A6",
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 999,
     flexDirection: "row",
     alignItems: "center",
-    alignSelf: "flex-start",
   },
-  buttonText: {
+  primaryTextWrapper: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  primaryButtonText: {
     color: "#fff",
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  secondaryButton: {
+    backgroundColor: "rgba(255,255,255,0.9)",
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 999,
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 10,
+  },
+  secondaryButtonText: {
+    color: "#0f172a",
     fontWeight: "600",
-    marginRight: 8,
+    marginRight: 6,
   },
 });
 

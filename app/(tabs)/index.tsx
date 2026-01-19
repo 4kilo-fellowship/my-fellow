@@ -4,8 +4,16 @@ import { ANNOUNCEMENTS, DEVOTIONS, QUICK_ACTIONS, VIDEOS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
-import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import React, { useRef, useState } from "react";
+import {
+  Animated,
+  Dimensions,
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Home = () => {
@@ -13,6 +21,10 @@ const Home = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [activeIndex, setActiveIndex] = useState(0);
+  const scrollX = useRef(new Animated.Value(0)).current;
+  const { width } = Dimensions.get("window");
+  const cardWidth = width - 48; // keep in sync with AnnouncementCard
+  const itemWidth = cardWidth + 16; // card width + marginRight from card style
 
   return (
     <View className="flex-1">
@@ -20,7 +32,7 @@ const Home = () => {
         className={`${isDark ? "bg-gray-900" : "bg-white"} absolute inset-0`}
       />
 
-      <View className="flex-1" style={{ paddingTop: top }}>
+      <View className="flex-1" style={{ paddingTop: top * 0.95 }}>
         <StatusBar
           style={isDark ? "light" : "dark"}
           backgroundColor="transparent"
@@ -53,7 +65,7 @@ const Home = () => {
           showsVerticalScrollIndicator={false}
         >
           {/* Upcoming Events */}
-          <View className="mt-8 mb-2">
+          <View className="mb-2">
             <View className="px-5 mb-2">
               <Text
                 className={`text-lg font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}
@@ -62,29 +74,33 @@ const Home = () => {
               </Text>
             </View>
 
-            <ScrollView
+            <Animated.ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
+              decelerationRate="fast"
+              snapToInterval={itemWidth}
+              snapToAlignment="start"
               contentContainerStyle={{ paddingHorizontal: 20 }}
+              onMomentumScrollEnd={(e) => {
+                const newIndex = Math.round(
+                  e.nativeEvent.contentOffset.x / itemWidth,
+                );
+                setActiveIndex(newIndex);
+              }}
+              onScroll={Animated.event(
+                [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                { useNativeDriver: true },
+              )}
+              scrollEventThrottle={16}
             >
               {ANNOUNCEMENTS.map((item) => (
-                <AnnouncementCard key={item.id} item={item} isDark={isDark} />
-              ))}
-            </ScrollView>
-
-            {/* Pagination Dots */}
-            <View className="flex-row justify-center mt-3">
-              {ANNOUNCEMENTS.map((_, i) => (
-                <View
-                  key={i}
-                  className={`h-2 rounded-full mx-1 ${
-                    i === activeIndex
-                      ? "w-9 bg-cyan-500"
-                      : `w-2 ${isDark ? "bg-gray-800" : "bg-gray-300"}`
-                  }`}
+                <AnnouncementCard
+                  key={item.id}
+                  item={item as any}
+                  isDark={isDark}
                 />
               ))}
-            </View>
+            </Animated.ScrollView>
           </View>
 
           {/* Quick Actions */}
@@ -95,7 +111,11 @@ const Home = () => {
               contentContainerStyle={{ paddingHorizontal: 20 }}
             >
               {QUICK_ACTIONS.map((action) => (
-                <QuickAction key={action.id} item={action} isDark={isDark} />
+                <QuickAction
+                  key={action.id}
+                  item={action as any}
+                  isDark={isDark}
+                />
               ))}
             </ScrollView>
           </View>
@@ -126,7 +146,7 @@ const Home = () => {
               contentContainerStyle={{ paddingHorizontal: 20 }}
             >
               {DEVOTIONS.map((d) => (
-                <DevotionCard key={d.id} item={d} isDark={isDark} />
+                <DevotionCard key={d.id} item={d as any} isDark={isDark} />
               ))}
             </ScrollView>
           </View>
