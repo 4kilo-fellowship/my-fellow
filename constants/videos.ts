@@ -12,8 +12,7 @@ export const VIDEOS: Video[] = [
     title: "Sunday Service Highlights",
     desc: "A recap of this Sunday's powerful message.",
     duration: "12 min",
-    thumbnail:
-      "https://images.unsplash.com/photo-1516280440614-6697288d5d38?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    thumbnail: "https://images.unsplash.com/photo-1764366795867-a0e7fcbf791e",
   },
   {
     id: "2",

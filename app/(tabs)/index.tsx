@@ -1,5 +1,10 @@
-import { AnnouncementCard, QuickAction, VideoItem } from "@/components";
-import { DevotionCard } from "@/components/DevotionCard";
+import {
+  AnnouncementCard,
+  DevotionCard,
+  QuickAction,
+  VideoItem,
+} from "@/components";
+
 import { ANNOUNCEMENTS, DEVOTIONS, QUICK_ACTIONS, VIDEOS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
@@ -135,15 +140,14 @@ const Home = () => {
               >
                 Recent Devotions
               </Text>
-              <TouchableOpacity className="flex-row items-center">
-                <Text className="text-teal-500 font-semibold mr-2">
+              <TouchableOpacity
+                activeOpacity={0.88}
+                className="flex-row items-center"
+              >
+                <Text className="text-primary font-semibold mr-2">
                   View All
                 </Text>
-                <Ionicons
-                  name="arrow-forward"
-                  size={16}
-                  color={isDark ? "#60a5fa" : "#0369A1"}
-                />
+                <Ionicons name="arrow-forward" size={16} color={"#ff6719"} />
               </TouchableOpacity>
             </View>
 

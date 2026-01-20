@@ -1,13 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useRef } from "react";
-import {
-  Dimensions,
-  FlatList,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Dimensions, FlatList, Text, View } from "react-native";
 
 type DevotionItem = {
   id: string;
@@ -27,7 +21,7 @@ const { width } = Dimensions.get("window");
 const CARD_WIDTH = 180;
 const CARD_HEIGHT = 220;
 
-export function DevotionCard({ item, isDark }: DevotionCardProps) {
+function DevotionCard({ item, isDark }: DevotionCardProps) {
   return (
     <View
       style={{
@@ -66,7 +60,7 @@ export function DevotionCard({ item, isDark }: DevotionCardProps) {
             {item.title}
           </Text>
 
-          <Text style={{ color: "#14B8A6", fontSize: 12, marginBottom: 8 }}>
+          <Text style={{ color: "#ff6719", fontSize: 12, marginBottom: 8 }}>
             {item.date}
           </Text>
 
@@ -108,20 +102,6 @@ export function DevotionCard({ item, isDark }: DevotionCardProps) {
             </View>
           </View>
         </View>
-
-        <TouchableOpacity
-          style={{
-            marginTop: 8,
-            paddingVertical: 6,
-            borderRadius: 8,
-            backgroundColor: isDark ? "#333" : "#f1f1f1",
-            alignItems: "center",
-          }}
-        >
-          <Text style={{ color: isDark ? "#fff" : "#111", fontSize: 12 }}>
-            Know More
-          </Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
@@ -166,3 +146,4 @@ export function DevotionList({ data, isDark }: DevotionListProps) {
     />
   );
 }
+export default DevotionCard;
