@@ -109,7 +109,7 @@ const Home = () => {
               <Text
                 className={`text-lg font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                Recent Devotions
+                Features
               </Text>
             </View>
             <ScrollView
