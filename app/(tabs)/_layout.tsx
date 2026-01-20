@@ -4,7 +4,7 @@ import Octicons from "@expo/vector-icons/Octicons";
 import { Tabs } from "expo-router";
 
 export default function TabLayout() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const isDark = theme === "dark";
   return (
     <Tabs
