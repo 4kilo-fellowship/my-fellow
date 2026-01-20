@@ -17,7 +17,7 @@ interface QuickActionProps {
 const QuickAction = ({ item, isDark = false, onPress }: QuickActionProps) => {
   return (
     <TouchableOpacity
-      activeOpacity={0.88}
+      activeOpacity={0.5}
       style={styles.container}
       onPress={onPress}
     >
