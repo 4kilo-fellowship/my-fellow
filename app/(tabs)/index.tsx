@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Home = () => {
   const { top } = useSafeAreaInsets();
-  const { theme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -29,7 +29,7 @@ const Home = () => {
   return (
     <View className="flex-1">
       <View
-        className={`${isDark ? "bg-gray-900" : "bg-white"} absolute inset-0`}
+        className={`${isDark ? "bg-[#1A1A1B]" : "bg-white"} absolute inset-0`}
       />
 
       <View className="flex-1" style={{ paddingTop: top * 0.95 }}>
@@ -47,14 +47,14 @@ const Home = () => {
             style={{ transform: [{ scale: 2 }, { translateX: -12 }] }}
           />
 
-          <TouchableOpacity>
+          <TouchableOpacity onPress={toggleTheme} activeOpacity={0.9}>
             <View
-              className={`${isDark ? "bg-gray-800" : "bg-gray-200"} w-9 h-9 rounded-xl flex items-center justify-center`}
+              className={`${isDark ? "bg-gray-800" : "bg-white"} w-9 h-9 rounded-xl flex items-center justify-center`}
             >
               <Ionicons
                 name="person"
-                size={18}
-                color={isDark ? "#94a3b8" : "#64748b"}
+                size={24}
+                color={isDark ? "#fff" : "#121212"}
               />
             </View>
           </TouchableOpacity>
@@ -105,6 +105,13 @@ const Home = () => {
 
           {/* Quick Actions */}
           <View className="mt-7">
+            <View className="px-5 flex-row justify-between items-center mb-3">
+              <Text
+                className={`text-lg font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}
+              >
+                Recent Devotions
+              </Text>
+            </View>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}

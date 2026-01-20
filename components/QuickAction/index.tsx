@@ -14,11 +14,7 @@ interface QuickActionProps {
   onPress?: () => void;
 }
 
-const QuickAction: React.FC<QuickActionProps> = ({
-  item,
-  isDark = false,
-  onPress,
-}) => {
+const QuickAction = ({ item, isDark = false, onPress }: QuickActionProps) => {
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
       <View
