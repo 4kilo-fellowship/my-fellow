@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef, useState } from "react";
 
-import { API_URL } from "@/constants";
 import { Image as ExpoImage } from "expo-image";
 import {
   Animated,
@@ -69,9 +68,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
       <ExpoImage
         source={
           imageUri && typeof imageUri === "string"
-            ? imageUri.startsWith("http")
-              ? imageUri
-              : `${API_URL.replace(/\/api$/, "")}${imageUri}`
+            ? imageUri
             : require("@/assets/images/header.png")
         }
         style={StyleSheet.absoluteFill}
