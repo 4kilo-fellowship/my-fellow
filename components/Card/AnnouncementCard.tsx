@@ -125,7 +125,6 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
             <View style={styles.primaryTextWrapper}>
               <Text style={styles.primaryButtonText}>{ctaText}</Text>
             </View>
-            {/* <Ionicons name="arrow-forward" size={16} color="#fff" /> */}
           </TouchableOpacity>
         </View>
       </View>
