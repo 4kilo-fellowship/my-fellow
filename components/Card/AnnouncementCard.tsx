@@ -1,10 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import { API_URL } from "@/constants";
 import { Image as ExpoImage } from "expo-image";
 import {
+  Animated,
   Dimensions,
   StyleSheet,
   Text,
@@ -46,6 +47,24 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     "";
   const ctaText = (item as any).cta || (item as any).cta_text || "Register";
 
+  const [loading, setLoading] = useState(true);
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(shimmerAnim, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: true,
+      }),
+    ).start();
+  }, [shimmerAnim]);
+
+  const translateX = shimmerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-width, width],
+  });
+
   return (
     <TouchableOpacity
       activeOpacity={0.92}
@@ -63,9 +82,34 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         style={StyleSheet.absoluteFill}
         contentFit="cover"
         transition={250}
+        onLoadStart={() => setLoading(true)}
+        onLoad={() => setLoading(false)}
+        onError={() => setLoading(false)}
         // placeholder={require("@/assets/images/header.png")}
         cachePolicy="memory-disk"
       />
+
+      {loading && (
+        <View
+          style={[styles.skeleton, StyleSheet.absoluteFill]}
+          pointerEvents="none"
+        >
+          <Animated.View
+            style={[styles.shimmer, { transform: [{ translateX }] }]}
+          >
+            <LinearGradient
+              colors={[
+                "rgba(255,255,255,0)",
+                "rgba(255,255,255,0.4)",
+                "rgba(255,255,255,0)",
+              ]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ flex: 1 }}
+            />
+          </Animated.View>
+        </View>
+      )}
 
       <LinearGradient
         colors={["rgba(0,0,0,0.32)", "rgba(0,0,0,0.56)"]}
@@ -163,6 +207,20 @@ const styles = StyleSheet.create({
     color: "#0f172a",
     fontWeight: "600",
     marginRight: 6,
+  },
+  skeleton: {
+    backgroundColor: "#e5e7eb",
+    opacity: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  shimmer: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: width * 2,
+    opacity: 0.6,
   },
 });
 
