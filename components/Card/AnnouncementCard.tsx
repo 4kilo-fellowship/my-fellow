@@ -34,12 +34,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     console.log(item);
   };
 
-  // Support multiple possible field names from backend
-  const imageUri =
-    (item as any).image ||
-    (item as any).imageUrl ||
-    (item as any).image_url ||
-    null;
+  const imageUri = (item as any).imageUrl || null;
   const subtitleText =
     item.subtitle ||
     (item as any).shortDescription ||
