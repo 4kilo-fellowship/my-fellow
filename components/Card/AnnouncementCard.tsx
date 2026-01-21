@@ -45,7 +45,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     (item as any).shortDescription ||
     (item as any).short_description ||
     "";
-  const ctaText = (item as any).cta || (item as any).cta_text || "Register";
+  const ctaText = (item as any).cta || (item as any).buttonText || "Register";
 
   const [loading, setLoading] = useState(true);
   const shimmerAnim = useRef(new Animated.Value(0)).current;
@@ -134,7 +134,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
             <View style={styles.primaryTextWrapper}>
               <Text style={styles.primaryButtonText}>{ctaText}</Text>
             </View>
-            <Ionicons name="arrow-forward" size={16} color="#fff" />
+            {/* <Ionicons name="arrow-forward" size={16} color="#fff" /> */}
           </TouchableOpacity>
         </View>
       </View>
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   primaryButton: {
-    backgroundColor: "#14B8A6",
+    backgroundColor: "#ff6719",
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 999,
