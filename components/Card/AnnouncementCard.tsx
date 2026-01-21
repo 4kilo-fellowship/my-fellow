@@ -73,7 +73,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         }
         style={StyleSheet.absoluteFill}
         contentFit="cover"
-        transition={2500}
+        transition={300}
         onLoadStart={() => setLoading(true)}
         onLoad={() => setLoading(false)}
         onError={() => setLoading(false)}

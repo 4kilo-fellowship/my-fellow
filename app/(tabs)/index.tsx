@@ -56,8 +56,10 @@ const Home = () => {
   };
 
   useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
+    if (events.length === 0) {
+      fetchEvents();
+    }
+  }, [fetchEvents, events.length]);
 
   useEffect(() => {
     console.log(
@@ -229,14 +231,23 @@ const Home = () => {
                 scrollEventThrottle={16}
               >
                 {Array.isArray(events) &&
-                  events.map((item: any, index) => (
-                    <AnnouncementCard
-                      key={item.id ?? index} // fallback key
-                      item={item}
-                      isDark={isDark}
-                      onPress={() => router.push(`/events/${item.id}` as any)}
-                    />
-                  ))}
+                  events.map((item: any, index) => {
+                    const eventId = item.id || item._id;
+                    return (
+                      <AnnouncementCard
+                        key={eventId ?? index} // fallback key
+                        item={item}
+                        isDark={isDark}
+                        onPress={() => {
+                          if (!eventId) {
+                            console.warn("Event has no ID:", item);
+                            return;
+                          }
+                          router.push(`/events/${eventId}` as any);
+                        }}
+                      />
+                    );
+                  })}
               </Animated.ScrollView>
             )}
           </View>
