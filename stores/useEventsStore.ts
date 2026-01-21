@@ -36,19 +36,15 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       const res = await api.get<EventSummary[]>("/events");
       set({ events: Array.isArray(res.data) ? res.data : [], loading: false });
     } catch (err: any) {
-      console.error("[events store] fetchEvents error", err);
       set({ error: err?.message ?? "Failed to fetch events", loading: false });
     }
   },
   fetchEventById: async (id: string) => {
     set({ loading: true, error: null });
     try {
-      console.log("[events store] fetching event by id", id);
       const res = await api.get<EventDetail>(`/events/${id}`);
-      console.log("[events store] fetched event", res.data?.id ?? null);
       set({ selectedEvent: res.data, loading: false });
     } catch (err: any) {
-      console.error("[events store] fetchEventById error", err);
       set({ error: err?.message ?? "Failed to fetch event", loading: false });
     }
   },
