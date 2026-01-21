@@ -34,11 +34,6 @@ export const useEventsStore = create<EventsState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const res = await api.get<EventSummary[]>("/events");
-      console.log(
-        "[events store] fetched",
-        Array.isArray(res.data) ? res.data.length : typeof res.data,
-        "events",
-      );
       set({ events: Array.isArray(res.data) ? res.data : [], loading: false });
     } catch (err: any) {
       console.error("[events store] fetchEvents error", err);
