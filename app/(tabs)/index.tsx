@@ -110,7 +110,7 @@ const Home = () => {
               )}
               scrollEventThrottle={16}
             >
-              {events.map((item: any) => (
+              {events?.map((item: any) => (
                 <AnnouncementCard
                   key={item.id}
                   item={item as any}

@@ -1,5 +1,5 @@
 import api from "@/services/api";
-import create from "zustand";
+import { create } from "zustand";
 
 export type EventSummary = {
   id: string;
@@ -34,7 +34,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const res = await api.get<EventSummary[]>("/events");
-      set({ events: res.data, loading: false });
+      set({ events: Array.isArray(res.data) ? res.data : [], loading: false });
     } catch (err: any) {
       set({ error: err?.message ?? "Failed to fetch events", loading: false });
     }
