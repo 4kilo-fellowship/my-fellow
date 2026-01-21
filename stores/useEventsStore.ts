@@ -33,7 +33,6 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   fetchEvents: async () => {
     set({ loading: true, error: null });
     try {
-      console.log("[events store] fetching events...");
       const res = await api.get<EventSummary[]>("/events");
       console.log(
         "[events store] fetched",
