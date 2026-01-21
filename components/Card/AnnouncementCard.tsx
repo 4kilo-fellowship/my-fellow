@@ -24,15 +24,20 @@ interface AnnouncementItem {
 interface AnnouncementCardProps {
   item: AnnouncementItem;
   isDark?: boolean;
+  onPress?: () => void;
 }
 
-const AnnouncementCard = ({ item, isDark }: AnnouncementCardProps) => {
+const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
   const handlePrimary = () => {
     console.log("CTA pressed:", item.title);
   };
 
   return (
-    <View style={styles.card}>
+    <TouchableOpacity
+      activeOpacity={0.92}
+      onPress={onPress}
+      style={styles.card}
+    >
       <Image
         source={{ uri: item.image }}
         style={StyleSheet.absoluteFill}
@@ -56,7 +61,6 @@ const AnnouncementCard = ({ item, isDark }: AnnouncementCardProps) => {
           <TouchableOpacity
             activeOpacity={0.85}
             style={styles.primaryButton}
-            className="bg-primary"
             onPress={handlePrimary}
             accessibilityLabel={`Primary action for ${item.title}`}
           >
@@ -66,7 +70,7 @@ const AnnouncementCard = ({ item, isDark }: AnnouncementCardProps) => {
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 

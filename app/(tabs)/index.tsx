@@ -4,12 +4,13 @@ import {
   QuickAction,
   VideoItem,
 } from "@/components";
-
-import { ANNOUNCEMENTS, DEVOTIONS, QUICK_ACTIONS, VIDEOS } from "@/constants";
+import { DEVOTIONS, QUICK_ACTIONS, VIDEOS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
+import { useEventsStore } from "@/stores/useEventsStore";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -30,6 +31,17 @@ const Home = () => {
   const { width } = Dimensions.get("window");
   const cardWidth = width - 48;
   const itemWidth = cardWidth + 16;
+
+  const router = useRouter();
+
+  const { events, fetchEvents } = useEventsStore((s: any) => ({
+    events: s.events,
+    fetchEvents: s.fetchEvents,
+  }));
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   return (
     <View className="flex-1">
@@ -98,11 +110,12 @@ const Home = () => {
               )}
               scrollEventThrottle={16}
             >
-              {ANNOUNCEMENTS.map((item) => (
+              {events.map((item: any) => (
                 <AnnouncementCard
                   key={item.id}
                   item={item as any}
                   isDark={isDark}
+                  onPress={() => router.push(`/events/${item.id}` as any)}
                 />
               ))}
             </Animated.ScrollView>
