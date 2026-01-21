@@ -139,6 +139,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     width: width - 48,
     height: 400,
+    backgroundColor: "#1a1a1a",
     shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 10,
@@ -199,7 +200,8 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   skeleton: {
-    backgroundColor: "#e5e7eb",
+    backgroundColor: "#1a1a1a",
+    zIndex: -1,
     opacity: 1,
     justifyContent: "center",
     alignItems: "center",
