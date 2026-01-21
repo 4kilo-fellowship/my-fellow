@@ -1,3 +1,4 @@
+// src/stores/events.store.ts
 import { fetchEventByIdApi, fetchEventsApi } from "@/services/events.api";
 import { EventDetail, EventSummary } from "@/types/events.types";
 import { create } from "zustand";
@@ -24,7 +25,12 @@ export const useEventsStore = create<EventsState>((set) => ({
       const events = await fetchEventsApi();
       set({ events, loading: false });
     } catch (err: any) {
-      set({ error: err?.message ?? "Failed to fetch events", loading: false });
+      // try to pull message from axios error shapes
+      const message =
+        err?.response?.data?.message ??
+        err?.message ??
+        "Failed to fetch events";
+      set({ error: message, loading: false });
     }
   },
 
@@ -34,7 +40,9 @@ export const useEventsStore = create<EventsState>((set) => ({
       const selectedEvent = await fetchEventByIdApi(id);
       set({ selectedEvent, loading: false });
     } catch (err: any) {
-      set({ error: err?.message ?? "Failed to fetch event", loading: false });
+      const message =
+        err?.response?.data?.message ?? err?.message ?? "Failed to fetch event";
+      set({ error: message, loading: false });
     }
   },
 

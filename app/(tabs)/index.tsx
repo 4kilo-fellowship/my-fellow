@@ -59,6 +59,14 @@ const Home = () => {
     fetchEvents();
   }, [fetchEvents]);
 
+  useEffect(() => {
+    console.log(
+      "[Home] events change ->",
+      Array.isArray(events) ? events.length : typeof events,
+    );
+    console.log("[Home] loading", loading, "error", error);
+  }, [events, loading, error]);
+
   return (
     <View className="flex-1">
       <View
@@ -82,7 +90,9 @@ const Home = () => {
 
           <TouchableOpacity onPress={toggleTheme} activeOpacity={0.9}>
             <View
-              className={`${isDark ? "bg-gray-800" : "bg-white"} w-9 h-9 rounded-xl flex items-center justify-center`}
+              className={`${
+                isDark ? "bg-gray-800" : "bg-white"
+              } w-9 h-9 rounded-xl flex items-center justify-center`}
             >
               <Ionicons
                 name="person"
@@ -108,7 +118,9 @@ const Home = () => {
           <View className="mb-2">
             <View className="px-5 mb-2">
               <Text
-                className={`text-lg font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}
+                className={`text-lg font-extrabold ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
               >
                 Upcoming Events
               </Text>
@@ -152,7 +164,7 @@ const Home = () => {
                     borderRadius: 8,
                   }}
                 >
-                  <Text style={{ color: "#fff", fontWeight: "700" }}>
+                  <Text style={{ color: "#ff6719", fontWeight: "700" }}>
                     Retry
                   </Text>
                 </TouchableOpacity>
@@ -217,9 +229,9 @@ const Home = () => {
                 scrollEventThrottle={16}
               >
                 {Array.isArray(events) &&
-                  events.map((item: any) => (
+                  events.map((item: any, index) => (
                     <AnnouncementCard
-                      key={item.id}
+                      key={item.id ?? index} // fallback key
                       item={item}
                       isDark={isDark}
                       onPress={() => router.push(`/events/${item.id}` as any)}
@@ -228,11 +240,14 @@ const Home = () => {
               </Animated.ScrollView>
             )}
           </View>
+
           {/* Quick Actions */}
           <View className="mt-7">
             <View className="px-5 flex-row justify-between items-center mb-3">
               <Text
-                className={`text-lg font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}
+                className={`text-lg font-extrabold ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
               >
                 Features
               </Text>
@@ -242,9 +257,9 @@ const Home = () => {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: 20 }}
             >
-              {QUICK_ACTIONS.map((action) => (
+              {QUICK_ACTIONS.map((action, index) => (
                 <QuickAction
-                  key={action.id}
+                  key={action.id ?? index}
                   item={action as any}
                   isDark={isDark}
                 />
@@ -256,7 +271,9 @@ const Home = () => {
           <View className="mt-7">
             <View className="px-5 flex-row justify-between items-center mb-3">
               <Text
-                className={`text-lg font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}
+                className={`text-lg font-extrabold ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
               >
                 Recent Devotions
               </Text>
@@ -276,8 +293,12 @@ const Home = () => {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: 20 }}
             >
-              {DEVOTIONS.map((d) => (
-                <DevotionCard key={d.id} item={d as any} isDark={isDark} />
+              {DEVOTIONS.map((d, index) => (
+                <DevotionCard
+                  key={d.id ?? index}
+                  item={d as any}
+                  isDark={isDark}
+                />
               ))}
             </ScrollView>
           </View>
@@ -285,12 +306,14 @@ const Home = () => {
           {/* Latest Sermons */}
           <View className="mt-7 px-5">
             <Text
-              className={`text-lg font-extrabold mb-3 ${isDark ? "text-white" : "text-gray-900"}`}
+              className={`text-lg font-extrabold mb-3 ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
             >
               Latest Sermons
             </Text>
-            {VIDEOS.map((v) => (
-              <VideoItem key={v.id} item={v} isDark={isDark} />
+            {VIDEOS.map((v, index) => (
+              <VideoItem key={v.id ?? index} item={v} isDark={isDark} />
             ))}
           </View>
         </ScrollView>

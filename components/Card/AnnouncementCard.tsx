@@ -32,6 +32,18 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     console.log("CTA pressed:", item.title);
   };
 
+  // Support multiple possible field names from backend
+  const imageUri =
+    (item as any).image ||
+    (item as any).imageUrl ||
+    (item as any).image_url ||
+    null;
+  const subtitleText =
+    item.subtitle ||
+    (item as any).shortDescription ||
+    (item as any).short_description ||
+    "";
+
   return (
     <TouchableOpacity
       activeOpacity={0.92}
