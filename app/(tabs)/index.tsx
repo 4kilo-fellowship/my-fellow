@@ -12,6 +12,7 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
   Dimensions,
   Image,
@@ -19,6 +20,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -38,6 +40,20 @@ const Home = () => {
     events: s.events,
     fetchEvents: s.fetchEvents,
   }));
+  const { loading, error } = useEventsStore((s: any) => ({
+    loading: s.loading,
+    error: s.error,
+  }));
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchEvents();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     fetchEvents();
@@ -80,6 +96,7 @@ const Home = () => {
         <ScrollView
           contentContainerStyle={{ paddingBottom: 140 }}
           showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "#fff" : "#0369A1"} />}
         >
           {/* Upcoming Events */}
           <View className="mb-2">
@@ -91,36 +108,101 @@ const Home = () => {
               </Text>
             </View>
 
-            <Animated.ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              decelerationRate="fast"
-              snapToInterval={itemWidth}
-              snapToAlignment="start"
-              contentContainerStyle={{ paddingHorizontal: 20 }}
-              onMomentumScrollEnd={(e) => {
-                const newIndex = Math.round(
-                  e.nativeEvent.contentOffset.x / itemWidth,
-                );
-                setActiveIndex(newIndex);
-              }}
-              onScroll={Animated.event(
-                [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-                { useNativeDriver: true },
-              )}
-              scrollEventThrottle={16}
-            >
-              {events?.map((item: any) => (
-                <AnnouncementCard
-                  key={item.id}
-                  item={item as any}
-                  isDark={isDark}
-                  onPress={() => router.push(`/events/${item.id}` as any)}
+            {loading ? (
+              <View
+                style={{
+                  height: 320,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <ActivityIndicator
+                  size="large"
+                  color={isDark ? "#fff" : "#0369A1"}
                 />
-              ))}
-            </Animated.ScrollView>
+              </View>
+            ) : error ? (
+              <View
+                style={{
+                  height: 320,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    color: isDark ? "#fff" : "#0f172a",
+                    marginBottom: 8,
+                  }}
+                >
+                  {String(error)}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => fetchEvents()}
+                  style={{
+                    backgroundColor: isDark ? "#0ea5a3" : "#14B8A6",
+                    paddingHorizontal: 14,
+                    paddingVertical: 10,
+                    borderRadius: 8,
+                  }}
+                >
+                  <Text style={{ color: "#fff", fontWeight: "700" }}>
+                    Retry
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : events.length === 0 ? (
+              <View
+                style={{
+                  height: 320,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Image
+                  source={require("@/assets/images/header.png")}
+                  style={{ width: 180, height: 120, marginBottom: 18, opacity: 0.95 }}
+                  resizeMode="contain"
+                />
+                <Text style={{ color: isDark ? "#fff" : "#0f172a", fontSize: 18, fontWeight: "800", marginBottom: 6 }}>
+                  No upcoming events
+                </Text>
+                <Text style={{ color: isDark ? "#9ca3af" : "#64748b", textAlign: "center", maxWidth: 300 }}>
+                  Stay fed — feed your soul. Pull down to refresh and check again.
+                </Text>
+              </View>
+            ) : (
+              <Animated.ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                decelerationRate="fast"
+                snapToInterval={itemWidth}
+                snapToAlignment="start"
+                contentContainerStyle={{ paddingHorizontal: 20 }}
+                onMomentumScrollEnd={(e) => {
+                  const newIndex = Math.round(
+                    e.nativeEvent.contentOffset.x / itemWidth,
+                  );
+                  setActiveIndex(newIndex);
+                }}
+                onScroll={Animated.event(
+                  [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                  { useNativeDriver: true },
+                )}
+                scrollEventThrottle={16}
+              >
+                {Array.isArray(events) &&
+                  events.map((item: any) => (
+                    <AnnouncementCard
+                      key={item.id}
+                      item={item}
+                      isDark={isDark}
+                      onPress={() => router.push(`/events/${item.id}` as any)}
+                    />
+                  ))}
+              </Animated.ScrollView>
+            )}
           </View>
-
           {/* Quick Actions */}
           <View className="mt-7">
             <View className="px-5 flex-row justify-between items-center mb-3">
