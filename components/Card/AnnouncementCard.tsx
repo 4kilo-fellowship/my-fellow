@@ -73,11 +73,10 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         }
         style={StyleSheet.absoluteFill}
         contentFit="cover"
-        transition={250}
+        transition={2500}
         onLoadStart={() => setLoading(true)}
         onLoad={() => setLoading(false)}
         onError={() => setLoading(false)}
-        // placeholder={require("@/assets/images/header.png")}
         cachePolicy="memory-disk"
       />
 
