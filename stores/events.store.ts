@@ -1,19 +1,6 @@
-import api from "@/services/api";
+import { fetchEventByIdApi, fetchEventsApi } from "@/services/events.api";
+import { EventDetail, EventSummary } from "@/types/events.types";
 import { create } from "zustand";
-
-export type EventSummary = {
-  id: string;
-  title: string;
-  shortDescription?: string;
-  startDate?: string;
-  image?: string;
-};
-
-export type EventDetail = EventSummary & {
-  fullDescription?: string;
-  endDate?: string;
-  metadata?: Record<string, any>;
-};
 
 type EventsState = {
   events: EventSummary[];
@@ -25,28 +12,31 @@ type EventsState = {
   clearSelected: () => void;
 };
 
-export const useEventsStore = create<EventsState>((set, get) => ({
+export const useEventsStore = create<EventsState>((set) => ({
   events: [],
   selectedEvent: null,
   loading: false,
   error: null,
+
   fetchEvents: async () => {
     set({ loading: true, error: null });
     try {
-      const res = await api.get<EventSummary[]>("/events");
-      set({ events: Array.isArray(res.data) ? res.data : [], loading: false });
+      const events = await fetchEventsApi();
+      set({ events, loading: false });
     } catch (err: any) {
       set({ error: err?.message ?? "Failed to fetch events", loading: false });
     }
   },
+
   fetchEventById: async (id: string) => {
     set({ loading: true, error: null });
     try {
-      const res = await api.get<EventDetail>(`/events/${id}`);
-      set({ selectedEvent: res.data, loading: false });
+      const selectedEvent = await fetchEventByIdApi(id);
+      set({ selectedEvent, loading: false });
     } catch (err: any) {
       set({ error: err?.message ?? "Failed to fetch event", loading: false });
     }
   },
+
   clearSelected: () => set({ selectedEvent: null }),
 }));

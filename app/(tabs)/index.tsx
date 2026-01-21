@@ -6,7 +6,7 @@ import {
 } from "@/components";
 import { DEVOTIONS, QUICK_ACTIONS, VIDEOS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
-import { useEventsStore } from "@/stores/useEventsStore";
+import { useEventsStore } from "@/stores/events.store";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -16,11 +16,11 @@ import {
   Animated,
   Dimensions,
   Image,
+  RefreshControl,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
-  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -96,7 +96,13 @@ const Home = () => {
         <ScrollView
           contentContainerStyle={{ paddingBottom: 140 }}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "#fff" : "#0369A1"} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={isDark ? "#fff" : "#0369A1"}
+            />
+          }
         >
           {/* Upcoming Events */}
           <View className="mb-2">
@@ -161,14 +167,33 @@ const Home = () => {
               >
                 <Image
                   source={require("@/assets/images/header.png")}
-                  style={{ width: 180, height: 120, marginBottom: 18, opacity: 0.95 }}
+                  style={{
+                    width: 180,
+                    height: 120,
+                    marginBottom: 18,
+                    opacity: 0.95,
+                  }}
                   resizeMode="contain"
                 />
-                <Text style={{ color: isDark ? "#fff" : "#0f172a", fontSize: 18, fontWeight: "800", marginBottom: 6 }}>
+                <Text
+                  style={{
+                    color: isDark ? "#fff" : "#0f172a",
+                    fontSize: 18,
+                    fontWeight: "800",
+                    marginBottom: 6,
+                  }}
+                >
                   No upcoming events
                 </Text>
-                <Text style={{ color: isDark ? "#9ca3af" : "#64748b", textAlign: "center", maxWidth: 300 }}>
-                  Stay fed — feed your soul. Pull down to refresh and check again.
+                <Text
+                  style={{
+                    color: isDark ? "#9ca3af" : "#64748b",
+                    textAlign: "center",
+                    maxWidth: 300,
+                  }}
+                >
+                  Stay fed — feed your soul. Pull down to refresh and check
+                  again.
                 </Text>
               </View>
             ) : (

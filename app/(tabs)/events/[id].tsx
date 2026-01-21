@@ -1,5 +1,5 @@
 import { useTheme } from "@/context/ThemeContext";
-import { useEventsStore } from "@/stores/useEventsStore";
+import { useEventsStore } from "@/stores/events.store";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import { ActivityIndicator, Image, ScrollView, Text, View } from "react-native";
