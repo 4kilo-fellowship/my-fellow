@@ -91,7 +91,7 @@ const Home = () => {
           <TouchableOpacity onPress={toggleTheme} activeOpacity={0.9}>
             <View
               className={`${
-                isDark ? "bg-gray-800" : "bg-white"
+                isDark ? "bg-gray-900" : "bg-white"
               } w-9 h-9 rounded-xl flex items-center justify-center`}
             >
               <Ionicons
@@ -158,13 +158,13 @@ const Home = () => {
                 <TouchableOpacity
                   onPress={() => fetchEvents()}
                   style={{
-                    backgroundColor: isDark ? "#0ea5a3" : "#14B8A6",
+                    backgroundColor: isDark ? "#ff6619" : "#ff6619",
                     paddingHorizontal: 14,
                     paddingVertical: 10,
                     borderRadius: 8,
                   }}
                 >
-                  <Text style={{ color: "#ff6719", fontWeight: "700" }}>
+                  <Text style={{ color: "#fff", fontWeight: "700" }}>
                     Retry
                   </Text>
                 </TouchableOpacity>

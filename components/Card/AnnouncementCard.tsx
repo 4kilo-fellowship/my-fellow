@@ -2,9 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 
+import { API_URL } from "@/constants";
+import { Image as ExpoImage } from "expo-image";
 import {
   Dimensions,
-  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -29,7 +30,7 @@ interface AnnouncementCardProps {
 
 const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
   const handlePrimary = () => {
-    console.log("CTA pressed:", item.title);
+    console.log(item);
   };
 
   // Support multiple possible field names from backend
@@ -43,6 +44,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     (item as any).shortDescription ||
     (item as any).short_description ||
     "";
+  const ctaText = (item as any).cta || (item as any).cta_text || "Register";
 
   return (
     <TouchableOpacity
@@ -50,10 +52,19 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
       onPress={onPress}
       style={styles.card}
     >
-      <Image
-        source={{ uri: item.image }}
+      <ExpoImage
+        source={
+          imageUri && typeof imageUri === "string"
+            ? imageUri.startsWith("http")
+              ? imageUri
+              : `${API_URL.replace(/\/api$/, "")}${imageUri}`
+            : require("@/assets/images/header.png")
+        }
         style={StyleSheet.absoluteFill}
-        resizeMode="cover"
+        contentFit="cover"
+        transition={250}
+        // placeholder={require("@/assets/images/header.png")}
+        cachePolicy="memory-disk"
       />
 
       <LinearGradient
@@ -65,8 +76,8 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         <Text numberOfLines={2} style={styles.title}>
           {item.title}
         </Text>
-        <Text numberOfLines={2} style={styles.subtitle}>
-          {item.subtitle}
+        <Text numberOfLines={3} style={styles.subtitle}>
+          {subtitleText}
         </Text>
 
         <View style={styles.actionsRow}>
@@ -77,8 +88,9 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
             accessibilityLabel={`Primary action for ${item.title}`}
           >
             <View style={styles.primaryTextWrapper}>
-              <Text style={styles.primaryButtonText}>{item.cta}</Text>
+              <Text style={styles.primaryButtonText}>{ctaText}</Text>
             </View>
+            <Ionicons name="arrow-forward" size={16} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
@@ -120,14 +132,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   primaryButton: {
-    paddingHorizontal: 14,
+    backgroundColor: "#14B8A6",
+    paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 999,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    minWidth: 110,
   },
   primaryTextWrapper: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -3,10 +3,21 @@ import { EventDetail, EventSummary } from "@/types/events.types";
 import api from "./api";
 
 function unwrap<T>(res: any): T {
-  // Handles both shapes:
-  // 1) { success: true, data: <T> }
-  // 2) <T>
-  if (res && typeof res === "object" && "data" in res) return res.data;
+  // Try to find the useful payload in several common shapes:
+  // - Array directly
+  // - { data: ... }
+  // - { events: [...] }
+  // - { results: [...] }
+  // - { items: [...] }
+  if (res == null) return res;
+  if (Array.isArray(res)) return res as any;
+  if (typeof res === "object") {
+    if ("data" in res) return unwrap(res.data);
+    if ("events" in res && Array.isArray(res.events)) return res.events as any;
+    if ("results" in res && Array.isArray(res.results))
+      return res.results as any;
+    if ("items" in res && Array.isArray(res.items)) return res.items as any;
+  }
   return res;
 }
 
