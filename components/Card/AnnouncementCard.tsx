@@ -103,7 +103,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
       )}
 
       <LinearGradient
-        colors={["rgba(0,0,0,0.32)", "rgba(0,0,0,0.56)"]}
+        colors={["rgba(0,0,0,0.32)", "rgba(0,0,0,0.36)"]}
         style={StyleSheet.absoluteFill}
       />
 
