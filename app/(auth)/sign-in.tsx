@@ -5,17 +5,17 @@ import { Link, useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
-  ActivityIndicator,
-  Dimensions,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
+    ActivityIndicator,
+    Dimensions,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
 } from "react-native";
 import { z } from "zod";
 
@@ -59,8 +59,14 @@ export default function SignIn() {
 
     try {
       await login(trimmedPhone, password);
-      // Navigate to tabs on successful login
-      router.replace("/(tabs)");
+      
+      // If there is history to go back to (e.g. from an event), go back
+      // otherwise go to tabs index.
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace("/(tabs)");
+      }
     } catch (error: any) {
       const message =
         error?.response?.data?.message ||

@@ -1,13 +1,14 @@
 import api from "@/services/api";
 import { authService } from "@/services/authService";
+import { useUserStore } from "@/stores/user.store";
 import {
-  AuthContextType,
-  AuthProviderProps,
-  AuthState,
-  LoginResponse,
-  SignUpData,
-  SignUpResponse,
-  User,
+    AuthContextType,
+    AuthProviderProps,
+    AuthState,
+    LoginResponse,
+    SignUpData,
+    SignUpResponse,
+    User,
 } from "@/types/types";
 import * as SecureStore from "expo-secure-store";
 import { createContext, useContext, useEffect, useState } from "react";
@@ -67,6 +68,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Update auth state
       setAuthState({ token, authenticated: true });
 
+      // Save user to Zustand store if available in response
+      if (response.user) {
+        useUserStore.getState().setUser(response.user);
+      }
+
       return response;
     } catch (error) {
       // Reset auth state on error
@@ -90,6 +96,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Update auth state
       setAuthState({ token, authenticated: true });
 
+      // Save user to Zustand store if available in response
+      if (response.user) {
+        useUserStore.getState().setUser(response.user);
+      }
+
       return response;
     } catch (error) {
       // Reset auth state on error
@@ -110,8 +121,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Clear authorization header
       api.defaults.headers.common.Authorization = "";
 
-      // Reset auth state
       setAuthState({ token: null, authenticated: false });
+      
+      // Clear user from Zustand store
+      useUserStore.getState().clearUser();
     } catch (error) {
       console.error("Error during logout:", error);
       // Still reset state even if storage deletion fails
@@ -121,11 +134,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   /**
    * Get current authenticated user
-   * GET /api/auth/me
+   * Prefers local store, fallbacks to API
    */
   const getCurrentUser = async (): Promise<User> => {
+    const localUser = useUserStore.getState().user;
+    if (localUser) return localUser;
+
     try {
       const user = await authService.getCurrentUser();
+      useUserStore.getState().setUser(user);
       return user;
     } catch (error) {
       console.error("Error fetching current user:", error);

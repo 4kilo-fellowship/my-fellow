@@ -1,5 +1,5 @@
 // src/stores/events.store.ts
-import { fetchEventByIdApi, fetchEventsApi } from "@/services/events.api";
+import { fetchEventByIdApi, fetchEventsApi, registerForEventApi } from "@/services/events.api";
 import { EventDetail, EventSummary } from "@/types/events.types";
 import { create } from "zustand";
 
@@ -8,9 +8,11 @@ type EventsState = {
   selectedEvent: EventDetail | null;
   loading: boolean;
   loadingDetail: boolean; // separate loading state for details
+  registering: boolean;
   error?: string | null;
   fetchEvents: () => Promise<void>;
   fetchEventById: (id: string) => Promise<void>;
+  registerForEvent: (data: any) => Promise<void>;
   clearSelected: () => void;
 };
 
@@ -19,6 +21,7 @@ export const useEventsStore = create<EventsState>((set) => ({
   selectedEvent: null,
   loading: false,
   loadingDetail: false,
+  registering: false,
   error: null,
 
   fetchEvents: async () => {
@@ -45,6 +48,21 @@ export const useEventsStore = create<EventsState>((set) => ({
       const message =
         err?.response?.data?.message ?? err?.message ?? "Failed to fetch event";
       set({ error: message, loadingDetail: false });
+    }
+  },
+
+  registerForEvent: async (data: any) => {
+    set({ registering: true, error: null });
+    try {
+      await registerForEventApi(data);
+      set({ registering: false });
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ??
+        err?.message ??
+        "Registration failed. Please try again.";
+      set({ error: message, registering: false });
+      throw err;
     }
   },
 

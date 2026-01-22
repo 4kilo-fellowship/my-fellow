@@ -32,3 +32,16 @@ export const fetchEventByIdApi = async (id: string): Promise<EventDetail> => {
   const payload = unwrap<any>(res.data ?? res);
   return payload as EventDetail;
 };
+
+export const registerForEventApi = async (data: {
+  fullName: string;
+  phoneNumber: string;
+  team?: string;
+  department: string;
+  yearOfStudy: string | number;
+  telegramUserName?: string;
+  eventTitle: string;
+}) => {
+  const res = await api.post("/events/register", data);
+  return res.data;
+};

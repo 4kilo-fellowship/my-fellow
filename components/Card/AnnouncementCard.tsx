@@ -2,15 +2,21 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef, useState } from "react";
 
+import { useAuth } from "@/context/AuthContext";
+import { useEventsStore } from "@/stores/events.store";
+import { useUserStore } from "@/stores/user.store";
 import { Image as ExpoImage } from "expo-image";
+import { useRouter } from "expo-router";
 import {
-  Animated,
-  Dimensions,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Animated,
+    Dimensions,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from "react-native";
+import { RegistrationModal, SignInPromptModal } from "../index";
 
 const { width } = Dimensions.get("window");
 
@@ -29,8 +35,52 @@ interface AnnouncementCardProps {
 }
 
 const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
-  const handlePrimary = () => {
-    console.log(item);
+  const router = useRouter();
+  const { authState, getCurrentUser } = useAuth();
+  const { registerForEvent, registering } = useEventsStore((s: any) => ({
+    registerForEvent: s.registerForEvent,
+    registering: s.registering,
+  }));
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [signInModalVisible, setSignInModalVisible] = useState(false);
+
+  const handlePrimary = async () => {
+    if (!authState.authenticated) {
+      setSignInModalVisible(true);
+      return;
+    }
+    setModalVisible(true);
+  };
+
+  const onConfirmRegistration = async () => {
+    try {
+      const user = useUserStore.getState().user;
+      
+      if (!user) {
+        setModalVisible(false);
+        setSignInModalVisible(true);
+        return;
+      }
+
+      const registrationData = {
+        fullName: user.fullName,
+        phoneNumber: user.phoneNumber,
+        team: user.team || "",
+        department: (user.department as string) || "",
+        yearOfStudy: (user.yearOfStudy as string) || "",
+        telegramUserName: user.telegramUserName || "",
+        eventTitle: item.title,
+      };
+
+      await registerForEvent(registrationData);
+      setModalVisible(false);
+      Alert.alert("Success", "You have successfully registered for the event");
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message || err?.message || "Registration failed";
+      Alert.alert("Error", message);
+    }
   };
 
   const imageUri = (item as any).imageUrl || null;
@@ -128,6 +178,24 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
           </TouchableOpacity>
         </View>
       </View>
+
+      <RegistrationModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onConfirm={onConfirmRegistration}
+        loading={registering}
+        eventTitle={item.title}
+      />
+
+      <SignInPromptModal
+        visible={signInModalVisible}
+        onClose={() => setSignInModalVisible(false)}
+        onSignIn={() => {
+          setSignInModalVisible(false);
+          router.push("/(auth)/sign-in");
+        }}
+        message="You need to be signed in to register for events. Would you like to sign in now?"
+      />
     </TouchableOpacity>
   );
 };

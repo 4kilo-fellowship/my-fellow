@@ -1,6 +1,9 @@
+import { RegistrationModal, SignInPromptModal } from "@/components";
 import { API_URL } from "@/constants";
+import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useEventsStore } from "@/stores/events.store";
+import { useUserStore } from "@/stores/user.store";
 import { Ionicons } from "@expo/vector-icons";
 import { Image as ExpoImage } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -9,6 +12,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import {
     ActivityIndicator,
+    Alert,
     Linking,
     ScrollView,
     Text,
@@ -24,14 +28,20 @@ export default function EventDetails() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const { selectedEvent, fetchEventById, loadingDetail, clearSelected, error } =
+  const { selectedEvent, fetchEventById, loadingDetail, clearSelected, error, registerForEvent, registering } =
     useEventsStore((s: any) => ({
       selectedEvent: s.selectedEvent,
       fetchEventById: s.fetchEventById,
       loadingDetail: s.loadingDetail,
       clearSelected: s.clearSelected,
       error: s.error,
+      registerForEvent: s.registerForEvent,
+      registering: s.registering,
     }));
+
+  const { authState, getCurrentUser } = useAuth();
+  const [modalVisible, setModalVisible] = React.useState(false);
+  const [signInModalVisible, setSignInModalVisible] = React.useState(false);
 
   const id = (params as any).id as string | undefined;
 
@@ -76,6 +86,15 @@ export default function EventDetails() {
     "Register Now";
 
   const handleCta = async () => {
+    if (ctaLabel === "Register" || ctaLabel === "Register Now") {
+        if (!authState.authenticated) {
+            setSignInModalVisible(true);
+            return;
+        }
+        setModalVisible(true);
+        return;
+    }
+
     const url = ev?.cta_url || ev?.metadata?.cta_url || ev?.metadata?.url;
     if (url) {
       try {
@@ -84,6 +103,36 @@ export default function EventDetails() {
       } catch (e) {
         console.warn("Failed to open url", url, e);
       }
+    }
+  };
+
+  const onConfirmRegistration = async () => {
+    try {
+      const user = useUserStore.getState().user;
+      
+      if (!user) {
+        setModalVisible(false);
+        setSignInModalVisible(true);
+        return;
+      }
+
+      const registrationData = {
+        fullName: user.fullName,
+        phoneNumber: user.phoneNumber,
+        team: user.team || "",
+        department: (user.department as string) || "",
+        yearOfStudy: (user.yearOfStudy as string) || "",
+        telegramUserName: user.telegramUserName || "",
+        eventTitle: ev.title,
+      };
+
+      await registerForEvent(registrationData);
+      setModalVisible(false);
+      Alert.alert("Success", "You have successfully registered for the event");
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message || err?.message || "Registration failed";
+      Alert.alert("Error", message);
     }
   };
 
@@ -269,14 +318,38 @@ export default function EventDetails() {
         <TouchableOpacity
           activeOpacity={0.9}
           onPress={handleCta}
-          className="w-full bg-[#ff6719] py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30"
+          disabled={registering}
+          className={`w-full bg-[#ff6719] py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30 ${registering ? "opacity-70" : ""}`}
         >
-          <Text className="text-white text-lg font-bold mr-2">
-            {ctaLabel}
-          </Text>
-          <Ionicons name="arrow-forward" size={20} color="white" />
+          {registering ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <>
+              <Text className="text-white text-lg font-bold mr-2">
+                {ctaLabel}
+              </Text>
+              <Ionicons name="arrow-forward" size={20} color="white" />
+            </>
+          )}
         </TouchableOpacity>
       </View>
+      <RegistrationModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onConfirm={onConfirmRegistration}
+        loading={registering}
+        eventTitle={ev.title}
+      />
+      
+      <SignInPromptModal
+        visible={signInModalVisible}
+        onClose={() => setSignInModalVisible(false)}
+        onSignIn={() => {
+          setSignInModalVisible(false);
+          router.push("/(auth)/sign-in");
+        }}
+        message="You need to be signed in to register for events. Would you like to sign in now?"
+      />
     </View>
   );
 }
