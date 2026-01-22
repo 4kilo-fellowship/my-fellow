@@ -115,16 +115,16 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
           {subtitleText}
         </Text>
 
-        <View style={styles.actionsRow}>
+
+        <View style={styles.actionsRow} className="w-full mt-4 items-center justify-center">
           <TouchableOpacity
-            activeOpacity={0.85}
-            style={styles.primaryButton}
+            activeOpacity={0.9}
             onPress={handlePrimary}
             accessibilityLabel={`Primary action for ${item.title}`}
+            className="w-full bg-[#ff6719] py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30"
           >
-            <View style={styles.primaryTextWrapper}>
-              <Text style={styles.primaryButtonText}>{ctaText}</Text>
-            </View>
+            <Text className="text-white text-lg font-bold mr-2">{ctaText}</Text>
+            <Ionicons name="arrow-forward" size={20} color="white" />
           </TouchableOpacity>
         </View>
       </View>
@@ -164,27 +164,9 @@ const styles = StyleSheet.create({
   actionsRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 4,
+    width: "100%",
   },
-  primaryButton: {
-    backgroundColor: "#ff6719",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 999,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 110,
-  },
-  primaryTextWrapper: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  primaryButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-    textAlign: "center",
-  },
+
   secondaryButton: {
     backgroundColor: "rgba(255,255,255,0.9)",
     paddingHorizontal: 12,
