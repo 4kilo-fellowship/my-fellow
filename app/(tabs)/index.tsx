@@ -112,7 +112,7 @@ const Home = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={isDark ? "#fff" : "#0369A1"}
+              tintColor={"#ff6619"}
             />
           }
         >
@@ -131,20 +131,20 @@ const Home = () => {
             {loading ? (
               <View
                 style={{
-                  height: 320,
+                  height: 400,
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
                 <ActivityIndicator
                   size="large"
-                  color={isDark ? "#fff" : "#0369A1"}
+                  color={"#ff6619"}
                 />
               </View>
             ) : error ? (
               <View
                 style={{
-                  height: 320,
+                  height: 400,
                   alignItems: "center",
                   justifyContent: "center",
                 }}
@@ -160,7 +160,7 @@ const Home = () => {
                 <TouchableOpacity
                   onPress={() => fetchEvents()}
                   style={{
-                    backgroundColor: isDark ? "#ff6619" : "#ff6619",
+                    backgroundColor: "#ff6619",
                     paddingHorizontal: 14,
                     paddingVertical: 10,
                     borderRadius: 8,
@@ -232,17 +232,13 @@ const Home = () => {
               >
                 {Array.isArray(events) &&
                   events.map((item: any, index) => {
-                    const eventId = item.id || item._id;
+                    const eventId = item._id;
                     return (
                       <AnnouncementCard
-                        key={eventId ?? index} // fallback key
+                        key={eventId ?? index}
                         item={item}
                         isDark={isDark}
                         onPress={() => {
-                          if (!eventId) {
-                            console.warn("Event has no ID:", item);
-                            return;
-                          }
                           router.push(`/events/${eventId}` as any);
                         }}
                       />
