@@ -1,3 +1,4 @@
+import { WEEKLY_PROGRAMS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -5,78 +6,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
 import React from "react";
 import {
-    FlatList,
-    Linking,
-    Platform,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Linking,
+  Platform,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-// Dummy Data with Unsplash Images and Location
-const WEEKLY_PROGRAMS = [
-  {
-    id: "1",
-    title: "Sunday Service",
-    description:
-      "Join us for a time of worship, prayer, and an inspiring message.",
-    day: "Sunday",
-    time: "9:00 AM - 11:30 AM",
-    category: "Worship",
-    location: "Main Sanctuary",
-    coordinates: { lat: 9.0192, lng: 38.7525 },
-    image: "https://images.unsplash.com/photo-1438232992991-995b7058bbb3?q=80&w=2073&auto=format&fit=crop",
-  },
-  {
-    id: "2",
-    title: "Bible Study",
-    description:
-      "Deep dive into the scriptures with our mid-week Bible study group.",
-    day: "Wednesday",
-    time: "6:00 PM - 7:30 PM",
-    category: "Education",
-    location: "Fellowship Hall",
-    coordinates: { lat: 9.0192, lng: 38.7525 },
-    image: "https://images.unsplash.com/photo-1491841550275-ad7854e35ca6?q=80&w=1974&auto=format&fit=crop",
-  },
-  {
-    id: "3",
-    title: "Youth Fellowship",
-    description:
-      "A vibrant gathering for young people to connect and grow in faith.",
-    day: "Friday",
-    time: "5:00 PM - 7:00 PM",
-    category: "Youth",
-    location: "Youth Center",
-    coordinates: { lat: 9.0192, lng: 38.7525 },
-    image: "https://images.unsplash.com/photo-1529070538774-1843cb3265df?q=80&w=2070&auto=format&fit=crop",
-  },
-  {
-    id: "4",
-    title: "Morning Glory",
-    description:
-      "Start your day with prayer and intercession every Saturday morning.",
-    day: "Saturday",
-    time: "6:00 AM - 7:00 AM",
-    category: "Prayer",
-    location: "Prayer Room",
-    coordinates: { lat: 9.0192, lng: 38.7525 },
-    image: "https://images.unsplash.com/photo-1544427920-c49ccfb85579?q=80&w=2000&auto=format&fit=crop",
-  },
-  {
-    id: "5",
-    title: "Choir Practice",
-    description:
-      "Preparation for Sunday worship. Open to all who love to sing.",
-    day: "Saturday",
-    time: "2:00 PM - 4:00 PM",
-    category: "Music",
-    location: "Music Hall",
-    coordinates: { lat: 9.0192, lng: 38.7525 },
-    image: "https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=2070&auto=format&fit=crop",
-  },
-];
 
 const openGoogleMaps = (lat: number, lng: number, label: string) => {
   const scheme = Platform.select({
@@ -113,7 +50,7 @@ const ProgramCard = ({ item, isDark }: { item: any; isDark: boolean }) => {
       {/* Image Section */}
       <View className="h-52 w-full relative">
         <Image
-          source={{ uri: item.image }}
+          source={item.image}
           style={{ width: "100%", height: "100%" }}
           contentFit="cover"
           transition={400}
