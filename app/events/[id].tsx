@@ -11,13 +11,14 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Linking,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  InteractionManager,
+  Linking,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -42,20 +43,23 @@ export default function EventDetails() {
   const { authState, getCurrentUser } = useAuth();
   const [modalVisible, setModalVisible] = React.useState(false);
   const [signInModalVisible, setSignInModalVisible] = React.useState(false);
+  const [isGoingBack, setIsGoingBack] = React.useState(false);
 
   const id = (params as any).id as string | undefined;
 
   useEffect(() => {
     if (id) fetchEventById(String(id));
-    return () => clearSelected();
+    return () => {
+      InteractionManager.runAfterInteractions(() => {
+        clearSelected();
+      });
+    };
   }, [id, fetchEventById, clearSelected]);
 
   const ev: any = selectedEvent;
 
   useEffect(() => {
-    if (ev) {
-        console.log("[EventDetails] Loaded Event:", JSON.stringify(ev, null, 2));
-    }
+    // console.log("[EventDetails] Loaded Event:", JSON.stringify(ev, null, 2));
   }, [ev]);
 
   /* Safe Image Handling */
@@ -75,7 +79,10 @@ export default function EventDetails() {
     }
   }
 
-  const handleBack = () => router.back();
+  const handleBack = () => {
+    setIsGoingBack(true);
+    router.back();
+  };
 
   const ctaLabel =
     ev?.buttonText || 
@@ -143,7 +150,7 @@ export default function EventDetails() {
           isDark ? "bg-[#1A1A1B]" : "bg-gray-50"
         }`}
       >
-        <ActivityIndicator size="large" color={isDark ? "#fff" : "#ff6719"} />
+        <ActivityIndicator size="large" color={isDark ? "#fff" : "#ff6619"} />
       </View>
     );
   }
@@ -155,7 +162,7 @@ export default function EventDetails() {
           isDark ? "bg-[#1A1A1B]" : "bg-gray-50"
         }`}
       >
-        <Ionicons name="alert-circle-outline" size={64} color={isDark ? "#ff6719" : "#ff6719"} />
+        <Ionicons name="alert-circle-outline" size={64} color={isDark ? "#ff6619" : "#ff6619"} />
         <Text
           className={`text-lg font-bold mt-4 text-center ${
             isDark ? "text-white" : "text-gray-900"
@@ -172,7 +179,7 @@ export default function EventDetails() {
         </Text>
         <TouchableOpacity
           onPress={() => id && fetchEventById(id)}
-          className="bg-[#ff6719] px-6 py-3 rounded-xl"
+          className="bg-[#ff6619] px-6 py-3 rounded-xl"
         >
           <Text className="text-white font-bold">Try Again</Text>
         </TouchableOpacity>
@@ -180,7 +187,11 @@ export default function EventDetails() {
             onPress={handleBack}
             className="mt-4"
         >
-            <Text className={`${isDark ? "text-gray-400" : "text-gray-600"}`}>Go Back</Text>
+            {isGoingBack ? (
+                <ActivityIndicator size="small" color={isDark ? "#fff" : "#64748b"} />
+            ) : (
+                <Text className={`${isDark ? "text-gray-400" : "text-gray-600"}`}>Go Back</Text>
+            )}
         </TouchableOpacity>
       </View>
     );
@@ -195,7 +206,11 @@ export default function EventDetails() {
       >
         <Text className={isDark ? "text-white" : "text-gray-900"}>Event not found</Text>
         <TouchableOpacity onPress={handleBack} className="mt-4">
-            <Text className="text-[#ff6719] font-bold">Go Back</Text>
+            {isGoingBack ? (
+                <ActivityIndicator size="small" color="#ff6719" />
+            ) : (
+                <Text className="text-[#ff6719] font-bold">Go Back</Text>
+            )}
         </TouchableOpacity>
       </View>
     );
@@ -225,13 +240,17 @@ export default function EventDetails() {
           className="absolute left-4 w-10 h-10 rounded-full bg-black/30 items-center justify-center backdrop-blur-md"
           style={{ top: top + 10 }}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          {isGoingBack ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          )}
         </TouchableOpacity>
 
         {/* Header Content Overlay */}
         <View className="absolute bottom-6 left-5 right-5">
           <View className="flex-row items-center mb-2">
-            <View className="bg-[#ff6719] px-2.5 py-1 rounded-md mr-2">
+            <View className="bg-[#ff6619] px-2.5 py-1 rounded-md mr-2">
               <Text className="text-white text-xs font-bold uppercase tracking-wider">
                 Event
               </Text>
@@ -319,7 +338,7 @@ export default function EventDetails() {
           activeOpacity={0.9}
           onPress={handleCta}
           disabled={registering}
-          className={`w-full bg-[#ff6719] py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30 ${registering ? "opacity-70" : ""}`}
+          className={`w-full bg-[#ff6619] py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30 ${registering ? "opacity-70" : ""}`}
         >
           {registering ? (
             <ActivityIndicator color="white" />

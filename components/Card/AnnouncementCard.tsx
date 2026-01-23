@@ -171,7 +171,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
             activeOpacity={0.9}
             onPress={handlePrimary}
             accessibilityLabel={`Primary action for ${item.title}`}
-            className="w-full bg-[#ff6719] py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30"
+            className="w-full bg-[#ff6619] py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30"
           >
             <Text className="text-white text-lg font-bold mr-2">{ctaText}</Text>
             <Ionicons name="arrow-forward" size={20} color="white" />

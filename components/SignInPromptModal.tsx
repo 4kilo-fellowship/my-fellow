@@ -63,7 +63,7 @@ const SignInPromptModal = ({
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={onSignIn}
-              className="w-full bg-[#ff6719] py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30"
+              className="w-full bg-[#ff6619] py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30"
             >
               <Text className="text-white text-lg font-bold mr-2">
                 Sign In

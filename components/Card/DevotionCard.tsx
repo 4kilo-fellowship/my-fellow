@@ -60,7 +60,7 @@ function DevotionCard({ item, isDark }: DevotionCardProps) {
             {item.title}
           </Text>
 
-          <Text style={{ color: "#ff6719", fontSize: 12, marginBottom: 8 }}>
+          <Text style={{ color: "#ff6619", fontSize: 12, marginBottom: 8 }}>
             {item.date}
           </Text>
 

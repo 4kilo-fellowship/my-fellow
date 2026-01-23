@@ -1,8 +1,8 @@
 import {
-  AnnouncementCard,
-  DevotionCard,
-  QuickAction,
-  VideoItem,
+    AnnouncementCard,
+    DevotionCard,
+    QuickAction,
+    VideoItem,
 } from "@/components";
 import { DEVOTIONS, QUICK_ACTIONS, VIDEOS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
@@ -12,15 +12,15 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Animated,
-  Dimensions,
-  Image,
-  RefreshControl,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Animated,
+    Dimensions,
+    Image,
+    RefreshControl,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -269,6 +269,11 @@ const Home = () => {
                   key={action.id ?? index}
                   item={action as any}
                   isDark={isDark}
+                  onPress={() => {
+                    if (action.id === "1") {
+                      router.push("/programs");
+                    }
+                  }}
                 />
               ))}
             </ScrollView>
@@ -291,7 +296,7 @@ const Home = () => {
                 <Text className="text-primary font-semibold mr-2">
                   View All
                 </Text>
-                <Ionicons name="arrow-forward" size={16} color={"#ff6719"} />
+                <Ionicons name="arrow-forward" size={16} color={"#ff6619"} />
               </TouchableOpacity>
             </View>
 

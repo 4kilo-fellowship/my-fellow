@@ -44,7 +44,7 @@ const RegistrationModal = ({
         >
           <View className="items-center mb-6">
             <View className="w-16 h-16 rounded-full bg-orange-100 items-center justify-center mb-4">
-              <Ionicons name="calendar" size={32} color="#ff6719" />
+              <Ionicons name="calendar" size={32} color="#ff6619" />
             </View>
             <Text
               className={`text-xl font-bold text-center mb-2 ${
@@ -68,7 +68,7 @@ const RegistrationModal = ({
               activeOpacity={0.85}
               onPress={onConfirm}
               disabled={loading}
-              className="w-full bg-[#ff6719] py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30"
+              className="w-full bg-[#ff6619] py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30"
             >
               {loading ? (
                 <ActivityIndicator color="white" />
