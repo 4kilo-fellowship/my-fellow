@@ -1,6 +1,6 @@
 import { ImageSourcePropType } from "react-native";
 
-type Program = {
+export type Program = {
     id: string;
     title: string;
     description: string;

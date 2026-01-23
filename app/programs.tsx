@@ -1,9 +1,11 @@
 import { WEEKLY_PROGRAMS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
+import { Program } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import React from "react";
 import {
   FlatList,
@@ -15,6 +17,11 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+
+interface ProgramProps {
+  item: Program;
+  isDark: boolean
+}
 const openGoogleMaps = (lat: number, lng: number, label: string) => {
   const scheme = Platform.select({
     ios: "maps:0,0?q=",
@@ -33,8 +40,10 @@ const openGoogleMaps = (lat: number, lng: number, label: string) => {
   }
 };
 
-const ProgramCard = ({ item, isDark }: { item: any; isDark: boolean }) => {
+
+const ProgramCard = ({ item, isDark }: ProgramProps) => {
   return (
+    <View className="flex-1">
     <View
       className={`mb-6 rounded-[28px] overflow-hidden ${
         isDark ? "bg-[#1C1C1E]" : "bg-white"
@@ -47,6 +56,10 @@ const ProgramCard = ({ item, isDark }: { item: any; isDark: boolean }) => {
         elevation: 10,
       }}
     >
+      <StatusBar
+      style={isDark? "light": "dark"}
+      backgroundColor="transparent"
+       />
       {/* Image Section */}
       <View className="h-52 w-full relative">
         <Image
@@ -137,7 +150,7 @@ const ProgramCard = ({ item, isDark }: { item: any; isDark: boolean }) => {
               <Ionicons
                 name="location"
                 size={20}
-                color="#ef4444"
+                color={isDark? "#fff" : "#000"}
               />
             </View>
             <View className="flex-1">
@@ -156,13 +169,15 @@ const ProgramCard = ({ item, isDark }: { item: any; isDark: boolean }) => {
           </View>
           <View 
             className="w-9 h-9 rounded-full items-center justify-center"
-            style={{ backgroundColor: '#3b82f6' }}
+            style={{ backgroundColor: '#f97316' }}
           >
             <Ionicons name="navigate" size={16} color="white" />
           </View>
         </TouchableOpacity>
       </View>
     </View>
+    </View>
+
   );
 };
 
