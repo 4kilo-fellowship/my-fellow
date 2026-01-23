@@ -1,8 +1,8 @@
 import {
-    AnnouncementCard,
-    DevotionCard,
-    QuickAction,
-    VideoItem,
+  AnnouncementCard,
+  DevotionCard,
+  QuickAction,
+  VideoItem,
 } from "@/components";
 import { DEVOTIONS, QUICK_ACTIONS, VIDEOS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
@@ -12,15 +12,15 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Animated,
-    Dimensions,
-    Image,
-    RefreshControl,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Image,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -61,14 +61,7 @@ const Home = () => {
     }
   }, [fetchEvents, events.length]);
 
-  useEffect(() => {
-    console.log(
-      "[Home] events change ->",
-      Array.isArray(events) ? events.length : typeof events,
-    );
-    console.log("[Home] loading", loading, "error", error);
-  }, [events, loading, error]);
-
+ 
   return (
     <View className="flex-1">
       <View
