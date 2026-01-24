@@ -3,6 +3,7 @@ export * from "./api";
 export * from "./departments";
 export * from "./devotions";
 export * from "./leaders";
+export * from "./locations";
 export * from "./programs";
 export * from "./quickActions";
 export * from "./teams";
