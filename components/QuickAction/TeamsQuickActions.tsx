@@ -105,25 +105,32 @@ const QuickActions = () => {
                   isDark ? "bg-zinc-800" : "bg-zinc-50"
                 }`}
               >
-                <View className="w-12 h-12 rounded-full bg-blue-500/10 items-center justify-center mr-4">
-                  <Ionicons name="call" size={24} color="#3b82f6" />
+                <View className="flex-row items-center flex-1">
+                  <View className="w-12 h-12 rounded-full bg-blue-500/10 items-center justify-center mr-4">
+                    <Ionicons name="call" size={24} color="#3b82f6" />
+                  </View>
+                  <View>
+                    <Text
+                      className={`text-sm ${
+                        isDark ? "text-zinc-400" : "text-zinc-500"
+                      }`}
+                    >
+                      Phone Number
+                    </Text>
+                    <Text
+                      className={`text-lg font-semibold ${
+                        isDark ? "text-white" : "text-zinc-900"
+                      }`}
+                    >
+                      +251 911 234 567
+                    </Text>
+                  </View>
                 </View>
-                <View>
-                  <Text
-                    className={`text-sm ${
-                      isDark ? "text-zinc-400" : "text-zinc-500"
-                    }`}
-                  >
-                    Phone Number
-                  </Text>
-                  <Text
-                    className={`text-lg font-semibold ${
-                      isDark ? "text-white" : "text-zinc-900"
-                    }`}
-                  >
-                    +251 911 234 567
-                  </Text>
-                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={isDark ? "#52525b" : "#a1a1aa"}
+                />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -132,25 +139,32 @@ const QuickActions = () => {
                   isDark ? "bg-zinc-800" : "bg-zinc-50"
                 }`}
               >
-                <View className="w-12 h-12 rounded-full bg-sky-500/10 items-center justify-center mr-4">
-                  <Ionicons name="paper-plane" size={24} color="#0ea5e9" />
+                <View className="flex-row items-center flex-1">
+                  <View className="w-12 h-12 rounded-full bg-sky-500/10 items-center justify-center mr-4">
+                    <Ionicons name="paper-plane" size={24} color="#0ea5e9" />
+                  </View>
+                  <View>
+                    <Text
+                      className={`text-sm ${
+                        isDark ? "text-zinc-400" : "text-zinc-500"
+                      }`}
+                    >
+                      Telegram
+                    </Text>
+                    <Text
+                      className={`text-lg font-semibold ${
+                        isDark ? "text-white" : "text-zinc-900"
+                      }`}
+                    >
+                      @myfellow_bot
+                    </Text>
+                  </View>
                 </View>
-                <View>
-                  <Text
-                    className={`text-sm ${
-                      isDark ? "text-zinc-400" : "text-zinc-500"
-                    }`}
-                  >
-                    Telegram
-                  </Text>
-                  <Text
-                    className={`text-lg font-semibold ${
-                      isDark ? "text-white" : "text-zinc-900"
-                    }`}
-                  >
-                    @myfellow_bot
-                  </Text>
-                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={isDark ? "#52525b" : "#a1a1aa"}
+                />
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
