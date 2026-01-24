@@ -1,5 +1,5 @@
 import SelectionModal from "@/components/SelectionModal";
-import { DEPARTMENTS, TEAMS, YEARS } from "@/constants";
+import { DEPARTMENTS, TEAM_NAMES, YEARS } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { SignUpStep2FormValues, signUpStep2Schema } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
@@ -76,13 +76,13 @@ export default function SignUpStep2() {
   };
 
   const handleComplete: (data: SignUpStep2FormValues) => Promise<void> = async (
-    data
+    data,
   ) => {
     // Validate step 1 data from params
     if (!params.fullName || !params.phone || !params.password) {
       Alert.alert(
         "Missing Information",
-        "Please complete all required fields."
+        "Please complete all required fields.",
       );
       router.back();
       return;
@@ -116,7 +116,7 @@ export default function SignUpStep2() {
         "Registration Failed",
         error.response?.data?.message ||
           error.message ||
-          "Something went wrong. Please try again."
+          "Something went wrong. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -391,7 +391,7 @@ export default function SignUpStep2() {
             visible={modalType === "team"}
             onClose={() => setModalType(null)}
             title="Select Team"
-            options={TEAMS}
+            options={TEAM_NAMES}
             onSelect={(val) => setValue("team", val, { shouldValidate: true })}
           />
           <SelectionModal

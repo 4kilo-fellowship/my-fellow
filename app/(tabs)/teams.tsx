@@ -1,4 +1,5 @@
 import { QuickActions } from "@/components";
+import { TEAMS } from "@/constants/teams";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
@@ -14,55 +15,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // --- Types ---
-type Team = {
-  id: string;
-  name: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-  members: string;
-};
-
-// --- Dummy Data ---
-const TEAMS: Team[] = [
-  {
-    id: "1",
-    name: "Worship",
-    icon: "musical-notes",
-    color: "#0ea5e9",
-    members: "45",
-  }, // Sky Blue
-  {
-    id: "2",
-    name: "Media & IT",
-    icon: "videocam",
-    color: "#db2777",
-    members: "12",
-  }, // Pink
-  { id: "3", name: "Ushers", icon: "people", color: "#d97706", members: "30" }, // Amber
-  { id: "4", name: "Prayer", icon: "flame", color: "#dc2626", members: "20" }, // Red
-  {
-    id: "5",
-    name: "Logistics",
-    icon: "construct",
-    color: "#4b5563",
-    members: "15",
-  }, // Gray
-  { id: "6", name: "Kids", icon: "happy", color: "#84cc16", members: "25" }, // Lime
-  {
-    id: "7",
-    name: "Outreach",
-    icon: "megaphone",
-    color: "#059669",
-    members: "50",
-  }, // Emerald
-  {
-    id: "8",
-    name: "Arts",
-    icon: "color-palette",
-    color: "#7c3aed",
-    members: "18",
-  }, // Violet
-];
+import type { Team } from "@/constants/teams";
 
 const { width } = Dimensions.get("window");
 const GAP = 12;
