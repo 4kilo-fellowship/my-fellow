@@ -312,10 +312,10 @@ const Home = () => {
                 isDark ? "text-white" : "text-gray-900"
               }`}
             >
-              Latest Sermons
+              Latest Videos
             </Text>
-            {VIDEOS.map((v, index) => (
-              <VideoItem key={v.id ?? index} item={v} isDark={isDark} />
+            {VIDEOS.map((v) => (
+              <VideoItem key={v.id} item={v} isDark={isDark} />
             ))}
           </View>
         </ScrollView>
