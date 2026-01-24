@@ -70,18 +70,14 @@ const QuickActions = () => {
         animationType="fade"
         transparent={true}
         visible={modalVisible}
+        statusBarTranslucent
         onRequestClose={() => setModalVisible(false)}
       >
-        <BlurView
-          intensity={50}
-          tint="dark"
-          style={StyleSheet.absoluteFill}
-          className="flex-1" // Ensure it takes full space if style override fails (though absoluteFill is best)
-        >
+        <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
           <TouchableOpacity
             activeOpacity={1}
             onPress={() => setModalVisible(false)}
-            className="flex-1 justify-center items-center px-6 cursor-auto" // removed bg-black/80
+            className="flex-1 justify-center items-center px-6 cursor-auto"
           >
             <TouchableOpacity
               activeOpacity={1}
@@ -99,6 +95,7 @@ const QuickActions = () => {
                   Contact Us
                 </Text>
                 <TouchableOpacity
+                  activeOpacity={0.8}
                   onPress={() => setModalVisible(false)}
                   className={`p-2 rounded-full ${
                     isDark ? "bg-zinc-800" : "bg-zinc-100"
@@ -115,13 +112,14 @@ const QuickActions = () => {
               <View className="space-y-4">
                 <TouchableOpacity
                   onPress={() => openLink("tel:+251911234567")}
-                  className={`flex-row items-center p-4 rounded-2xl ${
+                  activeOpacity={0.6}
+                  className={`flex-row items-center p-4 mb-4 rounded-2xl ${
                     isDark ? "bg-zinc-800" : "bg-zinc-50"
                   }`}
                 >
-                  <View className="flex-row items-center flex-1">
+                  <View className="flex-row items-center flex-1 ">
                     <View className="w-12 h-12 rounded-full bg-blue-500/10 items-center justify-center mr-4">
-                      <Ionicons name="call" size={24} color="#3b82f6" />
+                      <Ionicons name="call" size={24} color="#ff6619" />
                     </View>
                     <View>
                       <Text
@@ -149,13 +147,13 @@ const QuickActions = () => {
 
                 <TouchableOpacity
                   onPress={() => openLink("https://t.me/myfellow_bot")}
-                  className={`flex-row items-center p-4 rounded-2xl ${
+                  className={`flex-row items-center p-4 mb-4 rounded-2xl ${
                     isDark ? "bg-zinc-800" : "bg-zinc-50"
                   }`}
                 >
                   <View className="flex-row items-center flex-1">
                     <View className="w-12 h-12 rounded-full bg-sky-500/10 items-center justify-center mr-4">
-                      <Ionicons name="paper-plane" size={24} color="#0ea5e9" />
+                      <Ionicons name="paper-plane" size={24} color="#ff6619" />
                     </View>
                     <View>
                       <Text
