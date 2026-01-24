@@ -194,95 +194,83 @@ const Devotions = () => {
     <View className={`flex-1 ${isDark ? "bg-black" : "bg-slate-50"}`}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      {/* Header */}
-      <View style={{ paddingTop: top + 10 }} className="px-5 pb-4">
-        <View className="flex-row justify-between items-center">
-          <View>
-            <Text
-              className={`text-3xl font-bold ${isDark ? "text-white" : "text-zinc-900"}`}
-            >
-              Devotions
-            </Text>
-            <Text
-              className={`text-sm ${isDark ? "text-zinc-400" : "text-zinc-500"}`}
-            >
-              Feed your soul daily
-            </Text>
-          </View>
-          <TouchableOpacity
-            className={`h-10 w-10 rounded-full items-center justify-center ${isDark ? "bg-zinc-800" : "bg-white shadow-sm"}`}
+      <View style={{ paddingTop: top + 10 }}>
+        {/* Header Title */}
+        <View className="px-5 mb-4">
+          <Text
+            className={`text-4xl font-extrabold ${isDark ? "text-white" : "text-black"}`}
           >
-            <Ionicons
-              name="search"
-              size={20}
-              color={isDark ? "white" : "black"}
-            />
-          </TouchableOpacity>
+            Discover
+          </Text>
         </View>
-      </View>
 
-      {/* Filter Chips */}
-      <View className="py-2">
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20 }}
-        >
-          {CATEGORIES.map((cat) => (
-            <TouchableOpacity
-              key={cat.value}
-              onPress={() => setSelectedCat(cat.value)}
-              className={`mr-3 px-4 py-2.5 rounded-2xl flex-row items-center ${
-                selectedCat === cat.value
-                  ? "bg-primary"
-                  : isDark
-                    ? "bg-zinc-900"
-                    : "bg-white"
-              }`}
-            >
-              <Ionicons
-                name={cat.icon}
-                size={18}
-                color={
+        {/* Filter Chips */}
+        <View className="py-2">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20 }}
+          >
+            {CATEGORIES.map((cat) => (
+              <TouchableOpacity
+                key={cat.value}
+                onPress={() => setSelectedCat(cat.value)}
+                className={`mr-3 px-4 py-2.5 rounded-2xl flex-row items-center ${
                   selectedCat === cat.value
-                    ? "white"
+                    ? "bg-primary"
                     : isDark
-                      ? "#a1a1aa"
-                      : "#71717a"
-                }
-              />
-              <Text
-                className={`ml-2 font-semibold ${
-                  selectedCat === cat.value
-                    ? "text-white"
-                    : isDark
-                      ? "text-zinc-400"
-                      : "text-zinc-600"
+                      ? "bg-zinc-900"
+                      : "bg-white"
                 }`}
               >
-                {cat.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+                <Ionicons
+                  name={cat.icon}
+                  size={18}
+                  color={
+                    selectedCat === cat.value
+                      ? "white"
+                      : isDark
+                        ? "#a1a1aa"
+                        : "#71717a"
+                  }
+                />
+                <Text
+                  className={`ml-2 font-semibold ${
+                    selectedCat === cat.value
+                      ? "text-white"
+                      : isDark
+                        ? "text-zinc-400"
+                        : "text-zinc-600"
+                  }`}
+                >
+                  {cat.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
 
-      {/* List */}
-      <FlatList
-        data={filteredDevotions}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <DevotionCard item={item} />}
-        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View className="items-center justify-center mt-20">
-            <Ionicons name="document-text-outline" size={60} color="#cbd5e1" />
-            <Text className="text-zinc-400 mt-4">
-              No devotions found in this category
-            </Text>
-          </View>
-        }
-      />
+        {/* List */}
+        <FlatList
+          data={filteredDevotions}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <DevotionCard item={item} />}
+          contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View className="items-center justify-center mt-20">
+              <Ionicons
+                name="document-text-outline"
+                size={60}
+                color="#cbd5e1"
+              />
+              <Text className="text-zinc-400 mt-4">
+                No devotions found in this category
+              </Text>
+            </View>
+          }
+        />
+      </View>
     </View>
   );
 };
