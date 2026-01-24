@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
+const PRIMARY_COLOR = "#ff6619";
 
 const TeamDetails = () => {
   const { id } = useLocalSearchParams();
@@ -56,6 +57,25 @@ const TeamDetails = () => {
     <View className={`flex-1 ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
+      {/* Sticky Back Button */}
+      <View
+        style={{
+          position: "absolute",
+          top: top + 10,
+          left: 20,
+          zIndex: 100,
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ backgroundColor: PRIMARY_COLOR }}
+          className="w-11 h-11 rounded-full items-center justify-center shadow-lg"
+          activeOpacity={0.8}
+        >
+          <Ionicons name="arrow-back" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Hero Image */}
         <View className="relative">
@@ -69,32 +89,11 @@ const TeamDetails = () => {
           {/* Gradient Overlay */}
           <View className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
 
-          {/* Back Button */}
-          <View
-            style={{ paddingTop: top + 10 }}
-            className="absolute top-0 left-0 right-0 px-5 flex-row items-center justify-between"
-          >
-            <TouchableOpacity
-              onPress={() => router.back()}
-              className="w-10 h-10 bg-black/30 backdrop-blur-xl rounded-full items-center justify-center border border-white/20"
-              activeOpacity={0.8}
-            >
-              <Ionicons name="arrow-back" size={22} color="white" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className="w-10 h-10 bg-black/30 backdrop-blur-xl rounded-full items-center justify-center border border-white/20"
-              activeOpacity={0.8}
-            >
-              <Ionicons name="share-outline" size={22} color="white" />
-            </TouchableOpacity>
-          </View>
-
           {/* Team Badge */}
           <View className="absolute bottom-4 left-5">
             <View
-              style={{ backgroundColor: team.color }}
-              className="px-4 py-2 rounded-full flex-row items-center space-x-2"
+              style={{ backgroundColor: PRIMARY_COLOR }}
+              className="px-4 py-2 rounded-full flex-row items-center"
             >
               <Ionicons name={team.icon} size={18} color="white" />
               <Text className="text-white font-bold text-sm ml-2">
@@ -109,11 +108,11 @@ const TeamDetails = () => {
           {/* Title & Members */}
           <View className="mb-6">
             <Text
-              className={`text-3xl font-extrabold mb-2 ${isDark ? "text-white" : "text-black"}`}
+              className={`text-3xl font-extrabold mb-3 ${isDark ? "text-white" : "text-black"}`}
             >
               {team.name}
             </Text>
-            <View className="flex-row items-center space-x-4">
+            <View className="flex-row items-center gap-4">
               <View className="flex-row items-center">
                 <Ionicons
                   name="people"
@@ -126,7 +125,7 @@ const TeamDetails = () => {
               </View>
               <View className="flex-row items-center">
                 <Ionicons
-                  name="time"
+                  name="calendar"
                   size={18}
                   color={isDark ? "#a1a1aa" : "#71717a"}
                 />
@@ -148,65 +147,71 @@ const TeamDetails = () => {
 
           {/* Meeting Info Card */}
           <View
-            className={`rounded-2xl p-5 mb-6 ${isDark ? "bg-zinc-900" : "bg-zinc-50"}`}
+            className={`rounded-3xl p-6 mb-6 border ${
+              isDark
+                ? "bg-zinc-900 border-zinc-800"
+                : "bg-gradient-to-br from-sky-50 to-blue-50 border-sky-100"
+            }`}
           >
             <Text
-              className={`text-lg font-bold mb-4 ${isDark ? "text-white" : "text-black"}`}
+              className={`text-xl font-extrabold mb-5 ${isDark ? "text-white" : "text-black"}`}
             >
               Meeting Details
             </Text>
 
-            <View className="space-y-3">
+            <View className="gap-5">
               {/* Time */}
-              <View className="flex-row items-start">
+              <View className="flex-row items-center">
                 <View
-                  style={{ backgroundColor: team.color }}
-                  className="w-10 h-10 rounded-full items-center justify-center"
+                  style={{ backgroundColor: PRIMARY_COLOR }}
+                  className="w-12 h-12 rounded-2xl items-center justify-center shadow-md"
                 >
-                  <Ionicons name="time-outline" size={20} color="white" />
+                  <Ionicons name="time-outline" size={22} color="white" />
                 </View>
-                <View className="ml-3 flex-1">
-                  <Text className="text-zinc-500 text-xs font-semibold mb-1">
-                    TIME
+                <View className="ml-4 flex-1">
+                  <Text className="text-zinc-400 text-xs font-bold mb-1 uppercase tracking-wider">
+                    Time
                   </Text>
                   <Text
-                    className={`font-bold ${isDark ? "text-white" : "text-black"}`}
+                    className={`font-bold text-base ${isDark ? "text-white" : "text-black"}`}
                   >
                     {team.day}, {team.time}
                   </Text>
                 </View>
               </View>
 
+              {/* Divider */}
+              <View
+                className={`h-px ${isDark ? "bg-zinc-800" : "bg-sky-200"}`}
+              />
+
               {/* Location */}
-              <View className="flex-row items-start mt-4">
+              <View className="flex-row items-center">
                 <View
-                  style={{ backgroundColor: team.color }}
-                  className="w-10 h-10 rounded-full items-center justify-center"
+                  style={{ backgroundColor: PRIMARY_COLOR }}
+                  className="w-12 h-12 rounded-2xl items-center justify-center shadow-md"
                 >
-                  <Ionicons name="location-outline" size={20} color="white" />
+                  <Ionicons name="location-outline" size={22} color="white" />
                 </View>
-                <View className="ml-3 flex-1">
-                  <Text className="text-zinc-500 text-xs font-semibold mb-1">
-                    LOCATION
+                <View className="ml-4 flex-1">
+                  <Text className="text-zinc-400 text-xs font-bold mb-1 uppercase tracking-wider">
+                    Location
                   </Text>
                   <Text
-                    className={`font-bold mb-2 ${isDark ? "text-white" : "text-black"}`}
+                    className={`font-bold text-base mb-2 ${isDark ? "text-white" : "text-black"}`}
                   >
                     {team.location}
                   </Text>
                   <TouchableOpacity
                     onPress={handleGetDirections}
-                    className="flex-row items-center"
+                    style={{ backgroundColor: PRIMARY_COLOR }}
+                    className="self-start px-4 py-2 rounded-full flex-row items-center"
+                    activeOpacity={0.8}
                   >
-                    <Text style={{ color: team.color }} className="font-bold">
+                    <Ionicons name="navigate" size={16} color="white" />
+                    <Text className="text-white font-bold text-sm ml-2">
                       Get Directions
                     </Text>
-                    <Ionicons
-                      name="arrow-forward"
-                      size={16}
-                      color={team.color}
-                      style={{ marginLeft: 4 }}
-                    />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -238,7 +243,7 @@ const TeamDetails = () => {
             <View
               className={`rounded-2xl p-5 ${isDark ? "bg-zinc-900" : "bg-zinc-50"}`}
             >
-              <View className="flex-row items-center mb-4">
+              <View className="flex-row items-center mb-5">
                 <Image
                   source={{ uri: team.leader.image }}
                   className="w-16 h-16 rounded-full bg-zinc-200"
@@ -256,10 +261,11 @@ const TeamDetails = () => {
               </View>
 
               {/* Contact Buttons */}
-              <View className="flex-row space-x-3">
+              <View className="flex-row gap-3">
                 <TouchableOpacity
                   onPress={handleCall}
-                  className="flex-1 bg-green-500 py-3 rounded-xl flex-row items-center justify-center"
+                  style={{ backgroundColor: PRIMARY_COLOR }}
+                  className="flex-1 py-3.5 rounded-xl flex-row items-center justify-center shadow-md"
                   activeOpacity={0.8}
                 >
                   <Ionicons name="call" size={18} color="white" />
@@ -268,7 +274,7 @@ const TeamDetails = () => {
 
                 <TouchableOpacity
                   onPress={handleTelegram}
-                  className="flex-1 bg-blue-500 py-3 rounded-xl flex-row items-center justify-center"
+                  className="flex-1 py-3.5 rounded-xl flex-row items-center justify-center shadow-md bg-[#0088cc]"
                   activeOpacity={0.8}
                 >
                   <Ionicons name="paper-plane" size={18} color="white" />
@@ -280,7 +286,7 @@ const TeamDetails = () => {
 
           {/* Join Team Button */}
           <TouchableOpacity
-            style={{ backgroundColor: team.color }}
+            style={{ backgroundColor: PRIMARY_COLOR }}
             className="py-5 rounded-2xl items-center shadow-lg mb-4"
             activeOpacity={0.9}
           >
