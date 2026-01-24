@@ -1,8 +1,16 @@
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Linking, Modal, Text, TouchableOpacity, View } from "react-native";
+import {
+  Linking,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 const QuickActions = () => {
   const router = useRouter();
@@ -64,111 +72,118 @@ const QuickActions = () => {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={() => setModalVisible(false)}
-          className="flex-1 bg-black/60 justify-center items-center px-6"
+        <BlurView
+          intensity={50}
+          tint="dark"
+          style={StyleSheet.absoluteFill}
+          className="flex-1" // Ensure it takes full space if style override fails (though absoluteFill is best)
         >
           <TouchableOpacity
             activeOpacity={1}
-            onPress={(e) => e.stopPropagation()}
-            className={`w-full rounded-3xl p-6 ${
-              isDark ? "bg-zinc-900 border border-zinc-700" : "bg-white"
-            } shadow-2xl`}
+            onPress={() => setModalVisible(false)}
+            className="flex-1 justify-center items-center px-6 cursor-auto" // removed bg-black/80
           >
-            <View className="flex-row justify-between items-center mb-6">
-              <Text
-                className={`text-xl font-bold ${
-                  isDark ? "text-white" : "text-zinc-900"
-                }`}
-              >
-                Contact Us
-              </Text>
-              <TouchableOpacity
-                onPress={() => setModalVisible(false)}
-                className={`p-2 rounded-full ${
-                  isDark ? "bg-zinc-800" : "bg-zinc-100"
-                }`}
-              >
-                <Ionicons
-                  name="close"
-                  size={20}
-                  color={isDark ? "white" : "black"}
-                />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={(e) => e.stopPropagation()}
+              className={`w-full rounded-3xl p-6 ${
+                isDark ? "bg-zinc-900 border border-zinc-700" : "bg-white"
+              } shadow-2xl`}
+            >
+              <View className="flex-row justify-between items-center mb-6">
+                <Text
+                  className={`text-xl font-bold ${
+                    isDark ? "text-white" : "text-zinc-900"
+                  }`}
+                >
+                  Contact Us
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setModalVisible(false)}
+                  className={`p-2 rounded-full ${
+                    isDark ? "bg-zinc-800" : "bg-zinc-100"
+                  }`}
+                >
+                  <Ionicons
+                    name="close"
+                    size={20}
+                    color={isDark ? "white" : "black"}
+                  />
+                </TouchableOpacity>
+              </View>
 
-            <View className="space-y-4">
-              <TouchableOpacity
-                onPress={() => openLink("tel:+251911234567")}
-                className={`flex-row items-center p-4 rounded-2xl ${
-                  isDark ? "bg-zinc-800" : "bg-zinc-50"
-                }`}
-              >
-                <View className="flex-row items-center flex-1">
-                  <View className="w-12 h-12 rounded-full bg-blue-500/10 items-center justify-center mr-4">
-                    <Ionicons name="call" size={24} color="#3b82f6" />
+              <View className="space-y-4">
+                <TouchableOpacity
+                  onPress={() => openLink("tel:+251911234567")}
+                  className={`flex-row items-center p-4 rounded-2xl ${
+                    isDark ? "bg-zinc-800" : "bg-zinc-50"
+                  }`}
+                >
+                  <View className="flex-row items-center flex-1">
+                    <View className="w-12 h-12 rounded-full bg-blue-500/10 items-center justify-center mr-4">
+                      <Ionicons name="call" size={24} color="#3b82f6" />
+                    </View>
+                    <View>
+                      <Text
+                        className={`text-sm ${
+                          isDark ? "text-zinc-400" : "text-zinc-500"
+                        }`}
+                      >
+                        Phone Number
+                      </Text>
+                      <Text
+                        className={`text-lg font-semibold ${
+                          isDark ? "text-white" : "text-zinc-900"
+                        }`}
+                      >
+                        +251 911 234 567
+                      </Text>
+                    </View>
                   </View>
-                  <View>
-                    <Text
-                      className={`text-sm ${
-                        isDark ? "text-zinc-400" : "text-zinc-500"
-                      }`}
-                    >
-                      Phone Number
-                    </Text>
-                    <Text
-                      className={`text-lg font-semibold ${
-                        isDark ? "text-white" : "text-zinc-900"
-                      }`}
-                    >
-                      +251 911 234 567
-                    </Text>
-                  </View>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={20}
-                  color={isDark ? "#52525b" : "#a1a1aa"}
-                />
-              </TouchableOpacity>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={20}
+                    color={isDark ? "#52525b" : "#a1a1aa"}
+                  />
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => openLink("https://t.me/myfellow_bot")}
-                className={`flex-row items-center p-4 rounded-2xl ${
-                  isDark ? "bg-zinc-800" : "bg-zinc-50"
-                }`}
-              >
-                <View className="flex-row items-center flex-1">
-                  <View className="w-12 h-12 rounded-full bg-sky-500/10 items-center justify-center mr-4">
-                    <Ionicons name="paper-plane" size={24} color="#0ea5e9" />
+                <TouchableOpacity
+                  onPress={() => openLink("https://t.me/myfellow_bot")}
+                  className={`flex-row items-center p-4 rounded-2xl ${
+                    isDark ? "bg-zinc-800" : "bg-zinc-50"
+                  }`}
+                >
+                  <View className="flex-row items-center flex-1">
+                    <View className="w-12 h-12 rounded-full bg-sky-500/10 items-center justify-center mr-4">
+                      <Ionicons name="paper-plane" size={24} color="#0ea5e9" />
+                    </View>
+                    <View>
+                      <Text
+                        className={`text-sm ${
+                          isDark ? "text-zinc-400" : "text-zinc-500"
+                        }`}
+                      >
+                        Telegram
+                      </Text>
+                      <Text
+                        className={`text-lg font-semibold ${
+                          isDark ? "text-white" : "text-zinc-900"
+                        }`}
+                      >
+                        @myfellow_bot
+                      </Text>
+                    </View>
                   </View>
-                  <View>
-                    <Text
-                      className={`text-sm ${
-                        isDark ? "text-zinc-400" : "text-zinc-500"
-                      }`}
-                    >
-                      Telegram
-                    </Text>
-                    <Text
-                      className={`text-lg font-semibold ${
-                        isDark ? "text-white" : "text-zinc-900"
-                      }`}
-                    >
-                      @myfellow_bot
-                    </Text>
-                  </View>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={20}
-                  color={isDark ? "#52525b" : "#a1a1aa"}
-                />
-              </TouchableOpacity>
-            </View>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={20}
+                    color={isDark ? "#52525b" : "#a1a1aa"}
+                  />
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
           </TouchableOpacity>
-        </TouchableOpacity>
+        </BlurView>
       </Modal>
     </>
   );
