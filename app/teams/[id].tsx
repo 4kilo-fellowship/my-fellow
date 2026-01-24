@@ -68,8 +68,7 @@ const TeamDetails = () => {
       >
         <TouchableOpacity
           onPress={() => router.back()}
-          style={{ backgroundColor: PRIMARY_COLOR }}
-          className="w-11 h-11 rounded-full items-center justify-center shadow-lg"
+          className="w-11 h-11 bg-black/30 rounded-full items-center justify-center shadow-lg"
           activeOpacity={0.8}
         >
           <Ionicons name="arrow-back" size={24} color="white" />
@@ -162,11 +161,8 @@ const TeamDetails = () => {
             <View className="gap-5">
               {/* Time */}
               <View className="flex-row items-center">
-                <View
-                  style={{ backgroundColor: PRIMARY_COLOR }}
-                  className="w-12 h-12 rounded-2xl items-center justify-center shadow-md"
-                >
-                  <Ionicons name="time-outline" size={22} color="white" />
+                <View className="w-12 bg-white  h-12 rounded-2xl items-center justify-center">
+                  <Ionicons name="time-outline" size={22} color="black" />
                 </View>
                 <View className="ml-4 flex-1">
                   <Text className="text-zinc-400 text-xs font-bold mb-1 uppercase tracking-wider">
@@ -187,11 +183,8 @@ const TeamDetails = () => {
 
               {/* Location */}
               <View className="flex-row items-center">
-                <View
-                  style={{ backgroundColor: PRIMARY_COLOR }}
-                  className="w-12 h-12 rounded-2xl items-center justify-center shadow-md"
-                >
-                  <Ionicons name="location-outline" size={22} color="white" />
+                <View className="w-12 bg-white h-12 rounded-2xl items-center justify-center">
+                  <Ionicons name="location-outline" size={22} color="black" />
                 </View>
                 <View className="ml-4 flex-1">
                   <Text className="text-zinc-400 text-xs font-bold mb-1 uppercase tracking-wider">

@@ -129,16 +129,19 @@ const Teams = () => {
                 <Text
                   className={`font-bold text-lg mb-1 ${isDark ? "text-white" : "text-black"}`}
                 >
-                  Still unsure?
+                  Wondering where you fit?
                 </Text>
                 <Text className="text-zinc-500 text-center text-sm mb-4">
-                  Take our spiritual gifts test to find your place.
+                  Connect with I4U to get guidance and support.
                 </Text>
-                <TouchableOpacity className="bg-black dark:bg-white px-6 py-3 rounded-full">
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  className={`bg-black ${isDark ? "bg-white" : "bg-dark"} px-6 py-3 rounded-full`}
+                >
                   <Text
                     className={`font-bold ${isDark ? "text-black" : "text-white"}`}
                   >
-                    Take Test
+                    Contact I4U
                   </Text>
                 </TouchableOpacity>
               </View>
