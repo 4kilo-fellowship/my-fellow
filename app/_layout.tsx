@@ -9,11 +9,12 @@ export default function RootLayout() {
     <AuthProvider>
       <ThemeProvider>
         <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" options={{ title: "Home" }} />
-          <Stack.Screen name="devotions" options={{ title: "Devotions" }} />
-          <Stack.Screen name="teams" options={{ title: "Teams" }} />
-          <Stack.Screen name="reminders" options={{ title: "Alerts" }} />
-          <Stack.Screen name="gifts" options={{ title: "Gifts" }} />
+          <Stack.Screen name="(tabs)" options={{ title: "Home" }} />
+          <Stack.Screen name="(auth)" options={{ title: "Auth" }} />
+          <Stack.Screen name="events/[id]" options={{ title: "Events" }} />
+          <Stack.Screen name="teams/[id]" options={{ title: "Teams" }} />
+          <Stack.Screen name="leaders" options={{ title: "Leaders" }} />
+          <Stack.Screen name="locations" options={{ title: "Locations" }} />
           <Stack.Screen name="programs" options={{ title: "Programs" }} />
         </Stack>
       </ThemeProvider>

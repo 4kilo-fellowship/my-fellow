@@ -8,15 +8,16 @@ import { useUserStore } from "@/stores/user.store";
 import { Image as ExpoImage } from "expo-image";
 import { useRouter } from "expo-router";
 import {
-    Alert,
-    Animated,
-    Dimensions,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Alert,
+  Animated,
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { RegistrationModal, SignInPromptModal } from "../index";
+import RegistrationModal from "../RegistrationModal";
+import SignInPromptModal from "../SignInPromptModal";
 
 const { width } = Dimensions.get("window");
 
@@ -56,7 +57,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
   const onConfirmRegistration = async () => {
     try {
       const user = useUserStore.getState().user;
-      
+
       if (!user) {
         setModalVisible(false);
         setSignInModalVisible(true);
@@ -165,8 +166,10 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
           {subtitleText}
         </Text>
 
-
-        <View style={styles.actionsRow} className="w-full mt-4 items-center justify-center">
+        <View
+          style={styles.actionsRow}
+          className="w-full mt-4 items-center justify-center"
+        >
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={handlePrimary}
