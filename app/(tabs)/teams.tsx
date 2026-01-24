@@ -2,6 +2,7 @@ import { QuickActions } from "@/components";
 import { TEAMS } from "@/constants/teams";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
 import {
@@ -27,6 +28,7 @@ const Teams = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [searchText, setSearchText] = useState("");
+  const router = useRouter();
 
   // Filter logic
   const filteredTeams = TEAMS.filter((t) =>
@@ -63,7 +65,7 @@ const Teams = () => {
         backgroundColor: item.color,
       }}
       className="rounded-2xl p-4 relative overflow-hidden justify-between mb-3 shadow-sm"
-      onPress={() => console.log("Open", item.name)}
+      onPress={() => router.push(`/teams/${item.id}` as any)}
     >
       {/* Huge Background Icon (Watermark style) */}
       <View className="absolute -right-6 -bottom-6 opacity-20 transform rotate-12">
