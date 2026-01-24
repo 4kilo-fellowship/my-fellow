@@ -1,7 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useRef } from "react";
-import { Dimensions, FlatList, Text, View } from "react-native";
+import {
+  Dimensions,
+  FlatList,
+  Platform,
+  Text,
+  ToastAndroid,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 type DevotionItem = {
   id: string;
@@ -22,8 +30,20 @@ const CARD_WIDTH = 180;
 const CARD_HEIGHT = 220;
 
 function DevotionCard({ item, isDark }: DevotionCardProps) {
+  const handlePress = () => {
+    if (Platform.OS === "android") {
+      ToastAndroid.show("Coming Soon...", ToastAndroid.SHORT);
+    } else {
+      // For iOS, you could use a simple alert or a third-party solution
+      // For now, we'll just log it (iOS doesn't have native toast)
+      console.log("Coming Soon");
+    }
+  };
+
   return (
-    <View
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={handlePress}
       style={{
         marginRight: 16,
         borderRadius: 16,
@@ -37,6 +57,7 @@ function DevotionCard({ item, isDark }: DevotionCardProps) {
         shadowOpacity: 0.1,
         shadowRadius: 8,
         elevation: 3,
+        flex: 1,
       }}
     >
       <Image
@@ -48,7 +69,7 @@ function DevotionCard({ item, isDark }: DevotionCardProps) {
       />
 
       <View style={{ padding: 12, flex: 1, justifyContent: "space-between" }}>
-        <View>
+        <View className="flex-1">
           <Text
             numberOfLines={2}
             style={{
@@ -60,7 +81,7 @@ function DevotionCard({ item, isDark }: DevotionCardProps) {
             {item.title}
           </Text>
 
-          <Text style={{ color: "#ff6619", fontSize: 12, marginBottom: 8 }}>
+          <Text style={{ color: "#ff6719", fontSize: 12, marginBottom: 8 }}>
             {item.date}
           </Text>
 
@@ -103,7 +124,7 @@ function DevotionCard({ item, isDark }: DevotionCardProps) {
           </View>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 

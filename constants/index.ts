@@ -1,5 +1,6 @@
 export * from "./announcements";
 export * from "./api";
+export * from "./colors";
 export * from "./departments";
 export * from "./devotions";
 export * from "./leaders";

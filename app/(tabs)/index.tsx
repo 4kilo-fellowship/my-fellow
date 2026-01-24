@@ -4,7 +4,7 @@ import {
   QuickAction,
   VideoItem,
 } from "@/components";
-import { DEVOTIONS, QUICK_ACTIONS, VIDEOS } from "@/constants";
+import { DEVOTIONS, PRIMARY, QUICK_ACTIONS, VIDEOS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { useEventsStore } from "@/stores/events.store";
 import { Ionicons } from "@expo/vector-icons";
@@ -104,7 +104,7 @@ const Home = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={"#ff6619"}
+              tintColor={PRIMARY}
             />
           }
         >
@@ -283,13 +283,14 @@ const Home = () => {
                 Recent Devotions
               </Text>
               <TouchableOpacity
-                activeOpacity={0.88}
+                onPress={() => router.push("/devotions")}
+                activeOpacity={0.6}
                 className="flex-row items-center"
               >
                 <Text className="text-primary font-semibold mr-2">
                   View All
                 </Text>
-                <Ionicons name="arrow-forward" size={16} color={"#ff6619"} />
+                <Ionicons name="arrow-forward" size={16} color={PRIMARY} />
               </TouchableOpacity>
             </View>
 
@@ -299,11 +300,7 @@ const Home = () => {
               contentContainerStyle={{ paddingHorizontal: 20 }}
             >
               {DEVOTIONS.map((d, index) => (
-                <DevotionCard
-                  key={d.id ?? index}
-                  item={d as any}
-                  isDark={isDark}
-                />
+                <DevotionCard key={d.id} item={d as any} isDark={isDark} />
               ))}
             </ScrollView>
           </View>
