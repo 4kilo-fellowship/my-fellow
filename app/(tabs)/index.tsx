@@ -61,7 +61,6 @@ const Home = () => {
     }
   }, [fetchEvents, events.length]);
 
- 
   return (
     <View className="flex-1">
       <View
@@ -80,7 +79,7 @@ const Home = () => {
             source={require("@/assets/images/logo-primary.png")}
             className="w-64 h-20"
             resizeMode="contain"
-            style={{ transform: [{ scale: 2 }, { translateX: -12 }] }}
+            style={{ transform: [{ scale: 2 }, { translateX: -13 }] }}
           />
 
           <TouchableOpacity onPress={toggleTheme} activeOpacity={0.9}>
@@ -99,7 +98,7 @@ const Home = () => {
         </View>
 
         <ScrollView
-          contentContainerStyle={{ paddingBottom: 140 }} 
+          contentContainerStyle={{ paddingBottom: 140 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -129,10 +128,7 @@ const Home = () => {
                   justifyContent: "center",
                 }}
               >
-                <ActivityIndicator
-                  size="large"
-                  color={"#ff6619"}
-                />
+                <ActivityIndicator size="large" color={"#ff6619"} />
               </View>
             ) : error ? (
               <View

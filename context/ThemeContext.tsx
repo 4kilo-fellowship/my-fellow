@@ -59,7 +59,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       const newTheme = prevTheme === "light" ? "dark" : "light";
 
       AsyncStorage.setItem("theme", newTheme).catch((e) =>
-        console.error("Error saving theme:", e)
+        console.error("Error saving theme:", e),
       );
 
       return newTheme;

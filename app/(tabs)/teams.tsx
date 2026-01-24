@@ -1,3 +1,4 @@
+import { QuickActions } from "@/components";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
@@ -100,42 +101,6 @@ const Teams = () => {
     </View>
   );
 
-  const QuickActions = () => (
-    <View className="flex-row justify-between px-5 mb-6">
-      <TouchableOpacity
-        className={`flex-1 mr-2 h-14 rounded-xl flex-row items-center justify-center ${isDark ? "bg-zinc-800" : "bg-zinc-100"}`}
-        onPress={() => console.log("Leaders")}
-      >
-        <Ionicons
-          name="shield-checkmark"
-          size={20}
-          color={isDark ? "white" : "black"}
-        />
-        <Text
-          className={`ml-2 font-bold ${isDark ? "text-white" : "text-black"}`}
-        >
-          Leadership
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        className={`flex-1 ml-2 h-14 rounded-xl flex-row items-center justify-center ${isDark ? "bg-zinc-800" : "bg-zinc-100"}`}
-        onPress={() => console.log("Volunteer")}
-      >
-        <Ionicons
-          name="hand-right"
-          size={20}
-          color={isDark ? "white" : "black"}
-        />
-        <Text
-          className={`ml-2 font-bold ${isDark ? "text-white" : "text-black"}`}
-        >
-          Volunteer
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
-
   const GridCard = ({ item }: { item: Team }) => (
     <TouchableOpacity
       activeOpacity={0.9}
@@ -172,16 +137,16 @@ const Teams = () => {
   );
 
   return (
-    <View className={`flex-1 ${isDark ? "bg-black" : "bg-white"}`}>
+    <View className={`flex-1 ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      <View style={{ paddingTop: top + 10 }}>
-        {/* Header Title */}
+      <View style={{ paddingTop: top + 10, paddingBottom: 100 }}>
+        {/* HEADER */}
         <View className="px-5 mb-4">
           <Text
             className={`text-4xl font-extrabold ${isDark ? "text-white" : "text-black"}`}
           >
-            Discover
+            Teams
           </Text>
         </View>
 
