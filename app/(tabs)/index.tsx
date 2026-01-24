@@ -265,6 +265,8 @@ const Home = () => {
                   onPress={() => {
                     if (action.id === "1") {
                       router.push("/programs");
+                    } else if (action.id === "3") {
+                      router.push("/leaders");
                     }
                   }}
                 />
