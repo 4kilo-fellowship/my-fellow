@@ -99,7 +99,7 @@ const Home = () => {
         </View>
 
         <ScrollView
-          contentContainerStyle={{ paddingBottom: 140 }}
+          contentContainerStyle={{ paddingBottom: 140 }} 
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -243,7 +243,7 @@ const Home = () => {
 
           {/* Quick Actions */}
           <View className="mt-7">
-            <View className="px-5 flex-row justify-between items-center mb-3">
+            <View className="px-5 flex-row mb-3">
               <Text
                 className={`text-lg font-extrabold ${
                   isDark ? "text-white" : "text-gray-900"
@@ -259,7 +259,7 @@ const Home = () => {
             >
               {QUICK_ACTIONS.map((action, index) => (
                 <QuickAction
-                  key={action.id ?? index}
+                  key={action.id}
                   item={action as any}
                   isDark={isDark}
                   onPress={() => {
