@@ -2,7 +2,14 @@ import { GiftItem } from "@/constants/gifts";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  ToastAndroid,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface GiftCardProps {
   item: GiftItem;
@@ -11,6 +18,14 @@ interface GiftCardProps {
 }
 
 const GiftCard = ({ item, onPress, isDark }: GiftCardProps) => {
+  const handlePress = () => {
+    if (Platform.OS === "android") {
+      ToastAndroid.show("Coming Soon...", ToastAndroid.SHORT);
+    } else {
+      onPress(item);
+    }
+  };
+
   return (
     <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
       <Image
@@ -28,7 +43,7 @@ const GiftCard = ({ item, onPress, isDark }: GiftCardProps) => {
         <Text style={styles.price}>{item.price} ETB</Text>
         <TouchableOpacity
           style={styles.buyButton}
-          onPress={() => onPress(item)}
+          onPress={handlePress}
           activeOpacity={0.8}
         >
           <Text style={styles.buyButtonText}>Buy</Text>
