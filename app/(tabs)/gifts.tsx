@@ -6,6 +6,7 @@ import { usePaymentStore } from "@/stores/payment.store";
 import { useUserStore } from "@/stores/user.store";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { LinearGradient } from "expo-linear-gradient";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -16,8 +17,6 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   Text,
   TextInput,
@@ -58,6 +57,8 @@ const Gifts = () => {
     resolver: zodResolver(donationSchema),
     defaultValues: {
       amount: 0,
+      email: user?.email || "",
+      phoneNumber: user?.phoneNumber || "",
     },
   });
 
@@ -90,10 +91,8 @@ const Gifts = () => {
     setLoading(true);
     try {
       const response = await api.get(`/payments/chapa/verify/${ref}`);
-      if (
-        response.data.status === "success" ||
-        response.data.data?.status === "success"
-      ) {
+      const status = response.data.status || response.data.data?.status;
+      if (status === "success" || status === "completed") {
         Toast.show({
           type: "success",
           text1: "Payment Successful",
@@ -125,12 +124,15 @@ const Gifts = () => {
     try {
       const payload = {
         ...data,
-        fullName: user.fullName, // Auto-fill from store
+        fullName: user.fullName,
         reason: "Donation",
       };
 
       const response = await api.post("/payments/chapa/init", payload);
-      const { checkout_url, tx_ref } = response.data;
+      // Robust check for checkout_url in both root and nested data object
+      const checkout_url =
+        response.data.checkout_url || response.data.data?.checkout_url;
+      const tx_ref = response.data.tx_ref || response.data.data?.tx_ref;
 
       if (!checkout_url) {
         throw new Error("Invalid checkout URL received from server");
@@ -142,7 +144,9 @@ const Gifts = () => {
       console.error("Payment initialization failed:", error);
       Alert.alert(
         "Error",
-        error.response?.data?.message || "Failed to start payment process.",
+        error.message ||
+          error.response?.data?.message ||
+          "Failed to start payment process.",
       );
     } finally {
       setLoading(false);
@@ -155,111 +159,114 @@ const Gifts = () => {
     <View className={`flex-1 ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1"
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingTop: top + 10, paddingBottom: 100 }}
       >
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingTop: top + 10, paddingBottom: 100 }}
-        >
-          {/* HEADER (Standardized with Teams/Devotions) */}
-          <View className="px-5 mb-6">
-            <Text
-              className={`text-4xl font-extrabold ${isDark ? "text-white" : "text-black"}`}
-            >
-              Gifts
-            </Text>
-          </View>
+        {/* HEADER */}
+        <View className="px-5 mb-6">
+          <Text
+            className={`text-4xl font-extrabold ${isDark ? "text-white" : "text-black"}`}
+          >
+            Gifts
+          </Text>
+        </View>
 
-          {/* Fellowship Store Section */}
-          <View className="mb-10">
-            <View className="px-5 mb-4 flex-row justify-between items-center">
-              <Text
-                className={`text-xl font-bold ${isDark ? "text-white" : "text-zinc-900"}`}
-              >
-                Fellowship Store
-              </Text>
-              <View className="bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
-                <Text className="text-zinc-500 text-xs font-bold">
-                  New arrivals
-                </Text>
+        {/* SPIRUTAL HEADER SECTION */}
+        <View className="px-5 mb-8">
+          <LinearGradient
+            colors={isDark ? ["#2d2d2d", "#1a1a1b"] : ["#fff8f0", "#fff"]}
+            className="p-8 rounded-[40px] items-center overflow-hidden border border-primary/10 shadow-xl"
+          >
+            <View className="bg-primary/10 p-5 rounded-full mb-6">
+              <Ionicons name="sunny" size={80} color="#ff6719" />
+            </View>
+            <Text
+              className={`text-xl font-bold mb-4 ${isDark ? "text-primary" : "text-primary"}`}
+            >
+              Pledge — Give to God
+            </Text>
+            <Text
+              className={`text-center leading-7 font-medium px-2 ${isDark ? "text-zinc-300 italic" : "text-zinc-600 italic"}`}
+            >
+              “እግዚአብሔር በደስታ የሚሰጠውን ይወዳልና እያንዳንዱ በልቡ እንዳሰበ ይስጥ፥ በኀዘን ወይም በግድ
+              አይደለም።”
+            </Text>
+            <View className="h-[2px] w-20 bg-primary/20 my-4 rounded-full" />
+            <Text className="text-zinc-400 font-bold text-xs">
+              2ኛ ቆሮንቶስ 9፥7
+            </Text>
+          </LinearGradient>
+        </View>
+
+        {/* DONATION SECTION (Eye-catching UI, Moved Up) */}
+        <View className="px-5 mb-10">
+          <View
+            className={`p-8 rounded-[32px] shadow-2xl ${
+              isDark ? "bg-[#262626]" : "bg-white border border-zinc-50"
+            }`}
+          >
+            <View className="flex-row items-center mb-6">
+              <View className="bg-primary/10 p-3 rounded-2xl mr-4">
+                <Ionicons name="heart" size={24} color="#ff6719" />
               </View>
+              <Text
+                className={`text-2xl font-black ${isDark ? "text-white" : "text-zinc-900"}`}
+              >
+                Support Mission
+              </Text>
             </View>
 
-            <FlatList
-              data={GIFT_ITEMS}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={{ paddingHorizontal: 20 }}
-              renderItem={({ item }) => (
-                <GiftCard
-                  item={item}
-                  isDark={isDark}
-                  onPress={() => {}} // Store items now show "Coming Soon" toast in the component
-                />
-              )}
-            />
-          </View>
-
-          {/* Donation Section */}
-          <View className="px-5">
-            <View
-              className={`p-6 rounded-3xl ${isDark ? "bg-zinc-900" : "bg-slate-50 border border-slate-100"}`}
-            >
-              <Text
-                className={`text-xl font-bold mb-2 ${isDark ? "text-white" : "text-zinc-900"}`}
-              >
-                Support with Donation
-              </Text>
-              <Text
-                className={`text-sm mb-6 ${isDark ? "text-zinc-400" : "text-zinc-500"}`}
-              >
-                Your support helps us grow and impact more lives.
-              </Text>
-
-              {/* Preset Amounts */}
-              <View className="flex-row flex-wrap gap-2 mb-6">
-                {PRESET_AMOUNTS.map((amt) => (
-                  <TouchableOpacity
-                    key={amt}
-                    onPress={() => setValue("amount", amt)}
-                    className={`px-4 py-2.5 rounded-2xl border ${
+            {/* Preset Amounts */}
+            <View className="flex-row flex-wrap gap-3 mb-8">
+              {PRESET_AMOUNTS.map((amt) => (
+                <TouchableOpacity
+                  key={amt}
+                  onPress={() => setValue("amount", amt)}
+                  className={`px-5 py-3 rounded-2xl border-2 transition-all ${
+                    selectedAmount === amt
+                      ? "bg-primary border-primary scale-105"
+                      : isDark
+                        ? "bg-zinc-800 border-zinc-700"
+                        : "bg-zinc-50 border-zinc-100"
+                  }`}
+                >
+                  <Text
+                    className={`font-black text-base ${
                       selectedAmount === amt
-                        ? "bg-primary border-primary"
+                        ? "text-white"
                         : isDark
-                          ? "bg-zinc-800 border-zinc-700"
-                          : "bg-white border-zinc-200"
+                          ? "text-zinc-400"
+                          : "text-zinc-600"
                     }`}
                   >
-                    <Text
-                      className={`font-bold ${selectedAmount === amt ? "text-white" : isDark ? "text-zinc-400" : "text-zinc-600"}`}
-                    >
-                      {amt} ETB
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {/* Form Fields */}
-              <View className="gap-4">
-                <View>
-                  <Text
-                    className={`text-xs font-bold mb-1.5 ml-1 ${isDark ? "text-zinc-500" : "text-zinc-400"}`}
-                  >
-                    AMOUNT (ETB)
+                    {amt} ETB
                   </Text>
-                  <Controller
-                    control={control}
-                    name="amount"
-                    render={({ field: { onChange, onBlur, value } }) => (
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Form Fields Improvements */}
+            <View className="gap-6">
+              <View>
+                <Text
+                  className={`text-[10px] font-black uppercase tracking-widest mb-3 ml-1 ${
+                    isDark ? "text-primary" : "text-primary"
+                  }`}
+                >
+                  Amount to Give (ETB)
+                </Text>
+                <Controller
+                  control={control}
+                  name="amount"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <View className="relative">
                       <TextInput
-                        className={`px-4 py-3.5 rounded-2xl border text-lg font-bold ${
+                        className={`px-6 py-4 rounded-3xl border-2 text-2xl font-black ${
                           isDark
                             ? "bg-zinc-800 border-zinc-700 text-white"
-                            : "bg-white border-zinc-100 text-black shadow-sm"
-                        }`}
+                            : "bg-zinc-50 border-zinc-100 text-black"
+                        } ${errors.amount ? "border-red-500" : ""}`}
                         placeholder="0.00"
                         placeholderTextColor={isDark ? "#52525b" : "#a1a1aa"}
                         keyboardType="numeric"
@@ -270,102 +277,145 @@ const Gifts = () => {
                         }}
                         value={value === 0 ? "" : value.toString()}
                       />
-                    )}
-                  />
-                  {errors.amount && (
-                    <Text className="text-red-500 text-[10px] mt-1 ml-1">
-                      {errors.amount.message}
-                    </Text>
+                      <View className="absolute right-6 top-4">
+                        <Ionicons
+                          name="cash-outline"
+                          size={24}
+                          color="#ff6719"
+                        />
+                      </View>
+                    </View>
                   )}
-                </View>
-
-                <View>
-                  <Text
-                    className={`text-xs font-bold mb-1.5 ml-1 ${isDark ? "text-zinc-500" : "text-zinc-400"}`}
-                  >
-                    EMAIL ADDRESS
+                />
+                {errors.amount && (
+                  <Text className="text-red-500 text-xs mt-2 ml-2 font-bold">
+                    {errors.amount.message}
                   </Text>
-                  <Controller
-                    control={control}
-                    name="email"
-                    render={({ field: { onChange, onBlur, value } }) => (
-                      <TextInput
-                        className={`px-4 py-3.5 rounded-2xl border font-semibold ${
-                          isDark
-                            ? "bg-zinc-800 border-zinc-700 text-white"
-                            : "bg-white border-zinc-100 text-black shadow-sm"
-                        }`}
-                        placeholder="email@example.com"
-                        placeholderTextColor={isDark ? "#52525b" : "#a1a1aa"}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        onBlur={onBlur}
-                        onChangeText={onChange}
-                        value={value}
-                      />
-                    )}
-                  />
-                  {errors.email && (
-                    <Text className="text-red-500 text-[10px] mt-1 ml-1">
-                      {errors.email.message}
-                    </Text>
-                  )}
-                </View>
-
-                <View>
-                  <Text
-                    className={`text-xs font-bold mb-1.5 ml-1 ${isDark ? "text-zinc-500" : "text-zinc-400"}`}
-                  >
-                    PHONE NUMBER
-                  </Text>
-                  <Controller
-                    control={control}
-                    name="phoneNumber"
-                    render={({ field: { onChange, onBlur, value } }) => (
-                      <TextInput
-                        className={`px-4 py-3.5 rounded-2xl border font-semibold ${
-                          isDark
-                            ? "bg-zinc-800 border-zinc-700 text-white"
-                            : "bg-white border-zinc-100 text-black shadow-sm"
-                        }`}
-                        placeholder="0911..."
-                        placeholderTextColor={isDark ? "#52525b" : "#a1a1aa"}
-                        keyboardType="phone-pad"
-                        onBlur={onBlur}
-                        onChangeText={onChange}
-                        value={value}
-                      />
-                    )}
-                  />
-                  {errors.phoneNumber && (
-                    <Text className="text-red-500 text-[10px] mt-1 ml-1">
-                      {errors.phoneNumber.message}
-                    </Text>
-                  )}
-                </View>
+                )}
               </View>
 
-              <TouchableOpacity
-                onPress={handleSubmit(handleInitializePayment)}
-                disabled={loading}
-                activeOpacity={0.8}
-                className={`mt-8 py-4 rounded-2xl flex-row items-center justify-center ${loading ? "bg-zinc-400" : "bg-primary"}`}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <>
-                    <Text className="text-white font-extrabold text-lg mr-2">
-                      Donate {selectedAmount || 0} ETB
-                    </Text>
-                    <Ionicons name="heart" size={20} color="#fff" />
-                  </>
+              <View>
+                <Text
+                  className={`text-[10px] font-black uppercase tracking-widest mb-3 ml-1 ${
+                    isDark ? "text-zinc-500" : "text-zinc-400"
+                  }`}
+                >
+                  Confirmation Email
+                </Text>
+                <Controller
+                  control={control}
+                  name="email"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <TextInput
+                      className={`px-6 py-4 rounded-3xl border-2 font-bold ${
+                        isDark
+                          ? "bg-zinc-800 border-zinc-700 text-white"
+                          : "bg-zinc-50 border-zinc-100 text-black"
+                      } ${errors.email ? "border-red-500" : ""}`}
+                      placeholder="email@example.com"
+                      placeholderTextColor={isDark ? "#52525b" : "#a1a1aa"}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                  )}
+                />
+                {errors.email && (
+                  <Text className="text-red-500 text-xs mt-2 ml-2 font-bold">
+                    {errors.email.message}
+                  </Text>
                 )}
-              </TouchableOpacity>
+              </View>
+
+              <View>
+                <Text
+                  className={`text-[10px] font-black uppercase tracking-widest mb-3 ml-1 ${
+                    isDark ? "text-zinc-500" : "text-zinc-400"
+                  }`}
+                >
+                  Phone Number
+                </Text>
+                <Controller
+                  control={control}
+                  name="phoneNumber"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <TextInput
+                      className={`px-6 py-4 rounded-3xl border-2 font-bold ${
+                        isDark
+                          ? "bg-zinc-800 border-zinc-700 text-white"
+                          : "bg-zinc-50 border-zinc-100 text-black"
+                      } ${errors.phoneNumber ? "border-red-500" : ""}`}
+                      placeholder="09..."
+                      placeholderTextColor={isDark ? "#52525b" : "#a1a1aa"}
+                      keyboardType="phone-pad"
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                  )}
+                />
+                {errors.phoneNumber && (
+                  <Text className="text-red-500 text-xs mt-2 ml-2 font-bold">
+                    {errors.phoneNumber.message}
+                  </Text>
+                )}
+              </View>
             </View>
+
+            <TouchableOpacity
+              onPress={handleSubmit(handleInitializePayment)}
+              disabled={loading}
+              activeOpacity={0.9}
+              className={`mt-10 py-5 rounded-3xl flex-row items-center justify-center shadow-xl ${
+                loading ? "bg-zinc-400" : "bg-primary shadow-primary/40"
+              }`}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text className="text-white font-black text-xl mr-3">
+                    Donate {selectedAmount || 0} ETB
+                  </Text>
+                  <Ionicons
+                    name="arrow-forward-circle"
+                    size={28}
+                    color="#fff"
+                  />
+                </>
+              )}
+            </TouchableOpacity>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </View>
+
+        {/* FELLOWSHIP STORE SECTION (Moved Down, Larger Cards) */}
+        <View className="mb-12">
+          <View className="px-5 mb-6 flex-row justify-between items-center">
+            <Text
+              className={`text-2xl font-black ${isDark ? "text-white" : "text-zinc-900"}`}
+            >
+              Fellowship Store
+            </Text>
+          </View>
+
+          <FlatList
+            data={GIFT_ITEMS}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingHorizontal: 20 }}
+            renderItem={({ item }) => (
+              <GiftCard
+                item={item}
+                isDark={isDark}
+                onPress={() => {}} // Still "Coming Soon" toast
+              />
+            )}
+          />
+        </View>
+      </ScrollView>
     </View>
   );
 };

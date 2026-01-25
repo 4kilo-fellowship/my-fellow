@@ -3,6 +3,7 @@ export interface GiftItem {
   name: string;
   price: number;
   image: string;
+  isNew?: boolean;
 }
 
 export const GIFT_ITEMS: GiftItem[] = [
@@ -31,6 +32,7 @@ export const GIFT_ITEMS: GiftItem[] = [
     id: "4",
     name: "Study Materials",
     price: 300,
+    isNew: true,
     image:
       "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=500",
   },
@@ -38,6 +40,7 @@ export const GIFT_ITEMS: GiftItem[] = [
     id: "5",
     name: "Fellowship Hoodie",
     price: 850,
+    isNew: true,
     image:
       "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=500",
   },

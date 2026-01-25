@@ -28,6 +28,11 @@ const GiftCard = ({ item, onPress, isDark }: GiftCardProps) => {
 
   return (
     <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+      {item.isNew && (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>NEW</Text>
+        </View>
+      )}
       <Image
         source={{ uri: item.image }}
         style={styles.image}
@@ -36,6 +41,7 @@ const GiftCard = ({ item, onPress, isDark }: GiftCardProps) => {
       />
       <View style={styles.content}>
         <Text
+          numberOfLines={1}
           style={[styles.name, isDark ? styles.textDark : styles.textLight]}
         >
           {item.name}
@@ -56,15 +62,15 @@ const GiftCard = ({ item, onPress, isDark }: GiftCardProps) => {
 
 const styles = StyleSheet.create({
   card: {
-    width: 200,
-    borderRadius: 16,
-    marginRight: 16,
+    width: 240,
+    borderRadius: 24,
+    marginRight: 18,
     overflow: "hidden",
-    elevation: 4,
+    elevation: 8,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
   },
   cardLight: {
     backgroundColor: "#fff",
@@ -72,43 +78,63 @@ const styles = StyleSheet.create({
   cardDark: {
     backgroundColor: "#262626",
   },
+  badge: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    backgroundColor: "#ff6719",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    zIndex: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
   image: {
     width: "100%",
-    height: 120,
+    height: 160,
   },
   content: {
-    padding: 12,
+    padding: 16,
   },
   name: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 6,
   },
   textLight: {
-    color: "#000",
+    color: "#1a1a1a",
   },
   textDark: {
-    color: "#fff",
+    color: "#f0f0f0",
   },
   price: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#ff6719",
-    fontWeight: "700",
-    marginBottom: 12,
+    fontWeight: "800",
+    marginBottom: 16,
   },
   buyButton: {
     backgroundColor: "#ff6719",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 10,
+    borderRadius: 12,
     gap: 8,
   },
   buyButtonText: {
     color: "#fff",
-    fontWeight: "600",
-    fontSize: 14,
+    fontWeight: "700",
+    fontSize: 15,
   },
 });
 
