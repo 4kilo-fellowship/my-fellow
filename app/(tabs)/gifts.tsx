@@ -6,6 +6,7 @@ import { usePaymentStore } from "@/stores/payment.store";
 import { useUserStore } from "@/stores/user.store";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -55,16 +56,29 @@ const Gifts = () => {
     resolver: zodResolver(donationSchema),
     defaultValues: {
       amount: 0,
-      email: (user as any)?.email ?? "",
+      email: user?.email || "",
     },
   });
 
   const selectedAmount = watch("amount");
 
+  // Sync form with user data when it loads
+  useEffect(() => {
+    const loadSavedEmail = async () => {
+      const savedEmail = await AsyncStorage.getItem("last_donation_email");
+      if (savedEmail) {
+        setValue("email", savedEmail);
+      } else if (user?.email) {
+        setValue("email", user.email);
+      }
+    };
+    if (user) loadSavedEmail();
+  }, [user, setValue]);
+
   // Redirect if not logged in
   useEffect(() => {
     if (!user) {
-      router.replace("/(auth)/login" as any);
+      router.replace("/(auth)/sign-in" as any);
     }
   }, [user]);
 
@@ -117,12 +131,22 @@ const Gifts = () => {
   const handleInitializePayment = async (data: DonationForm) => {
     if (!user) return;
 
+    // Check for required Chapa fields if not provided
+    if (!data.email) {
+      Alert.alert(
+        "Missing Information",
+        "Please provide a valid email address for the receipt.",
+      );
+      return;
+    }
+
     setLoading(true);
     try {
       const payload = {
         ...data,
-        fullName: user.fullName,
-        phoneNumber: user.phoneNumber, // Automatically from user store
+        email: data.email.trim(), // Sanitize input
+        fullName: user.fullName || "Member",
+        phoneNumber: user.phoneNumber || "0900000000",
         reason: "Donation",
       };
 
@@ -136,6 +160,12 @@ const Gifts = () => {
       }
 
       setTxRef(tx_ref);
+
+      // Persist email for future use since it's not in the account
+      if (data.email) {
+        await AsyncStorage.setItem("last_donation_email", data.email);
+      }
+
       await WebBrowser.openBrowserAsync(checkout_url);
     } catch (error: any) {
       console.error("Payment initialization failed:", error);
@@ -311,6 +341,7 @@ const Gifts = () => {
                         autoCapitalize="none"
                         onBlur={onBlur}
                         onChangeText={onChange}
+                        defaultValue={user?.email || ""}
                         value={value}
                       />
                     )}
