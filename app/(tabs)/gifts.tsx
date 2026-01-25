@@ -28,7 +28,6 @@ import * as z from "zod";
 
 const donationSchema = z.object({
   email: z.string().email("Invalid email address"),
-  phoneNumber: z.string().min(10, "Invalid phone number"),
   amount: z.number().min(1, "Amount must be greater than 0"),
 });
 
@@ -57,7 +56,6 @@ const Gifts = () => {
     defaultValues: {
       amount: 0,
       email: (user as any)?.email ?? "",
-      phoneNumber: user?.phoneNumber ?? "",
     },
   });
 
@@ -124,6 +122,7 @@ const Gifts = () => {
       const payload = {
         ...data,
         fullName: user.fullName,
+        phoneNumber: user.phoneNumber, // Automatically from user store
         reason: "Donation",
       };
 
@@ -323,40 +322,6 @@ const Gifts = () => {
                   {errors.email && (
                     <Text className="text-red-500 text-xs mt-2 ml-2 font-bold">
                       {errors.email.message}
-                    </Text>
-                  )}
-                </View>
-
-                <View>
-                  <Text
-                    className={`text-[11px] font-black uppercase tracking-widest mb-3 ml-1 ${
-                      isDark ? "text-zinc-500" : "text-zinc-400"
-                    }`}
-                  >
-                    Phone Number
-                  </Text>
-                  <Controller
-                    control={control}
-                    name="phoneNumber"
-                    render={({ field: { onChange, onBlur, value } }) => (
-                      <TextInput
-                        className={`px-6 py-5 rounded-[24px] border-2 font-bold ${
-                          isDark
-                            ? "bg-zinc-800 border-zinc-700 text-white"
-                            : "bg-zinc-50 border-zinc-100 text-black"
-                        } ${errors.phoneNumber ? "border-red-500" : ""}`}
-                        placeholder="09..."
-                        placeholderTextColor={isDark ? "#52525b" : "#a1a1aa"}
-                        keyboardType="phone-pad"
-                        onBlur={onBlur}
-                        onChangeText={onChange}
-                        value={value}
-                      />
-                    )}
-                  />
-                  {errors.phoneNumber && (
-                    <Text className="text-red-500 text-xs mt-2 ml-2 font-bold">
-                      {errors.phoneNumber.message}
                     </Text>
                   )}
                 </View>
