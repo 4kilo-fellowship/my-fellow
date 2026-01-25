@@ -2,6 +2,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { Stack } from "expo-router";
 import React from "react";
+import Toast from "react-native-toast-message";
 import "./global.css";
 
 export default function RootLayout() {
@@ -18,6 +19,7 @@ export default function RootLayout() {
           <Stack.Screen name="locations" options={{ title: "Locations" }} />
           <Stack.Screen name="programs" options={{ title: "Programs" }} />
         </Stack>
+        <Toast />
       </ThemeProvider>
     </AuthProvider>
   );

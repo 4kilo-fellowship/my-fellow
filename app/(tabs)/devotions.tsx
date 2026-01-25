@@ -7,6 +7,7 @@ import {
   Image,
   ScrollView,
   Text,
+  ToastAndroid,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -122,7 +123,7 @@ const Devotions = () => {
     <TouchableOpacity
       activeOpacity={0.9}
       className={`mb-5 rounded-3xl overflow-hidden ${isDark ? "bg-zinc-900" : "bg-white"} shadow-sm`}
-      onPress={() => console.log("Navigate to details", item.id)}
+      onPress={() => ToastAndroid.show("Coming Soon...", ToastAndroid.SHORT)}
     >
       {/* Image Section */}
       <View className="relative h-48 w-full">
@@ -200,7 +201,7 @@ const Devotions = () => {
           <Text
             className={`text-4xl font-extrabold ${isDark ? "text-white" : "text-black"}`}
           >
-            Discover
+            Devotions
           </Text>
         </View>
 
@@ -213,6 +214,7 @@ const Devotions = () => {
           >
             {CATEGORIES.map((cat) => (
               <TouchableOpacity
+                activeOpacity={0.8}
                 key={cat.value}
                 onPress={() => setSelectedCat(cat.value)}
                 className={`mr-3 px-4 py-2.5 rounded-2xl flex-row items-center ${
