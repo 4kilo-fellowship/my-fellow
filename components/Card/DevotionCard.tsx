@@ -34,8 +34,6 @@ function DevotionCard({ item, isDark }: DevotionCardProps) {
     if (Platform.OS === "android") {
       ToastAndroid.show("Coming Soon...", ToastAndroid.SHORT);
     } else {
-      // For iOS, you could use a simple alert or a third-party solution
-      // For now, we'll just log it (iOS doesn't have native toast)
       console.log("Coming Soon");
     }
   };
@@ -128,7 +126,6 @@ function DevotionCard({ item, isDark }: DevotionCardProps) {
   );
 }
 
-// --- Infinite Horizontal Scroll Implementation ---
 type DevotionListProps = {
   data: DevotionItem[];
   isDark: boolean;
@@ -137,7 +134,6 @@ type DevotionListProps = {
 export function DevotionList({ data, isDark }: DevotionListProps) {
   const flatListRef = useRef<FlatList>(null);
 
-  // Duplicate data for "infinite" feeling
   const infiniteData = [...data, ...data, ...data];
 
   const onScrollEnd = (event: any) => {
@@ -145,7 +141,6 @@ export function DevotionList({ data, isDark }: DevotionListProps) {
     const contentWidth = event.nativeEvent.contentSize.width;
     const layoutWidth = event.nativeEvent.layoutMeasurement.width;
 
-    // If we scroll to near the end, reset to middle
     if (contentOffsetX + layoutWidth >= contentWidth - CARD_WIDTH) {
       flatListRef.current?.scrollToOffset({
         offset: contentWidth / 3,

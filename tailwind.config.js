@@ -1,12 +1,3 @@
-// /** @type {import('tailwindcss').Config} */
-// module.exports = {
-//   content: [],
-//   theme: {
-//     extend: {},
-//   },
-//   plugins: [],
-// }
-
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   // NOTE: Update this to include the paths to all files that contain Nativewind classes.
@@ -16,6 +7,8 @@ module.exports = {
     extend: {
       colors: {
         primary: "#ff6719",
+        background: "#fff",
+        dark: "#1A1A1B",
       },
     },
   },

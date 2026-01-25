@@ -16,6 +16,7 @@ import {
   Animated,
   Dimensions,
   Image,
+  Linking,
   RefreshControl,
   ScrollView,
   Text,
@@ -64,7 +65,7 @@ const Home = () => {
   return (
     <View className="flex-1">
       <View
-        className={`${isDark ? "bg-[#1A1A1B]" : "bg-white"} absolute inset-0`}
+        className={`${isDark ? "bg-dark" : "bg-background"} absolute inset-0`}
       />
 
       <View className="flex-1" style={{ paddingTop: top * 0.95 }}>
@@ -265,6 +266,16 @@ const Home = () => {
                       router.push("/locations");
                     } else if (action.id === "3") {
                       router.push("/leaders");
+                    } else if (action.id === "4") {
+                      router.push("/teams");
+                    } else if (action.id === "5") {
+                      Linking.openURL("https://instagram.com/4kilo_fellowship");
+                    } else if (action.id === "6") {
+                      Linking.openURL("https://t.me/4kilo_fellow");
+                    } else if (action.id === "7") {
+                      Linking.openURL("https:://tiktok.com/4kilo_fellowship");
+                    } else if (action.id === "8") {
+                      router.push("/gifts");
                     }
                   }}
                 />

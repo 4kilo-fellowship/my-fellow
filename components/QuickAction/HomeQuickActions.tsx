@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -27,11 +28,15 @@ const QuickAction = ({ item, isDark = false, onPress }: QuickActionProps) => {
           { backgroundColor: isDark ? "#262626" : "#f1f5f9" },
         ]}
       >
-        <Ionicons
-          name={item.icon}
-          size={40}
-          color={isDark ? "white" : "#121212"}
-        />
+        {item.id === "5" || item.id === "6" || item.id === "7" ? (
+          <FontAwesome5 name={item.icon} size={40} color="black" />
+        ) : (
+          <Ionicons
+            name={item.icon}
+            size={40}
+            color={isDark ? "white" : "#121212"}
+          />
+        )}
       </View>
       <Text style={[styles.label, { color: isDark ? "#cbd5e1" : "#475569" }]}>
         {item.label}
