@@ -6,7 +6,6 @@ import { usePaymentStore } from "@/stores/payment.store";
 import { useUserStore } from "@/stores/user.store";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LinearGradient } from "expo-linear-gradient";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -35,7 +34,7 @@ const donationSchema = z.object({
 
 type DonationForm = z.infer<typeof donationSchema>;
 
-const PRESET_AMOUNTS = [50, 100, 200, 500, 1000, 10000];
+const PRESET_AMOUNTS = [50, 500, 1000];
 
 const Gifts = () => {
   const { theme } = useTheme();
@@ -57,8 +56,8 @@ const Gifts = () => {
     resolver: zodResolver(donationSchema),
     defaultValues: {
       amount: 0,
-      email: user?.email || "",
-      phoneNumber: user?.phoneNumber || "",
+      email: (user as any)?.email ?? "",
+      phoneNumber: user?.phoneNumber ?? "",
     },
   });
 
@@ -129,7 +128,6 @@ const Gifts = () => {
       };
 
       const response = await api.post("/payments/chapa/init", payload);
-      // Robust check for checkout_url in both root and nested data object
       const checkout_url =
         response.data.checkout_url || response.data.data?.checkout_url;
       const tx_ref = response.data.tx_ref || response.data.data?.tx_ref;
@@ -159,12 +157,9 @@ const Gifts = () => {
     <View className={`flex-1 ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: top + 10, paddingBottom: 100 }}
-      >
-        {/* HEADER */}
-        <View className="px-5 mb-6">
+      <View style={{ paddingTop: top + 10 }}>
+        {/* HEADER (Sticky outside ScrollView) */}
+        <View className="px-5 mb-4">
           <Text
             className={`text-4xl font-extrabold ${isDark ? "text-white" : "text-black"}`}
           >
@@ -172,250 +167,250 @@ const Gifts = () => {
           </Text>
         </View>
 
-        {/* SPIRUTAL HEADER SECTION */}
-        <View className="px-5 mb-8">
-          <LinearGradient
-            colors={isDark ? ["#2d2d2d", "#1a1a1b"] : ["#fff8f0", "#fff"]}
-            className="p-8 rounded-[40px] items-center overflow-hidden border border-primary/10 shadow-xl"
-          >
-            <View className="bg-primary/10 p-5 rounded-full mb-6">
-              <Ionicons name="sunny" size={80} color="#ff6719" />
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 160 }}
+        >
+          {/* SPIRITUAL HEADER SECTION (Refined) */}
+          <View className="px-5 mb-10 pt-4 items-center">
+            <View className="flex-row items-center justify-center">
+              <Ionicons
+                name="hand-left-outline"
+                size={80}
+                color={isDark ? "#a1a1aa" : "#71717a"}
+                style={{ marginRight: -10 }}
+              />
+              <Ionicons
+                name="hand-right-outline"
+                size={80}
+                color={isDark ? "#a1a1aa" : "#71717a"}
+                style={{ marginLeft: -10 }}
+              />
             </View>
+            <View className="h-4" />
             <Text
-              className={`text-xl font-bold mb-4 ${isDark ? "text-primary" : "text-primary"}`}
-            >
-              Pledge — Give to God
-            </Text>
-            <Text
-              className={`text-center leading-7 font-medium px-2 ${isDark ? "text-zinc-300 italic" : "text-zinc-600 italic"}`}
+              className={`text-center leading-8 text-[17px] font-medium px-4 tracking-wide ${isDark ? "text-zinc-400 italic" : "text-zinc-600 italic"}`}
             >
               “እግዚአብሔር በደስታ የሚሰጠውን ይወዳልና እያንዳንዱ በልቡ እንዳሰበ ይስጥ፥ በኀዘን ወይም በግድ
               አይደለም።”
             </Text>
-            <View className="h-[2px] w-20 bg-primary/20 my-4 rounded-full" />
-            <Text className="text-zinc-400 font-bold text-xs">
+            <View className="h-[2px] w-12 bg-zinc-200 dark:bg-zinc-800 my-6 rounded-full" />
+            <Text className="text-zinc-400 font-bold text-xs tracking-widest uppercase">
               2ኛ ቆሮንቶስ 9፥7
             </Text>
-          </LinearGradient>
-        </View>
+          </View>
 
-        {/* DONATION SECTION (Eye-catching UI, Moved Up) */}
-        <View className="px-5 mb-10">
-          <View
-            className={`p-8 rounded-[32px] shadow-2xl ${
-              isDark ? "bg-[#262626]" : "bg-white border border-zinc-50"
-            }`}
-          >
-            <View className="flex-row items-center mb-6">
-              <View className="bg-primary/10 p-3 rounded-2xl mr-4">
-                <Ionicons name="heart" size={24} color="#ff6719" />
-              </View>
-              <Text
-                className={`text-2xl font-black ${isDark ? "text-white" : "text-zinc-900"}`}
-              >
-                Support Mission
-              </Text>
-            </View>
-
-            {/* Preset Amounts */}
-            <View className="flex-row flex-wrap gap-3 mb-8">
-              {PRESET_AMOUNTS.map((amt) => (
-                <TouchableOpacity
-                  key={amt}
-                  onPress={() => setValue("amount", amt)}
-                  className={`px-5 py-3 rounded-2xl border-2 transition-all ${
-                    selectedAmount === amt
-                      ? "bg-primary border-primary scale-105"
-                      : isDark
-                        ? "bg-zinc-800 border-zinc-700"
-                        : "bg-zinc-50 border-zinc-100"
-                  }`}
+          {/* DONATION SECTION */}
+          <View className="px-5 mb-12">
+            <View
+              className={`p-8 rounded-[40px] shadow-2xl ${
+                isDark ? "bg-[#262626]" : "bg-white border border-zinc-50"
+              }`}
+            >
+              <View className="mb-6">
+                <Text
+                  className={`text-2xl font-black ${isDark ? "text-white" : "text-zinc-900"}`}
                 >
-                  <Text
-                    className={`font-black text-base ${
+                  Support Mission
+                </Text>
+              </View>
+
+              {/* Preset Amounts */}
+              <View className="flex-row flex-wrap gap-3 mb-10">
+                {PRESET_AMOUNTS.map((amt) => (
+                  <TouchableOpacity
+                    key={amt}
+                    onPress={() => setValue("amount", amt)}
+                    className={`px-4 py-3.5 rounded-2xl border-2 ${
                       selectedAmount === amt
-                        ? "text-white"
+                        ? "bg-primary border-primary"
                         : isDark
-                          ? "text-zinc-400"
-                          : "text-zinc-600"
+                          ? "bg-zinc-800 border-zinc-700"
+                          : "bg-zinc-50 border-zinc-100"
                     }`}
                   >
-                    {amt} ETB
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                    <Text
+                      className={`font-black text-base ${
+                        selectedAmount === amt
+                          ? "text-white"
+                          : isDark
+                            ? "text-zinc-400"
+                            : "text-zinc-600"
+                      }`}
+                    >
+                      {amt} ETB
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
 
-            {/* Form Fields Improvements */}
-            <View className="gap-6">
-              <View>
-                <Text
-                  className={`text-[10px] font-black uppercase tracking-widest mb-3 ml-1 ${
-                    isDark ? "text-primary" : "text-primary"
-                  }`}
-                >
-                  Amount to Give (ETB)
-                </Text>
-                <Controller
-                  control={control}
-                  name="amount"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <View className="relative">
+              {/* Form Fields */}
+              <View className="gap-8">
+                <View>
+                  <Text
+                    className={`text-[11px] font-black uppercase tracking-widest mb-3 ml-1 ${
+                      isDark ? "text-primary" : "text-primary"
+                    }`}
+                  >
+                    Amount to Give (ETB)
+                  </Text>
+                  <Controller
+                    control={control}
+                    name="amount"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <View className="relative">
+                        <TextInput
+                          className={`px-6 py-5 rounded-[24px] border-2 text-2xl font-black ${
+                            isDark
+                              ? "bg-zinc-800 border-zinc-700 text-white"
+                              : "bg-zinc-50 border-zinc-100 text-black"
+                          } ${errors.amount ? "border-red-500" : ""}`}
+                          placeholder="0.00"
+                          placeholderTextColor={isDark ? "#52525b" : "#a1a1aa"}
+                          keyboardType="numeric"
+                          onBlur={onBlur}
+                          onChangeText={(text) => {
+                            const num = parseFloat(text);
+                            onChange(isNaN(num) ? 0 : num);
+                          }}
+                          value={value === 0 ? "" : value.toString()}
+                        />
+                        <View className="absolute right-6 top-5">
+                          <Ionicons
+                            name="cash-outline"
+                            size={28}
+                            color="#ff6719"
+                          />
+                        </View>
+                      </View>
+                    )}
+                  />
+                  {errors.amount && (
+                    <Text className="text-red-500 text-xs mt-2 ml-2 font-bold">
+                      {errors.amount.message}
+                    </Text>
+                  )}
+                </View>
+
+                <View>
+                  <Text
+                    className={`text-[11px] font-black uppercase tracking-widest mb-3 ml-1 ${
+                      isDark ? "text-zinc-500" : "text-zinc-400"
+                    }`}
+                  >
+                    Confirmation Email
+                  </Text>
+                  <Controller
+                    control={control}
+                    name="email"
+                    render={({ field: { onChange, onBlur, value } }) => (
                       <TextInput
-                        className={`px-6 py-4 rounded-3xl border-2 text-2xl font-black ${
+                        className={`px-6 py-5 rounded-[24px] border-2 font-bold ${
                           isDark
                             ? "bg-zinc-800 border-zinc-700 text-white"
                             : "bg-zinc-50 border-zinc-100 text-black"
-                        } ${errors.amount ? "border-red-500" : ""}`}
-                        placeholder="0.00"
+                        } ${errors.email ? "border-red-500" : ""}`}
+                        placeholder="email@example.com"
                         placeholderTextColor={isDark ? "#52525b" : "#a1a1aa"}
-                        keyboardType="numeric"
+                        keyboardType="email-address"
+                        autoCapitalize="none"
                         onBlur={onBlur}
-                        onChangeText={(text) => {
-                          const num = parseFloat(text);
-                          onChange(isNaN(num) ? 0 : num);
-                        }}
-                        value={value === 0 ? "" : value.toString()}
+                        onChangeText={onChange}
+                        value={value}
                       />
-                      <View className="absolute right-6 top-4">
-                        <Ionicons
-                          name="cash-outline"
-                          size={24}
-                          color="#ff6719"
-                        />
-                      </View>
-                    </View>
+                    )}
+                  />
+                  {errors.email && (
+                    <Text className="text-red-500 text-xs mt-2 ml-2 font-bold">
+                      {errors.email.message}
+                    </Text>
                   )}
-                />
-                {errors.amount && (
-                  <Text className="text-red-500 text-xs mt-2 ml-2 font-bold">
-                    {errors.amount.message}
+                </View>
+
+                <View>
+                  <Text
+                    className={`text-[11px] font-black uppercase tracking-widest mb-3 ml-1 ${
+                      isDark ? "text-zinc-500" : "text-zinc-400"
+                    }`}
+                  >
+                    Phone Number
                   </Text>
-                )}
+                  <Controller
+                    control={control}
+                    name="phoneNumber"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <TextInput
+                        className={`px-6 py-5 rounded-[24px] border-2 font-bold ${
+                          isDark
+                            ? "bg-zinc-800 border-zinc-700 text-white"
+                            : "bg-zinc-50 border-zinc-100 text-black"
+                        } ${errors.phoneNumber ? "border-red-500" : ""}`}
+                        placeholder="09..."
+                        placeholderTextColor={isDark ? "#52525b" : "#a1a1aa"}
+                        keyboardType="phone-pad"
+                        onBlur={onBlur}
+                        onChangeText={onChange}
+                        value={value}
+                      />
+                    )}
+                  />
+                  {errors.phoneNumber && (
+                    <Text className="text-red-500 text-xs mt-2 ml-2 font-bold">
+                      {errors.phoneNumber.message}
+                    </Text>
+                  )}
+                </View>
               </View>
 
-              <View>
-                <Text
-                  className={`text-[10px] font-black uppercase tracking-widest mb-3 ml-1 ${
-                    isDark ? "text-zinc-500" : "text-zinc-400"
-                  }`}
-                >
-                  Confirmation Email
-                </Text>
-                <Controller
-                  control={control}
-                  name="email"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <TextInput
-                      className={`px-6 py-4 rounded-3xl border-2 font-bold ${
-                        isDark
-                          ? "bg-zinc-800 border-zinc-700 text-white"
-                          : "bg-zinc-50 border-zinc-100 text-black"
-                      } ${errors.email ? "border-red-500" : ""}`}
-                      placeholder="email@example.com"
-                      placeholderTextColor={isDark ? "#52525b" : "#a1a1aa"}
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      onBlur={onBlur}
-                      onChangeText={onChange}
-                      value={value}
+              <TouchableOpacity
+                onPress={handleSubmit((data) => handleInitializePayment(data))}
+                disabled={loading}
+                activeOpacity={0.9}
+                className={`mt-12 py-5 rounded-[24px] flex-row items-center justify-center shadow-xl ${
+                  loading ? "bg-zinc-400" : "bg-primary shadow-primary/40"
+                }`}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <>
+                    <Text className="text-white font-black text-xl mr-3">
+                      Donate {selectedAmount || 0} ETB
+                    </Text>
+                    <Ionicons
+                      name="arrow-forward-circle"
+                      size={28}
+                      color="#fff"
                     />
-                  )}
-                />
-                {errors.email && (
-                  <Text className="text-red-500 text-xs mt-2 ml-2 font-bold">
-                    {errors.email.message}
-                  </Text>
+                  </>
                 )}
-              </View>
+              </TouchableOpacity>
+            </View>
+          </View>
 
-              <View>
-                <Text
-                  className={`text-[10px] font-black uppercase tracking-widest mb-3 ml-1 ${
-                    isDark ? "text-zinc-500" : "text-zinc-400"
-                  }`}
-                >
-                  Phone Number
-                </Text>
-                <Controller
-                  control={control}
-                  name="phoneNumber"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <TextInput
-                      className={`px-6 py-4 rounded-3xl border-2 font-bold ${
-                        isDark
-                          ? "bg-zinc-800 border-zinc-700 text-white"
-                          : "bg-zinc-50 border-zinc-100 text-black"
-                      } ${errors.phoneNumber ? "border-red-500" : ""}`}
-                      placeholder="09..."
-                      placeholderTextColor={isDark ? "#52525b" : "#a1a1aa"}
-                      keyboardType="phone-pad"
-                      onBlur={onBlur}
-                      onChangeText={onChange}
-                      value={value}
-                    />
-                  )}
-                />
-                {errors.phoneNumber && (
-                  <Text className="text-red-500 text-xs mt-2 ml-2 font-bold">
-                    {errors.phoneNumber.message}
-                  </Text>
-                )}
-              </View>
+          {/* FELLOWSHIP STORE SECTION */}
+          <View className="mb-12">
+            <View className="px-5 mb-6">
+              <Text
+                className={`text-2xl font-black ${isDark ? "text-white" : "text-zinc-900"}`}
+              >
+                Fellowship Store
+              </Text>
             </View>
 
-            <TouchableOpacity
-              onPress={handleSubmit(handleInitializePayment)}
-              disabled={loading}
-              activeOpacity={0.9}
-              className={`mt-10 py-5 rounded-3xl flex-row items-center justify-center shadow-xl ${
-                loading ? "bg-zinc-400" : "bg-primary shadow-primary/40"
-              }`}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
-                  <Text className="text-white font-black text-xl mr-3">
-                    Donate {selectedAmount || 0} ETB
-                  </Text>
-                  <Ionicons
-                    name="arrow-forward-circle"
-                    size={28}
-                    color="#fff"
-                  />
-                </>
+            <FlatList
+              data={GIFT_ITEMS}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={{ paddingHorizontal: 20 }}
+              renderItem={({ item }) => (
+                <GiftCard item={item} isDark={isDark} onPress={() => {}} />
               )}
-            </TouchableOpacity>
+            />
           </View>
-        </View>
-
-        {/* FELLOWSHIP STORE SECTION (Moved Down, Larger Cards) */}
-        <View className="mb-12">
-          <View className="px-5 mb-6 flex-row justify-between items-center">
-            <Text
-              className={`text-2xl font-black ${isDark ? "text-white" : "text-zinc-900"}`}
-            >
-              Fellowship Store
-            </Text>
-          </View>
-
-          <FlatList
-            data={GIFT_ITEMS}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={{ paddingHorizontal: 20 }}
-            renderItem={({ item }) => (
-              <GiftCard
-                item={item}
-                isDark={isDark}
-                onPress={() => {}} // Still "Coming Soon" toast
-              />
-            )}
-          />
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </View>
   );
 };

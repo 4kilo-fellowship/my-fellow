@@ -8,6 +8,7 @@ export type AuthState = {
 export type User = {
   id: string;
   fullName: string;
+  email?: string;
   phoneNumber: string;
   team?: string | null;
   department?: string | null;
