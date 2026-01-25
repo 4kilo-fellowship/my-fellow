@@ -29,8 +29,8 @@ const QuickActions = () => {
       <View className="flex-row justify-between px-5 mb-6">
         <TouchableOpacity
           onPress={() => router.push("/leaders")}
-          activeOpacity={0.9}
-          className={`flex-1 mr-2 h-14 rounded-xl flex-row items-center justify-center ${
+          activeOpacity={0.7}
+          className={`flex-1 mr-2 h-16 rounded-xl flex-row items-center justify-center ${
             isDark ? "bg-zinc-800" : "bg-zinc-100"
           }`}
         >
@@ -47,11 +47,11 @@ const QuickActions = () => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          className={`flex-1 ml-2 h-14 rounded-xl flex-row items-center justify-center ${
+          className={`flex-1 ml-2 h-16 rounded-xl flex-row items-center justify-center ${
             isDark ? "bg-zinc-800" : "bg-zinc-100"
           }`}
           onPress={() => setModalVisible(true)}
-          activeOpacity={0.9}
+          activeOpacity={0.7}
         >
           <Ionicons
             name="chatbubble"
@@ -77,7 +77,7 @@ const QuickActions = () => {
           <TouchableOpacity
             activeOpacity={1}
             onPress={() => setModalVisible(false)}
-            className="flex-1 justify-center items-center px-6 cursor-auto"
+            className="flex-1 justify-center items-center px-6"
           >
             <TouchableOpacity
               activeOpacity={1}
@@ -111,8 +111,11 @@ const QuickActions = () => {
 
               <View className="space-y-4">
                 <TouchableOpacity
-                  onPress={() => openLink("tel:+251911234567")}
-                  activeOpacity={0.6}
+                  onPress={() => {
+                    openLink("tel:+251911234567");
+                    setModalVisible(false);
+                  }}
+                  activeOpacity={0.7}
                   className={`flex-row items-center p-4 mb-4 rounded-2xl ${
                     isDark ? "bg-zinc-800" : "bg-zinc-50"
                   }`}
@@ -146,7 +149,11 @@ const QuickActions = () => {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  onPress={() => openLink("https://t.me/myfellow_bot")}
+                  onPress={() => {
+                    openLink("https://t.me/myfellow_bot");
+                    setModalVisible(false);
+                  }}
+                  activeOpacity={0.7}
                   className={`flex-row items-center p-4 mb-4 rounded-2xl ${
                     isDark ? "bg-zinc-800" : "bg-zinc-50"
                   }`}
