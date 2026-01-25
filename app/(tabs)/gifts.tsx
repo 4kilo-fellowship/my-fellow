@@ -199,13 +199,9 @@ const Gifts = () => {
             </Text>
           </View>
 
-          {/* DONATION SECTION */}
+          {/* DONATION SECTION (Flattened) */}
           <View className="px-5 mb-12">
-            <View
-              className={`p-8 rounded-[40px] shadow-2xl ${
-                isDark ? "bg-[#262626]" : "bg-white border border-zinc-50"
-              }`}
-            >
+            <View>
               <View className="mb-6">
                 <Text
                   className={`text-2xl font-black ${isDark ? "text-white" : "text-zinc-900"}`}
@@ -368,7 +364,10 @@ const Gifts = () => {
               horizontal
               showsHorizontalScrollIndicator={false}
               keyExtractor={(item) => item.id}
-              contentContainerStyle={{ paddingHorizontal: 20 }}
+              contentContainerStyle={{
+                paddingHorizontal: 20,
+                paddingVertical: 16,
+              }}
               renderItem={({ item }) => (
                 <GiftCard item={item} isDark={isDark} onPress={() => {}} />
               )}

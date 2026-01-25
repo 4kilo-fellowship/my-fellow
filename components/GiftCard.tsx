@@ -33,12 +33,14 @@ const GiftCard = ({ item, onPress, isDark }: GiftCardProps) => {
           <Text style={styles.badgeText}>NEW</Text>
         </View>
       )}
-      <Image
-        source={{ uri: item.image }}
-        style={styles.image}
-        contentFit="cover"
-        transition={1000}
-      />
+      <View style={styles.imageContainer}>
+        <Image
+          source={{ uri: item.image }}
+          style={styles.image}
+          contentFit="cover"
+          transition={500}
+        />
+      </View>
       <View style={styles.content}>
         <Text
           numberOfLines={1}
@@ -65,18 +67,21 @@ const styles = StyleSheet.create({
     width: 240,
     borderRadius: 24,
     marginRight: 18,
-    overflow: "hidden",
-    elevation: 8,
+    // Removed overflow: hidden here to prevent shadow clipping
+    elevation: 6,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    borderWidth: 1,
   },
   cardLight: {
     backgroundColor: "#fff",
+    borderColor: "#f4f4f5", // zinc-100 equivalent for a subtle edge
   },
   cardDark: {
     backgroundColor: "#262626",
+    borderColor: "#3f3f46", // zinc-700 equivalent
   },
   badge: {
     position: "absolute",
@@ -84,19 +89,24 @@ const styles = StyleSheet.create({
     left: 12,
     backgroundColor: "#ff6719",
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderRadius: 8,
     zIndex: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowRadius: 3,
   },
   badgeText: {
     color: "#fff",
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "900",
     letterSpacing: 1,
+  },
+  imageContainer: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: "hidden", // Only hide overflow on the top part to allow shadows on bottom
   },
   image: {
     width: "100%",
@@ -107,19 +117,20 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: "800",
     marginBottom: 6,
+    letterSpacing: -0.5,
   },
   textLight: {
-    color: "#1a1a1a",
+    color: "#18181b",
   },
   textDark: {
-    color: "#f0f0f0",
+    color: "#fafafa",
   },
   price: {
     fontSize: 16,
     color: "#ff6719",
-    fontWeight: "800",
+    fontWeight: "900",
     marginBottom: 16,
   },
   buyButton: {
@@ -127,13 +138,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingVertical: 12,
+    borderRadius: 14,
     gap: 8,
+    elevation: 2,
   },
   buyButtonText: {
     color: "#fff",
-    fontWeight: "700",
+    fontWeight: "800",
     fontSize: 15,
   },
 });
