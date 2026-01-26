@@ -231,43 +231,6 @@ const Gifts = () => {
           {/* gifts section */}
           <View className="px-5 mb-12">
             <View>
-              <View className="mb-6">
-                <Text
-                  className={`text-2xl font-black ${isDark ? "text-white" : "text-zinc-900"}`}
-                >
-                  Support Mission
-                </Text>
-              </View>
-
-              {/* Preset Amounts */}
-              <View className="flex-row flex-wrap gap-3 mb-10">
-                {PRESET_AMOUNTS.map((amt) => (
-                  <TouchableOpacity
-                    key={amt}
-                    onPress={() => setValue("amount", amt)}
-                    className={`px-4 py-3.5 rounded-2xl border-2 ${
-                      selectedAmount === amt
-                        ? "bg-primary border-primary"
-                        : isDark
-                          ? "bg-zinc-800 border-zinc-700"
-                          : "bg-zinc-50 border-zinc-100"
-                    }`}
-                  >
-                    <Text
-                      className={`font-black text-base ${
-                        selectedAmount === amt
-                          ? "text-white"
-                          : isDark
-                            ? "text-zinc-400"
-                            : "text-zinc-600"
-                      }`}
-                    >
-                      {amt} ETB
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
               {/* Form Fields */}
               <View className="gap-8">
                 <View>
