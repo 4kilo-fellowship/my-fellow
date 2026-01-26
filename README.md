@@ -1,50 +1,21 @@
-# Welcome to your Expo app 👋
+# My-Fellow
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**My-Fellow** is a fellowship application built for the **AAU 4-Killo Evangelical Christian Students Fellowship (ECSF)**. It provides a centralized platform where students and leaders can access fellowship information, announcements, events, devotionals, and participation tools in one place.
 
-## Get started
+![App Mockup](assets/mock.png)
 
-1. Install dependencies
+## Overview
 
-   ```bash
-   npm install
-   ```
+The app replaces scattered communication channels by offering real-time updates, clear event information, and structured fellowship resources. Members can stay informed, grow spiritually, and participate consistently, while leaders can communicate more effectively with the community.
 
-2. Start the app
+## Features
 
-   ```bash
-   npx expo start
-   ```
+My-Fellow includes fellowship and team information with meeting locations, real-time announcements, upcoming events with easy sharing and registration, daily devotionals, and digital giving through **Chapa payment integration** supporting banks and mobile wallets. The app also supports event posting, sharing, reminder notifications, and simple onboarding for new members.
 
-In the output, you'll find options to open the app in a
+## Contributing
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+This project is open source and community-driven. Contributors can fork the repository, create a feature branch, make improvements, and submit a pull request. Contributions should align with the fellowship’s mission and community values.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## License
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+MIT License
