@@ -80,7 +80,7 @@ const Home = () => {
             source={require("@/assets/images/logo-primary.png")}
             className="w-64 h-20"
             resizeMode="contain"
-            style={{ transform: [{ scale: 2 }, { translateX: -13 }] }}
+            style={{ transform: [{ scale: 2.1 }, { translateX: -13 }] }}
           />
 
           <TouchableOpacity onPress={toggleTheme} activeOpacity={0.9}>
