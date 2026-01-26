@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-// --- Types ---
 export type DevotionType = "text" | "voice" | "pdf" | "book";
 
 export type Devotion = {
@@ -25,10 +24,9 @@ export type Devotion = {
   likes: string;
   image: string;
   type: DevotionType;
-  duration?: string; // For voice
+  duration?: string;
 };
 
-// --- Dummy Data ---
 export const DEVOTIONS: Devotion[] = [
   {
     id: "1",
