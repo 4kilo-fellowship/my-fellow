@@ -62,7 +62,6 @@ const Gifts = () => {
 
   const selectedAmount = watch("amount");
 
-  // Sync form with user data when it loads
   useEffect(() => {
     const loadSavedEmail = async () => {
       const savedEmail = await AsyncStorage.getItem("last_donation_email");
@@ -183,11 +182,11 @@ const Gifts = () => {
   if (!user) return null;
 
   return (
-    <View className={`flex-1 ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}>
+    <View className={`flex-1 ${isDark ? "bg-dark" : "bg-background"}`}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
       <View style={{ paddingTop: top + 10 }}>
-        {/* HEADER (Sticky outside ScrollView) */}
+        {/* header section */}
         <View className="px-5 mb-4">
           <Text
             className={`text-4xl font-extrabold ${isDark ? "text-white" : "text-black"}`}
@@ -198,9 +197,9 @@ const Gifts = () => {
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 160 }}
+          contentContainerStyle={{ paddingBottom: 140 }}
         >
-          {/* SPIRITUAL HEADER SECTION (Refined) */}
+          {/* donation header section */}
           <View className="px-5 mb-10 pt-4 items-center">
             <View className="flex-row items-center justify-center">
               <Ionicons
@@ -224,12 +223,12 @@ const Gifts = () => {
               አይደለም።”
             </Text>
             <View className="h-[2px] w-12 bg-zinc-200 dark:bg-zinc-800 my-6 rounded-full" />
-            <Text className="text-zinc-400 font-bold text-xs tracking-widest uppercase">
+            <Text className="text-zinc-400 font-bold text-xs tracking-widest">
               2ኛ ቆሮንቶስ 9፥7
             </Text>
           </View>
 
-          {/* DONATION SECTION (Flattened) */}
+          {/* gifts section */}
           <View className="px-5 mb-12">
             <View>
               <View className="mb-6">
