@@ -4,6 +4,7 @@ import { useTheme } from "@/context/ThemeContext";
 import api from "@/services/api";
 import { usePaymentStore } from "@/stores/payment.store";
 import { useUserStore } from "@/stores/user.store";
+import { donationSchema } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -27,14 +28,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import * as z from "zod";
 
-const donationSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  amount: z.number().min(1, "Amount must be greater than 0"),
-});
-
 type DonationForm = z.infer<typeof donationSchema>;
-
-const PRESET_AMOUNTS = [50, 500, 1000];
 
 const Gifts = () => {
   const { theme } = useTheme();
@@ -183,7 +177,10 @@ const Gifts = () => {
 
   return (
     <View className={`flex-1 ${isDark ? "bg-dark" : "bg-background"}`}>
-      <StatusBar style={isDark ? "light" : "dark"} />
+      <StatusBar
+        style={isDark ? "light" : "dark"}
+        backgroundColor={isDark ? "#1A1A1B" : "#fff"}
+      />
 
       <View style={{ paddingTop: top + 10 }}>
         {/* header section */}
@@ -236,7 +233,7 @@ const Gifts = () => {
                 <View>
                   <Text
                     className={`text-[11px] font-black uppercase tracking-widest mb-3 ml-1 ${
-                      isDark ? "text-primary" : "text-primary"
+                      isDark ? "text-zinc-500" : "text-zinc-400"
                     }`}
                   >
                     Amount to Give (ETB)
@@ -252,7 +249,7 @@ const Gifts = () => {
                               ? "bg-zinc-800 border-zinc-700 text-white"
                               : "bg-zinc-50 border-zinc-100 text-black"
                           } ${errors.amount ? "border-red-500" : ""}`}
-                          placeholder="0.00"
+                          placeholder="0.00 Birr"
                           placeholderTextColor={isDark ? "#52525b" : "#a1a1aa"}
                           keyboardType="numeric"
                           onBlur={onBlur}
@@ -297,7 +294,7 @@ const Gifts = () => {
                             ? "bg-zinc-800 border-zinc-700 text-white"
                             : "bg-zinc-50 border-zinc-100 text-black"
                         } ${errors.email ? "border-red-500" : ""}`}
-                        placeholder="email@example.com"
+                        placeholder="natnaletamiru98@gmail.com"
                         placeholderTextColor={isDark ? "#52525b" : "#a1a1aa"}
                         keyboardType="email-address"
                         autoCapitalize="none"
@@ -329,7 +326,7 @@ const Gifts = () => {
                 ) : (
                   <>
                     <Text className="text-white font-black text-xl mr-3">
-                      Donate {selectedAmount || 0} ETB
+                      Give {selectedAmount || 0} ETB
                     </Text>
                     <Ionicons
                       name="arrow-forward-circle"
