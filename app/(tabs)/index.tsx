@@ -269,13 +269,13 @@ const Home = () => {
                     } else if (action.id === "4") {
                       router.push("/teams");
                     } else if (action.id === "5") {
-                      Linking.openURL("https://instagram.com/4kilo_fellowship");
-                    } else if (action.id === "6") {
                       Linking.openURL("https://t.me/4kilo_fellow");
-                    } else if (action.id === "7") {
+                    } else if (action.id === "6") {
                       Linking.openURL("https:://tiktok.com/4kilo_fellowship");
-                    } else if (action.id === "8") {
+                    } else if (action.id === "7") {
                       router.push("/gifts");
+                    } else if (action.id === "8") {
+                      Linking.openURL("https://instagram.com/4kilo_fellowship");
                     }
                   }}
                 />

@@ -28,8 +28,12 @@ const QuickAction = ({ item, isDark = false, onPress }: QuickActionProps) => {
           { backgroundColor: isDark ? "#262626" : "#f1f5f9" },
         ]}
       >
-        {item.id === "5" || item.id === "6" || item.id === "7" ? (
-          <FontAwesome5 name={item.icon} size={40} color="black" />
+        {item.id === "5" || item.id === "6" || item.id === "8" ? (
+          <FontAwesome5
+            name={item.icon}
+            size={40}
+            color={isDark ? "white" : "#121212"}
+          />
         ) : (
           <Ionicons
             name={item.icon}
