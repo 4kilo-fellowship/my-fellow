@@ -2,6 +2,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useUserStore } from "@/stores/user.store";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -10,6 +11,7 @@ import {
   Image,
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Switch,
   Text,
@@ -180,7 +182,11 @@ const UserProfileMenu = () => {
           key={item.id}
           style={[
             styles.divider,
-            { backgroundColor: isDark ? "#2c2c2e" : "#e5e7eb" },
+            {
+              backgroundColor: isDark
+                ? "rgba(255,255,255,0.08)"
+                : "rgba(0,0,0,0.06)",
+            },
           ]}
         />
       );
@@ -191,7 +197,11 @@ const UserProfileMenu = () => {
         key={item.id}
         style={[
           styles.menuItem,
-          { backgroundColor: isDark ? "#1c1c1e" : "#ffffff" },
+          {
+            backgroundColor: isDark
+              ? "rgba(255,255,255,0.05)"
+              : "rgba(0,0,0,0.02)",
+          },
         ]}
         onPress={item.type === "toggle" ? undefined : item.onPress}
         activeOpacity={item.type === "toggle" ? 1 : 0.7}
@@ -202,10 +212,10 @@ const UserProfileMenu = () => {
               styles.iconContainer,
               {
                 backgroundColor: item.danger
-                  ? "rgba(239, 68, 68, 0.12)"
+                  ? "rgba(239, 68, 68, 0.15)"
                   : isDark
-                    ? "#2c2c2e"
-                    : "#f3f4f6",
+                    ? "rgba(255,255,255,0.1)"
+                    : "rgba(0,0,0,0.05)",
               },
             ]}
           >
@@ -239,7 +249,7 @@ const UserProfileMenu = () => {
           <Ionicons
             name="chevron-forward"
             size={20}
-            color={isDark ? "#6b7280" : "#9ca3af"}
+            color={isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.3)"}
           />
         )}
       </TouchableOpacity>
@@ -248,14 +258,18 @@ const UserProfileMenu = () => {
 
   return (
     <>
-      {/* Profile Avatar Button */}
+      {/* Profile Avatar Button - Fully Rounded */}
       <TouchableOpacity onPress={openMenu} activeOpacity={0.8}>
         <View
           style={[
             styles.avatarContainer,
             {
               backgroundColor: isDark ? "#2c2c2e" : "#ffffff",
-              borderColor: isDark ? "#3c3c3e" : "#e5e7eb",
+              borderColor: isAuthenticated
+                ? "#ff6619"
+                : isDark
+                  ? "#3c3c3e"
+                  : "#e5e7eb",
             },
           ]}
         >
@@ -268,7 +282,7 @@ const UserProfileMenu = () => {
           ) : isAuthenticated ? (
             <Ionicons
               name="person"
-              size={24}
+              size={22}
               color={isDark ? "#fff" : "#374151"}
             />
           ) : (
@@ -289,7 +303,7 @@ const UserProfileMenu = () => {
         statusBarTranslucent
         onRequestClose={closeMenu}
       >
-        {/* Backdrop */}
+        {/* Backdrop with blur effect */}
         <Animated.View
           style={[
             styles.backdrop,
@@ -306,182 +320,264 @@ const UserProfileMenu = () => {
           style={[
             styles.sidePanel,
             {
-              backgroundColor: isDark ? "#000000" : "#f9fafb",
-              paddingTop: insets.top,
               transform: [{ translateX: slideAnim }],
             },
           ]}
         >
-          {/* Close Button */}
-          <TouchableOpacity
-            style={[
-              styles.closeButton,
-              { backgroundColor: isDark ? "#1c1c1e" : "#ffffff" },
-            ]}
-            onPress={closeMenu}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="close"
-              size={24}
-              color={isDark ? "#fff" : "#374151"}
-            />
-          </TouchableOpacity>
+          {/* Gradient Background */}
+          <LinearGradient
+            colors={
+              isDark
+                ? ["#0a0a0a", "#1a1a1a", "#0f0f0f"]
+                : ["#ffffff", "#f8fafc", "#f1f5f9"]
+            }
+            style={styles.gradientBg}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          />
 
-          {/* User Profile Section */}
-          <View
-            style={[
-              styles.profileSection,
-              { backgroundColor: isDark ? "#1c1c1e" : "#ffffff" },
-            ]}
-          >
-            <View style={styles.profileImageContainer}>
-              {isAuthenticated && (user?.profileImage || user?.image) ? (
-                <Image
-                  source={{ uri: user.profileImage || user.image || "" }}
-                  style={styles.profileImage}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View
-                  style={[
-                    styles.profileImagePlaceholder,
-                    { backgroundColor: isDark ? "#2c2c2e" : "#e5e7eb" },
-                  ]}
-                >
-                  <Ionicons
-                    name="person"
-                    size={40}
-                    color={isDark ? "#6b7280" : "#9ca3af"}
-                  />
-                </View>
-              )}
-              {isAuthenticated && <View style={styles.onlineBadge} />}
-            </View>
+          {/* Header with Close Button */}
+          <View style={[styles.panelHeader, { paddingTop: insets.top + 12 }]}>
+            <Text
+              style={[
+                styles.panelTitle,
+                { color: isDark ? "#fff" : "#1f2937" },
+              ]}
+            >
+              Profile
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.closeButton,
+                {
+                  backgroundColor: isDark
+                    ? "rgba(255,255,255,0.1)"
+                    : "rgba(0,0,0,0.05)",
+                },
+              ]}
+              onPress={closeMenu}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="close"
+                size={22}
+                color={isDark ? "#fff" : "#374151"}
+              />
+            </TouchableOpacity>
+          </View>
 
-            {isAuthenticated && user ? (
-              <View style={styles.profileInfo}>
-                <Text
-                  style={[
-                    styles.profileName,
-                    { color: isDark ? "#fff" : "#1f2937" },
-                  ]}
+          {/* Scrollable Content */}
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: insets.bottom + 40 },
+            ]}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* User Profile Section */}
+            <View
+              style={[
+                styles.profileSection,
+                {
+                  backgroundColor: isDark
+                    ? "rgba(255,255,255,0.05)"
+                    : "rgba(0,0,0,0.02)",
+                  borderColor: isDark
+                    ? "rgba(255,255,255,0.08)"
+                    : "rgba(0,0,0,0.06)",
+                },
+              ]}
+            >
+              {/* Profile Image - Fully Circular */}
+              <View style={styles.profileImageWrapper}>
+                <LinearGradient
+                  colors={["#ff6619", "#ff8a50", "#ffb380"]}
+                  style={styles.profileImageGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
                 >
-                  {user.fullName || "Fellow Member"}
-                </Text>
-                <Text
-                  style={[
-                    styles.profilePhone,
-                    { color: isDark ? "#9ca3af" : "#6b7280" },
-                  ]}
-                >
-                  {user.phoneNumber}
-                </Text>
-                {user.team && (
                   <View
                     style={[
-                      styles.teamBadge,
-                      { backgroundColor: isDark ? "#2c2c2e" : "#f3f4f6" },
+                      styles.profileImageInner,
+                      { backgroundColor: isDark ? "#0a0a0a" : "#ffffff" },
                     ]}
                   >
-                    <MaterialIcons name="groups" size={14} color="#ff6619" />
-                    <Text
-                      style={[
-                        styles.teamText,
-                        { color: isDark ? "#d1d5db" : "#4b5563" },
-                      ]}
-                    >
-                      {user.team}
-                    </Text>
+                    {isAuthenticated && (user?.profileImage || user?.image) ? (
+                      <Image
+                        source={{
+                          uri: user.profileImage || user.image || "",
+                        }}
+                        style={styles.profileImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Ionicons
+                        name="person"
+                        size={44}
+                        color={isDark ? "#6b7280" : "#9ca3af"}
+                      />
+                    )}
+                  </View>
+                </LinearGradient>
+                {isAuthenticated && (
+                  <View style={styles.onlineBadge}>
+                    <View style={styles.onlineBadgeInner} />
                   </View>
                 )}
               </View>
-            ) : (
-              <View style={styles.profileInfo}>
-                <Text
-                  style={[
-                    styles.profileName,
-                    { color: isDark ? "#fff" : "#1f2937" },
-                  ]}
-                >
-                  Guest User
-                </Text>
-                <Text
-                  style={[
-                    styles.profilePhone,
-                    { color: isDark ? "#9ca3af" : "#6b7280" },
-                  ]}
-                >
-                  Sign in to access all features
-                </Text>
-              </View>
-            )}
-          </View>
 
-          {/* Account Stats - Only for authenticated users */}
-          {isAuthenticated && user && (
-            <View
-              style={[
-                styles.statsContainer,
-                { backgroundColor: isDark ? "#1c1c1e" : "#ffffff" },
-              ]}
-            >
-              <View style={styles.statItem}>
-                <Text
-                  style={[
-                    styles.statValue,
-                    { color: isDark ? "#fff" : "#1f2937" },
-                  ]}
-                >
-                  {user.department || "—"}
-                </Text>
-                <Text
-                  style={[
-                    styles.statLabel,
-                    { color: isDark ? "#9ca3af" : "#6b7280" },
-                  ]}
-                >
-                  Department
-                </Text>
-              </View>
+              {/* User Info */}
+              {isAuthenticated && user ? (
+                <View style={styles.profileInfo}>
+                  <Text
+                    style={[
+                      styles.profileName,
+                      { color: isDark ? "#fff" : "#1f2937" },
+                    ]}
+                  >
+                    {user.fullName || "Fellow Member"}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.profilePhone,
+                      { color: isDark ? "rgba(255,255,255,0.6)" : "#6b7280" },
+                    ]}
+                  >
+                    {user.phoneNumber}
+                  </Text>
+                  {user.team && (
+                    <View
+                      style={[
+                        styles.teamBadge,
+                        {
+                          backgroundColor: isDark
+                            ? "rgba(255,102,25,0.15)"
+                            : "rgba(255,102,25,0.1)",
+                        },
+                      ]}
+                    >
+                      <MaterialIcons name="groups" size={14} color="#ff6619" />
+                      <Text style={styles.teamText}>{user.team}</Text>
+                    </View>
+                  )}
+                </View>
+              ) : (
+                <View style={styles.profileInfo}>
+                  <Text
+                    style={[
+                      styles.profileName,
+                      { color: isDark ? "#fff" : "#1f2937" },
+                    ]}
+                  >
+                    Guest User
+                  </Text>
+                  <Text
+                    style={[
+                      styles.profilePhone,
+                      { color: isDark ? "rgba(255,255,255,0.6)" : "#6b7280" },
+                    ]}
+                  >
+                    Sign in to access all features
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Account Stats - Only for authenticated users */}
+            {isAuthenticated && user && (
               <View
                 style={[
-                  styles.statDivider,
-                  { backgroundColor: isDark ? "#2c2c2e" : "#e5e7eb" },
+                  styles.statsContainer,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(255,255,255,0.05)"
+                      : "rgba(0,0,0,0.02)",
+                    borderColor: isDark
+                      ? "rgba(255,255,255,0.08)"
+                      : "rgba(0,0,0,0.06)",
+                  },
                 ]}
-              />
-              <View style={styles.statItem}>
-                <Text
+              >
+                <View style={styles.statItem}>
+                  <Text
+                    style={[
+                      styles.statValue,
+                      { color: isDark ? "#fff" : "#1f2937" },
+                    ]}
+                  >
+                    {user.department || "—"}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.statLabel,
+                      { color: isDark ? "rgba(255,255,255,0.5)" : "#6b7280" },
+                    ]}
+                  >
+                    Department
+                  </Text>
+                </View>
+                <View
                   style={[
-                    styles.statValue,
-                    { color: isDark ? "#fff" : "#1f2937" },
+                    styles.statDivider,
+                    {
+                      backgroundColor: isDark
+                        ? "rgba(255,255,255,0.1)"
+                        : "rgba(0,0,0,0.08)",
+                    },
                   ]}
-                >
-                  {user.yearOfStudy || "—"}
-                </Text>
-                <Text
-                  style={[
-                    styles.statLabel,
-                    { color: isDark ? "#9ca3af" : "#6b7280" },
-                  ]}
-                >
-                  Year
-                </Text>
+                />
+                <View style={styles.statItem}>
+                  <Text
+                    style={[
+                      styles.statValue,
+                      { color: isDark ? "#fff" : "#1f2937" },
+                    ]}
+                  >
+                    {user.yearOfStudy || "—"}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.statLabel,
+                      { color: isDark ? "rgba(255,255,255,0.5)" : "#6b7280" },
+                    ]}
+                  >
+                    Year
+                  </Text>
+                </View>
               </View>
-            </View>
-          )}
+            )}
 
-          {/* Menu Items */}
-          <View style={styles.menuContainer}>
-            {menuItems.map(renderMenuItem)}
-          </View>
+            {/* Menu Items */}
+            <View style={styles.menuContainer}>
+              <Text
+                style={[
+                  styles.menuSectionTitle,
+                  { color: isDark ? "rgba(255,255,255,0.5)" : "#6b7280" },
+                ]}
+              >
+                PREFERENCES
+              </Text>
+              {menuItems.map(renderMenuItem)}
+            </View>
+          </ScrollView>
 
           {/* Footer */}
-          <View style={styles.footer}>
+          <View
+            style={[
+              styles.footer,
+              {
+                paddingBottom: insets.bottom + 16,
+                borderTopColor: isDark
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(0,0,0,0.06)",
+              },
+            ]}
+          >
             <Text
               style={[
                 styles.footerText,
-                { color: isDark ? "#6b7280" : "#9ca3af" },
+                { color: isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)" },
               ]}
             >
               4 Kilo Fellowship • v1.0.0
@@ -494,154 +590,193 @@ const UserProfileMenu = () => {
 };
 
 const styles = StyleSheet.create({
+  // Avatar Button - Fully Circular
   avatarContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     overflow: "hidden",
     borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
   },
+
+  // Backdrop
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
   },
   backdropPressable: {
     flex: 1,
   },
+
+  // Side Panel
   sidePanel: {
     position: "absolute",
     right: 0,
     top: 0,
     bottom: 0,
-    width: "85%",
-    maxWidth: 360,
-    shadowColor: "#000",
-    shadowOffset: { width: -4, height: 0 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 20,
+    width: "88%",
+    maxWidth: 380,
+    overflow: "hidden",
+  },
+  gradientBg: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
+  // Header
+  panelHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+  },
+  panelTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    letterSpacing: -0.5,
   },
   closeButton: {
-    position: "absolute",
-    top: 50,
-    left: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
+
+  // Scroll View
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+  },
+
+  // Profile Section
   profileSection: {
-    marginTop: 60,
-    marginHorizontal: 16,
-    padding: 20,
-    borderRadius: 20,
+    padding: 24,
+    borderRadius: 24,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    marginBottom: 16,
   },
-  profileImageContainer: {
+  profileImageWrapper: {
     position: "relative",
     marginBottom: 16,
   },
-  profileImage: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    borderWidth: 3,
-    borderColor: "#ff6619",
-  },
-  profileImagePlaceholder: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+  profileImageGradient: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    padding: 3,
     alignItems: "center",
     justifyContent: "center",
   },
+  profileImageInner: {
+    width: 94,
+    height: 94,
+    borderRadius: 47,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  profileImage: {
+    width: 94,
+    height: 94,
+    borderRadius: 47,
+  },
   onlineBadge: {
     position: "absolute",
-    bottom: 4,
-    right: 4,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    bottom: 6,
+    right: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  onlineBadgeInner: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: "#22c55e",
-    borderWidth: 3,
-    borderColor: "#ffffff",
   },
   profileInfo: {
     alignItems: "center",
   },
   profileName: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
     marginBottom: 4,
+    letterSpacing: -0.5,
   },
   profilePhone: {
-    fontSize: 14,
+    fontSize: 15,
     marginBottom: 12,
   },
   teamBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 20,
     gap: 6,
   },
   teamText: {
     fontSize: 13,
-    fontWeight: "500",
+    fontWeight: "600",
+    color: "#ff6619",
   },
+
+  // Stats
   statsContainer: {
     flexDirection: "row",
-    marginHorizontal: 16,
-    marginTop: 12,
-    padding: 16,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    padding: 20,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 16,
   },
   statItem: {
     flex: 1,
     alignItems: "center",
   },
   statValue: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
+    fontWeight: "500",
   },
   statDivider: {
     width: 1,
     height: "100%",
     marginHorizontal: 12,
   },
+
+  // Menu
   menuContainer: {
-    marginTop: 20,
-    marginHorizontal: 16,
-    gap: 4,
+    gap: 8,
+  },
+  menuSectionTitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 1,
+    marginBottom: 12,
+    marginLeft: 4,
   },
   menuItem: {
     flexDirection: "row",
@@ -649,17 +784,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 14,
-    marginBottom: 4,
+    borderRadius: 16,
   },
   menuItemLeft: {
     flexDirection: "row",
     alignItems: "center",
   },
   iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 14,
@@ -671,17 +805,19 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     marginVertical: 8,
-    marginHorizontal: 16,
+    marginHorizontal: 8,
   },
+
+  // Footer
   footer: {
-    position: "absolute",
-    bottom: 30,
-    left: 0,
-    right: 0,
+    paddingTop: 16,
+    paddingHorizontal: 20,
     alignItems: "center",
+    borderTopWidth: 1,
   },
   footerText: {
     fontSize: 12,
+    fontWeight: "500",
   },
 });
 
