@@ -15,6 +15,8 @@ export type User = {
   yearOfStudy?: string | null;
   telegramUserName?: string | null;
   image?: string | null;
+  profileImage?: string | null;
+  createdAt?: string;
   [key: string]: unknown;
 };
 

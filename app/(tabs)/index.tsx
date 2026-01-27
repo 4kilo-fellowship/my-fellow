@@ -2,6 +2,7 @@ import {
   AnnouncementCard,
   DevotionCard,
   QuickAction,
+  UserProfileMenu,
   VideoItem,
 } from "@/components";
 import { DEVOTIONS, PRIMARY, QUICK_ACTIONS, VIDEOS } from "@/constants";
@@ -27,7 +28,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Home = () => {
   const { top } = useSafeAreaInsets();
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const isDark = theme === "dark";
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -83,19 +84,7 @@ const Home = () => {
             style={{ transform: [{ scale: 2.1 }, { translateX: -13 }] }}
           />
 
-          <TouchableOpacity onPress={toggleTheme} activeOpacity={0.9}>
-            <View
-              className={`${
-                isDark ? "bg-gray-900" : "bg-white"
-              } w-9 h-9 rounded-xl flex items-center justify-center`}
-            >
-              <Ionicons
-                name="person"
-                size={24}
-                color={isDark ? "#fff" : "#121212"}
-              />
-            </View>
-          </TouchableOpacity>
+          <UserProfileMenu />
         </View>
 
         <ScrollView
