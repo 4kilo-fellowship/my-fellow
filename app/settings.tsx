@@ -432,9 +432,14 @@ export default function Settings() {
         styles.settingItem,
         { backgroundColor: isDark ? "#1c1c1e" : "#ffffff" },
       ]}
-      onPress={item.type === "toggle" ? undefined : item.onPress}
-      activeOpacity={item.type === "toggle" ? 1 : 0.7}
-      disabled={item.type === "toggle"}
+      onPress={() => {
+        if (item.type === "toggle") {
+          item.onToggle?.(!item.value);
+        } else {
+          item.onPress?.();
+        }
+      }}
+      activeOpacity={0.7}
     >
       <View style={styles.settingItemLeft}>
         <View
@@ -630,7 +635,7 @@ export default function Settings() {
         <View style={styles.footer}>
           <Image
             source={require("@/assets/images/logo-primary.png")}
-            style={styles.footerLogo}
+            style={[styles.footerLogo, { transform: [{ scale: 3.8 }] }]}
             resizeMode="contain"
           />
           <Text
@@ -639,7 +644,8 @@ export default function Settings() {
               { color: isDark ? "#6b7280" : "#9ca3af" },
             ]}
           >
-            Made with ❤️ by 4 Kilo Fellowship
+            Made with <Ionicons name="heart" size={15} color="#ff6719" /> by 4
+            Kilo Fellowship
           </Text>
           <Text
             style={[

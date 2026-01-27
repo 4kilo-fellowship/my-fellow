@@ -203,8 +203,14 @@ const UserProfileMenu = () => {
               : "rgba(0,0,0,0.02)",
           },
         ]}
-        onPress={item.type === "toggle" ? undefined : item.onPress}
-        activeOpacity={item.type === "toggle" ? 1 : 0.7}
+        onPress={() => {
+          if (item.type === "toggle") {
+            item.onToggle?.(!item.value);
+          } else {
+            item.onPress?.();
+          }
+        }}
+        activeOpacity={0.7}
       >
         <View style={styles.menuItemLeft}>
           <View
