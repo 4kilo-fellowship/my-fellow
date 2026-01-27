@@ -414,8 +414,8 @@ const UserProfileMenu = () => {
                     ) : (
                       <Ionicons
                         name="person"
-                        size={44}
-                        color={isDark ? "#6b7280" : "#9ca3af"}
+                        size={48}
+                        color={isDark ? "#334155" : "#cbd5e1"}
                       />
                     )}
                   </View>
@@ -486,64 +486,89 @@ const UserProfileMenu = () => {
 
             {/* Account Stats - Only for authenticated users */}
             {isAuthenticated && user && (
-              <View
-                style={[
-                  styles.statsContainer,
-                  {
-                    backgroundColor: isDark
-                      ? "rgba(255,255,255,0.05)"
-                      : "rgba(0,0,0,0.02)",
-                    borderColor: isDark
-                      ? "rgba(255,255,255,0.08)"
-                      : "rgba(0,0,0,0.06)",
-                  },
-                ]}
-              >
-                <View style={styles.statItem}>
-                  <Text
-                    style={[
-                      styles.statValue,
-                      { color: isDark ? "#fff" : "#1f2937" },
-                    ]}
-                  >
-                    {user.department || "—"}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.statLabel,
-                      { color: isDark ? "rgba(255,255,255,0.5)" : "#6b7280" },
-                    ]}
-                  >
-                    Department
-                  </Text>
-                </View>
+              <View style={styles.statsContainer}>
+                {/* Department Stat */}
                 <View
                   style={[
-                    styles.statDivider,
+                    styles.statItem,
                     {
                       backgroundColor: isDark
-                        ? "rgba(255,255,255,0.1)"
-                        : "rgba(0,0,0,0.08)",
+                        ? "rgba(255,102,25,0.06)"
+                        : "rgba(255,102,25,0.03)",
+                      borderColor: isDark
+                        ? "rgba(255,102,25,0.15)"
+                        : "rgba(255,102,25,0.08)",
                     },
                   ]}
-                />
-                <View style={styles.statItem}>
-                  <Text
-                    style={[
-                      styles.statValue,
-                      { color: isDark ? "#fff" : "#1f2937" },
-                    ]}
-                  >
-                    {user.yearOfStudy || "—"}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.statLabel,
-                      { color: isDark ? "rgba(255,255,255,0.5)" : "#6b7280" },
-                    ]}
-                  >
-                    Year
-                  </Text>
+                >
+                  <View style={styles.statIconContainer}>
+                    <Ionicons name="layers-outline" size={18} color="#ff6619" />
+                  </View>
+                  <View style={styles.statTextContainer}>
+                    <Text
+                      style={[
+                        styles.statLabel,
+                        { color: isDark ? "rgba(255,255,255,0.4)" : "#94a3b8" },
+                      ]}
+                    >
+                      Department
+                    </Text>
+                    <Text
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                      style={[
+                        styles.statValue,
+                        { color: isDark ? "#fff" : "#1e293b" },
+                      ]}
+                    >
+                      {user.department || "Not set"}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Year Stat */}
+                <View
+                  style={[
+                    styles.statItem,
+                    {
+                      backgroundColor: isDark
+                        ? "rgba(255,102,25,0.06)"
+                        : "rgba(255,102,25,0.03)",
+                      borderColor: isDark
+                        ? "rgba(255,102,25,0.15)"
+                        : "rgba(255,102,25,0.08)",
+                    },
+                  ]}
+                >
+                  <View style={styles.statIconContainer}>
+                    <Ionicons
+                      name="calendar-clear-outline"
+                      size={18}
+                      color="#ff6619"
+                    />
+                  </View>
+                  <View style={styles.statTextContainer}>
+                    <Text
+                      style={[
+                        styles.statLabel,
+                        { color: isDark ? "rgba(255,255,255,0.4)" : "#94a3b8" },
+                      ]}
+                    >
+                      Year
+                    </Text>
+                    <Text
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                      style={[
+                        styles.statValue,
+                        { color: isDark ? "#fff" : "#1e293b" },
+                      ]}
+                    >
+                      {user.yearOfStudy || "Not set"}
+                    </Text>
+                  </View>
                 </View>
               </View>
             )}
@@ -656,6 +681,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
+    flexGrow: 1,
+    paddingBottom: 60,
   },
 
   // Profile Section
@@ -743,28 +770,40 @@ const styles = StyleSheet.create({
   // Stats
   statsContainer: {
     flexDirection: "row",
-    padding: 20,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginBottom: 16,
+    gap: 12,
+    marginBottom: 20,
+    marginTop: 8,
   },
   statItem: {
     flex: 1,
+    flexDirection: "row",
     alignItems: "center",
+    padding: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+  },
+  statIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,102,25,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
+  statTextContainer: {
+    flex: 1,
   },
   statValue: {
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: "700",
-    marginBottom: 4,
   },
   statLabel: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  statDivider: {
-    width: 1,
-    height: "100%",
-    marginHorizontal: 12,
+    fontSize: 9,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 1,
   },
 
   // Menu
@@ -799,7 +838,7 @@ const styles = StyleSheet.create({
     marginRight: 14,
   },
   menuItemLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "500",
   },
   divider: {

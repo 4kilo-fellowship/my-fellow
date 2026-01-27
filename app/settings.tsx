@@ -501,27 +501,27 @@ export default function Settings() {
       <StatusBar style={isDark ? "light" : "dark"} />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: top + 10 }]}>
+      <View
+        className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"}`}
+        style={{ paddingTop: top + 10 }}
+      >
         <TouchableOpacity
-          style={[
-            styles.backButton,
-            { backgroundColor: isDark ? "#1c1c1e" : "#ffffff" },
-          ]}
           onPress={() => router.back()}
-          activeOpacity={0.7}
+          activeOpacity={0.8}
+          className="w-11 h-11 rounded-full items-center justify-center mr-4"
+          style={{ backgroundColor: isDark ? "#1C1C1E" : "#e2e8f0" }}
         >
           <Ionicons
             name="arrow-back"
-            size={24}
-            color={isDark ? "#fff" : "#374151"}
+            size={22}
+            color={isDark ? "white" : "#0f172a"}
           />
         </TouchableOpacity>
         <Text
-          style={[styles.headerTitle, { color: isDark ? "#fff" : "#1f2937" }]}
+          className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
         >
           Settings
         </Text>
-        <View style={styles.headerRight} />
       </View>
 
       <ScrollView
@@ -658,32 +658,6 @@ export default function Settings() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  headerRight: {
-    width: 44,
   },
   scrollView: {
     flex: 1,
