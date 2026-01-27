@@ -32,13 +32,13 @@ const QuickAction = ({ item, isDark = false, onPress }: QuickActionProps) => {
           <FontAwesome5
             name={item.icon}
             size={40}
-            color={isDark ? "white" : "#121212"}
+            color={isDark ? "#e2e8f0" : "#121212"}
           />
         ) : (
           <Ionicons
             name={item.icon}
             size={40}
-            color={isDark ? "white" : "#121212"}
+            color={isDark ? "#e2e8f0" : "#121212"}
           />
         )}
       </View>
