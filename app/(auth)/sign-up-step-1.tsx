@@ -111,7 +111,7 @@ export default function SignUpStep1() {
                 <Image
                   width={24}
                   height={24}
-                  style={{ transform: [{ scale: 0.3 }, { translateY: -10 }] }}
+                  style={{ transform: [{ scale: 0.3 }, { translateY: -5 }] }}
                   source={require("@/assets/images/logo-white.png")}
                 />
               </View>

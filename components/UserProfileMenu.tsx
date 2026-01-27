@@ -4,12 +4,13 @@ import { useUserStore } from "@/stores/user.store";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
   Image,
   Modal,
+  PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -38,14 +39,43 @@ const UserProfileMenu = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const isDark = theme === "dark";
+  const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
-  const [slideAnim] = useState(
-    new Animated.Value(Dimensions.get("window").width),
-  );
-  const [backdropAnim] = useState(new Animated.Value(0));
+  const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
+  const backdropAnim = useRef(new Animated.Value(0)).current;
 
   const isAuthenticated = authState.authenticated === true;
+
+  // PanResponder for swipe-to-close
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only respond to horizontal swipes to the right
+        return gestureState.dx > 10 && Math.abs(gestureState.dy) < 30;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        // Only allow swiping to the right (positive dx)
+        if (gestureState.dx > 0) {
+          slideAnim.setValue(gestureState.dx);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx > SCREEN_WIDTH * 0.3 || gestureState.vx > 0.5) {
+          closeMenu();
+        } else {
+          // Reset to open position
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            useNativeDriver: true,
+            tension: 65,
+            friction: 11,
+          }).start();
+        }
+      },
+    }),
+  ).current;
 
   // Fetch user data when authenticated and no user data
   useEffect(() => {
@@ -74,7 +104,7 @@ const UserProfileMenu = () => {
   const closeMenu = () => {
     Animated.parallel([
       Animated.timing(slideAnim, {
-        toValue: Dimensions.get("window").width,
+        toValue: SCREEN_WIDTH,
         duration: 250,
         useNativeDriver: true,
       }),
@@ -333,6 +363,7 @@ const UserProfileMenu = () => {
               transform: [{ translateX: slideAnim }],
             },
           ]}
+          {...panResponder.panHandlers}
         >
           {/* Gradient Background */}
           <LinearGradient
