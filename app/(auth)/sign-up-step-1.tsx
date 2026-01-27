@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   Dimensions,
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -107,12 +108,12 @@ export default function SignUpStep1() {
 
               {/* header Section */}
               <View className="items-center">
-                <Text className="text-4xl font-black text-white text-center mb-3 tracking-tight">
-                  Join 4kilo-ECSF
-                </Text>
-                <Text className="text-white/90 text-base font-medium text-center leading-6 max-w-[85%]">
-                  Grow in faith, fellowship, and purpose together
-                </Text>
+                <Image
+                  width={24}
+                  height={24}
+                  style={{ transform: [{ scale: 0.3 }, { translateY: -10 }] }}
+                  source={require("@/assets/images/logo-white.png")}
+                />
               </View>
             </View>
           </View>

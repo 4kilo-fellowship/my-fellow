@@ -1,21 +1,23 @@
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
-    ActivityIndicator,
-    Dimensions,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 import { z } from "zod";
 
@@ -25,7 +27,7 @@ const HEADER_HEIGHT = SCREEN_HEIGHT * 0.4;
 const signInSchema = z.object({
   phoneNumber: z
     .string()
-    .min(1, "Phone number is required")
+    .min(9, "Phone number is required")
     .regex(/^\d{9,15}$/, "Enter a valid phone number"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
@@ -38,6 +40,8 @@ export default function SignIn() {
   const { login } = useAuth();
   const router = useRouter();
   const [loginError, setLoginError] = useState<string | null>(null);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const {
     control,
@@ -59,9 +63,6 @@ export default function SignIn() {
 
     try {
       await login(trimmedPhone, password);
-      
-      // If there is history to go back to (e.g. from an event), go back
-      // otherwise go to tabs index.
       if (router.canGoBack()) {
         router.back();
       } else {
@@ -69,8 +70,8 @@ export default function SignIn() {
       }
     } catch (error: any) {
       const message =
-        error?.response?.data?.message ||
-        error?.message ||
+        // error?.response?.data?.message ||
+        // error?.message ||
         "Invalid phone number or password. Please try again.";
       setLoginError(message);
     } finally {
@@ -79,7 +80,7 @@ export default function SignIn() {
   };
 
   return (
-    <View className="flex-1 bg-white">
+    <View className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} `}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -97,9 +98,12 @@ export default function SignIn() {
             <View className="flex-1 justify-center items-center px-6">
               {/* Header Section */}
               <View className="items-center">
-                <Text className="text-white text-5xl font-black text-center tracking-tight">
-                  4kilo-ECSF
-                </Text>
+                <Image
+                  width={24}
+                  height={24}
+                  style={{ transform: [{ scale: 0.3 }, { translateY: 99 }] }}
+                  source={require("@/assets/images/logo-white.png")}
+                />
               </View>
             </View>
           </View>
