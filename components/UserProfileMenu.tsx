@@ -621,8 +621,8 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
-    width: "88%",
-    maxWidth: 380,
+    width: "80%",
+    maxWidth: 340,
     overflow: "hidden",
   },
   gradientBg: {
