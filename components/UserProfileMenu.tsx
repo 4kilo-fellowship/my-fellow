@@ -39,7 +39,7 @@ const UserProfileMenu = () => {
   const insets = useSafeAreaInsets();
   const isDark = theme === "dark";
 
-  const [menuVisible, setMenuVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState<boolean>(false);
   const [slideAnim] = useState(
     new Animated.Value(Dimensions.get("window").width),
   );
@@ -112,7 +112,7 @@ const UserProfileMenu = () => {
     }, 300);
   };
 
-  // Menu items configuration
+  // Menu items configuration (constants)
   const menuItems: MenuItem[] = [
     {
       id: "theme",
@@ -258,13 +258,17 @@ const UserProfileMenu = () => {
 
   return (
     <>
-      {/* Profile Avatar Button - Fully Rounded */}
+      {/* profile */}
       <TouchableOpacity onPress={openMenu} activeOpacity={0.8}>
         <View
           style={[
             styles.avatarContainer,
             {
-              backgroundColor: isDark ? "#2c2c2e" : "#ffffff",
+              backgroundColor: isAuthenticated
+                ? "#ff6619"
+                : isDark
+                  ? "#2c2c2e"
+                  : "#ffffff",
               borderColor: isAuthenticated
                 ? "#ff6619"
                 : isDark
@@ -273,9 +277,9 @@ const UserProfileMenu = () => {
             },
           ]}
         >
-          {isAuthenticated && (user?.profileImage || user?.image) ? (
+          {isAuthenticated && user?.profileImage ? (
             <Image
-              source={{ uri: user.profileImage || user.image || "" }}
+              source={{ uri: user.profileImage }}
               style={styles.avatarImage}
               resizeMode="cover"
             />
@@ -286,10 +290,10 @@ const UserProfileMenu = () => {
               color={isDark ? "#fff" : "#374151"}
             />
           ) : (
-            <Image
-              source={require("@/assets/images/logo.png")}
-              style={styles.avatarImage}
-              resizeMode="contain"
+            <Ionicons
+              name="person"
+              size={22}
+              color={isDark ? "#fff" : "#374151"}
             />
           )}
         </View>
@@ -336,7 +340,7 @@ const UserProfileMenu = () => {
             end={{ x: 0, y: 1 }}
           />
 
-          {/* Header with Close Button */}
+          {/* header */}
           <View style={[styles.panelHeader, { paddingTop: insets.top + 12 }]}>
             <Text
               style={[
@@ -389,7 +393,7 @@ const UserProfileMenu = () => {
                 },
               ]}
             >
-              {/* Profile Image - Fully Circular */}
+              {/* Profile Image */}
               <View style={styles.profileImageWrapper}>
                 <LinearGradient
                   colors={["#ff6619", "#ff8a50", "#ffb380"]}
@@ -403,10 +407,10 @@ const UserProfileMenu = () => {
                       { backgroundColor: isDark ? "#0a0a0a" : "#ffffff" },
                     ]}
                   >
-                    {isAuthenticated && (user?.profileImage || user?.image) ? (
+                    {isAuthenticated && user?.profileImage ? (
                       <Image
                         source={{
-                          uri: user.profileImage || user.image || "",
+                          uri: user.profileImage,
                         }}
                         style={styles.profileImage}
                         resizeMode="cover"
@@ -615,7 +619,6 @@ const UserProfileMenu = () => {
 };
 
 const styles = StyleSheet.create({
-  // Avatar Button - Fully Circular
   avatarContainer: {
     width: 42,
     height: 42,
