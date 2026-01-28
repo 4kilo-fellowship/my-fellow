@@ -1,4 +1,3 @@
-
 import { ImageSourcePropType } from "react-native";
 
 export type Location = {
@@ -17,23 +16,23 @@ export type Location = {
 export const LOCATIONS: Location[] = [
   {
     id: "1",
-    name: "Main Campus (4kilo)",
+    name: "Hibret Amba",
     address: "Arat Kilo, Addis Ababa",
-    image: require("@/assets/images/header.png"), 
+    image: require("@/assets/images/locations/hibret.png"),
     coordinates: {
       latitude: 9.034,
       longitude: 38.762,
     },
-    serviceTimes: ["Sundays: 9:00 AM - 12:00 PM", "Wednesdays: 5:30 PM - 7:30 PM"],
-    googleMapsUrl: "https://maps.google.com/?q=joy+worship+chapel", 
+    serviceTimes: ["Monday: 9:00 AM - 12:00 PM", "Tuesday: 5:30 PM - 7:30 PM"],
+    googleMapsUrl: "https://maps.google.com/?q=joy+worship+chapel",
   },
   {
     id: "2",
-    name: "Hibret Amba",
-    address: "Sidist Kilo, Addis Ababa",
-    image: require("@/assets/images/header.png"), 
+    name: "Emmanuel Church",
+    address: "Arat Kilo, Addis Ababa",
+    image: require("@/assets/images/locations/image.png"),
     coordinates: {
-      latitude: 9.040,
+      latitude: 9.04,
       longitude: 38.765,
     },
     serviceTimes: ["Fridays: 5:30 PM - 7:30 PM"],
@@ -41,11 +40,11 @@ export const LOCATIONS: Location[] = [
   {
     id: "3",
     name: "Anglican",
-    address: "Piasa, Addis Ababa",
-    image: require("@/assets/images/header.png"), 
+    address: "Arat Kilo, Addis Ababa",
+    image: require("@/assets/images/programs/fresh.png"),
     coordinates: {
-      latitude: 9.030,
-      longitude: 38.750,
+      latitude: 9.03,
+      longitude: 38.75,
     },
     serviceTimes: ["Tuesdays: 5:30 PM - 7:30 PM"],
   },
