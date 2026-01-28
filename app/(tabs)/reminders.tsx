@@ -129,6 +129,7 @@ const Reminder = () => {
                 </Text>
 
                 <TouchableOpacity
+                  activeOpacity={0.7}
                   onPress={handleAddPress}
                   className="mt-8 bg-orange-500/10 px-8 py-4 rounded-2xl"
                 >
