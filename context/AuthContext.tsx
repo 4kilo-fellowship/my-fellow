@@ -2,13 +2,13 @@ import api from "@/services/api";
 import { authService } from "@/services/authService";
 import { useUserStore } from "@/stores/user.store";
 import {
-    AuthContextType,
-    AuthProviderProps,
-    AuthState,
-    LoginResponse,
-    SignUpData,
-    SignUpResponse,
-    User,
+  AuthContextType,
+  AuthProviderProps,
+  AuthState,
+  LoginResponse,
+  SignUpData,
+  SignUpResponse,
+  User,
 } from "@/types/types";
 import * as SecureStore from "expo-secure-store";
 import { createContext, useContext, useEffect, useState } from "react";
@@ -43,7 +43,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setAuthState({ token: null, authenticated: false });
         }
       } catch (error) {
-        console.error("Error loading token:", error);
         setAuthState({ token: null, authenticated: false });
       }
     };
@@ -53,7 +52,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // login function
   const login = async (
     phoneNumber: string,
-    password: string
+    password: string,
   ): Promise<LoginResponse> => {
     try {
       const response = await authService.login(phoneNumber, password);
@@ -109,10 +108,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  /**
-   * Logout function
-   * Clears token and resets auth state
-   */
   const logout = async (): Promise<void> => {
     try {
       // Remove token from secure storage
@@ -122,20 +117,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       api.defaults.headers.common.Authorization = "";
 
       setAuthState({ token: null, authenticated: false });
-      
+
       // Clear user from Zustand store
       useUserStore.getState().clearUser();
     } catch (error) {
-      console.error("Error during logout:", error);
       // Still reset state even if storage deletion fails
       setAuthState({ token: null, authenticated: false });
     }
   };
 
-  /**
-   * Get current authenticated user
-   * Prefers local store, fallbacks to API
-   */
   const getCurrentUser = async (): Promise<User> => {
     const localUser = useUserStore.getState().user;
     if (localUser) return localUser;
@@ -145,13 +135,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       useUserStore.getState().setUser(user);
       return user;
     } catch (error) {
-      console.error("Error fetching current user:", error);
       throw error;
     }
   };
 
   return (
-    <AuthContext.Provider value={{ authState, login, signup, logout, getCurrentUser }}>
+    <AuthContext.Provider
+      value={{ authState, login, signup, logout, getCurrentUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

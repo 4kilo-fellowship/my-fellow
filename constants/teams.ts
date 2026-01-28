@@ -42,11 +42,11 @@ export const TEAMS: Team[] = [
     coordinates: { lat: 9.038952250154978, lng: 38.75831542801892 },
     image: require("@/assets/images/programs/evan.png"),
     leader: {
-      name: "Daniel Tesfaye",
+      name: "Robi",
       role: "Evangelism Team Leader",
       image:
         "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400",
-      telegram: "@daniel_tesfaye",
+      telegram: "@robi",
       phone: "+251 911 234 567",
     },
   },
@@ -66,7 +66,7 @@ export const TEAMS: Team[] = [
     coordinates: { lat: 9.040462923318069, lng: 38.759740033794586 },
     image: require("@/assets/images/programs/bss.png"),
     leader: {
-      name: "Ruth Alemayehu",
+      name: "Muse Lema",
       role: "Bible Study Coordinator",
       image:
         "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400",
@@ -90,7 +90,7 @@ export const TEAMS: Team[] = [
     coordinates: { lat: 9.038952250154978, lng: 38.75831542801892 },
     image: require("@/assets/images/programs/wer.png"),
     leader: {
-      name: "Samuel Bekele",
+      name: "Salem Bekele",
       role: "Worship Leader",
       image:
         "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400",
@@ -115,7 +115,7 @@ export const TEAMS: Team[] = [
     coordinates: { lat: 9.03037740148045, lng: 38.77196975055801 },
     image: require("@/assets/images/programs/i4u.png"),
     leader: {
-      name: "Bethlehem Tadesse",
+      name: "Desalegn Tadesse",
       role: "I4U Team Coordinator",
       image:
         "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400",
@@ -139,7 +139,7 @@ export const TEAMS: Team[] = [
     coordinates: { lat: 9.03037740148045, lng: 38.77196975055801 },
     image: require("@/assets/images/programs/image2.png"),
     leader: {
-      name: "Yohannes Mulugeta",
+      name: "Dagim Amha",
       role: "Prayer Coordinator",
       image:
         "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400",
@@ -163,7 +163,7 @@ export const TEAMS: Team[] = [
     coordinates: { lat: 9.040462923318069, lng: 38.759740033794586 },
     image: require("@/assets/images/programs/image.png"),
     leader: {
-      name: "Meron Haile",
+      name: "Dibora Eyasu",
       role: "Media Director",
       image:
         "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400",
@@ -188,7 +188,7 @@ export const TEAMS: Team[] = [
     coordinates: { lat: 9.033291325771401, lng: 38.76877997143855 },
     image: require("@/assets/images/programs/fresh.png"),
     leader: {
-      name: "Abigail Girma",
+      name: "Natnale Zerihun",
       role: "Freshman Coordinator",
       image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400",
       telegram: "@abigail_girma",

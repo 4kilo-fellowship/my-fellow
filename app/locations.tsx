@@ -5,17 +5,23 @@ import { Image } from "expo-image";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
+
 import {
-    FlatList,
-    Linking,
-    Platform,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Linking,
+  Platform,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const LocationCard = ({ item, isDark }: { item: any; isDark: boolean }) => {
+interface Props {
+  item: any;
+  isDark: boolean;
+}
+
+const LocationCard = ({ item, isDark }: Props) => {
   const handleOpenMaps = () => {
     const scheme = Platform.select({ ios: "maps:", android: "geo:" });
     const latLng = `${item.coordinates.latitude},${item.coordinates.longitude}`;
@@ -25,10 +31,8 @@ const LocationCard = ({ item, isDark }: { item: any; isDark: boolean }) => {
       android: `${scheme}0,0?q=${latLng}(${label})`,
     });
 
-    if (item.googleMapsUrl) {
-        Linking.openURL(item.googleMapsUrl); 
-    } else if (url) {
-        Linking.openURL(url);
+    if (url) {
+      Linking.openURL(url);
     }
   };
 
@@ -78,10 +82,17 @@ const LocationCard = ({ item, isDark }: { item: any; isDark: boolean }) => {
         <View className="mb-5">
           {item.serviceTimes.map((time: string, index: number) => (
             <View key={index} className="flex-row items-center mt-1">
-               <Ionicons name="time-outline" size={14} color="#f97316" style={{marginRight: 6}} />
-               <Text className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-                   {time}
-                </Text>
+              <Ionicons
+                name="time-outline"
+                size={14}
+                color="#f97316"
+                style={{ marginRight: 6 }}
+              />
+              <Text
+                className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}
+              >
+                {time}
+              </Text>
             </View>
           ))}
         </View>
@@ -91,7 +102,12 @@ const LocationCard = ({ item, isDark }: { item: any; isDark: boolean }) => {
           activeOpacity={0.8}
           className="bg-orange-500 py-3.5 rounded-xl flex-row items-center justify-center"
         >
-          <Ionicons name="map" size={20} color="white" style={{ marginRight: 8 }} />
+          <Ionicons
+            name="map"
+            size={20}
+            color="white"
+            style={{ marginRight: 8 }}
+          />
           <Text className="text-white font-bold text-base">Get Directions</Text>
         </TouchableOpacity>
       </View>
@@ -112,13 +128,16 @@ export default function LocationsScreen() {
           headerShown: false,
         }}
       />
-      <StatusBar style={isDark ? "light" : "dark"} />
+      <StatusBar
+        style={isDark ? "light" : "dark"}
+        backgroundColor="transparent"
+      />
 
-      <View className={`flex-1 ${isDark ? "bg-[#0A0A0A]" : "bg-[#f8fafc]"}`}>
+      <View className={`flex-1 ${isDark ? "bg-dark" : "bg-white"}`}>
         {/* Header */}
         <View
           className={`px-5 pb-4 flex-row items-center border-b ${
-            isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"
+            isDark ? "bg-dark border-gray-800" : "bg-white border-gray-200"
           }`}
           style={{ paddingTop: top + 10 }}
         >
@@ -146,7 +165,9 @@ export default function LocationsScreen() {
         <FlatList
           data={LOCATIONS}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <LocationCard item={item} isDark={isDark} />}
+          renderItem={({ item }) => (
+            <LocationCard item={item} isDark={isDark} />
+          )}
           contentContainerStyle={{
             padding: 20,
             paddingBottom: 40,
@@ -158,8 +179,8 @@ export default function LocationsScreen() {
                 isDark ? "text-gray-400" : "text-gray-600"
               }`}
             >
-              Find us at these locations for worship and fellowship. We can't wait
-              to see you!
+              Find us at these locations for worship and fellowship. We can't
+              wait to see you!
             </Text>
           }
         />
