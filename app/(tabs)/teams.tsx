@@ -23,6 +23,66 @@ const GAP = 12;
 const PADDING = 20;
 const ITEM_WIDTH = (width - PADDING * 2 - GAP) / 2;
 
+// --- Components ---
+
+const SearchBar = ({
+  isDark,
+  searchText,
+  setSearchText,
+}: {
+  isDark: boolean;
+  searchText: string;
+  setSearchText: (text: string) => void;
+}) => (
+  <View
+    className={`mx-5 mb-6 px-4 h-12 rounded-2xl flex-row items-center ${isDark ? "bg-zinc-800" : "bg-zinc-100"}`}
+  >
+    <Ionicons name="search" size={20} color={isDark ? "#a1a1aa" : "#71717a"} />
+    <TextInput
+      placeholder="Search ministries..."
+      placeholderTextColor={isDark ? "#a1a1aa" : "#71717a"}
+      className={`flex-1 ml-3 text-base ${isDark ? "text-white" : "text-black"}`}
+      value={searchText}
+      onChangeText={setSearchText}
+    />
+  </View>
+);
+
+const GridCard = ({ item, onPress }: { item: Team; onPress: () => void }) => (
+  <TouchableOpacity
+    activeOpacity={0.9}
+    style={{
+      width: ITEM_WIDTH,
+      height: ITEM_WIDTH * 0.85, // Aspect ratio similar to screenshot
+      backgroundColor: item.color,
+    }}
+    className="rounded-2xl p-4 relative overflow-hidden justify-between mb-3 shadow-sm"
+    onPress={onPress}
+  >
+    {/* Huge Background Icon (Watermark style) */}
+    <View className="absolute -right-6 -bottom-6 opacity-20 transform rotate-12">
+      <Ionicons name={item.icon} size={110} color="white" />
+    </View>
+
+    {/* Content */}
+    <View>
+      <Text className="text-white text-lg font-extrabold tracking-wide">
+        {item.name}
+      </Text>
+      <View className="bg-black/10 self-start px-2 py-0.5 rounded-md mt-1">
+        <Text className="text-white/90 text-[10px] font-bold">
+          {item.members} Mbrs
+        </Text>
+      </View>
+    </View>
+
+    {/* Small directional arrow */}
+    <View className="self-end bg-white/20 p-1.5 rounded-full">
+      <Ionicons name="arrow-forward" size={14} color="white" />
+    </View>
+  </TouchableOpacity>
+);
+
 const Teams = () => {
   const { top } = useSafeAreaInsets();
   const { theme } = useTheme();
@@ -33,62 +93,6 @@ const Teams = () => {
   // Filter logic
   const filteredTeams = TEAMS.filter((t) =>
     t.name.toLowerCase().includes(searchText.toLowerCase()),
-  );
-
-  // --- Components ---
-
-  const SearchBar = () => (
-    <View
-      className={`mx-5 mb-6 px-4 h-12 rounded-2xl flex-row items-center ${isDark ? "bg-zinc-800" : "bg-zinc-100"}`}
-    >
-      <Ionicons
-        name="search"
-        size={20}
-        color={isDark ? "#a1a1aa" : "#71717a"}
-      />
-      <TextInput
-        placeholder="Search ministries..."
-        placeholderTextColor={isDark ? "#a1a1aa" : "#71717a"}
-        className={`flex-1 ml-3 text-base ${isDark ? "text-white" : "text-black"}`}
-        value={searchText}
-        onChangeText={setSearchText}
-      />
-    </View>
-  );
-
-  const GridCard = ({ item }: { item: Team }) => (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      style={{
-        width: ITEM_WIDTH,
-        height: ITEM_WIDTH * 0.85, // Aspect ratio similar to screenshot
-        backgroundColor: item.color,
-      }}
-      className="rounded-2xl p-4 relative overflow-hidden justify-between mb-3 shadow-sm"
-      onPress={() => router.push(`/teams/${item.id}` as any)}
-    >
-      {/* Huge Background Icon (Watermark style) */}
-      <View className="absolute -right-6 -bottom-6 opacity-20 transform rotate-12">
-        <Ionicons name={item.icon} size={110} color="white" />
-      </View>
-
-      {/* Content */}
-      <View>
-        <Text className="text-white text-lg font-extrabold tracking-wide">
-          {item.name}
-        </Text>
-        <View className="bg-black/10 self-start px-2 py-0.5 rounded-md mt-1">
-          <Text className="text-white/90 text-[10px] font-bold">
-            {item.members} Mbrs
-          </Text>
-        </View>
-      </View>
-
-      {/* Small directional arrow */}
-      <View className="self-end bg-white/20 p-1.5 rounded-full">
-        <Ionicons name="arrow-forward" size={14} color="white" />
-      </View>
-    </TouchableOpacity>
   );
 
   return (
@@ -106,14 +110,23 @@ const Teams = () => {
         </View>
 
         {/* Search & Actions */}
-        <SearchBar />
+        <SearchBar
+          isDark={isDark}
+          searchText={searchText}
+          setSearchText={setSearchText}
+        />
         <QuickActions />
 
         {/* Grid Content */}
         <FlatList
           data={filteredTeams}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <GridCard item={item} />}
+          renderItem={({ item }) => (
+            <GridCard
+              item={item}
+              onPress={() => router.push(`/teams/${item.id}` as any)}
+            />
+          )}
           numColumns={2}
           columnWrapperStyle={{
             justifyContent: "space-between",
