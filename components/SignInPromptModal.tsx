@@ -1,7 +1,14 @@
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface SignInPromptModalProps {
   visible: boolean;
@@ -26,8 +33,9 @@ const SignInPromptModal = ({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <View
+      <Pressable style={styles.overlay} onPress={onClose}>
+        <Pressable
+          onPress={(e) => e.stopPropagation()}
           style={[
             styles.container,
             { backgroundColor: isDark ? "#1A1A1B" : "white" },
@@ -78,8 +86,8 @@ const SignInPromptModal = ({
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 };
