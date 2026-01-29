@@ -2,6 +2,7 @@ import { RegistrationModal, SignInPromptModal } from "@/components";
 import { API_URL } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useAlerts } from "@/hooks/useAlerts";
 import { useEventsStore } from "@/stores/events.store";
 import { useUserStore } from "@/stores/user.store";
 import { Ionicons } from "@expo/vector-icons";
@@ -29,16 +30,25 @@ export default function EventDetails() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const { selectedEvent, fetchEventById, loadingDetail, clearSelected, error, registerForEvent, registering } =
-    useEventsStore((s: any) => ({
-      selectedEvent: s.selectedEvent,
-      fetchEventById: s.fetchEventById,
-      loadingDetail: s.loadingDetail,
-      clearSelected: s.clearSelected,
-      error: s.error,
-      registerForEvent: s.registerForEvent,
-      registering: s.registering,
-    }));
+  const {
+    selectedEvent,
+    fetchEventById,
+    loadingDetail,
+    clearSelected,
+    error,
+    registerForEvent,
+    registering,
+  } = useEventsStore((s: any) => ({
+    selectedEvent: s.selectedEvent,
+    fetchEventById: s.fetchEventById,
+    loadingDetail: s.loadingDetail,
+    clearSelected: s.clearSelected,
+    error: s.error,
+    registerForEvent: s.registerForEvent,
+    registering: s.registering,
+  }));
+
+  const { addAlert } = useAlerts();
 
   const { authState, getCurrentUser } = useAuth();
   const [modalVisible, setModalVisible] = React.useState(false);
@@ -66,15 +76,15 @@ export default function EventDetails() {
   let imageSource = require("@/assets/images/header.png");
   // Check both 'image' and 'imageUrl'
   const imgPath = ev?.image || ev?.imageUrl;
-  
+
   if (imgPath) {
     if (typeof imgPath === "string") {
       if (imgPath.startsWith("http")) {
         imageSource = { uri: imgPath };
       } else {
-         const baseUrl = API_URL.replace(/\/api\/?$/, "");
-         const cleanPath = imgPath.startsWith("/") ? imgPath : `/${imgPath}`;
-         imageSource = { uri: `${baseUrl}${cleanPath}` };
+        const baseUrl = API_URL.replace(/\/api\/?$/, "");
+        const cleanPath = imgPath.startsWith("/") ? imgPath : `/${imgPath}`;
+        imageSource = { uri: `${baseUrl}${cleanPath}` };
       }
     }
   }
@@ -85,7 +95,7 @@ export default function EventDetails() {
   };
 
   const ctaLabel =
-    ev?.buttonText || 
+    ev?.buttonText ||
     ev?.cta ||
     ev?.cta_text ||
     ev?.metadata?.cta_text ||
@@ -93,13 +103,39 @@ export default function EventDetails() {
     "Register Now";
 
   const handleCta = async () => {
-    if (ctaLabel === "Register" || ctaLabel === "Register Now") {
-        if (!authState.authenticated) {
-            setSignInModalVisible(true);
-            return;
-        }
-        setModalVisible(true);
+    const text = ctaLabel.toLowerCase().trim();
+
+    if (text.includes("register") || text.includes("join")) {
+      if (!authState.authenticated) {
+        setSignInModalVisible(true);
         return;
+      }
+      setModalVisible(true);
+      return;
+    }
+
+    if (text.includes("notify")) {
+      if (!ev?.startDate) {
+        Alert.alert("Warning", "Program time not available for notification.");
+        return;
+      }
+
+      await addAlert({
+        title: `Reminder: ${ev.title}`,
+        time: ev.startDate,
+        repeats: "none",
+        remindBefore: 15,
+      });
+      Alert.alert(
+        "Alert Set",
+        "We'll notify you 15 minutes before the program starts.",
+      );
+      return;
+    }
+
+    if (text.includes("donate")) {
+      router.push("/gifts");
+      return;
     }
 
     const url = ev?.cta_url || ev?.metadata?.cta_url || ev?.metadata?.url;
@@ -116,7 +152,7 @@ export default function EventDetails() {
   const onConfirmRegistration = async () => {
     try {
       const user = useUserStore.getState().user;
-      
+
       if (!user) {
         setModalVisible(false);
         setSignInModalVisible(true);
@@ -162,7 +198,11 @@ export default function EventDetails() {
           isDark ? "bg-[#1A1A1B]" : "bg-gray-50"
         }`}
       >
-        <Ionicons name="alert-circle-outline" size={64} color={isDark ? "#ff6619" : "#ff6619"} />
+        <Ionicons
+          name="alert-circle-outline"
+          size={64}
+          color={isDark ? "#ff6619" : "#ff6619"}
+        />
         <Text
           className={`text-lg font-bold mt-4 text-center ${
             isDark ? "text-white" : "text-gray-900"
@@ -183,15 +223,17 @@ export default function EventDetails() {
         >
           <Text className="text-white font-bold">Try Again</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-            onPress={handleBack}
-            className="mt-4"
-        >
-            {isGoingBack ? (
-                <ActivityIndicator size="small" color={isDark ? "#fff" : "#64748b"} />
-            ) : (
-                <Text className={`${isDark ? "text-gray-400" : "text-gray-600"}`}>Go Back</Text>
-            )}
+        <TouchableOpacity onPress={handleBack} className="mt-4">
+          {isGoingBack ? (
+            <ActivityIndicator
+              size="small"
+              color={isDark ? "#fff" : "#64748b"}
+            />
+          ) : (
+            <Text className={`${isDark ? "text-gray-400" : "text-gray-600"}`}>
+              Go Back
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
     );
@@ -204,13 +246,15 @@ export default function EventDetails() {
           isDark ? "bg-[#1A1A1B]" : "bg-gray-50"
         }`}
       >
-        <Text className={isDark ? "text-white" : "text-gray-900"}>Event not found</Text>
+        <Text className={isDark ? "text-white" : "text-gray-900"}>
+          Event not found
+        </Text>
         <TouchableOpacity onPress={handleBack} className="mt-4">
-            {isGoingBack ? (
-                <ActivityIndicator size="small" color="#ff6719" />
-            ) : (
-                <Text className="text-[#ff6719] font-bold">Go Back</Text>
-            )}
+          {isGoingBack ? (
+            <ActivityIndicator size="small" color="#ff6719" />
+          ) : (
+            <Text className="text-[#ff6719] font-bold">Go Back</Text>
+          )}
         </TouchableOpacity>
       </View>
     );
@@ -219,7 +263,7 @@ export default function EventDetails() {
   return (
     <View className={`flex-1 ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}>
       <StatusBar style="light" />
-      
+
       {/* Immersive Header Image */}
       <View className="h-[45vh] w-full relative">
         <ExpoImage
@@ -264,73 +308,88 @@ export default function EventDetails() {
               </Text>
             )}
           </View>
-          
+
           <Text className="text-white text-3xl font-extrabold leading-tight shadow-sm">
             {ev.title}
           </Text>
-          
+
           {ev.startDate && (
-             <View className="flex-row items-center mt-2">
-               <Ionicons name="time-outline" size={16} color="rgba(255,255,255,0.8)" />
-               <Text className="text-gray-200 ml-1.5 font-medium">
-                 {new Date(ev.startDate).toLocaleTimeString(undefined, {
-                   hour: "2-digit",
-                   minute: "2-digit",
-                 })}
-               </Text>
-             </View>
+            <View className="flex-row items-center mt-2">
+              <Ionicons
+                name="time-outline"
+                size={16}
+                color="rgba(255,255,255,0.8)"
+              />
+              <Text className="text-gray-200 ml-1.5 font-medium">
+                {new Date(ev.startDate).toLocaleTimeString(undefined, {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </Text>
+            </View>
           )}
         </View>
       </View>
 
       {/* Content Scroll */}
-      <View 
+      <View
         className={`flex-1 -mt-6 rounded-t-3xl px-6 pt-8 ${
           isDark ? "bg-[#1A1A1B]" : "bg-white"
         }`}
       >
-        <ScrollView 
+        <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 100 }}
         >
           <View className="mb-6">
-            <Text className={`text-lg font-bold mb-3 ${isDark ? "text-white" : "text-gray-900"}`}>
+            <Text
+              className={`text-lg font-bold mb-3 ${isDark ? "text-white" : "text-gray-900"}`}
+            >
               About this Event
             </Text>
-            <Text className={`text-base leading-7 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+            <Text
+              className={`text-base leading-7 ${isDark ? "text-gray-300" : "text-gray-600"}`}
+            >
               {ev.fullDescription ||
-               ev.shortDescription ||
-               ev.description ||
-               "No description available for this event."}
+                ev.shortDescription ||
+                ev.description ||
+                "No description available for this event."}
             </Text>
           </View>
 
           {/* Additional meta info could go here (location, organizers, etc) */}
           {ev.location && (
-             <View className={`p-4 rounded-xl border mb-6 flex-row items-start ${
-               isDark ? "bg-gray-800 border-gray-700" : "bg-gray-50 border-gray-100"
-             }`}>
-               <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-3">
-                 <Ionicons name="location" size={20} color="#0369A1" />
-               </View>
-               <View className="flex-1">
-                 <Text className={`font-bold text-base mb-1 ${isDark ? "text-white" : "text-gray-900"}`}>
-                   Location
-                 </Text>
-                 <Text className={`${isDark ? "text-gray-400" : "text-gray-600"}`}>
-                   {ev.location}
-                 </Text>
-               </View>
-             </View>
+            <View
+              className={`p-4 rounded-xl border mb-6 flex-row items-start ${
+                isDark
+                  ? "bg-gray-800 border-gray-700"
+                  : "bg-gray-50 border-gray-100"
+              }`}
+            >
+              <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-3">
+                <Ionicons name="location" size={20} color="#0369A1" />
+              </View>
+              <View className="flex-1">
+                <Text
+                  className={`font-bold text-base mb-1 ${isDark ? "text-white" : "text-gray-900"}`}
+                >
+                  Location
+                </Text>
+                <Text
+                  className={`${isDark ? "text-gray-400" : "text-gray-600"}`}
+                >
+                  {ev.location}
+                </Text>
+              </View>
+            </View>
           )}
-
         </ScrollView>
       </View>
 
       {/* Floating Bottom Action Bar */}
-      <View 
+      <View
         className={`absolute bottom-0 left-0 right-0 px-6 pt-4 border-t ${
-           isDark ? "bg-[#1A1A1B] border-gray-800" : "bg-white border-gray-100"
+          isDark ? "bg-[#1A1A1B] border-gray-800" : "bg-white border-gray-100"
         }`}
         style={{ paddingBottom: bottom > 0 ? bottom + 4 : 20 }}
       >
@@ -359,7 +418,7 @@ export default function EventDetails() {
         loading={registering}
         eventTitle={ev.title}
       />
-      
+
       <SignInPromptModal
         visible={signInModalVisible}
         onClose={() => setSignInModalVisible(false)}
@@ -372,4 +431,3 @@ export default function EventDetails() {
     </View>
   );
 }
-

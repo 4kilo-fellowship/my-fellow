@@ -3,6 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/context/AuthContext";
+import { useAlerts } from "@/hooks/useAlerts";
 import { useEventsStore } from "@/stores/events.store";
 import { useUserStore } from "@/stores/user.store";
 import { Image as ExpoImage } from "expo-image";
@@ -43,15 +44,50 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     registering: s.registering,
   }));
 
+  const { addAlert } = useAlerts();
+
   const [modalVisible, setModalVisible] = useState(false);
   const [signInModalVisible, setSignInModalVisible] = useState(false);
 
   const handlePrimary = async () => {
-    if (!authState.authenticated) {
-      setSignInModalVisible(true);
+    const text = ctaText.toLowerCase().trim();
+
+    if (text.includes("register") || text.includes("join")) {
+      if (!authState.authenticated) {
+        setSignInModalVisible(true);
+        return;
+      }
+      setModalVisible(true);
       return;
     }
-    setModalVisible(true);
+
+    if (text.includes("notify")) {
+      const startTime = (item as any).startDate;
+      if (!startTime) {
+        Alert.alert("Warning", "Program time not available for notification.");
+        return;
+      }
+
+      await addAlert({
+        title: `Reminder: ${item.title}`,
+        time: startTime,
+        repeats: "none",
+        remindBefore: 15, // 15 minutes before
+      });
+      Alert.alert(
+        "Alert Set",
+        "We'll notify you 15 minutes before the program starts.",
+      );
+      return;
+    }
+
+    if (text.includes("donate")) {
+      router.push("/gifts");
+      return;
+    }
+
+    // Default behavior if not matched
+    onPress?.();
   };
 
   const onConfirmRegistration = async () => {
