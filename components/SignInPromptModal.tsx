@@ -1,13 +1,7 @@
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import {
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface SignInPromptModalProps {
   visible: boolean;
@@ -40,8 +34,8 @@ const SignInPromptModal = ({
           ]}
         >
           <View className="items-center mb-6">
-            <View className="w-16 h-16 rounded-full bg-blue-100 items-center justify-center mb-4">
-              <Ionicons name="lock-closed" size={32} color="#0369A1" />
+            <View className="w-16 h-16 rounded-full bg-[#ff6619] items-center justify-center mb-4 shadow-lg shadow-orange-500/20">
+              <Ionicons name="lock-closed" size={30} color="white" />
             </View>
             <Text
               className={`text-xl font-bold text-center mb-2 ${
@@ -63,12 +57,9 @@ const SignInPromptModal = ({
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={onSignIn}
-              className="w-full bg-[#ff6619] py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30"
+              className="w-full bg-[#ff6619] mb-3 py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30"
             >
-              <Text className="text-white text-lg font-bold mr-2">
-                Sign In
-              </Text>
-              <Ionicons name="log-in-outline" size={20} color="white" />
+              <Text className="text-white text-lg font-bold">Sign In</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

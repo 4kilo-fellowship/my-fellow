@@ -65,15 +65,8 @@ const Gifts = () => {
         setValue("email", user.email);
       }
     };
-    if (user) loadSavedEmail();
+    loadSavedEmail();
   }, [user, setValue]);
-
-  // Redirect if not logged in
-  useEffect(() => {
-    if (!user) {
-      router.replace("/(auth)/sign-in" as any);
-    }
-  }, [user]);
 
   // Handle deep linking for payment return
   useEffect(() => {
@@ -122,7 +115,10 @@ const Gifts = () => {
   };
 
   const handleInitializePayment = async (data: DonationForm) => {
-    if (!user) return;
+    if (!user) {
+      router.push("/(auth)/sign-in" as any);
+      return;
+    }
 
     // Check for required Chapa fields if not provided
     if (!data.email) {
@@ -172,8 +168,6 @@ const Gifts = () => {
       setLoading(false);
     }
   };
-
-  if (!user) return null;
 
   return (
     <View className={`flex-1 ${isDark ? "bg-dark" : "bg-background"}`}>
@@ -359,7 +353,17 @@ const Gifts = () => {
                 paddingVertical: 16,
               }}
               renderItem={({ item }) => (
-                <GiftCard item={item} isDark={isDark} onPress={() => {}} />
+                <GiftCard
+                  item={item}
+                  isDark={isDark}
+                  onPress={() => {
+                    if (!user) {
+                      router.push("/(auth)/sign-in" as any);
+                    } else {
+                      // Original onPress logic if any
+                    }
+                  }}
+                />
               )}
             />
           </View>
