@@ -37,6 +37,11 @@
   "expo": {
     "android": {
       "package": "com.natitam1.myfellow"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "0957bdbf-a7f2-45cf-bf64-47e89c33eca8"
+      }
     }
   }
 }
