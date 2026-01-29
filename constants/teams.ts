@@ -64,7 +64,7 @@ export const TEAMS: Team[] = [
     category: "Teaching",
     location: "6kilo church",
     coordinates: { lat: 9.040462923318069, lng: 38.759740033794586 },
-    image: require("@/assets/images/programs/bss.png"),
+    image: require("@/assets/images/programs/bss.jpg"),
     leader: {
       name: "Muse Lema",
       role: "Bible Study Coordinator",
@@ -113,7 +113,7 @@ export const TEAMS: Team[] = [
     category: "Fellowship",
     location: "Emmanuel church",
     coordinates: { lat: 9.03037740148045, lng: 38.77196975055801 },
-    image: require("@/assets/images/programs/i4u.png"),
+    image: require("@/assets/images/programs/i4u.jpg"),
     leader: {
       name: "Desalegn Tadesse",
       role: "I4U Team Coordinator",
