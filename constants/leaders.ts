@@ -57,7 +57,7 @@ export const LEADERS: Leader[] = [
     phoneNumber: "0976652663",
     telegram: "@nahom",
     isVerified: true,
-    image: require("@/assets/images/leaders/leader4.png"),
+    image: require("@/assets/images/leaders/leader4.jpg"),
     type: "Main",
   },
   {
@@ -68,7 +68,7 @@ export const LEADERS: Leader[] = [
     phoneNumber: "0976652663",
     telegram: "@lombame",
     isVerified: true,
-    image: require("@/assets/images/leaders/leader5.png"),
+    image: require("@/assets/images/leaders/leader5.jpg"),
     type: "Main",
   },
   {
@@ -112,7 +112,7 @@ export const LEADERS: Leader[] = [
     phoneNumber: TEAM_LEADERS[1].phoneNumber,
     telegram: TEAM_LEADERS[1].telegram,
     isVerified: true,
-    image: require("@/assets/images/leaders/leader4.png"),
+    image: require("@/assets/images/leaders/leader4.jpg"),
     type: "Team",
   },
   {
@@ -145,7 +145,7 @@ export const LEADERS: Leader[] = [
     phoneNumber: TEAM_LEADERS[4].phoneNumber,
     telegram: TEAM_LEADERS[4].telegram,
     isVerified: true,
-    image: require("@/assets/images/leaders/leader4.png"),
+    image: require("@/assets/images/leaders/leader4.jpg"),
     type: "Team",
   },
   {
@@ -167,7 +167,7 @@ export const LEADERS: Leader[] = [
     phoneNumber: TEAM_LEADERS[6].phoneNumber,
     telegram: TEAM_LEADERS[6].telegram,
     isVerified: true,
-    image: require("@/assets/images/leaders/leader5.png"),
+    image: require("@/assets/images/leaders/leader5.jpg"),
     type: "Team",
   },
 ];
