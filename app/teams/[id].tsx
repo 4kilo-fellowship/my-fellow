@@ -25,7 +25,6 @@ const TeamDetails = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  // Find the team by ID
   const team = TEAMS.find((t) => t.id === id);
 
   if (!team) {
@@ -54,10 +53,8 @@ const TeamDetails = () => {
   };
 
   return (
-    <View className={`flex-1 ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}>
+    <View className={`flex-1 ${isDark ? "bg-dark" : "bg-background"}`}>
       <StatusBar style={isDark ? "light" : "dark"} />
-
-      {/* Sticky Back Button */}
       <View
         style={{
           position: "absolute",
@@ -76,7 +73,6 @@ const TeamDetails = () => {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Hero Image */}
         <View className="relative">
           <Image
             source={team.image}
@@ -85,10 +81,6 @@ const TeamDetails = () => {
             resizeMode="cover"
           />
 
-          {/* Gradient Overlay */}
-          <View className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
-
-          {/* Team Badge */}
           <View className="absolute bottom-4 left-5">
             <View
               style={{ backgroundColor: PRIMARY_COLOR }}
@@ -102,9 +94,7 @@ const TeamDetails = () => {
           </View>
         </View>
 
-        {/* Content */}
         <View className="px-5 pt-6 pb-10">
-          {/* Title & Members */}
           <View className="mb-6">
             <Text
               className={`text-3xl font-extrabold mb-3 ${isDark ? "text-white" : "text-black"}`}
@@ -135,7 +125,6 @@ const TeamDetails = () => {
             </View>
           </View>
 
-          {/* Description */}
           <View className="mb-6">
             <Text
               className={`text-base leading-6 ${isDark ? "text-zinc-300" : "text-zinc-700"}`}
@@ -144,7 +133,6 @@ const TeamDetails = () => {
             </Text>
           </View>
 
-          {/* Meeting Info Card */}
           <View
             className={`rounded-3xl p-6 mb-6 border ${
               isDark
@@ -159,10 +147,15 @@ const TeamDetails = () => {
             </Text>
 
             <View className="gap-5">
-              {/* Time */}
               <View className="flex-row items-center">
-                <View className="w-12 bg-white  h-12 rounded-2xl items-center justify-center">
-                  <Ionicons name="time-outline" size={22} color="black" />
+                <View
+                  className={`w-12 ${isDark ? "bg-zinc-900" : "bg-white"} h-12 rounded-2xl items-center justify-center`}
+                >
+                  <Ionicons
+                    name="time-outline"
+                    size={22}
+                    color={isDark ? "white" : "black"}
+                  />
                 </View>
                 <View className="ml-4 flex-1">
                   <Text className="text-zinc-400 text-xs font-bold mb-1 uppercase tracking-wider">
@@ -176,15 +169,19 @@ const TeamDetails = () => {
                 </View>
               </View>
 
-              {/* Divider */}
               <View
                 className={`h-px ${isDark ? "bg-zinc-800" : "bg-sky-200"}`}
               />
 
-              {/* Location */}
               <View className="flex-row items-center">
-                <View className="w-12 bg-white h-12 rounded-2xl items-center justify-center">
-                  <Ionicons name="location-outline" size={22} color="black" />
+                <View
+                  className={`w-12 ${isDark ? "bg-zinc-900" : "bg-white"} h-12 rounded-2xl items-center justify-center`}
+                >
+                  <Ionicons
+                    name="location-outline"
+                    size={22}
+                    color={isDark ? "white" : "black"}
+                  />
                 </View>
                 <View className="ml-4 flex-1">
                   <Text className="text-zinc-400 text-xs font-bold mb-1 uppercase tracking-wider">
@@ -211,7 +208,6 @@ const TeamDetails = () => {
             </View>
           </View>
 
-          {/* About Section */}
           <View className="mb-6">
             <Text
               className={`text-xl font-bold mb-3 ${isDark ? "text-white" : "text-black"}`}
@@ -225,7 +221,6 @@ const TeamDetails = () => {
             </Text>
           </View>
 
-          {/* Leader Card */}
           <View className="mb-6">
             <Text
               className={`text-xl font-bold mb-4 ${isDark ? "text-white" : "text-black"}`}
@@ -253,7 +248,6 @@ const TeamDetails = () => {
                 </View>
               </View>
 
-              {/* Contact Buttons */}
               <View className="flex-row gap-3">
                 <TouchableOpacity
                   onPress={handleCall}
@@ -277,7 +271,6 @@ const TeamDetails = () => {
             </View>
           </View>
 
-          {/* Join Team Button */}
           <TouchableOpacity
             style={{ backgroundColor: PRIMARY_COLOR }}
             className="py-5 rounded-2xl items-center shadow-lg mb-4"
