@@ -631,7 +631,6 @@ export default function Settings() {
           </View>
         ))}
 
-        {/* Footer */}
         <View style={styles.footer}>
           <Image
             source={require("@/assets/images/logo-primary.png")}
@@ -644,8 +643,13 @@ export default function Settings() {
               { color: isDark ? "#6b7280" : "#9ca3af" },
             ]}
           >
-            Made with <Ionicons name="heart" size={15} color="#ff6719" /> by 4
-            Kilo Fellowship
+            Made with{" "}
+            <Ionicons
+              name="heart"
+              size={15}
+              color={isDark ? "#6b7280" : "#9ca3af"}
+            />{" "}
+            by 4 Kilo Fellowship
           </Text>
           <Text
             style={[
