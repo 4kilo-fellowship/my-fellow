@@ -1,46 +1,54 @@
 {
-  "build": {
-    "production": {
-      "android": {
-        "buildType": "app-bundle",
-        "env": {
-          "NODE_ENV": "production"
-        }
-      },
-      "ios": {
-        "simulator": false,
-        "env": {
-          "NODE_ENV": "production"
-        }
-      }
-    },
-    "development": {
-      "android": {
-        "buildType": "apk",
-        "env": {
-          "NODE_ENV": "development"
-        }
-      },
-      "ios": {
-        "simulator": true,
-        "env": {
-          "NODE_ENV": "development"
-        }
-      }
-    }
-  },
-  "extra": {
-    "eas": {
-      "projectId": "0957bdbf-a7f2-45cf-bf64-47e89c33eca8"
-    }
-  },
   "expo": {
+    "name": "My Fellow",
+    "slug": "my-fellow",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
     "android": {
       "package": "com.natitam1.myfellow"
+    },
+    "web": {},
+    "experiments": {
+      "tsconfigPaths": true
     },
     "extra": {
       "eas": {
         "projectId": "0957bdbf-a7f2-45cf-bf64-47e89c33eca8"
+      }
+    },
+    "build": {
+      "production": {
+        "android": {
+          "buildType": "app-bundle",
+          "env": {
+            "NODE_ENV": "production"
+          }
+        },
+        "ios": {
+          "simulator": false,
+          "env": {
+            "NODE_ENV": "production"
+          }
+        }
+      },
+      "development": {
+        "android": {
+          "buildType": "apk",
+          "env": {
+            "NODE_ENV": "development"
+          }
+        },
+        "ios": {
+          "simulator": true,
+          "env": {
+            "NODE_ENV": "development"
+          }
+        }
       }
     }
   }
