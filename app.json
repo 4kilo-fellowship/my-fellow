@@ -6,11 +6,22 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "assetBundlePatterns": ["**/*"],
+    "icon": "./assets/images/4k_icon.png",
+    "splash": {
+      "backgroundColor": "#ff6719",
+      "resizeMode": "contain"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.natitam1.myfellow",
+      "icon": "./assets/images/4k_icon.png"
     },
     "android": {
-      "package": "com.natitam1.myfellow"
+      "package": "com.natitam1.myfellow",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/4k_icon.png",
+        "backgroundColor": "#ff6719"
+      }
     },
     "web": {},
     "experiments": {

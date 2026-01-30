@@ -1,22 +1,14 @@
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React from "react";
 import Toast from "react-native-toast-message";
 import "./global.css";
 
-// Prevent the native splash screen from auto-hiding before your custom one is ready
-SplashScreen.preventAutoHideAsync().catch(() => {
-  /* reloading app might cause this to error */
-});
+// Native splash screen will hide as soon as the app is ready,
+// so we don't need to manually prevent or hide it if we want to "jump" it.
 
 export default function RootLayout() {
-  useEffect(() => {
-    // Immediately hide the native splash screen so that app/index.tsx (your custom splash) shows up
-    SplashScreen.hideAsync();
-  }, []);
-
   return (
     <AuthProvider>
       <ThemeProvider>
