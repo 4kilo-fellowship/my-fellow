@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "assetBundlePatterns": ["**/*"],
-    "icon": "./assets/images/4k_icon.png",
+    "icon": "./assets/images/4kk.png",
     "splash": {
       "image": "./assets/images/logo-white.png",
       "backgroundColor": "#ff6719",
@@ -16,12 +16,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.natitam1.myfellow",
-      "icon": "./assets/images/4k_icon.png"
+      "icon": "./assets/images/4kk.png"
     },
     "android": {
       "package": "com.natitam1.myfellow",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/4k_icon.png",
+        "foregroundImage": "./assets/images/4kk.png",
         "backgroundColor": "#ff6719"
       }
     },
