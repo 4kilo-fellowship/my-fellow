@@ -190,14 +190,37 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
       )}
 
       <LinearGradient
-        colors={["rgba(0,0,0,0.32)", "rgba(0,0,0,0.36)"]}
+        colors={[
+          "transparent",
+          "rgba(0,0,0,0.01)",
+          "rgba(0,0,0,0.2)",
+          "rgba(0,0,0,0.55)",
+          "rgba(0,0,0,0.8)",
+        ]}
+        locations={[0, 0.4, 0.6, 0.8, 1]}
         style={StyleSheet.absoluteFill}
       />
+
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.7}
+        className="absolute top-5 right-6 flex-row items-center"
+        style={{ zIndex: 10 }}
+      >
+        <Text style={styles.detailsText}>LEARN MORE</Text>
+        <Ionicons
+          name="chevron-forward"
+          size={14}
+          color="white"
+          style={{ opacity: 0.8, marginLeft: 2 }}
+        />
+      </TouchableOpacity>
 
       <View style={styles.content}>
         <Text numberOfLines={2} style={styles.title}>
           {item.title}
         </Text>
+
         <Text numberOfLines={3} style={styles.subtitle}>
           {subtitleText}
         </Text>
@@ -210,10 +233,18 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
             activeOpacity={0.9}
             onPress={handlePrimary}
             accessibilityLabel={`Primary action for ${item.title}`}
-            className="w-full bg-[#ff6619] py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30"
+            className={`w-full ${isDark ? "bg-white" : "bg-[#ff6619]"} py-3.5 rounded-2xl flex-row items-center justify-center shadow-lg ${isDark ? "shadow-white/20" : "shadow-orange-500/40"}`}
           >
-            <Text className="text-white text-lg font-bold mr-2">{ctaText}</Text>
-            <Ionicons name="arrow-forward" size={20} color="white" />
+            <Text
+              className={`${isDark ? "text-slate-900" : "text-white"} text-base font-bold mr-2`}
+            >
+              {ctaText}
+            </Text>
+            <Ionicons
+              name="arrow-forward"
+              size={18}
+              color={isDark ? "#0f172a" : "white"}
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -259,14 +290,35 @@ const styles = StyleSheet.create({
   },
   title: {
     color: "#fff",
-    fontSize: 22,
-    fontWeight: "800",
-    marginBottom: 4,
+    fontSize: 26,
+    fontWeight: "900",
+    marginBottom: 6,
+    textShadowColor: "rgba(0, 0, 0, 0.6)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+    fontFamily: "Poppins_900Black",
   },
   subtitle: {
-    color: "rgba(255,255,255,0.9)",
-    fontSize: 14,
-    marginBottom: 14,
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 13,
+    fontWeight: "400",
+    lineHeight: 18,
+    marginBottom: 16,
+    textShadowColor: "rgba(0, 0, 0, 0.4)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+    fontFamily: "Poppins_400Regular",
+  },
+  detailsText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "600",
+    letterSpacing: 2,
+    opacity: 0.9,
+    textShadowColor: "rgba(0, 0, 0, 0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+    fontFamily: "Poppins_600SemiBold",
   },
   actionsRow: {
     flexDirection: "row",

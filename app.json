@@ -9,6 +9,8 @@
     "assetBundlePatterns": ["**/*"],
     "icon": "./assets/images/4kk.png",
     "splash": {
+      "image": "./assets/images/4kk.png",
+      "resizeMode": "contain",
       "backgroundColor": "#ff6719"
     },
     "ios": {
@@ -35,6 +37,6 @@
         "NODE_ENV": "development"
       }
     },
-    "plugins": ["expo-font", "expo-router"]
+    "plugins": ["expo-font", "expo-router", "expo-splash-screen"]
   }
 }
