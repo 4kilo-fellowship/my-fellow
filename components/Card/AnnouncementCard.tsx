@@ -1,3 +1,4 @@
+import { PRIMARY } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef, useState } from "react";
@@ -233,18 +234,13 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
             activeOpacity={0.9}
             onPress={handlePrimary}
             accessibilityLabel={`Primary action for ${item.title}`}
-            className={`w-full ${isDark ? "bg-white" : "bg-[#ff6619]"} py-3.5 rounded-2xl flex-row items-center justify-center shadow-lg ${isDark ? "shadow-white/20" : "shadow-orange-500/40"}`}
+            style={{ backgroundColor: PRIMARY }}
+            className="w-full py-3.5 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/40"
           >
-            <Text
-              className={`${isDark ? "text-slate-900" : "text-white"} text-base font-bold mr-2`}
-            >
+            <Text className="text-white text-base font-bold mr-2">
               {ctaText}
             </Text>
-            <Ionicons
-              name="arrow-forward"
-              size={18}
-              color={isDark ? "#0f172a" : "white"}
-            />
+            <Ionicons name="arrow-forward" size={18} color="white" />
           </TouchableOpacity>
         </View>
       </View>
