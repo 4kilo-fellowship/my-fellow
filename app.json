@@ -6,11 +6,10 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "icon": "./assets/images/4k_icon.png",
     "splash": {
+      "image": "./assets/images/logo-white.png",
       "backgroundColor": "#ff6719",
       "resizeMode": "contain"
     },
@@ -38,9 +37,6 @@
         "NODE_ENV": "development"
       }
     },
-    "plugins": [
-      "expo-font",
-      "expo-router"
-    ]
+    "plugins": ["expo-font", "expo-router"]
   }
 }
