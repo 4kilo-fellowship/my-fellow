@@ -9,9 +9,7 @@
     "assetBundlePatterns": ["**/*"],
     "icon": "./assets/images/4kk.png",
     "splash": {
-      "image": "./assets/images/logo-white.png",
-      "backgroundColor": "#ff6719",
-      "resizeMode": "contain"
+      "backgroundColor": "#ff6719"
     },
     "ios": {
       "supportsTablet": true,

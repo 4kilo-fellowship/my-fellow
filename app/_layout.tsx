@@ -1,12 +1,13 @@
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import React from "react";
 import Toast from "react-native-toast-message";
 import "./global.css";
 
-// Native splash screen will hide as soon as the app is ready,
-// so we don't need to manually prevent or hide it if we want to "jump" it.
+// Prevent the splash screen from auto-hiding before asset loading is complete.
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   return (

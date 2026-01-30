@@ -1,62 +1,62 @@
 name: EAS Build and Create Release (wait + attach link)
 
 on:
-    push:
-        branches:
-            - main
+  push:
+    branches:
+      - main
 
 jobs:
-    build-and-release:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v5
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-            - name: Setup Node
-              uses: actions/setup-node@v6
-              with:
-                  node-version: 22
-                  cache: "npm"
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
 
-            - name: Install jq (for JSON parsing)
-              run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Install jq (for JSON parsing)
+        run: sudo apt-get update && sudo apt-get install -y jq
 
-            - name: Setup Expo & EAS CLI
-              uses: expo/expo-github-action@v8
-              with:
-                  eas-version: latest
-                  token: ${{ secrets.EXPO_TOKEN }}
+      - name: Setup Expo & EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
 
-            - name: Install dependencies
-              run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-            - name: Run EAS build and wait (JSON)
-              id: eas_build
-              run: |
-                  # start build and wait; output JSON so we can parse the build id
-                  # change --platform to android/ios/all and --profile if needed
-                  set -o pipefail
-                  npx eas-cli build --platform android --profile production --non-interactive --wait --json 2>&1 | tee build-output.json
-                  # find build id from JSON output (the CLI prints JSON to stdout)
-                  BUILD_ID=$(jq -r '.id // .buildId // .data.id' build-output.json | head -n1)
-                  echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
+      - name: Run EAS build and wait (JSON)
+        id: eas_build
+        run: |
+          # start build and wait; output JSON so we can parse the build id
+          # change --platform to android/ios/all and --profile if needed
+          set -o pipefail
+          npx eas-cli build --platform android --profile production --non-interactive --wait --json 2>&1 | tee build-output.json
+          # find build id from JSON output (the CLI prints JSON to stdout)
+          BUILD_ID=$(jq -r '.id // .buildId // .data.id' build-output.json | head -n1)
+          echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
 
-            - name: Get artifact URL
-              id: get_url
-              run: |
-                  # fetch details and parse artifact url
-                  npx eas-cli build:view ${{ steps.eas_build.outputs.build_id }} --json > build-details.json
-                  # The JSON contains "artifacts": { "url": "<download url>" } or platform-specific
-                  ARTIFACT_URL=$(jq -r '.artifacts?.url // .artifacts?.buildUrl // .artifacts?.apk?.url // .artifacts?.aab?.url // .artifacts?.ipa?.url' build-details.json)
-                  echo "artifact_url=$ARTIFACT_URL" >> $GITHUB_OUTPUT
+      - name: Get artifact URL
+        id: get_url
+        run: |
+          # fetch details and parse artifact url
+          npx eas-cli build:view ${{ steps.eas_build.outputs.build_id }} --json > build-details.json
+          # The JSON contains "artifacts": { "url": "<download url>" } or platform-specific
+          ARTIFACT_URL=$(jq -r '.artifacts?.url // .artifacts?.buildUrl // .artifacts?.apk?.url // .artifacts?.aab?.url // .artifacts?.ipa?.url' build-details.json)
+          echo "artifact_url=$ARTIFACT_URL" >> $GITHUB_OUTPUT
 
-            - name: Create GitHub Release with download link
-              uses: softprops/action-gh-release@v1
-              with:
-                  tag_name: "eas-build-${{ steps.eas_build.outputs.build_id }}"
-                  name: "EAS build ${{ steps.eas_build.outputs.build_id }}"
-                  body: |
-                      EAS build finished.
-                      Build ID: ${{ steps.eas_build.outputs.build_id }}
-                      Download: ${{ steps.get_url.outputs.artifact_url }}
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub Release with download link
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "eas-build-${{ steps.eas_build.outputs.build_id }}"
+          name: "EAS build ${{ steps.eas_build.outputs.build_id }}"
+          body: |
+            EAS build finished.
+            Build ID: ${{ steps.eas_build.outputs.build_id }}
+            Download: ${{ steps.get_url.outputs.artifact_url }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

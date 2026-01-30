@@ -1,28 +1,34 @@
 import { PRIMARY } from "@/constants";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
 import { View } from "react-native";
 
-export default function SplashScreen() {
+export default function SplashScreenComponent() {
   const router = useRouter();
   const [phase, setPhase] = useState<"primary" | "white">("primary");
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   useEffect(() => {
-    const changeTimeout = setTimeout(() => {
-      setPhase("white");
-    }, 3000);
+    if (isImageLoaded) {
+      // Once image is loaded, hide native splash to reveal this matching screen
+      SplashScreen.hideAsync();
 
-    const navTimeout = setTimeout(() => {
-      // After the splash screen, navigate into the auth flow
-      router.replace("/(tabs)");
-    }, 4000);
+      const changeTimeout = setTimeout(() => {
+        setPhase("white");
+      }, 3000);
 
-    return () => {
-      clearTimeout(changeTimeout);
-      clearTimeout(navTimeout);
-    };
-  }, []);
+      const navTimeout = setTimeout(() => {
+        router.replace("/(tabs)");
+      }, 4000);
+
+      return () => {
+        clearTimeout(changeTimeout);
+        clearTimeout(navTimeout);
+      };
+    }
+  }, [isImageLoaded]);
 
   return (
     <View
@@ -39,10 +45,16 @@ export default function SplashScreen() {
             ? require("../assets/images/logo-white.png")
             : require("../assets/images/logo-primary.png")
         }
-        style={{ width: 500, height: 500 }}
+        style={{
+          width: "100%",
+          height: "100%",
+          maxWidth: 400, // Reasonable max width close to typical native splash icon sizes
+          maxHeight: 400,
+        }}
         contentFit="contain"
         transition={0}
         cachePolicy="memory"
+        onLoad={() => setIsImageLoaded(true)}
       />
     </View>
   );
