@@ -2,6 +2,7 @@
   "expo": {
     "name": "My Fellow",
     "slug": "my-fellow",
+    "scheme": "my-fellow",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
@@ -30,36 +31,9 @@
     "extra": {
       "eas": {
         "projectId": "0957bdbf-a7f2-45cf-bf64-47e89c33eca8"
-      }
-    },
-    "build": {
-      "production": {
-        "android": {
-          "buildType": "app-bundle",
-          "env": {
-            "NODE_ENV": "production"
-          }
-        },
-        "ios": {
-          "simulator": false,
-          "env": {
-            "NODE_ENV": "production"
-          }
-        }
       },
-      "development": {
-        "android": {
-          "buildType": "apk",
-          "env": {
-            "NODE_ENV": "development"
-          }
-        },
-        "ios": {
-          "simulator": true,
-          "env": {
-            "NODE_ENV": "development"
-          }
-        }
+      "env": {
+        "NODE_ENV": "development"
       }
     }
   }
