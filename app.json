@@ -21,7 +21,7 @@
     "android": {
       "package": "com.natitam1.myfellow",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/4kk.png",
+        "foregroundImage": "./assets/images/primary.png",
         "backgroundColor": "#ff6719"
       }
     },
