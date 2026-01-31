@@ -222,7 +222,7 @@ const Gifts = () => {
           {/* gifts section */}
           <View className="px-5 mb-12">
             <View>
-              {/* Form Fields */}
+              {/* form  */}
               <View className="gap-8">
                 <View>
                   <Text

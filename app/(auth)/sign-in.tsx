@@ -1,3 +1,4 @@
+import ForgotPasswordModal from "@/components/Modals/ForgotPasswordModal";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
@@ -69,10 +70,7 @@ export default function SignIn() {
         router.replace("/(tabs)");
       }
     } catch (error: any) {
-      const message =
-        // error?.response?.data?.message ||
-        // error?.message ||
-        "Invalid phone number or password. Please try again.";
+      const message = "Invalid phone number or password. Please try again.";
       setLoginError(message);
     } finally {
       setLoading(false);
@@ -97,7 +95,7 @@ export default function SignIn() {
             }}
           >
             <View className="flex-1 justify-center items-center px-6">
-              {/* Header Section */}
+              {/* header section */}
               <View className="items-center">
                 <Image
                   width={24}
@@ -136,7 +134,7 @@ export default function SignIn() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View className="relative">
                         <TextInput
-                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 text-base focus:bg-transparent ${
+                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 text-base focus:bg-transparent focus:border-primary ${
                             errors.phoneNumber
                               ? "border-red-500"
                               : "focus:border-primary"
@@ -227,20 +225,13 @@ export default function SignIn() {
                   </Text>
                 ) : null}
 
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  className="items-end mt-2"
-                >
-                  <Text className="text-primary font-bold text-base">
-                    Forgot Password?
-                  </Text>
-                </TouchableOpacity>
+                <ForgotPasswordModal />
               </View>
 
               {/* Action Buttons */}
               <View className="mt-8 mb-6">
                 <TouchableOpacity
-                  activeOpacity={0.9}
+                  activeOpacity={0.8}
                   onPress={handleSubmit(onSubmit)}
                   disabled={loading}
                   className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 items-center justify-center active:scale-[0.98] flex-row"
@@ -262,7 +253,7 @@ export default function SignIn() {
                     Don&apos;t have an account?{" "}
                   </Text>
                   <Link href="/sign-up-step-1" asChild>
-                    <TouchableOpacity activeOpacity={0.9}>
+                    <TouchableOpacity activeOpacity={0.8}>
                       <Text className="text-primary font-bold text-base">
                         Register
                       </Text>
