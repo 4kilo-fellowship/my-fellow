@@ -83,8 +83,8 @@ export default function SignIn() {
     <View className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} `}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1"
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
         >
           {/* head */}
           <View
@@ -118,11 +118,15 @@ export default function SignIn() {
             keyboardDismissMode="on-drag"
           >
             {/* form */}
-            <View className="flex-1 bg-white pt-8 px-6">
+            <View
+              className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} pt-8 px-6`}
+            >
               {/* fields*/}
               <View className="space-y-5">
                 <View>
-                  <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
+                  <Text
+                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
+                  >
                     Phone Number
                   </Text>
                   <Controller
@@ -131,13 +135,13 @@ export default function SignIn() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View className="relative">
                         <TextInput
-                          className={`w-full bg-slate-50 border-2 rounded-2xl p-4 pl-12 text-slate-900 text-base focus:bg-white ${
+                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 text-base focus:bg-transparent ${
                             errors.phoneNumber
                               ? "border-red-500"
-                              : "border-slate-200 focus:border-primary"
+                              : "focus:border-primary"
                           }`}
                           placeholder="e.g. 0994627985"
-                          placeholderTextColor="#94a3b8"
+                          placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           value={value}
                           onChangeText={onChange}
                           onBlur={onBlur}
@@ -148,7 +152,7 @@ export default function SignIn() {
                           <Ionicons
                             name="call-outline"
                             size={22}
-                            color="#64748b"
+                            color={isDark ? "#94a3b8" : "#64748b"}
                           />
                         </View>
                       </View>
@@ -160,9 +164,10 @@ export default function SignIn() {
                     </Text>
                   ) : null}
                 </View>
-
                 <View>
-                  <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
+                  <Text
+                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
+                  >
                     Password
                   </Text>
                   <Controller
@@ -171,13 +176,13 @@ export default function SignIn() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View className="relative">
                         <TextInput
-                          className={`w-full bg-slate-50 border-2 rounded-2xl p-4 pl-12 pr-12 text-slate-900 text-base focus:bg-white ${
+                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 pr-12 text-base focus:bg-transparent ${
                             errors.password
                               ? "border-red-500"
-                              : "border-slate-200 focus:border-primary"
+                              : "focus:border-primary"
                           }`}
                           placeholder="Enter your password"
-                          placeholderTextColor="#94a3b8"
+                          placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           value={value}
                           keyboardType="default"
                           onChangeText={onChange}
@@ -188,7 +193,7 @@ export default function SignIn() {
                           <Ionicons
                             name="lock-closed-outline"
                             size={22}
-                            color="#64748b"
+                            color={isDark ? "#94a3b8" : "#64748b"}
                           />
                         </View>
                         <TouchableOpacity
@@ -201,7 +206,7 @@ export default function SignIn() {
                               showPassword ? "eye-off-outline" : "eye-outline"
                             }
                             size={22}
-                            color="#64748b"
+                            color={isDark ? "#94a3b8" : "#64748b"}
                           />
                         </TouchableOpacity>
                       </View>
@@ -250,7 +255,9 @@ export default function SignIn() {
 
                 {/* Footer */}
                 <View className="flex-row justify-center mt-6">
-                  <Text className="text-slate-600 font-medium text-base">
+                  <Text
+                    className={`${isDark ? "text-slate-400" : "text-slate-600"} font-medium text-base`}
+                  >
                     Don&apos;t have an account?{" "}
                   </Text>
                   <Link href="/sign-up-step-1" asChild>
@@ -264,7 +271,9 @@ export default function SignIn() {
 
                 {/* Terms */}
                 <View className="mt-6 px-2">
-                  <Text className="text-center text-xs text-slate-500 leading-5">
+                  <Text
+                    className={`text-center text-xs ${isDark ? "text-slate-500" : "text-slate-500"} leading-5`}
+                  >
                     By signing in, you agree to our{" "}
                     <Text className="text-primary font-bold">Terms of Use</Text>{" "}
                     and{" "}

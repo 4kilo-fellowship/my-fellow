@@ -273,13 +273,15 @@ const UserProfileMenu = () => {
           </Text>
         </View>
         {item.type === "toggle" && (
-          <Switch
-            value={item.value}
-            onValueChange={item.onToggle}
-            trackColor={{ false: "#d1d5db", true: "#ff6619" }}
-            thumbColor="#ffffff"
-            ios_backgroundColor="#d1d5db"
-          />
+          <View pointerEvents="none">
+            <Switch
+              value={item.value}
+              onValueChange={item.onToggle}
+              trackColor={{ false: "#d1d5db", true: "#ff6619" }}
+              thumbColor="#ffffff"
+              ios_backgroundColor="#d1d5db"
+            />
+          </View>
         )}
         {item.type === "navigation" && (
           <Ionicons

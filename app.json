@@ -9,7 +9,7 @@
     "assetBundlePatterns": ["**/*"],
     "icon": "./assets/images/4kk.png",
     "splash": {
-      "image": "./assets/images/logo-white.png",
+      "image": "./assets/images/primary.png",
       "resizeMode": "contain",
       "backgroundColor": "#ff6719"
     },
@@ -21,7 +21,7 @@
     "android": {
       "package": "com.natitam1.myfellow",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/primary.png",
+        "foregroundImage": "./assets/images/4kk.png",
         "backgroundColor": "#ff6719"
       }
     },

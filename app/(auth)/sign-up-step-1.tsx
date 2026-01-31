@@ -1,3 +1,4 @@
+import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
@@ -41,6 +42,8 @@ type SignUpStep1FormValues = z.infer<typeof signUpStep1Schema>;
 export default function SignUpStep1() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const {
     control,
@@ -76,11 +79,11 @@ export default function SignUpStep1() {
   };
 
   return (
-    <View className="flex-1 bg-white">
+    <View className={`flex-1 ${isDark ? "bg-dark" : "bg-white"}`}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1"
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
         >
           {/* header */}
           <View
@@ -126,11 +129,15 @@ export default function SignUpStep1() {
             keyboardDismissMode="on-drag"
           >
             {/* Form Container */}
-            <View className="flex-1 bg-white pt-8 px-6">
+            <View
+              className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} pt-8 px-6`}
+            >
               {/* Form Fields */}
               <View className="space-y-5">
                 <View>
-                  <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
+                  <Text
+                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
+                  >
                     Full Name
                   </Text>
                   <Controller
@@ -139,13 +146,13 @@ export default function SignUpStep1() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View className="relative">
                         <TextInput
-                          className={`w-full bg-slate-50 border-2 rounded-2xl p-4 pl-12 text-slate-900 text-base focus:bg-white ${
+                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 text-base focus:bg-transparent ${
                             errors.fullName
                               ? "border-red-500"
-                              : "border-slate-200 focus:border-primary"
+                              : "focus:border-primary"
                           }`}
                           placeholder="e.g. Natnael Zerihun"
-                          placeholderTextColor="#94a3b8"
+                          placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           value={value}
                           onChangeText={onChange}
                           onBlur={onBlur}
@@ -155,7 +162,7 @@ export default function SignUpStep1() {
                           <Ionicons
                             name="person-outline"
                             size={22}
-                            color="#64748b"
+                            color={isDark ? "#94a3b8" : "#64748b"}
                           />
                         </View>
                       </View>
@@ -169,7 +176,9 @@ export default function SignUpStep1() {
                 </View>
 
                 <View>
-                  <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
+                  <Text
+                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
+                  >
                     Phone Number
                   </Text>
                   <Controller
@@ -178,13 +187,13 @@ export default function SignUpStep1() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View className="relative">
                         <TextInput
-                          className={`w-full bg-slate-50 border-2 rounded-2xl p-4 pl-12 text-slate-900 text-base focus:bg-white ${
+                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 text-base focus:bg-transparent ${
                             errors.phone
                               ? "border-red-500"
-                              : "border-slate-200 focus:border-primary"
+                              : "focus:border-primary"
                           }`}
                           placeholder="e.g. 0994627985"
-                          placeholderTextColor="#94a3b8"
+                          placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           keyboardType="phone-pad"
                           value={value}
                           onChangeText={onChange}
@@ -194,7 +203,7 @@ export default function SignUpStep1() {
                           <Ionicons
                             name="call-outline"
                             size={22}
-                            color="#64748b"
+                            color={isDark ? "#94a3b8" : "#64748b"}
                           />
                         </View>
                       </View>
@@ -208,7 +217,9 @@ export default function SignUpStep1() {
                 </View>
 
                 <View>
-                  <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
+                  <Text
+                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
+                  >
                     Password
                   </Text>
                   <Controller
@@ -217,13 +228,13 @@ export default function SignUpStep1() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View className="relative">
                         <TextInput
-                          className={`w-full bg-slate-50 border-2 rounded-2xl p-4 pl-12 pr-12 text-slate-900 text-base focus:bg-white ${
+                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 pr-12 text-base focus:bg-transparent ${
                             errors.password
                               ? "border-red-500"
-                              : "border-slate-200 focus:border-primary"
+                              : "focus:border-primary"
                           }`}
                           placeholder="Create a strong password"
-                          placeholderTextColor="#94a3b8"
+                          placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           secureTextEntry={!showPassword}
                           value={value}
                           onChangeText={onChange}
@@ -233,7 +244,7 @@ export default function SignUpStep1() {
                           <Ionicons
                             name="lock-closed-outline"
                             size={22}
-                            color="#64748b"
+                            color={isDark ? "#94a3b8" : "#64748b"}
                           />
                         </View>
                         <TouchableOpacity
@@ -246,7 +257,7 @@ export default function SignUpStep1() {
                               showPassword ? "eye-off-outline" : "eye-outline"
                             }
                             size={22}
-                            color="#64748b"
+                            color={isDark ? "#94a3b8" : "#64748b"}
                           />
                         </TouchableOpacity>
                       </View>
@@ -259,7 +270,9 @@ export default function SignUpStep1() {
                   ) : null}
                 </View>
                 <View>
-                  <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
+                  <Text
+                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
+                  >
                     Confirm Password
                   </Text>
                   <Controller
@@ -268,13 +281,13 @@ export default function SignUpStep1() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View className="relative">
                         <TextInput
-                          className={`w-full bg-slate-50 border-2 rounded-2xl p-4 pl-12 pr-12 text-slate-900 text-base focus:bg-white ${
+                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 pr-12 text-base focus:bg-transparent ${
                             errors.confirmPassword
                               ? "border-red-500"
-                              : "border-slate-200 focus:border-primary"
+                              : "focus:border-primary"
                           }`}
                           placeholder="Confirm your password"
-                          placeholderTextColor="#94a3b8"
+                          placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           secureTextEntry={!showPassword}
                           value={value}
                           onChangeText={onChange}
@@ -284,7 +297,7 @@ export default function SignUpStep1() {
                           <Ionicons
                             name="lock-closed-outline"
                             size={22}
-                            color="#64748b"
+                            color={isDark ? "#94a3b8" : "#64748b"}
                           />
                         </View>
                         <TouchableOpacity
@@ -297,7 +310,7 @@ export default function SignUpStep1() {
                               showPassword ? "eye-off-outline" : "eye-outline"
                             }
                             size={22}
-                            color="#64748b"
+                            color={isDark ? "#94a3b8" : "#64748b"}
                           />
                         </TouchableOpacity>
                       </View>
@@ -325,7 +338,9 @@ export default function SignUpStep1() {
                 </TouchableOpacity>
 
                 <View className="flex-row justify-center mt-6">
-                  <Text className="text-slate-600 font-medium text-base">
+                  <Text
+                    className={`${isDark ? "text-slate-400" : "text-slate-600"} font-medium text-base`}
+                  >
                     Already have an account?{" "}
                   </Text>
                   <TouchableOpacity

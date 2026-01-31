@@ -1,6 +1,7 @@
 import SelectionModal from "@/components/SelectionModal";
 import { DEPARTMENTS, TEAM_NAMES, YEARS } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { SignUpStep2FormValues, signUpStep2Schema } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,6 +34,8 @@ export default function SignUpStep2() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { signup } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -108,7 +111,6 @@ export default function SignUpStep2() {
       await signup(registrationData);
 
       // Success - navigation will be handled by AuthProvider/auth state
-      Alert.alert("Welcome!", "Your account has been created successfully.");
       router.replace("/(tabs)");
     } catch (error: any) {
       console.error("Registration error:", error);
@@ -124,15 +126,15 @@ export default function SignUpStep2() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className={`flex-1 ${isDark ? "bg-dark" : "bg-white"}`}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1"
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
         >
           {/* header */}
           <View
-            className="bg-white"
+            className={`${isDark ? "bg-dark shadow-gray-900/10" : "bg-white shadow-slate-100"}`}
             style={{
               height: HEADER_HEIGHT,
               borderBottomLeftRadius: 40,
@@ -148,9 +150,13 @@ export default function SignUpStep2() {
                 <TouchableOpacity
                   activeOpacity={0.9}
                   onPress={() => router.back()}
-                  className="w-12 h-12 bg-white/20 rounded-full items-center justify-center border border-white/30 shadow-lg"
+                  className={`w-12 h-12 ${isDark ? "bg-slate-800" : "bg-slate-50"} rounded-full items-center justify-center border ${isDark ? "border-slate-700" : "border-slate-200"} shadow-lg`}
                 >
-                  <Ionicons name="arrow-back" size={24} color="black" />
+                  <Ionicons
+                    name="arrow-back"
+                    size={24}
+                    color={isDark ? "white" : "black"}
+                  />
                 </TouchableOpacity>
               </View>
             </View>
@@ -163,15 +169,19 @@ export default function SignUpStep2() {
             showsVerticalScrollIndicator={false}
           >
             {/* Form */}
-            <View className="flex-1 bg-white pt-8 px-6">
+            <View
+              className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} pt-8 px-6`}
+            >
               {/* Image Picker */}
               <View className="items-center mb-6">
                 <TouchableOpacity
                   onPress={pickImage}
                   activeOpacity={1}
-                  className="relative shadow-xl shadow-slate-200"
+                  className={`relative shadow-xl ${isDark ? "shadow-gray-900" : "shadow-slate-200"}`}
                 >
-                  <View className="w-32 h-32 rounded-full bg-slate-50 items-center justify-center border-2 border-dashed border-slate-300 overflow-hidden">
+                  <View
+                    className={`w-32 h-32 rounded-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-300"} items-center justify-center border-2 border-dashed overflow-hidden`}
+                  >
                     {image ? (
                       <Image
                         source={{ uri: image }}
@@ -179,8 +189,14 @@ export default function SignUpStep2() {
                       />
                     ) : (
                       <View className="items-center">
-                        <Ionicons name="camera" size={32} color="#94a3b8" />
-                        <Text className="text-[10px] text-slate-400 mt-1 font-bold uppercase tracking-wider">
+                        <Ionicons
+                          name="camera"
+                          size={32}
+                          color={isDark ? "#4b5563" : "#94a3b8"}
+                        />
+                        <Text
+                          className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"} mt-1 font-bold uppercase tracking-wider`}
+                        >
                           Upload
                         </Text>
                       </View>
@@ -200,7 +216,9 @@ export default function SignUpStep2() {
               <View className="space-y-5">
                 {/* Team Dropdown */}
                 <View>
-                  <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
+                  <Text
+                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
+                  >
                     Team
                   </Text>
                   <Controller
@@ -211,15 +229,15 @@ export default function SignUpStep2() {
                         <TouchableOpacity
                           activeOpacity={0.8}
                           onPress={() => setModalType("team")}
-                          className={`w-full bg-slate-50 border-2 rounded-2xl p-4 flex-row justify-between items-center ${
-                            errors.team ? "border-red-500" : "border-slate-200"
+                          className={`w-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"} border-2 rounded-2xl p-4 flex-row justify-between items-center ${
+                            errors.team ? "border-red-500" : ""
                           }`}
                         >
                           <Text
                             className={
                               value
-                                ? "text-slate-900 text-base"
-                                : "text-slate-400 text-base"
+                                ? `${isDark ? "text-white" : "text-slate-900"} text-base`
+                                : `${isDark ? "text-slate-600" : "text-slate-400"} text-base`
                             }
                           >
                             {value || "Select your team"}
@@ -227,7 +245,7 @@ export default function SignUpStep2() {
                           <Ionicons
                             name="chevron-down"
                             size={20}
-                            color="#94a3b8"
+                            color={isDark ? "#4b5563" : "#94a3b8"}
                           />
                         </TouchableOpacity>
                         {errors.team?.message ? (
@@ -242,7 +260,9 @@ export default function SignUpStep2() {
 
                 {/* Department Dropdown */}
                 <View>
-                  <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
+                  <Text
+                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
+                  >
                     Department
                   </Text>
                   <Controller
@@ -253,17 +273,15 @@ export default function SignUpStep2() {
                         <TouchableOpacity
                           activeOpacity={0.8}
                           onPress={() => setModalType("department")}
-                          className={`w-full bg-slate-50 border-2 rounded-2xl p-4 flex-row justify-between items-center ${
-                            errors.department
-                              ? "border-red-500"
-                              : "border-slate-200"
+                          className={`w-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"} border-2 rounded-2xl p-4 flex-row justify-between items-center ${
+                            errors.department ? "border-red-500" : ""
                           }`}
                         >
                           <Text
                             className={
                               value
-                                ? "text-slate-900 text-base"
-                                : "text-slate-400 text-base"
+                                ? `${isDark ? "text-white" : "text-slate-900"} text-base`
+                                : `${isDark ? "text-slate-600" : "text-slate-400"} text-base`
                             }
                           >
                             {value || "Select your department"}
@@ -271,7 +289,7 @@ export default function SignUpStep2() {
                           <Ionicons
                             name="chevron-down"
                             size={20}
-                            color="#94a3b8"
+                            color={isDark ? "#4b5563" : "#94a3b8"}
                           />
                         </TouchableOpacity>
                         {errors.department?.message ? (
@@ -286,7 +304,9 @@ export default function SignUpStep2() {
 
                 {/* Year Dropdown */}
                 <View>
-                  <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
+                  <Text
+                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
+                  >
                     Year
                   </Text>
                   <Controller
@@ -297,15 +317,15 @@ export default function SignUpStep2() {
                         <TouchableOpacity
                           activeOpacity={0.8}
                           onPress={() => setModalType("year")}
-                          className={`w-full bg-slate-50 border-2 rounded-2xl p-4 flex-row justify-between items-center ${
-                            errors.year ? "border-red-500" : "border-slate-200"
+                          className={`w-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"} border-2 rounded-2xl p-4 flex-row justify-between items-center ${
+                            errors.year ? "border-red-500" : ""
                           }`}
                         >
                           <Text
                             className={
                               value
-                                ? "text-slate-900 text-base"
-                                : "text-slate-400 text-base"
+                                ? `${isDark ? "text-white" : "text-slate-900"} text-base`
+                                : `${isDark ? "text-slate-600" : "text-slate-400"} text-base`
                             }
                           >
                             {value || "Select your academic year"}
@@ -313,7 +333,7 @@ export default function SignUpStep2() {
                           <Ionicons
                             name="chevron-down"
                             size={20}
-                            color="#94a3b8"
+                            color={isDark ? "#4b5563" : "#94a3b8"}
                           />
                         </TouchableOpacity>
                         {errors.year?.message ? (
@@ -328,7 +348,9 @@ export default function SignUpStep2() {
 
                 {/* Telegram Input */}
                 <View>
-                  <Text className="text-slate-800 font-bold mb-3 ml-1 text-base">
+                  <Text
+                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
+                  >
                     Telegram Handle
                   </Text>
                   <Controller
@@ -337,13 +359,13 @@ export default function SignUpStep2() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View className="relative justify-center">
                         <TextInput
-                          className={`w-full bg-slate-50 border-2 rounded-2xl p-4 pl-12 text-slate-900 text-base focus:bg-white ${
+                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 text-base focus:bg-transparent ${
                             errors.telegram
                               ? "border-red-500"
-                              : "border-slate-200 focus:border-primary"
+                              : "focus:border-primary"
                           }`}
                           placeholder="@username"
-                          placeholderTextColor="#94a3b8"
+                          placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           value={value}
                           onChangeText={onChange}
                           onBlur={onBlur}
@@ -353,7 +375,7 @@ export default function SignUpStep2() {
                           <Ionicons
                             name="paper-plane-outline"
                             size={22}
-                            color="#64748b"
+                            color={isDark ? "#94a3b8" : "#64748b"}
                           />
                         </View>
                       </View>
@@ -370,6 +392,7 @@ export default function SignUpStep2() {
               {/* Footer Button */}
               <View className="mt-8 mb-6">
                 <TouchableOpacity
+                  activeOpacity={0.8}
                   onPress={handleSubmit(handleComplete)}
                   disabled={loading}
                   className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 active:scale-[0.98] flex-row justify-center items-center"
