@@ -129,8 +129,9 @@ export default function SignUpStep2() {
     <SafeAreaView className={`flex-1 ${isDark ? "bg-dark" : "bg-white"}`}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{ flex: 1 }}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
           {/* header */}
           <View
@@ -167,6 +168,8 @@ export default function SignUpStep2() {
               flexGrow: 1,
             }}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
           >
             {/* Form */}
             <View

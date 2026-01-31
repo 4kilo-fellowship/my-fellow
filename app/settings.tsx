@@ -1,3 +1,4 @@
+import { ConfirmationModal } from "@/components";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useUserStore } from "@/stores/user.store";
@@ -53,23 +54,20 @@ export default function Settings() {
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
   const [autoPlay, setAutoPlay] = useState(false);
   const [dataSync, setDataSync] = useState(true);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   const handleSignOut = () => {
-    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Sign Out",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await logout();
-            router.replace("/(auth)/sign-in");
-          } catch (error) {
-            console.error("Sign out error:", error);
-          }
-        },
-      },
-    ]);
+    setShowSignOutConfirm(true);
+  };
+
+  const confirmSignOut = async () => {
+    setShowSignOutConfirm(false);
+    try {
+      await logout();
+      router.replace("/(auth)/sign-in");
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
   };
 
   const handleDeleteAccount = () => {
@@ -531,6 +529,8 @@ export default function Settings() {
         </Text>
       </View>
 
+      <View className="h-4" />
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -663,6 +663,15 @@ export default function Settings() {
           </Text>
         </View>
       </ScrollView>
+      <ConfirmationModal
+        visible={showSignOutConfirm}
+        onClose={() => setShowSignOutConfirm(false)}
+        onConfirm={confirmSignOut}
+        title="Sign Out"
+        message="Are you sure you want to sign out of your account?"
+        confirmLabel="Sign Out"
+        danger
+      />
     </View>
   );
 }

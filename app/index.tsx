@@ -1,20 +1,23 @@
 import { PRIMARY } from "@/constants";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import { View } from "react-native";
 
-export default function SplashScreen() {
+export default function AppSplashScreen() {
   const router = useRouter();
   const [phase, setPhase] = useState<"primary" | "white">("primary");
 
   useEffect(() => {
+    SplashScreen.hideAsync().catch(() => {});
+
     const changeTimeout = setTimeout(() => {
       setPhase("white");
     }, 3000);
 
     const navTimeout = setTimeout(() => {
-      // After the splash screen, navigate into the auth flow
       router.replace("/(tabs)");
     }, 4000);
 
@@ -33,6 +36,11 @@ export default function SplashScreen() {
         alignItems: "center",
       }}
     >
+      <StatusBar
+        style={phase === "primary" ? "light" : "dark"}
+        backgroundColor={phase === "primary" ? PRIMARY : "#fff"}
+        translucent
+      />
       <Image
         source={
           phase === "primary"

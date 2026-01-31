@@ -83,8 +83,9 @@ export default function SignIn() {
     <View className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} `}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{ flex: 1 }}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
           {/* head */}
           <View

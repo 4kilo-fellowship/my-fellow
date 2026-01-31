@@ -9,9 +9,9 @@ import "./global.css";
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  useEffect(() => {
-    SplashScreen.hideAsync();
-  }, []);
+  // SplashScreen.hideAsync() is now handled in app/index.tsx
+  // to ensure a smooth transition from native splash to custom splash.
+  useEffect(() => {}, []);
 
   return (
     <AuthProvider>

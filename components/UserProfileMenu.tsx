@@ -20,6 +20,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ConfirmationModal } from "./index";
 
 interface MenuItem {
   id: string;
@@ -42,6 +43,7 @@ const UserProfileMenu = () => {
   const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState<boolean>(false);
   const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
 
@@ -116,7 +118,12 @@ const UserProfileMenu = () => {
     ]).start(() => setMenuVisible(false));
   };
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
+    setShowSignOutConfirm(true);
+  };
+
+  const confirmSignOut = async () => {
+    setShowSignOutConfirm(false);
     closeMenu();
     setTimeout(async () => {
       try {
@@ -653,6 +660,15 @@ const UserProfileMenu = () => {
           </View>
         </Animated.View>
       </Modal>
+      <ConfirmationModal
+        visible={showSignOutConfirm}
+        onClose={() => setShowSignOutConfirm(false)}
+        onConfirm={confirmSignOut}
+        title="Sign Out"
+        message="Are you sure you want to sign out of your account?"
+        confirmLabel="Sign Out"
+        danger
+      />
     </>
   );
 };
