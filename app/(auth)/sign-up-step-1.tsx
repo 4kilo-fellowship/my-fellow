@@ -100,18 +100,20 @@ export default function SignUpStep1() {
               style={{ paddingTop: 60 }}
             >
               {/* header button */}
-              <View className="absolute top-4 left-6 pt-6">
+              <View className="absolute top-12 left-6 z-50">
                 <TouchableOpacity
                   activeOpacity={0.9}
                   onPress={handleBackToLogin}
-                  className="w-12 h-12 bg-white/20 rounded-full items-center justify-center border border-white/30 shadow-lg"
+                  className=" w-12 h-12 bg-white/20 rounded-full items-center justify-center border border-white/30 shadow-lg"
                 >
                   <Ionicons name="arrow-back" size={24} color="white" />
                 </TouchableOpacity>
               </View>
 
-              {/* header Section */}
-              <View className="items-center">
+              <View
+                className="flex-1 justify-center items-center px-6"
+                style={{ paddingTop: 40 }}
+              >
                 <Image
                   width={24}
                   height={24}
@@ -325,7 +327,7 @@ export default function SignUpStep1() {
                 </View>
               </View>
 
-              {/* Footer / Button */}
+              {/* Footer */}
               <View className="mt-8 mb-6">
                 <TouchableOpacity
                   activeOpacity={0.9}

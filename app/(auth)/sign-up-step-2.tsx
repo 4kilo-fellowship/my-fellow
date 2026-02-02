@@ -1,4 +1,3 @@
-import SelectionModal from "@/components/SelectionModal";
 import { DEPARTMENTS, TEAM_NAMES, YEARS } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -8,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
-
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
@@ -17,12 +15,14 @@ import {
   Image,
   Keyboard,
   KeyboardAvoidingView,
+  LayoutAnimation,
   Platform,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
+  UIManager,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -39,10 +39,27 @@ export default function SignUpStep2() {
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // state variables for the drop down
-  const [modalType, setModalType] = useState<
+  // state variables for the dropdown
+  const [openDropdown, setOpenDropdown] = useState<
     "team" | "department" | "year" | null
   >(null);
+
+  // Enable LayoutAnimation for Android
+  if (
+    Platform.OS === "android" &&
+    UIManager.setLayoutAnimationEnabledExperimental
+  ) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+
+  const toggleDropdown = (type: "team" | "department" | "year") => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setOpenDropdown(openDropdown === type ? null : type);
+  };
+
+  const closeDropdowns = () => {
+    setOpenDropdown(null);
+  };
 
   const {
     control,
@@ -94,7 +111,6 @@ export default function SignUpStep2() {
     setLoading(true);
 
     try {
-      // Prepare registration data
       const registrationData = {
         fullName: params.fullName as string,
         phone: params.phone as string,
@@ -107,10 +123,8 @@ export default function SignUpStep2() {
         profileImage: image || undefined,
       };
 
-      // Call signup service
       await signup(registrationData);
 
-      // Success - navigation will be handled by AuthProvider/auth state
       router.replace("/(tabs)");
     } catch (error: any) {
       console.error("Registration error:", error);
@@ -123,6 +137,95 @@ export default function SignUpStep2() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const renderDropdown = (
+    name: "team" | "department" | "year",
+    label: string,
+    options: readonly string[],
+    placeholder: string,
+  ) => {
+    const hasError = !!errors[name];
+    const errorMessage = errors[name]?.message;
+
+    return (
+      <View style={{ zIndex: openDropdown === name ? 30 : 1 }}>
+        <Text
+          className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
+        >
+          {label}
+        </Text>
+        <Controller
+          control={control}
+          name={name}
+          render={({ field: { value } }) => (
+            <View>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => toggleDropdown(name)}
+                className={`w-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"} border-2 ${openDropdown === name ? "rounded-t-2xl rounded-b-none border-b-0" : "rounded-2xl"} p-4 flex-row justify-between items-center ${
+                  hasError ? "border-red-500" : ""
+                }`}
+              >
+                <Text
+                  className={
+                    value
+                      ? `${isDark ? "text-white" : "text-slate-900"} text-base`
+                      : `${isDark ? "text-slate-600" : "text-slate-400"} text-base`
+                  }
+                >
+                  {value || placeholder}
+                </Text>
+                <Ionicons
+                  name={openDropdown === name ? "chevron-up" : "chevron-down"}
+                  size={20}
+                  color={isDark ? "#4b5563" : "#94a3b8"}
+                />
+              </TouchableOpacity>
+              {openDropdown === name && (
+                <View
+                  className={`w-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"} border-2 border-t-0 rounded-b-2xl overflow-hidden`}
+                >
+                  <View>
+                    {options.map((option, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          setValue(name, option, {
+                            shouldValidate: true,
+                          });
+                          closeDropdowns();
+                        }}
+                        className={`p-4 ${index !== options.length - 1 ? `border-b ${isDark ? "border-slate-800" : "border-slate-200"}` : ""} flex-row justify-between items-center ${value === option ? (isDark ? "bg-slate-800" : "bg-slate-100") : ""}`}
+                      >
+                        <Text
+                          className={`${value === option ? "text-primary font-bold" : isDark ? "text-slate-300" : "text-slate-700"} text-base`}
+                        >
+                          {option}
+                        </Text>
+                        {value === option && (
+                          <Ionicons
+                            name="checkmark"
+                            size={18}
+                            color="#ff6719"
+                          />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
+              {errorMessage ? (
+                <Text className="text-red-500 text-xs mt-1 ml-1">
+                  {errorMessage}
+                </Text>
+              ) : null}
+            </View>
+          )}
+        />
+      </View>
+    );
   };
 
   return (
@@ -218,136 +321,23 @@ export default function SignUpStep2() {
               {/* Form Fields */}
               <View className="space-y-5">
                 {/* Team Dropdown */}
-                <View>
-                  <Text
-                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
-                  >
-                    Team
-                  </Text>
-                  <Controller
-                    control={control}
-                    name="team"
-                    render={({ field: { value } }) => (
-                      <>
-                        <TouchableOpacity
-                          activeOpacity={0.8}
-                          onPress={() => setModalType("team")}
-                          className={`w-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"} border-2 rounded-2xl p-4 flex-row justify-between items-center ${
-                            errors.team ? "border-red-500" : ""
-                          }`}
-                        >
-                          <Text
-                            className={
-                              value
-                                ? `${isDark ? "text-white" : "text-slate-900"} text-base`
-                                : `${isDark ? "text-slate-600" : "text-slate-400"} text-base`
-                            }
-                          >
-                            {value || "Select your team"}
-                          </Text>
-                          <Ionicons
-                            name="chevron-down"
-                            size={20}
-                            color={isDark ? "#4b5563" : "#94a3b8"}
-                          />
-                        </TouchableOpacity>
-                        {errors.team?.message ? (
-                          <Text className="text-red-500 text-xs mt-1 ml-1">
-                            {errors.team.message}
-                          </Text>
-                        ) : null}
-                      </>
-                    )}
-                  />
-                </View>
+                {renderDropdown("team", "Team", TEAM_NAMES, "Select your team")}
 
                 {/* Department Dropdown */}
-                <View>
-                  <Text
-                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
-                  >
-                    Department
-                  </Text>
-                  <Controller
-                    control={control}
-                    name="department"
-                    render={({ field: { value } }) => (
-                      <>
-                        <TouchableOpacity
-                          activeOpacity={0.8}
-                          onPress={() => setModalType("department")}
-                          className={`w-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"} border-2 rounded-2xl p-4 flex-row justify-between items-center ${
-                            errors.department ? "border-red-500" : ""
-                          }`}
-                        >
-                          <Text
-                            className={
-                              value
-                                ? `${isDark ? "text-white" : "text-slate-900"} text-base`
-                                : `${isDark ? "text-slate-600" : "text-slate-400"} text-base`
-                            }
-                          >
-                            {value || "Select your department"}
-                          </Text>
-                          <Ionicons
-                            name="chevron-down"
-                            size={20}
-                            color={isDark ? "#4b5563" : "#94a3b8"}
-                          />
-                        </TouchableOpacity>
-                        {errors.department?.message ? (
-                          <Text className="text-red-500 text-xs mt-1 ml-1">
-                            {errors.department.message}
-                          </Text>
-                        ) : null}
-                      </>
-                    )}
-                  />
-                </View>
+                {renderDropdown(
+                  "department",
+                  "Department",
+                  DEPARTMENTS,
+                  "Select your department",
+                )}
 
                 {/* Year Dropdown */}
-                <View>
-                  <Text
-                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
-                  >
-                    Year
-                  </Text>
-                  <Controller
-                    control={control}
-                    name="year"
-                    render={({ field: { value } }) => (
-                      <>
-                        <TouchableOpacity
-                          activeOpacity={0.8}
-                          onPress={() => setModalType("year")}
-                          className={`w-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"} border-2 rounded-2xl p-4 flex-row justify-between items-center ${
-                            errors.year ? "border-red-500" : ""
-                          }`}
-                        >
-                          <Text
-                            className={
-                              value
-                                ? `${isDark ? "text-white" : "text-slate-900"} text-base`
-                                : `${isDark ? "text-slate-600" : "text-slate-400"} text-base`
-                            }
-                          >
-                            {value || "Select your academic year"}
-                          </Text>
-                          <Ionicons
-                            name="chevron-down"
-                            size={20}
-                            color={isDark ? "#4b5563" : "#94a3b8"}
-                          />
-                        </TouchableOpacity>
-                        {errors.year?.message ? (
-                          <Text className="text-red-500 text-xs mt-1 ml-1">
-                            {errors.year.message}
-                          </Text>
-                        ) : null}
-                      </>
-                    )}
-                  />
-                </View>
+                {renderDropdown(
+                  "year",
+                  "Year",
+                  YEARS,
+                  "Select your academic year",
+                )}
 
                 {/* Telegram Input */}
                 <View>
@@ -411,31 +401,6 @@ export default function SignUpStep2() {
               </View>
             </View>
           </ScrollView>
-
-          {/* Modals for Selection */}
-          <SelectionModal
-            visible={modalType === "team"}
-            onClose={() => setModalType(null)}
-            title="Select Team"
-            options={TEAM_NAMES}
-            onSelect={(val) => setValue("team", val, { shouldValidate: true })}
-          />
-          <SelectionModal
-            visible={modalType === "department"}
-            onClose={() => setModalType(null)}
-            title="Select Department"
-            options={DEPARTMENTS}
-            onSelect={(val) =>
-              setValue("department", val, { shouldValidate: true })
-            }
-          />
-          <SelectionModal
-            visible={modalType === "year"}
-            onClose={() => setModalType(null)}
-            title="Select Year"
-            options={YEARS}
-            onSelect={(val) => setValue("year", val, { shouldValidate: true })}
-          />
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
     </SafeAreaView>
