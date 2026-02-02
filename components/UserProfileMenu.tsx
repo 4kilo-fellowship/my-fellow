@@ -20,7 +20,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ConfirmationModal } from "./index";
+import ConfirmationModal from "./ConfirmationModal";
 
 interface MenuItem {
   id: string;

@@ -39,12 +39,11 @@ export default function SignUpStep2() {
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // state variables for the dropdown
   const [openDropdown, setOpenDropdown] = useState<
     "team" | "department" | "year" | null
   >(null);
 
-  // Enable LayoutAnimation for Android
+  type DropdownNameProps = "team" | "department" | "year";
   if (
     Platform.OS === "android" &&
     UIManager.setLayoutAnimationEnabledExperimental
@@ -76,7 +75,6 @@ export default function SignUpStep2() {
     },
   });
 
-  // image picker for the profile picture
   const pickImage = async () => {
     // Ask for gallery library permission
     const permissionResult =
@@ -140,11 +138,12 @@ export default function SignUpStep2() {
   };
 
   const renderDropdown = (
-    name: "team" | "department" | "year",
+    name: DropdownNameProps,
     label: string,
     options: readonly string[],
     placeholder: string,
   ) => {
+    ``;
     const hasError = !!errors[name];
     const errorMessage = errors[name]?.message;
 

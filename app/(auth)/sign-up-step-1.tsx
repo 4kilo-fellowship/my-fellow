@@ -149,7 +149,7 @@ export default function SignUpStep1() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View className="relative">
                         <TextInput
-                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 text-base focus:bg-transparent ${
+                          className={`w-full ${isDark ? "bg-slate-900 text-white focus:border-primary border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 text-base focus:bg-transparent ${
                             errors.fullName
                               ? "border-red-500"
                               : "focus:border-primary"
@@ -190,7 +190,7 @@ export default function SignUpStep1() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View className="relative">
                         <TextInput
-                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 text-base focus:bg-transparent ${
+                          className={`w-full ${isDark ? "bg-slate-900 text-white focus:border-primary border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 text-base focus:bg-transparent ${
                             errors.phone
                               ? "border-red-500"
                               : "focus:border-primary"
@@ -231,7 +231,7 @@ export default function SignUpStep1() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View className="relative">
                         <TextInput
-                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 pr-12 text-base focus:bg-transparent ${
+                          className={`w-full ${isDark ? "bg-slate-900 text-white focus:border-primary border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 pr-12 text-base focus:bg-transparent ${
                             errors.password
                               ? "border-red-500"
                               : "focus:border-primary"
@@ -284,7 +284,7 @@ export default function SignUpStep1() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View className="relative">
                         <TextInput
-                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 pr-12 text-base focus:bg-transparent ${
+                          className={`w-full ${isDark ? "bg-slate-900 text-white focus:border-primary border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 pr-12 text-base focus:bg-transparent ${
                             errors.confirmPassword
                               ? "border-red-500"
                               : "focus:border-primary"
