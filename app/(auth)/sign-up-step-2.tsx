@@ -22,7 +22,6 @@ import {
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  UIManager,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -44,12 +43,6 @@ export default function SignUpStep2() {
   >(null);
 
   type DropdownNameProps = "team" | "department" | "year";
-  if (
-    Platform.OS === "android" &&
-    UIManager.setLayoutAnimationEnabledExperimental
-  ) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
-  }
 
   const toggleDropdown = (type: "team" | "department" | "year") => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
