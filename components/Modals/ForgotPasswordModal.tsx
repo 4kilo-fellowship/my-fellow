@@ -87,10 +87,15 @@ const ForgotPasswordModal = () => {
               >
                 <Ionicons name="call" size={24} color="#ff6619" />
                 <Text
-                  className={`ml-4 text-lg ${isDark ? "text-white" : "text-zinc-900"}`}
+                  className={`ml-4 text-lg flex-1 ${isDark ? "text-white" : "text-zinc-900"}`}
                 >
                   0994627985
                 </Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={isDark ? "#a1a1aa" : "#71717a"}
+                />
               </TouchableOpacity>
 
               {/* Telegram */}
@@ -106,10 +111,15 @@ const ForgotPasswordModal = () => {
               >
                 <Ionicons name="paper-plane" size={24} color="#ff6619" />
                 <Text
-                  className={`ml-4 text-lg ${isDark ? "text-white" : "text-zinc-900"}`}
+                  className={`ml-4 text-lg flex-1 ${isDark ? "text-white" : "text-zinc-900"}`}
                 >
                   @myfellow_bot
                 </Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={isDark ? "#a1a1aa" : "#71717a"}
+                />
               </TouchableOpacity>
             </TouchableOpacity>
           </TouchableOpacity>

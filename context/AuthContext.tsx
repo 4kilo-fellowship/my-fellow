@@ -13,7 +13,6 @@ import {
 import * as SecureStore from "expo-secure-store";
 import { createContext, useContext, useEffect, useState } from "react";
 
-// create a context for the auth
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = (): AuthContextType => {
@@ -24,14 +23,12 @@ export const useAuth = (): AuthContextType => {
   return context;
 };
 
-// manage auth
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [authState, setAuthState] = useState<AuthState>({
     token: null,
     authenticated: null,
   });
 
-  // load token on mount
   useEffect(() => {
     const loadToken = async (): Promise<void> => {
       try {
@@ -49,7 +46,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     loadToken();
   }, []);
 
-  // login function
   const login = async (
     phoneNumber: string,
     password: string,
@@ -58,51 +54,39 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const response = await authService.login(phoneNumber, password);
       const { token } = response;
 
-      // Store token securely
       await SecureStore.setItemAsync("userToken", token);
 
-      // Set authorization header
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
-
-      // Update auth state
       setAuthState({ token, authenticated: true });
 
-      // Save user to Zustand store if available in response
       if (response.user) {
         useUserStore.getState().setUser(response.user);
       }
 
       return response;
     } catch (error) {
-      // Reset auth state on error
       setAuthState({ token: null, authenticated: false });
       throw error;
     }
   };
 
-  // Sign up
   const signup = async (data: SignUpData): Promise<SignUpResponse> => {
     try {
       const response = await authService.signup(data);
       const { token } = response;
 
-      // Store token securely
       await SecureStore.setItemAsync("userToken", token);
 
-      // Set authorization header
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
 
-      // Update auth state
       setAuthState({ token, authenticated: true });
 
-      // Save user to Zustand store if available in response
       if (response.user) {
         useUserStore.getState().setUser(response.user);
       }
 
       return response;
     } catch (error) {
-      // Reset auth state on error
       setAuthState({ token: null, authenticated: false });
       throw error;
     }
@@ -110,18 +94,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const logout = async (): Promise<void> => {
     try {
-      // Remove token from secure storage
       await SecureStore.deleteItemAsync("userToken");
 
-      // Clear authorization header
       api.defaults.headers.common.Authorization = "";
 
       setAuthState({ token: null, authenticated: false });
-
-      // Clear user from Zustand store
       useUserStore.getState().clearUser();
     } catch (error) {
-      // Still reset state even if storage deletion fails
       setAuthState({ token: null, authenticated: false });
     }
   };

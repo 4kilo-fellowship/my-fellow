@@ -95,32 +95,23 @@ export default function SignUpStep1() {
               borderBottomRightRadius: 40,
             }}
           >
-            <View
-              className="flex-1 justify-center items-center px-6"
-              style={{ paddingTop: 60 }}
-            >
-              {/* header button */}
-              <View className="absolute top-12 left-6 z-50">
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  onPress={handleBackToLogin}
-                  className=" w-12 h-12 bg-white/20 rounded-full items-center justify-center border border-white/30 shadow-lg"
-                >
-                  <Ionicons name="arrow-back" size={24} color="white" />
-                </TouchableOpacity>
-              </View>
-
-              <View
-                className="flex-1 justify-center items-center px-6"
-                style={{ paddingTop: 40 }}
+            {/* back button */}
+            <View className="absolute top-12 left-6 z-50">
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={handleBackToLogin}
+                className="w-12 h-12 bg-white/20 rounded-full items-center justify-center border border-white/30 shadow-lg"
               >
-                <Image
-                  width={24}
-                  height={24}
-                  style={{ transform: [{ scale: 0.3 }, { translateY: -5 }] }}
-                  source={require("@/assets/images/logo-white.png")}
-                />
-              </View>
+                <Ionicons name="arrow-back" size={24} color="white" />
+              </TouchableOpacity>
+            </View>
+
+            <View className="flex-1 justify-center items-center px-6 pt-10">
+              <Image
+                source={require("@/assets/images/logo-white.png")}
+                style={{ width: 450, height: 450 }}
+                resizeMode="contain"
+              />
             </View>
           </View>
           <ScrollView

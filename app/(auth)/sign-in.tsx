@@ -94,16 +94,12 @@ export default function SignIn() {
               borderBottomRightRadius: 40,
             }}
           >
-            <View className="flex-1 justify-center items-center px-6">
-              {/* header section */}
-              <View className="items-center">
-                <Image
-                  width={24}
-                  height={24}
-                  style={{ transform: [{ scale: 0.3 }, { translateY: 99 }] }}
-                  source={require("@/assets/images/logo-white.png")}
-                />
-              </View>
+            <View className="flex-1 justify-center items-center px-6 pt-10">
+              <Image
+                source={require("@/assets/images/logo-white.png")}
+                style={{ width: 450, height: 450 }}
+                resizeMode="contain"
+              />
             </View>
           </View>
 
