@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Switch, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Switch, Text, TouchableOpacity, View } from "react-native";
 import { AlertItem } from "../hooks/useAlerts";
 
 interface AlertCardProps {
@@ -28,11 +28,18 @@ export const AlertCard = ({
     day: "numeric",
   });
 
+  const handleDelete = () => {
+    Alert.alert("Delete Alert", "Are you sure you want to delete this alert?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: onDelete },
+    ]);
+  };
+
   return (
     <View
       className={`mb-4 px-5 py-5 rounded-[32px] overflow-hidden border ${
         isDark ? "bg-[#1C1C1E] border-gray-800" : "bg-white border-gray-100"
-      } flex-row items-center justify-between`}
+      }`}
       style={{
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 4 },
@@ -41,14 +48,14 @@ export const AlertCard = ({
         elevation: 3,
       }}
     >
-      <TouchableOpacity
-        onPress={onEdit}
-        activeOpacity={0.7}
-        className="flex-1 mr-4"
-      >
-        <View className="flex-row items-center mb-1.5">
+      <View className="flex-row items-center justify-between mb-2">
+        <TouchableOpacity
+          onPress={onEdit}
+          activeOpacity={0.7}
+          className="flex-row items-center"
+        >
           <Text
-            className={`text-2xl font-black ${isDark ? "text-white" : "text-black"}`}
+            className={`text-3xl font-black ${isDark ? "text-white" : "text-black"}`}
           >
             {timeString}
           </Text>
@@ -65,38 +72,8 @@ export const AlertCard = ({
               {alert.repeats === "none" ? dayString : alert.repeats}
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
-        <View className="pr-4">
-          <Text
-            className={`text-base font-bold mb-0.5 ${
-              isDark ? "text-gray-200" : "text-gray-900"
-            }`}
-            numberOfLines={1}
-          >
-            {alert.title}
-          </Text>
-        </View>
-
-        {alert.remindBefore > 0 && (
-          <View className="flex-row items-center mt-2">
-            <Ionicons
-              name="notifications-outline"
-              size={12}
-              color={isDark ? "#4b5563" : "#9ca3af"}
-            />
-            <Text
-              className={`text-[10px] font-bold ml-1 ${
-                isDark ? "text-gray-500" : "text-gray-400"
-              }`}
-            >
-              Alert {alert.remindBefore}m before
-            </Text>
-          </View>
-        )}
-      </TouchableOpacity>
-
-      <View className="flex-row items-center">
         <Switch
           value={alert.enabled}
           onValueChange={onToggle}
@@ -105,15 +82,70 @@ export const AlertCard = ({
             true: "#f97316",
           }}
           thumbColor="#fff"
-          style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+          style={{ transform: [{ scaleX: 1 }, { scaleY: 1 }] }}
         />
+      </View>
+
+      <TouchableOpacity onPress={onEdit} activeOpacity={0.7} className="mb-3">
+        <Text
+          className={`text-lg font-bold mb-1 ${
+            isDark ? "text-gray-200" : "text-gray-900"
+          }`}
+          numberOfLines={1}
+        >
+          {alert.title}
+        </Text>
+        {alert.description ? (
+          <Text
+            className={`text-sm ${isDark ? "text-gray-500" : "text-gray-400"}`}
+            numberOfLines={2}
+          >
+            {alert.description}
+          </Text>
+        ) : null}
+      </TouchableOpacity>
+
+      <View className="flex-row items-center justify-between mt-2 pt-3 border-t border-gray-100/10">
+        <View className="flex-row items-center">
+          {alert.remindBefore > 0 && (
+            <View className="flex-row items-center bg-gray-500/10 px-2 py-1 rounded-lg">
+              <Ionicons
+                name="notifications-outline"
+                size={12}
+                color={isDark ? "#f97316" : "#f97316"}
+              />
+              <Text
+                className={`text-[10px] font-bold ml-1 ${
+                  isDark ? "text-orange-400" : "text-orange-600"
+                }`}
+              >
+                {alert.remindBefore}m before
+              </Text>
+            </View>
+          )}
+          <View className="flex-row items-center ml-2 bg-gray-500/10 px-2 py-1 rounded-lg">
+            <Ionicons
+              name="volume-high-outline"
+              size={12}
+              color={isDark ? "#f97316" : "#f97316"}
+            />
+            <Text
+              className={`text-[10px] font-bold ml-1 ${
+                isDark ? "text-orange-400" : "text-orange-600"
+              }`}
+            >
+              Sound On
+            </Text>
+          </View>
+        </View>
+
         <TouchableOpacity
-          onPress={onDelete}
-          className={`ml-1 p-3 rounded-full ${
-            isDark ? "bg-red-500/10" : "bg-red-50"
+          onPress={handleDelete}
+          className={`p-4 rounded-2xl ${
+            isDark ? "bg-red-500/20" : "bg-red-50"
           }`}
         >
-          <Ionicons name="trash" size={18} color="#ef4444" />
+          <Ionicons name="trash" size={24} color="#ef4444" />
         </TouchableOpacity>
       </View>
     </View>

@@ -24,6 +24,10 @@ export default function RootLayout() {
           <Stack.Screen name="locations" options={{ title: "Locations" }} />
           <Stack.Screen name="programs" options={{ title: "Programs" }} />
           <Stack.Screen name="settings" options={{ title: "Settings" }} />
+          <Stack.Screen
+            name="reminders/manage"
+            options={{ title: "Manage Alert" }}
+          />
         </Stack>
         <Toast />
       </ThemeProvider>
