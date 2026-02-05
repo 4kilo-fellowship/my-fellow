@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Alert, Switch, Text, TouchableOpacity, View } from "react-native";
 import { AlertItem } from "../hooks/useAlerts";
@@ -43,9 +44,8 @@ export const AlertCard = ({
 
   return (
     <TouchableOpacity
-      activeOpacity={0.8}
+      activeOpacity={0.95}
       onPress={onEdit}
-      onLongPress={handleDelete}
       className={`mb-3 px-6 py-5 rounded-[20px] flex-row items-center justify-between ${
         isDark ? "bg-[#1C1C1E]" : "bg-white"
       }`}
@@ -75,7 +75,7 @@ export const AlertCard = ({
       </View>
 
       <Text
-        className={`ml-4 text-sm font-medium flex-1 text-right mr-5 ${
+        className={`ml-4 text-sm font-medium flex-1 text-right mr-3 ${
           isDark ? "text-white/30" : "text-gray-400"
         }`}
       >
@@ -85,6 +85,17 @@ export const AlertCard = ({
             ? "Every day"
             : `${new Intl.DateTimeFormat("en-US", { weekday: "short" }).format(date)}, ${new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date)}`}
       </Text>
+
+      <TouchableOpacity
+        onPress={handleDelete}
+        className="w-10 h-10 items-center justify-center mr-1"
+      >
+        <Ionicons
+          name="trash-outline"
+          size={22}
+          color={isDark ? "#ff453a" : "#ef4444"}
+        />
+      </TouchableOpacity>
 
       <Switch
         value={alert.enabled}
