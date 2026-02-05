@@ -1,11 +1,11 @@
 import { AlertCard } from "@/components/AlertCard";
-import { AlertModal } from "@/components/AlertModal";
 import { useTheme } from "@/context/ThemeContext";
-import { AlertItem, useAlerts } from "@/hooks/useAlerts";
+import { useAlerts } from "@/hooks/useAlerts";
 import { registerForPushNotificationsAsync } from "@/utils/notificationService";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -17,40 +17,28 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Reminder = () => {
   const { theme } = useTheme();
-  const { top, bottom } = useSafeAreaInsets();
+  const { top } = useSafeAreaInsets();
   const isDark = theme === "dark";
-  const { alerts, loading, addAlert, updateAlert, deleteAlert, toggleAlert } =
-    useAlerts();
-
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingAlert, setEditingAlert] = useState<AlertItem | undefined>();
+  const { alerts, loading, deleteAlert, toggleAlert } = useAlerts();
+  const router = useRouter();
 
   useEffect(() => {
     registerForPushNotificationsAsync();
   }, []);
 
   const handleAddPress = () => {
-    setEditingAlert(undefined);
-    setModalVisible(true);
+    router.push("/reminders/manage");
   };
 
-  const handleEditPress = (alert: AlertItem) => {
-    setEditingAlert(alert);
-    setModalVisible(true);
-  };
-
-  const handleSaveAlert = (
-    alertData: Omit<AlertItem, "id" | "enabled"> | AlertItem,
-  ) => {
-    if ("id" in alertData) {
-      updateAlert(alertData as AlertItem);
-    } else {
-      addAlert(alertData);
-    }
+  const handleEditPress = (id: string) => {
+    router.push({
+      pathname: "/reminders/manage",
+      params: { id },
+    });
   };
 
   return (
-    <View className={`flex-1 ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}>
+    <View className={`flex-1 ${isDark ? "bg-[#0A0A0A]" : "bg-[#f8fafc]"}`}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
       <View className="flex-1" style={{ paddingTop: top + 10 }}>
@@ -60,7 +48,7 @@ const Reminder = () => {
             <Text
               className={`text-4xl font-black ${isDark ? "text-white" : "text-black"}`}
             >
-              Reminders
+              Alerts
             </Text>
             <Text
               className={`text-sm font-bold mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}
@@ -70,10 +58,10 @@ const Reminder = () => {
           </View>
           <TouchableOpacity
             onPress={handleAddPress}
-            activeOpacity={0.7}
-            className="w-12 h-12 rounded-2xl bg-orange-500 items-center justify-center shadow-lg shadow-orange-500/40"
+            activeOpacity={0.8}
+            className="w-14 h-14 rounded-2xl bg-orange-500 items-center justify-center shadow-lg shadow-orange-500/40"
           >
-            <Ionicons name="add" size={28} color="white" />
+            <Ionicons name="add" size={32} color="white" />
           </TouchableOpacity>
         </View>
 
@@ -91,7 +79,7 @@ const Reminder = () => {
                 isDark={isDark}
                 onToggle={() => toggleAlert(item.id)}
                 onDelete={() => deleteAlert(item.id)}
-                onEdit={() => handleEditPress(item)}
+                onEdit={() => handleEditPress(item.id)}
               />
             )}
             contentContainerStyle={{
@@ -129,7 +117,7 @@ const Reminder = () => {
                 </Text>
 
                 <TouchableOpacity
-                  activeOpacity={0.7}
+                  activeOpacity={0.8}
                   onPress={handleAddPress}
                   className="mt-8 bg-orange-500/10 px-8 py-4 rounded-2xl"
                 >
@@ -142,14 +130,6 @@ const Reminder = () => {
           />
         )}
       </View>
-
-      <AlertModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onSave={handleSaveAlert}
-        initialAlert={editingAlert}
-        isDark={isDark}
-      />
     </View>
   );
 };

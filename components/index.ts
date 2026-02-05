@@ -1,4 +1,3 @@
-export { AlertModal } from "./AlertModal";
 export { default as AnnouncementCard } from "./Card/AnnouncementCard";
 export { default as DevotionCard } from "./Card/DevotionCard";
 export { default as LeaderCard } from "./Card/LeaderCard";
