@@ -10,7 +10,6 @@ import { Controller, useForm } from "react-hook-form";
 import {
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,6 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
 
 const alertSchema = z.object({
@@ -47,6 +47,7 @@ export default function ManageAlertScreen() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const { alerts, addAlert, updateAlert } = useAlertsStore();
+  const { top } = useSafeAreaInsets();
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -103,41 +104,34 @@ export default function ManageAlertScreen() {
   };
 
   return (
-    <SafeAreaView
-      style={[
-        styles.container,
-        { backgroundColor: isDark ? "#121212" : "#F8F9FA" },
-      ]}
-    >
+    <View className={`flex-1 ${isDark ? "bg-[#0A0A0A]" : "bg-[#f8fafc]"}`}>
       <StatusBar style={isDark ? "light" : "dark"} />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View
+          className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"}`}
+          style={{ paddingTop: top + 10 }}
+        >
           <TouchableOpacity
             onPress={() => router.back()}
-            style={[
-              styles.backButton,
-              { backgroundColor: isDark ? "#1E1E1E" : "#FFFFFF" },
-            ]}
+            activeOpacity={0.8}
+            className="w-11 h-11 rounded-full items-center justify-center mr-4"
+            style={{ backgroundColor: isDark ? "#1C1C1E" : "#e2e8f0" }}
           >
             <Ionicons
               name="arrow-back"
-              size={24}
-              color={isDark ? "#FFFFFF" : "#000000"}
+              size={22}
+              color={isDark ? "white" : "#0f172a"}
             />
           </TouchableOpacity>
           <Text
-            style={[
-              styles.headerTitle,
-              { color: isDark ? "#FFFFFF" : "#000000" },
-            ]}
+            className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
           >
             {id ? "Edit Alert" : "Add Alert"}
           </Text>
-          <View style={{ width: 44 }} />
         </View>
 
         <ScrollView
@@ -145,22 +139,17 @@ export default function ManageAlertScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Form Card */}
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: isDark ? "#1E1E1E" : "#FFFFFF" },
-            ]}
-          >
+          {/* Form Content */}
+          <View className="flex-1">
             {/* Title */}
             <View style={styles.inputGroup}>
               <Text
                 style={[
                   styles.label,
-                  { color: isDark ? "#A0A0A0" : "#666666" },
+                  { color: isDark ? "#A0A0A0" : "#64748b" },
                 ]}
               >
-                NAME
+                ALERT NAME
               </Text>
               <Controller
                 control={control}
@@ -170,13 +159,17 @@ export default function ManageAlertScreen() {
                     value={value}
                     onChangeText={onChange}
                     placeholder="e.g., Morning Prayer"
-                    placeholderTextColor={isDark ? "#48484A" : "#AEAEB2"}
+                    placeholderTextColor={isDark ? "#48484A" : "#94a3b8"}
                     style={[
                       styles.textInput,
                       {
-                        backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-                        borderColor: errors.title ? "#FF3B30" : "transparent",
-                        color: isDark ? "#FFFFFF" : "#000000",
+                        backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                        borderColor: errors.title
+                          ? "#ef4444"
+                          : isDark
+                            ? "#1f2937"
+                            : "#e2e8f0",
+                        color: isDark ? "#FFFFFF" : "#0f172a",
                       },
                     ]}
                   />
@@ -192,10 +185,10 @@ export default function ManageAlertScreen() {
               <Text
                 style={[
                   styles.label,
-                  { color: isDark ? "#A0A0A0" : "#666666" },
+                  { color: isDark ? "#A0A0A0" : "#64748b" },
                 ]}
               >
-                DETAILS
+                DESCRIPTION (OPTIONAL)
               </Text>
               <Controller
                 control={control}
@@ -204,18 +197,20 @@ export default function ManageAlertScreen() {
                   <TextInput
                     value={value}
                     onChangeText={onChange}
-                    placeholder="Add some details..."
-                    placeholderTextColor={isDark ? "#48484A" : "#AEAEB2"}
+                    placeholder="What's this reminder for?"
+                    placeholderTextColor={isDark ? "#48484A" : "#94a3b8"}
                     multiline
                     numberOfLines={3}
                     style={[
                       styles.textArea,
                       {
-                        backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+                        backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
                         borderColor: errors.description
-                          ? "#FF3B30"
-                          : "transparent",
-                        color: isDark ? "#FFFFFF" : "#000000",
+                          ? "#ef4444"
+                          : isDark
+                            ? "#1f2937"
+                            : "#e2e8f0",
+                        color: isDark ? "#FFFFFF" : "#0f172a",
                       },
                     ]}
                   />
@@ -234,16 +229,20 @@ export default function ManageAlertScreen() {
                 <Text
                   style={[
                     styles.label,
-                    { color: isDark ? "#A0A0A0" : "#666666" },
+                    { color: isDark ? "#A0A0A0" : "#64748b" },
                   ]}
                 >
                   DATE
                 </Text>
                 <TouchableOpacity
+                  activeOpacity={0.8}
                   onPress={() => setShowDatePicker(true)}
                   style={[
                     styles.pickerTrigger,
-                    { backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7" },
+                    {
+                      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                      borderColor: isDark ? "#1f2937" : "#e2e8f0",
+                    },
                   ]}
                 >
                   <Text
@@ -251,10 +250,12 @@ export default function ManageAlertScreen() {
                       styles.pickerValue,
                       {
                         color: !datePicked
-                          ? "#AEAEB2"
+                          ? isDark
+                            ? "#4b5563"
+                            : "#94a3b8"
                           : isDark
                             ? "#FFFFFF"
-                            : "#000000",
+                            : "#0f172a",
                       },
                     ]}
                   >
@@ -265,7 +266,7 @@ export default function ManageAlertScreen() {
                   <Ionicons
                     name="calendar-outline"
                     size={18}
-                    color={isDark ? "#A0A0A0" : "#666666"}
+                    color={isDark ? "#94a3b8" : "#64748b"}
                   />
                 </TouchableOpacity>
               </View>
@@ -274,16 +275,20 @@ export default function ManageAlertScreen() {
                 <Text
                   style={[
                     styles.label,
-                    { color: isDark ? "#A0A0A0" : "#666666" },
+                    { color: isDark ? "#A0A0A0" : "#64748b" },
                   ]}
                 >
                   TIME
                 </Text>
                 <TouchableOpacity
+                  activeOpacity={0.8}
                   onPress={() => setShowTimePicker(true)}
                   style={[
                     styles.pickerTrigger,
-                    { backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7" },
+                    {
+                      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                      borderColor: isDark ? "#1f2937" : "#e2e8f0",
+                    },
                   ]}
                 >
                   <Text
@@ -291,10 +296,12 @@ export default function ManageAlertScreen() {
                       styles.pickerValue,
                       {
                         color: !timePicked
-                          ? "#AEAEB2"
+                          ? isDark
+                            ? "#4b5563"
+                            : "#94a3b8"
                           : isDark
                             ? "#FFFFFF"
-                            : "#000000",
+                            : "#0f172a",
                       },
                     ]}
                   >
@@ -308,7 +315,7 @@ export default function ManageAlertScreen() {
                   <Ionicons
                     name="time-outline"
                     size={18}
-                    color={isDark ? "#A0A0A0" : "#666666"}
+                    color={isDark ? "#94a3b8" : "#64748b"}
                   />
                 </TouchableOpacity>
               </View>
@@ -355,7 +362,7 @@ export default function ManageAlertScreen() {
               <Text
                 style={[
                   styles.label,
-                  { color: isDark ? "#A0A0A0" : "#666666" },
+                  { color: isDark ? "#A0A0A0" : "#64748b" },
                 ]}
               >
                 REPETITION
@@ -363,7 +370,7 @@ export default function ManageAlertScreen() {
               <View
                 style={[
                   styles.segmentedControl,
-                  { backgroundColor: isDark ? "#121212" : "#F2F2F7" },
+                  { backgroundColor: isDark ? "#1C1C1E" : "#e2e8f0" },
                 ]}
               >
                 {FREQUENCY_OPTIONS.map((r) => {
@@ -371,6 +378,7 @@ export default function ManageAlertScreen() {
                   return (
                     <TouchableOpacity
                       key={r}
+                      activeOpacity={0.8}
                       onPress={() =>
                         setValue("repeats", r, { shouldValidate: true })
                       }
@@ -389,8 +397,8 @@ export default function ManageAlertScreen() {
                             color: isActive
                               ? "#F97316"
                               : isDark
-                                ? "#8E8E93"
-                                : "#636366",
+                                ? "#94a3b8"
+                                : "#64748b",
                           },
                         ]}
                       >
@@ -407,10 +415,10 @@ export default function ManageAlertScreen() {
               <Text
                 style={[
                   styles.label,
-                  { color: isDark ? "#A0A0A0" : "#666666" },
+                  { color: isDark ? "#A0A0A0" : "#64748b" },
                 ]}
               >
-                REMIND BEFORE
+                REMIND ME BEFORE
               </Text>
               <View style={styles.pillContainer}>
                 {REMIND_OPTIONS.map((item) => {
@@ -418,6 +426,7 @@ export default function ManageAlertScreen() {
                   return (
                     <TouchableOpacity
                       key={item.value}
+                      activeOpacity={0.8}
                       onPress={() =>
                         setValue("remindBefore", item.value, {
                           shouldValidate: true,
@@ -429,9 +438,13 @@ export default function ManageAlertScreen() {
                           backgroundColor: isActive
                             ? "#F97316"
                             : isDark
-                              ? "#2C2C2E"
-                              : "#F2F2F7",
-                          borderColor: isActive ? "#F97316" : "transparent",
+                              ? "#1C1C1E"
+                              : "#FFFFFF",
+                          borderColor: isActive
+                            ? "#F97316"
+                            : isDark
+                              ? "#374151"
+                              : "#e2e8f0",
                         },
                       ]}
                     >
@@ -442,8 +455,8 @@ export default function ManageAlertScreen() {
                             color: isActive
                               ? "#FFFFFF"
                               : isDark
-                                ? "#8E8E93"
-                                : "#636366",
+                                ? "#94a3b8"
+                                : "#64748b",
                           },
                         ]}
                       >
@@ -454,147 +467,82 @@ export default function ManageAlertScreen() {
                 })}
               </View>
             </View>
-
-            {/* Notification Confirmation */}
-            <View
-              style={[
-                styles.notificationBox,
-                {
-                  backgroundColor: isDark ? "#121212" : "#FFF7ED",
-                  borderColor: isDark ? "#2C2C2E" : "#FED7AA",
-                },
-              ]}
-            >
-              <Ionicons name="notifications" size={20} color="#F97316" />
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text
-                  style={[
-                    styles.notificationTitle,
-                    { color: isDark ? "#FFFFFF" : "#9A3412" },
-                  ]}
-                >
-                  Notification Alert
-                </Text>
-                <Text
-                  style={[
-                    styles.notificationDesc,
-                    { color: isDark ? "#A0A0A0" : "#C2410C" },
-                  ]}
-                >
-                  This alert will notify you with a standard system sound.
-                </Text>
-              </View>
-            </View>
           </View>
 
           {/* Submit Button */}
-          <TouchableOpacity
-            onPress={handleSubmit(onSubmit)}
-            activeOpacity={0.8}
-            style={styles.submitButton}
-          >
-            <Text style={styles.submitText}>
-              {id ? "Update Alert" : "Create Alert"}
-            </Text>
-          </TouchableOpacity>
+          <View className="mt-8 mb-10">
+            <TouchableOpacity
+              onPress={handleSubmit(onSubmit)}
+              activeOpacity={0.8}
+              style={styles.submitButton}
+            >
+              <Text style={styles.submitText}>
+                {id ? "Update Alert" : "Set Alert"}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 15,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-  },
   scrollContent: {
-    padding: 20,
-  },
-  card: {
-    borderRadius: 25,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 15,
-    elevation: 5,
-    marginBottom: 20,
+    paddingHorizontal: 24,
+    paddingTop: 24,
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   label: {
-    fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 1.5,
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 1,
     marginBottom: 8,
     marginLeft: 4,
   },
   textInput: {
-    height: 55,
-    borderRadius: 15,
-    paddingHorizontal: 16,
+    height: 56,
+    borderRadius: 16,
+    paddingHorizontal: 20,
     fontSize: 16,
     fontWeight: "600",
-    borderWidth: 2,
-    borderColor: "transparent",
+    borderWidth: 1.5,
   },
   textArea: {
-    height: 100,
-    borderRadius: 15,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    height: 120,
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     fontSize: 16,
     fontWeight: "600",
-    borderWidth: 2,
-    borderColor: "transparent",
+    borderWidth: 1.5,
     textAlignVertical: "top",
   },
   errorText: {
-    color: "#FF3B30",
+    color: "#ef4444",
     fontSize: 12,
     fontWeight: "600",
-    marginTop: 5,
-    marginLeft: 5,
+    marginTop: 6,
+    marginLeft: 6,
   },
   row: {
     flexDirection: "row",
-    gap: 15,
-    marginBottom: 20,
+    gap: 16,
+    marginBottom: 24,
   },
   flex1: {
     flex: 1,
   },
   pickerTrigger: {
-    height: 55,
-    borderRadius: 15,
+    height: 56,
+    borderRadius: 16,
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    borderWidth: 1.5,
   },
   pickerValue: {
     fontSize: 14,
@@ -602,14 +550,14 @@ const styles = StyleSheet.create({
   },
   segmentedControl: {
     flexDirection: "row",
-    padding: 4,
-    borderRadius: 12,
+    padding: 6,
+    borderRadius: 16,
   },
   segmentItem: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     alignItems: "center",
-    borderRadius: 10,
+    borderRadius: 12,
   },
   segmentActiveLight: {
     backgroundColor: "#FFFFFF",
@@ -623,46 +571,28 @@ const styles = StyleSheet.create({
     backgroundColor: "#2C2C2E",
   },
   segmentText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700",
     textTransform: "capitalize",
   },
   pillContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 12,
   },
   pill: {
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 14,
     borderWidth: 1.5,
   },
   pillText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700",
-  },
-  notificationBox: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginTop: 10,
-  },
-  notificationTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    marginBottom: 2,
-  },
-  notificationDesc: {
-    fontSize: 12,
-    fontWeight: "600",
-    lineHeight: 16,
   },
   submitButton: {
     backgroundColor: "#F97316",
-    height: 60,
+    height: 64,
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
@@ -671,7 +601,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 10,
     elevation: 8,
-    marginBottom: 40,
   },
   submitText: {
     color: "#FFFFFF",

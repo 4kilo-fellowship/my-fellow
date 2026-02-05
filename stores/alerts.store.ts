@@ -51,8 +51,8 @@ export const useAlertsStore = create<AlertsState>((set, get) => ({
     const { alerts } = get();
     const updated = [...alerts, newAlert];
 
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     set({ alerts: updated });
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 
     await syncNotification(newAlert);
   },
@@ -63,8 +63,8 @@ export const useAlertsStore = create<AlertsState>((set, get) => ({
       a.id === updatedAlert.id ? updatedAlert : a,
     );
 
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     set({ alerts: updated });
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 
     if (updatedAlert.enabled) {
       await syncNotification(updatedAlert);
@@ -77,8 +77,8 @@ export const useAlertsStore = create<AlertsState>((set, get) => ({
     const { alerts } = get();
     const updated = alerts.filter((a) => a.id !== id);
 
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     set({ alerts: updated });
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 
     await cancelNotification(id);
   },

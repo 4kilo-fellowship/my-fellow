@@ -6,13 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Reminder = () => {
@@ -38,7 +32,7 @@ const Reminder = () => {
   };
 
   return (
-    <View className={`flex-1 ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}>
+    <View className={`flex-1 ${isDark ? "bg-[#0A0A0A]" : "bg-[#f8fafc]"}`}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
       <View className="flex-1" style={{ paddingTop: top + 10 }}>
@@ -58,7 +52,7 @@ const Reminder = () => {
           </View>
           <TouchableOpacity
             onPress={handleAddPress}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
             className="w-14 h-14 rounded-2xl bg-orange-500 items-center justify-center shadow-lg shadow-orange-500/40"
           >
             <Ionicons name="add" size={32} color="white" />
@@ -117,7 +111,7 @@ const Reminder = () => {
                 </Text>
 
                 <TouchableOpacity
-                  activeOpacity={0.7}
+                  activeOpacity={0.8}
                   onPress={handleAddPress}
                   className="mt-8 bg-orange-500/10 px-8 py-4 rounded-2xl"
                 >

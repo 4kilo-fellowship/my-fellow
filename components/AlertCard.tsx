@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Alert, Switch, Text, TouchableOpacity, View } from "react-native";
 import { AlertItem } from "../hooks/useAlerts";
@@ -19,135 +18,84 @@ export const AlertCard = ({
   onEdit,
 }: AlertCardProps) => {
   const date = new Date(alert.time);
-  const timeString = date.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours % 12 || 12;
+  const displayMinutes = minutes < 10 ? `0${minutes}` : minutes;
+
   const dayString = date.toLocaleDateString([], {
     month: "short",
     day: "numeric",
   });
 
   const handleDelete = () => {
-    Alert.alert("Delete Alert", "Are you sure you want to delete this alert?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: onDelete },
-    ]);
+    Alert.alert(
+      "Delete Alert",
+      "Are you sure you want to delete this alert? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: onDelete },
+      ],
+      { cancelable: true },
+    );
   };
 
   return (
-    <View
-      className={`mb-4 px-5 py-5 rounded-[32px] overflow-hidden border ${
-        isDark ? "bg-[#1C1C1E] border-gray-800" : "bg-white border-gray-100"
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={onEdit}
+      onLongPress={handleDelete}
+      className={`mb-3 px-6 py-5 rounded-[20px] flex-row items-center justify-between ${
+        isDark ? "bg-[#1C1C1E]" : "bg-white"
       }`}
       style={{
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 12,
-        elevation: 3,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.02,
+        shadowRadius: 4,
+        elevation: 1,
       }}
     >
-      <View className="flex-row items-center justify-between mb-2">
-        <TouchableOpacity
-          onPress={onEdit}
-          activeOpacity={0.7}
-          className="flex-row items-center"
-        >
-          <Text
-            className={`text-3xl font-black ${isDark ? "text-white" : "text-black"}`}
-          >
-            {timeString}
-          </Text>
-          <View
-            className={`ml-3 px-3 py-1 rounded-full ${
-              isDark ? "bg-orange-500/10" : "bg-orange-50"
-            }`}
-          >
-            <Text
-              className={`text-[10px] font-black uppercase tracking-widest ${
-                isDark ? "text-orange-400" : "text-orange-600"
-              }`}
-            >
-              {alert.repeats === "none" ? dayString : alert.repeats}
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        <Switch
-          value={alert.enabled}
-          onValueChange={onToggle}
-          trackColor={{
-            false: isDark ? "#3A3A3C" : "#D1D1D6",
-            true: "#f97316",
-          }}
-          thumbColor="#fff"
-          style={{ transform: [{ scaleX: 1 }, { scaleY: 1 }] }}
-        />
-      </View>
-
-      <TouchableOpacity onPress={onEdit} activeOpacity={0.7} className="mb-3">
+      <View className="flex-row items-baseline">
         <Text
-          className={`text-lg font-bold mb-1 ${
-            isDark ? "text-gray-200" : "text-gray-900"
+          className={`text-4xl font-medium tracking-tight ${
+            isDark ? "text-white/90" : "text-gray-500"
           }`}
-          numberOfLines={1}
         >
-          {alert.title}
+          {displayHours}:{displayMinutes}
         </Text>
-        {alert.description ? (
-          <Text
-            className={`text-sm ${isDark ? "text-gray-500" : "text-gray-400"}`}
-            numberOfLines={2}
-          >
-            {alert.description}
-          </Text>
-        ) : null}
-      </TouchableOpacity>
-
-      <View className="flex-row items-center justify-between mt-2 pt-3 border-t border-gray-100/10">
-        <View className="flex-row items-center">
-          {alert.remindBefore > 0 && (
-            <View className="flex-row items-center bg-gray-500/10 px-2 py-1 rounded-lg">
-              <Ionicons
-                name="notifications-outline"
-                size={12}
-                color={isDark ? "#f97316" : "#f97316"}
-              />
-              <Text
-                className={`text-[10px] font-bold ml-1 ${
-                  isDark ? "text-orange-400" : "text-orange-600"
-                }`}
-              >
-                {alert.remindBefore}m before
-              </Text>
-            </View>
-          )}
-          <View className="flex-row items-center ml-2 bg-gray-500/10 px-2 py-1 rounded-lg">
-            <Ionicons
-              name="volume-high-outline"
-              size={12}
-              color={isDark ? "#f97316" : "#f97316"}
-            />
-            <Text
-              className={`text-[10px] font-bold ml-1 ${
-                isDark ? "text-orange-400" : "text-orange-600"
-              }`}
-            >
-              Sound On
-            </Text>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          onPress={handleDelete}
-          className={`p-4 rounded-2xl ${
-            isDark ? "bg-red-500/20" : "bg-red-50"
+        <Text
+          className={`ml-1 text-lg font-medium ${
+            isDark ? "text-white/40" : "text-gray-300"
           }`}
         >
-          <Ionicons name="trash" size={24} color="#ef4444" />
-        </TouchableOpacity>
+          {ampm}
+        </Text>
       </View>
-    </View>
+
+      <Text
+        className={`ml-4 text-sm font-medium flex-1 text-right mr-5 ${
+          isDark ? "text-white/30" : "text-gray-400"
+        }`}
+      >
+        {alert.repeats === "none"
+          ? dayString
+          : alert.repeats === "daily"
+            ? "Every day"
+            : `${new Intl.DateTimeFormat("en-US", { weekday: "short" }).format(date)}, ${new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date)}`}
+      </Text>
+
+      <Switch
+        value={alert.enabled}
+        onValueChange={onToggle}
+        trackColor={{
+          false: isDark ? "#3A3A3C" : "#E2E8F0",
+          true: "#f97316",
+        }}
+        thumbColor="#fff"
+        ios_backgroundColor={isDark ? "#3A3A3C" : "#E2E8F0"}
+      />
+    </TouchableOpacity>
   );
 };
