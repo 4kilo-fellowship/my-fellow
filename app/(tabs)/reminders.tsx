@@ -1,4 +1,5 @@
 import { AlertCard } from "@/components/AlertCard";
+import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { useAlerts } from "@/hooks/useAlerts";
 import { registerForPushNotificationsAsync } from "@/utils/notificationService";
@@ -38,12 +39,11 @@ const Reminder = () => {
   };
 
   return (
-    <View className={`flex-1 ${isDark ? "bg-[#0A0A0A]" : "bg-[#f8fafc]"}`}>
+    <View className={`flex-1 ${isDark ? "bg-dark" : "bg-background"}`}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
       <View className="flex-1" style={{ paddingTop: top + 10 }}>
-        {/* HEADER */}
-        <View className="px-6 mb-8 flex-row justify-between items-end">
+        <View className="px-6 mb-8 flex-row justify-between items-center">
           <View>
             <Text
               className={`text-4xl font-black ${isDark ? "text-white" : "text-black"}`}
@@ -67,7 +67,7 @@ const Reminder = () => {
 
         {loading ? (
           <View className="flex-1 justify-center items-center">
-            <ActivityIndicator size="large" color="#f97316" />
+            <ActivityIndicator size="large" color={PRIMARY} />
           </View>
         ) : (
           <FlatList

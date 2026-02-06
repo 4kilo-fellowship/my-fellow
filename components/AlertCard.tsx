@@ -46,7 +46,7 @@ export const AlertCard = ({
     <TouchableOpacity
       activeOpacity={0.95}
       onPress={onEdit}
-      className={`mb-3 px-6 py-5 rounded-[20px] flex-row items-center justify-between ${
+      className={`mb-3 px-6 h-32 rounded-xl flex-row items-center justify-between ${
         isDark ? "bg-[#1C1C1E]" : "bg-white"
       }`}
       style={{
