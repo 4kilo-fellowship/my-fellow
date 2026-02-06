@@ -47,7 +47,7 @@ export default function ManageAlertScreen() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const { alerts, addAlert, updateAlert } = useAlertsStore();
-  const { top } = useSafeAreaInsets();
+  const { top, bottom } = useSafeAreaInsets();
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -97,10 +97,11 @@ export default function ManageAlertScreen() {
 
     if (initialAlert) {
       await updateAlert({ ...initialAlert, ...alertData });
+      router.back();
     } else {
       await addAlert(alertData);
+      router.back();
     }
-    router.back();
   };
 
   return (
@@ -110,7 +111,7 @@ export default function ManageAlertScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
-        {/* Header */}
+        {/* Consistent Header */}
         <View
           className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"}`}
           style={{ paddingTop: top + 10 }}
@@ -140,16 +141,11 @@ export default function ManageAlertScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {/* Form Content */}
-          <View className="flex-1">
+          <View className="flex-1 pt-6">
             {/* Title */}
             <View style={styles.inputGroup}>
-              <Text
-                style={[
-                  styles.label,
-                  { color: isDark ? "#A0A0A0" : "#64748b" },
-                ]}
-              >
-                ALERT NAME
+              <Text style={[styles.label, { color: isDark ? "#ccc" : "#444" }]}>
+                Alert Name
               </Text>
               <Controller
                 control={control}
@@ -159,17 +155,17 @@ export default function ManageAlertScreen() {
                     value={value}
                     onChangeText={onChange}
                     placeholder="e.g., Morning Prayer"
-                    placeholderTextColor={isDark ? "#48484A" : "#94a3b8"}
+                    placeholderTextColor={isDark ? "#666" : "#999"}
                     style={[
                       styles.textInput,
                       {
-                        backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                        color: isDark ? "white" : "black",
                         borderColor: errors.title
                           ? "#ef4444"
                           : isDark
-                            ? "#1f2937"
-                            : "#e2e8f0",
-                        color: isDark ? "#FFFFFF" : "#0f172a",
+                            ? "#444"
+                            : "#ccc",
+                        backgroundColor: isDark ? "#1e1e1e" : "#fff",
                       },
                     ]}
                   />
@@ -182,13 +178,8 @@ export default function ManageAlertScreen() {
 
             {/* Description */}
             <View style={styles.inputGroup}>
-              <Text
-                style={[
-                  styles.label,
-                  { color: isDark ? "#A0A0A0" : "#64748b" },
-                ]}
-              >
-                DESCRIPTION (OPTIONAL)
+              <Text style={[styles.label, { color: isDark ? "#ccc" : "#444" }]}>
+                Description
               </Text>
               <Controller
                 control={control}
@@ -197,67 +188,57 @@ export default function ManageAlertScreen() {
                   <TextInput
                     value={value}
                     onChangeText={onChange}
-                    placeholder="What's this reminder for?"
-                    placeholderTextColor={isDark ? "#48484A" : "#94a3b8"}
+                    placeholder="What is this alert for?"
+                    placeholderTextColor={isDark ? "#666" : "#999"}
                     multiline
                     numberOfLines={3}
                     style={[
                       styles.textArea,
                       {
-                        backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                        color: isDark ? "white" : "black",
                         borderColor: errors.description
                           ? "#ef4444"
                           : isDark
-                            ? "#1f2937"
-                            : "#e2e8f0",
-                        color: isDark ? "#FFFFFF" : "#0f172a",
+                            ? "#444"
+                            : "#ccc",
+                        backgroundColor: isDark ? "#1e1e1e" : "#fff",
                       },
                     ]}
                   />
                 )}
               />
-              {errors.description && (
-                <Text style={styles.errorText}>
-                  {errors.description.message}
-                </Text>
-              )}
             </View>
 
-            {/* DateTime Row */}
+            {/* Date/Time Row */}
             <View style={styles.row}>
-              <View style={styles.flex1}>
+              <View style={{ flex: 1 }}>
                 <Text
-                  style={[
-                    styles.label,
-                    { color: isDark ? "#A0A0A0" : "#64748b" },
-                  ]}
+                  style={[styles.label, { color: isDark ? "#ccc" : "#444" }]}
                 >
-                  DATE
+                  Date
                 </Text>
                 <TouchableOpacity
                   activeOpacity={0.8}
                   onPress={() => setShowDatePicker(true)}
                   style={[
-                    styles.pickerTrigger,
+                    styles.pickerButton,
                     {
-                      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                      borderColor: isDark ? "#1f2937" : "#e2e8f0",
+                      borderColor: isDark ? "#444" : "#ccc",
+                      backgroundColor: isDark ? "#1e1e1e" : "#fff",
                     },
                   ]}
                 >
                   <Text
-                    style={[
-                      styles.pickerValue,
-                      {
-                        color: !datePicked
-                          ? isDark
-                            ? "#4b5563"
-                            : "#94a3b8"
-                          : isDark
-                            ? "#FFFFFF"
-                            : "#0f172a",
-                      },
-                    ]}
+                    style={{
+                      fontSize: 16,
+                      color: datePicked
+                        ? isDark
+                          ? "white"
+                          : "black"
+                        : isDark
+                          ? "#666"
+                          : "#999",
+                    }}
                   >
                     {datePicked
                       ? selectedDate.toLocaleDateString()
@@ -265,45 +246,40 @@ export default function ManageAlertScreen() {
                   </Text>
                   <Ionicons
                     name="calendar-outline"
-                    size={18}
-                    color={isDark ? "#94a3b8" : "#64748b"}
+                    size={20}
+                    color={isDark ? "#ccc" : "#666"}
                   />
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.flex1}>
+              <View style={{ flex: 1 }}>
                 <Text
-                  style={[
-                    styles.label,
-                    { color: isDark ? "#A0A0A0" : "#64748b" },
-                  ]}
+                  style={[styles.label, { color: isDark ? "#ccc" : "#444" }]}
                 >
-                  TIME
+                  Time
                 </Text>
                 <TouchableOpacity
                   activeOpacity={0.8}
                   onPress={() => setShowTimePicker(true)}
                   style={[
-                    styles.pickerTrigger,
+                    styles.pickerButton,
                     {
-                      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                      borderColor: isDark ? "#1f2937" : "#e2e8f0",
+                      borderColor: isDark ? "#444" : "#ccc",
+                      backgroundColor: isDark ? "#1e1e1e" : "#fff",
                     },
                   ]}
                 >
                   <Text
-                    style={[
-                      styles.pickerValue,
-                      {
-                        color: !timePicked
-                          ? isDark
-                            ? "#4b5563"
-                            : "#94a3b8"
-                          : isDark
-                            ? "#FFFFFF"
-                            : "#0f172a",
-                      },
-                    ]}
+                    style={{
+                      fontSize: 16,
+                      color: timePicked
+                        ? isDark
+                          ? "white"
+                          : "black"
+                        : isDark
+                          ? "#666"
+                          : "#999",
+                    }}
                   >
                     {timePicked
                       ? selectedDate.toLocaleTimeString([], {
@@ -314,8 +290,8 @@ export default function ManageAlertScreen() {
                   </Text>
                   <Ionicons
                     name="time-outline"
-                    size={18}
-                    color={isDark ? "#94a3b8" : "#64748b"}
+                    size={20}
+                    color={isDark ? "#ccc" : "#666"}
                   />
                 </TouchableOpacity>
               </View>
@@ -325,84 +301,86 @@ export default function ManageAlertScreen() {
               <DateTimePicker
                 value={selectedDate}
                 mode="date"
-                display={Platform.OS === "ios" ? "spinner" : "default"}
-                onChange={(event, date) => {
-                  setShowDatePicker(false);
-                  if (date) {
+                display="default"
+                onChange={(e, d) => {
+                  setShowDatePicker(Platform.OS === "ios");
+                  if (d) {
                     const newDate = new Date(selectedDate);
-                    newDate.setFullYear(date.getFullYear());
-                    newDate.setMonth(date.getMonth());
-                    newDate.setDate(date.getDate());
-                    setValue("date", newDate, { shouldValidate: true });
+                    newDate.setFullYear(d.getFullYear());
+                    newDate.setMonth(d.getMonth());
+                    newDate.setDate(d.getDate());
+                    setValue("date", newDate);
                     setDatePicked(true);
                   }
                 }}
               />
             )}
+            {/* Simple iOS Close Button */}
+            {Platform.OS === "ios" && showDatePicker && (
+              <TouchableOpacity
+                onPress={() => setShowDatePicker(false)}
+                style={{ alignSelf: "flex-end", padding: 8 }}
+              >
+                <Text style={{ color: "#F97316", fontSize: 16 }}>Done</Text>
+              </TouchableOpacity>
+            )}
+
             {showTimePicker && (
               <DateTimePicker
                 value={selectedDate}
                 mode="time"
-                display={Platform.OS === "ios" ? "spinner" : "default"}
-                onChange={(event, date) => {
-                  setShowTimePicker(false);
-                  if (date) {
+                display="default"
+                onChange={(e, d) => {
+                  setShowTimePicker(Platform.OS === "ios");
+                  if (d) {
                     const newDate = new Date(selectedDate);
-                    newDate.setHours(date.getHours());
-                    newDate.setMinutes(date.getMinutes());
-                    setValue("date", newDate, { shouldValidate: true });
+                    newDate.setHours(d.getHours());
+                    newDate.setMinutes(d.getMinutes());
+                    setValue("date", newDate);
                     setTimePicked(true);
                   }
                 }}
               />
             )}
+            {Platform.OS === "ios" && showTimePicker && (
+              <TouchableOpacity
+                onPress={() => setShowTimePicker(false)}
+                style={{ alignSelf: "flex-end", padding: 8 }}
+              >
+                <Text style={{ color: "#F97316", fontSize: 16 }}>Done</Text>
+              </TouchableOpacity>
+            )}
 
-            {/* Frequency */}
+            {/* Repeats */}
             <View style={styles.inputGroup}>
-              <Text
-                style={[
-                  styles.label,
-                  { color: isDark ? "#A0A0A0" : "#64748b" },
-                ]}
-              >
-                REPETITION
+              <Text style={[styles.label, { color: isDark ? "#ccc" : "#444" }]}>
+                Repeat
               </Text>
-              <View
-                style={[
-                  styles.segmentedControl,
-                  { backgroundColor: isDark ? "#1C1C1E" : "#e2e8f0" },
-                ]}
-              >
-                {FREQUENCY_OPTIONS.map((r) => {
-                  const isActive = selectedRepeats === r;
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+                {FREQUENCY_OPTIONS.map((opt) => {
+                  const isActive = selectedRepeats === opt;
                   return (
                     <TouchableOpacity
-                      key={r}
-                      activeOpacity={0.8}
-                      onPress={() =>
-                        setValue("repeats", r, { shouldValidate: true })
-                      }
+                      key={opt}
+                      onPress={() => setValue("repeats", opt)}
                       style={[
-                        styles.segmentItem,
-                        isActive &&
-                          (isDark
-                            ? styles.segmentActiveDark
-                            : styles.segmentActiveLight),
+                        styles.chip,
+                        isActive
+                          ? {
+                              backgroundColor: "#F97316",
+                              borderColor: "#F97316",
+                            }
+                          : { borderColor: isDark ? "#444" : "#ccc" },
                       ]}
                     >
                       <Text
                         style={[
-                          styles.segmentText,
-                          {
-                            color: isActive
-                              ? "#F97316"
-                              : isDark
-                                ? "#94a3b8"
-                                : "#64748b",
-                          },
+                          styles.chipText,
+                          isActive && { color: "white" },
+                          !isActive && isDark && { color: "#ccc" },
                         ]}
                       >
-                        {r}
+                        {opt === "none" ? "Never" : opt}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -410,78 +388,64 @@ export default function ManageAlertScreen() {
               </View>
             </View>
 
-            {/* Remind me */}
+            {/* Remind Before */}
             <View style={styles.inputGroup}>
-              <Text
-                style={[
-                  styles.label,
-                  { color: isDark ? "#A0A0A0" : "#64748b" },
-                ]}
-              >
-                REMIND ME BEFORE
+              <Text style={[styles.label, { color: isDark ? "#ccc" : "#444" }]}>
+                Remind Me
               </Text>
-              <View style={styles.pillContainer}>
-                {REMIND_OPTIONS.map((item) => {
-                  const isActive = selectedRemindBefore === item.value;
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+                {REMIND_OPTIONS.map((opt) => {
+                  const isActive = selectedRemindBefore === opt.value;
                   return (
                     <TouchableOpacity
-                      key={item.value}
-                      activeOpacity={0.8}
-                      onPress={() =>
-                        setValue("remindBefore", item.value, {
-                          shouldValidate: true,
-                        })
-                      }
+                      key={opt.value}
+                      onPress={() => setValue("remindBefore", opt.value)}
                       style={[
-                        styles.pill,
-                        {
-                          backgroundColor: isActive
-                            ? "#F97316"
-                            : isDark
-                              ? "#1C1C1E"
-                              : "#FFFFFF",
-                          borderColor: isActive
-                            ? "#F97316"
-                            : isDark
-                              ? "#374151"
-                              : "#e2e8f0",
-                        },
+                        styles.chip,
+                        isActive
+                          ? {
+                              backgroundColor: "#F97316",
+                              borderColor: "#F97316",
+                            }
+                          : { borderColor: isDark ? "#444" : "#ccc" },
                       ]}
                     >
                       <Text
                         style={[
-                          styles.pillText,
-                          {
-                            color: isActive
-                              ? "#FFFFFF"
-                              : isDark
-                                ? "#94a3b8"
-                                : "#64748b",
-                          },
+                          styles.chipText,
+                          isActive && { color: "white" },
+                          !isActive && isDark && { color: "#ccc" },
                         ]}
                       >
-                        {item.label}
+                        {opt.label}
                       </Text>
                     </TouchableOpacity>
                   );
                 })}
               </View>
             </View>
-          </View>
-
-          {/* Submit Button */}
-          <View className="mt-8 mb-10">
-            <TouchableOpacity
-              onPress={handleSubmit(onSubmit)}
-              activeOpacity={0.8}
-              style={styles.submitButton}
-            >
-              <Text style={styles.submitText}>
-                {id ? "Update Alert" : "Set Alert"}
-              </Text>
-            </TouchableOpacity>
           </View>
         </ScrollView>
+        <View
+          className={`p-4 border-t ${isDark ? "border-gray-800 bg-[#0A0A0A]" : "border-gray-200 bg-[#f8fafc]"}`}
+          style={{ paddingBottom: Math.max(bottom + 10, 20) }}
+        >
+          <TouchableOpacity
+            onPress={handleSubmit(onSubmit)}
+            activeOpacity={0.8}
+            style={{
+              backgroundColor: "#F97316",
+              borderRadius: 12,
+              height: 50,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Text style={{ color: "white", fontSize: 16, fontWeight: "bold" }}>
+              {id ? "Save Changes" : "Create Alert"}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </KeyboardAvoidingView>
     </View>
   );
@@ -489,122 +453,65 @@ export default function ManageAlertScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
   },
   inputGroup: {
     marginBottom: 24,
   },
   label: {
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 1,
+    fontSize: 14,
+    fontWeight: "bold",
     marginBottom: 8,
-    marginLeft: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   textInput: {
-    height: 56,
-    borderRadius: 16,
-    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    height: 50,
     fontSize: 16,
-    fontWeight: "600",
-    borderWidth: 1.5,
   },
   textArea: {
-    height: 120,
-    borderRadius: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    height: 100,
     fontSize: 16,
-    fontWeight: "600",
-    borderWidth: 1.5,
     textAlignVertical: "top",
   },
   errorText: {
     color: "#ef4444",
     fontSize: 12,
-    fontWeight: "600",
-    marginTop: 6,
-    marginLeft: 6,
+    marginTop: 4,
   },
   row: {
     flexDirection: "row",
     gap: 16,
     marginBottom: 24,
   },
-  flex1: {
-    flex: 1,
-  },
-  pickerTrigger: {
-    height: 56,
-    borderRadius: 16,
-    paddingHorizontal: 16,
+  pickerButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderWidth: 1.5,
+    borderWidth: 1,
+    borderRadius: 8,
+    height: 50,
+    paddingHorizontal: 12,
   },
-  pickerValue: {
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  segmentedControl: {
-    flexDirection: "row",
-    padding: 6,
-    borderRadius: 16,
-  },
-  segmentItem: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: "center",
-    borderRadius: 12,
-  },
-  segmentActiveLight: {
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  segmentActiveDark: {
-    backgroundColor: "#2C2C2E",
-  },
-  segmentText: {
-    fontSize: 13,
-    fontWeight: "700",
-    textTransform: "capitalize",
-  },
-  pillContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  pill: {
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 14,
-    borderWidth: 1.5,
-  },
-  pillText: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  submitButton: {
-    backgroundColor: "#F97316",
-    height: 64,
+  chip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#F97316",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 8,
+    borderWidth: 1,
+    backgroundColor: "transparent",
   },
-  submitText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "800",
+  chipText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#555",
+    textTransform: "capitalize",
   },
 });
