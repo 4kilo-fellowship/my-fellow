@@ -46,28 +46,21 @@ export const AlertCard = ({
     <TouchableOpacity
       activeOpacity={0.95}
       onPress={onEdit}
-      className={`mb-3 px-6 h-32 rounded-xl flex-row items-center justify-between ${
-        isDark ? "bg-[#1C1C1E]" : "bg-white"
+      className={`mb-3 px-6 h-32 rounded-xl flex-row items-center justify-between border  ${
+        isDark ? "bg-zinc-800 border-gray-800" : "bg-gray-50 border-gray-200"
       }`}
-      style={{
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.02,
-        shadowRadius: 4,
-        elevation: 1,
-      }}
     >
       <View className="flex-row items-baseline">
         <Text
           className={`text-4xl font-medium tracking-tight ${
-            isDark ? "text-white/90" : "text-gray-500"
+            isDark ? "text-white" : "text-gray-900"
           }`}
         >
           {displayHours}:{displayMinutes}
         </Text>
         <Text
           className={`ml-1 text-lg font-medium ${
-            isDark ? "text-white/40" : "text-gray-300"
+            isDark ? "text-gray-400" : "text-gray-500"
           }`}
         >
           {ampm}
@@ -76,7 +69,7 @@ export const AlertCard = ({
 
       <Text
         className={`ml-4 text-sm font-medium flex-1 text-right mr-3 ${
-          isDark ? "text-white/30" : "text-gray-400"
+          isDark ? "text-gray-500" : "text-gray-400"
         }`}
       >
         {alert.repeats === "none"
