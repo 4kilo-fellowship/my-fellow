@@ -1,7 +1,9 @@
+export { AlertCard } from "./AlertCard";
 export { default as AnnouncementCard } from "./Card/AnnouncementCard";
 export { default as DevotionCard } from "./Card/DevotionCard";
 export { default as LeaderCard } from "./Card/LeaderCard";
 export { default as ConfirmationModal } from "./ConfirmationModal";
+export { DeleteConfirmModal } from "./Modals/DeleteConfirmModal";
 export { default as QuickAction } from "./QuickAction/HomeQuickActions";
 export { default as QuickActions } from "./QuickAction/TeamsQuickActions";
 export { default as RegistrationModal } from "./RegistrationModal";

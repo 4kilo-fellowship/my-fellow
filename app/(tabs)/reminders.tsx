@@ -1,4 +1,4 @@
-import { AlertCard } from "@/components/AlertCard";
+import { AlertCard, DeleteConfirmModal } from "@/components";
 import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { useAlerts } from "@/hooks/useAlerts";
@@ -22,6 +22,8 @@ const Reminder = () => {
   const isDark = theme === "dark";
   const { alerts, loading, deleteAlert, toggleAlert } = useAlerts();
   const router = useRouter();
+  const [deleteModalVisible, setDeleteModalVisible] = React.useState(false);
+  const [alertToDelete, setAlertToDelete] = React.useState<string | null>(null);
 
   useEffect(() => {
     registerForPushNotificationsAsync();
@@ -36,6 +38,19 @@ const Reminder = () => {
       pathname: "/reminders/manage",
       params: { id },
     });
+  };
+
+  const handleDeletePress = (id: string) => {
+    setAlertToDelete(id);
+    setDeleteModalVisible(true);
+  };
+
+  const confirmDelete = async () => {
+    if (alertToDelete) {
+      await deleteAlert(alertToDelete);
+      setDeleteModalVisible(false);
+      setAlertToDelete(null);
+    }
   };
 
   return (
@@ -78,7 +93,7 @@ const Reminder = () => {
                 alert={item}
                 isDark={isDark}
                 onToggle={() => toggleAlert(item.id)}
-                onDelete={() => deleteAlert(item.id)}
+                onDelete={() => handleDeletePress(item.id)}
                 onEdit={() => handleEditPress(item.id)}
               />
             )}
@@ -130,6 +145,12 @@ const Reminder = () => {
           />
         )}
       </View>
+      <DeleteConfirmModal
+        visible={deleteModalVisible}
+        onClose={() => setDeleteModalVisible(false)}
+        onConfirm={confirmDelete}
+        isDark={isDark}
+      />
     </View>
   );
 };

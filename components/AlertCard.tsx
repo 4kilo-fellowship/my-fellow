@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Alert, Switch, Text, TouchableOpacity, View } from "react-native";
+import { Switch, Text, TouchableOpacity, View } from "react-native";
 import { AlertItem } from "../hooks/useAlerts";
 
 interface AlertCardProps {
@@ -29,18 +29,6 @@ export const AlertCard = ({
     month: "short",
     day: "numeric",
   });
-
-  const handleDelete = () => {
-    Alert.alert(
-      "Delete Alert",
-      "Are you sure you want to delete this alert? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: onDelete },
-      ],
-      { cancelable: true },
-    );
-  };
 
   return (
     <TouchableOpacity
@@ -80,13 +68,13 @@ export const AlertCard = ({
       </Text>
 
       <TouchableOpacity
-        onPress={handleDelete}
+        onPress={onDelete}
         className="w-10 h-10 items-center justify-center mr-1"
       >
         <Ionicons
           name="trash-outline"
           size={22}
-          color={isDark ? "#ff453a" : "#ef4444"}
+          color={isDark ? "#ef4444" : "#dc2626"}
         />
       </TouchableOpacity>
 

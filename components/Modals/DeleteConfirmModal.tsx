@@ -1,9 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
 import React from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
-const ACCENT = "rgb(255, 103, 25)";
+import {
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface DeleteConfirmModalProps {
   visible: boolean;
@@ -19,114 +23,126 @@ export const DeleteConfirmModal = ({
   onClose,
   onConfirm,
   isDark,
-  title = "Delete Alert",
-  message = "Are you sure you want to delete this alert? This action cannot be undone.",
+  title = "Delete Reminder",
+  message = "This action will permanently remove this alert from your schedule.",
 }: DeleteConfirmModalProps) => {
+  const bgColor = isDark ? "#121212" : "#FFFFFF";
+  const textColor = isDark ? "#E4E4E7" : "#18181B";
+  const subTextColor = isDark ? "#71717A" : "#71717A";
+
   return (
     <Modal
       animationType="fade"
-      transparent
+      transparent={true}
       visible={visible}
-      statusBarTranslucent
+      statusBarTranslucent={true}
       onRequestClose={onClose}
     >
-      <BlurView
-        intensity={25}
-        tint={isDark ? "dark" : "light"}
-        style={StyleSheet.absoluteFill}
-        className="justify-center items-center"
+      <View
+        style={[
+          styles.overlay,
+          { backgroundColor: isDark ? "rgba(0,0,0,0.9)" : "rgba(0,0,0,0.4)" },
+        ]}
       >
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={onClose}
-          style={StyleSheet.absoluteFill}
-        />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View
-          pointerEvents="auto"
-          className={`w-[85%] max-w-[340px] rounded-[28px] p-6 items-center mx-6 ${
-            isDark
-              ? "bg-[#1C1C1E] border border-white/5"
-              : "bg-white border border-black/5"
-          }`}
-          style={{
-            shadowColor: ACCENT,
-            shadowOffset: { width: 0, height: 18 },
-            shadowOpacity: 0.35,
-            shadowRadius: 35,
-            elevation: 28,
-          }}
-        >
-          {/* Icon */}
-          <View
-            className="w-14 h-14 rounded-full items-center justify-center mb-5"
-            style={{
-              backgroundColor: isDark
-                ? "rgba(255,103,25,0.15)"
-                : "rgba(255,103,25,0.12)",
-            }}
-          >
-            <Ionicons name="trash-outline" size={28} color={ACCENT} />
+        <View style={[styles.container, { backgroundColor: bgColor }]}>
+          {/* Subtle Icon - No Background */}
+          <View style={styles.iconContainer}>
+            <Ionicons
+              name="trash-outline"
+              size={32}
+              color={isDark ? "#52525B" : "#A1A1AA"}
+            />
           </View>
 
-          {/* Title */}
-          <Text
-            className={`text-xl font-bold mb-2 text-center ${
-              isDark ? "text-white" : "text-gray-900"
-            }`}
-          >
-            {title}
-          </Text>
+          <Text style={[styles.title, { color: textColor }]}>{title}</Text>
 
-          {/* Message */}
-          <Text
-            className={`text-center text-[15px] leading-6 mb-8 ${
-              isDark ? "text-white/60" : "text-gray-500"
-            }`}
-          >
+          <Text style={[styles.message, { color: subTextColor }]}>
             {message}
           </Text>
 
-          {/* Actions */}
-          <View className="flex-row gap-3 w-full">
+          {/* Minimalist Button Row - No Backgrounds */}
+          <View style={styles.buttonRow}>
             <TouchableOpacity
-              activeOpacity={0.7}
+              activeOpacity={0.6}
               onPress={onClose}
-              className={`flex-1 py-4 rounded-2xl items-center justify-center ${
-                isDark ? "bg-[#2C2C2E]" : "bg-gray-100"
-              }`}
+              style={styles.button}
             >
-              <Text
-                className={`font-semibold text-[17px] ${
-                  isDark ? "text-white" : "text-gray-900"
-                }`}
-              >
+              <Text style={[styles.buttonText, { color: subTextColor }]}>
                 Cancel
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              activeOpacity={0.8}
+              activeOpacity={0.6}
               onPress={() => {
                 onConfirm();
                 onClose();
               }}
-              className="flex-1 py-4 rounded-2xl items-center justify-center"
-              style={{
-                backgroundColor: ACCENT,
-                shadowColor: ACCENT,
-                shadowOpacity: 0.45,
-                shadowRadius: 18,
-                elevation: 12,
-              }}
+              style={styles.button}
             >
-              <Text className="font-semibold text-[17px] text-white">
+              <Text style={[styles.buttonText, styles.deleteButtonText]}>
                 Delete
               </Text>
             </TouchableOpacity>
           </View>
         </View>
-      </BlurView>
+      </View>
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  container: {
+    width: "100%",
+    maxWidth: 360,
+    borderRadius: 32,
+    paddingVertical: 24,
+    paddingHorizontal: 24,
+    alignItems: "center",
+  },
+  iconContainer: {
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 10,
+    letterSpacing: -0.5,
+  },
+  message: {
+    fontSize: 15,
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 36,
+    paddingHorizontal: 10,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "space-between",
+    borderTopWidth: 0,
+    paddingTop: 0,
+  },
+  button: {
+    flex: 1,
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  buttonText: {
+    fontSize: 17,
+    fontWeight: "600",
+  },
+  deleteButtonText: {
+    color: "#EF4444",
+  },
+});

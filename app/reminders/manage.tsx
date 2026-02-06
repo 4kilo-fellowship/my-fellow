@@ -47,7 +47,7 @@ export default function ManageAlertScreen() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const { alerts, addAlert, updateAlert } = useAlertsStore();
-  const { top, bottom } = useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -114,7 +114,7 @@ export default function ManageAlertScreen() {
         {/* Consistent Header */}
         <View
           className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"}`}
-          style={{ paddingTop: top + 10 }}
+          style={{ paddingTop: insets.top + 10 }}
         >
           <TouchableOpacity
             onPress={() => router.back()}
@@ -427,22 +427,27 @@ export default function ManageAlertScreen() {
           </View>
         </ScrollView>
         <View
-          className={`p-4 border-t ${isDark ? "border-gray-800 bg-[#0A0A0A]" : "border-gray-200 bg-[#f8fafc]"}`}
-          style={{ paddingBottom: Math.max(bottom + 10, 20) }}
+          className={`px-6 pb-6 ${isDark ? "bg-[#0A0A0A]" : "bg-[#f8fafc]"}`}
+          style={{ paddingBottom: Math.max(insets.bottom + 10, 24) }}
         >
           <TouchableOpacity
             onPress={handleSubmit(onSubmit)}
             activeOpacity={0.8}
             style={{
               backgroundColor: "#F97316",
-              borderRadius: 12,
-              height: 50,
+              borderRadius: 16,
+              height: 56,
               alignItems: "center",
               justifyContent: "center",
+              shadowColor: "#F97316",
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.25,
+              shadowRadius: 12,
+              elevation: 4,
             }}
           >
-            <Text style={{ color: "white", fontSize: 16, fontWeight: "bold" }}>
-              {id ? "Save Changes" : "Create Alert"}
+            <Text style={{ color: "white", fontSize: 18, fontWeight: "900" }}>
+              Save Alert
             </Text>
           </TouchableOpacity>
         </View>
