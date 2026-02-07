@@ -1,3 +1,4 @@
+import { PRIMARY } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
@@ -53,7 +54,7 @@ export const ConfirmModal = ({
       case "danger":
         return "#EF4444";
       case "primary":
-        return "#f97316";
+        return PRIMARY;
       default:
         return subTextColor;
     }
@@ -77,13 +78,12 @@ export const ConfirmModal = ({
       <View
         style={[
           styles.overlay,
-          { backgroundColor: isDark ? "rgba(0,0,0,0.9)" : "rgba(0,0,0,0.4)" },
+          { backgroundColor: isDark ? "rgba(0,0,0,0.7)" : "rgba(0,0,0,0.4)" },
         ]}
       >
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
         <View style={[styles.container, { backgroundColor: bgColor }]}>
-          {/* Icon */}
           {icon && (
             <View style={styles.iconContainer}>
               <Ionicons
@@ -94,17 +94,13 @@ export const ConfirmModal = ({
             </View>
           )}
 
-          {/* Title */}
           <Text style={[styles.title, { color: textColor }]}>{title}</Text>
 
-          {/* Description */}
           <Text style={[styles.message, { color: subTextColor }]}>
             {description}
           </Text>
 
-          {/* Action Buttons */}
           <View style={styles.buttonRow}>
-            {/* Cancel Button */}
             {cancelButton && (
               <TouchableOpacity
                 activeOpacity={0.6}
@@ -117,7 +113,6 @@ export const ConfirmModal = ({
               </TouchableOpacity>
             )}
 
-            {/* Dynamic Buttons */}
             {buttons.map((button, index) => (
               <TouchableOpacity
                 key={index}
