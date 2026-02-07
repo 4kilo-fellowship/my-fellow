@@ -80,6 +80,7 @@ export const AlertCard = ({
         </Text>
 
         <TouchableOpacity
+          activeOpacity={0.8}
           onPress={handleDeletePress}
           className="w-10 h-10 items-center justify-center mr-1"
         >

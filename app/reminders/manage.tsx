@@ -111,7 +111,6 @@ export default function ManageAlertScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
-        {/* Consistent Header */}
         <View
           className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"}`}
           style={{ paddingTop: insets.top + 10 }}
@@ -361,6 +360,7 @@ export default function ManageAlertScreen() {
                   const isActive = selectedRepeats === opt;
                   return (
                     <TouchableOpacity
+                      activeOpacity={0.8}
                       key={opt}
                       onPress={() => setValue("repeats", opt)}
                       style={[
@@ -398,6 +398,7 @@ export default function ManageAlertScreen() {
                   const isActive = selectedRemindBefore === opt.value;
                   return (
                     <TouchableOpacity
+                      activeOpacity={0.8}
                       key={opt.value}
                       onPress={() => setValue("remindBefore", opt.value)}
                       style={[
