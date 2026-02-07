@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useState } from "react";
 import { Switch, Text, TouchableOpacity, View } from "react-native";
 import { AlertItem } from "../hooks/useAlerts";
+import { ConfirmModal } from "./Modals/ConfirmModal";
 
 interface AlertCardProps {
   alert: AlertItem;
@@ -18,6 +19,8 @@ export const AlertCard = ({
   onDelete,
   onEdit,
 }: AlertCardProps) => {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
   const date = new Date(alert.time);
   const hours = date.getHours();
   const minutes = date.getMinutes();
@@ -30,64 +33,93 @@ export const AlertCard = ({
     day: "numeric",
   });
 
-  return (
-    <TouchableOpacity
-      activeOpacity={0.95}
-      onPress={onEdit}
-      className={`mb-3 px-6 h-32 rounded-xl flex-row items-center justify-between border  ${
-        isDark ? "bg-zinc-800 border-gray-800" : "bg-gray-50 border-gray-200"
-      }`}
-    >
-      <View className="flex-row items-baseline">
-        <Text
-          className={`text-4xl font-medium tracking-tight ${
-            isDark ? "text-white" : "text-gray-900"
-          }`}
-        >
-          {displayHours}:{displayMinutes}
-        </Text>
-        <Text
-          className={`ml-1 text-lg font-medium ${
-            isDark ? "text-gray-400" : "text-gray-500"
-          }`}
-        >
-          {ampm}
-        </Text>
-      </View>
+  const handleDeletePress = () => {
+    setShowDeleteModal(true);
+  };
 
-      <Text
-        className={`ml-4 text-sm font-medium flex-1 text-right mr-3 ${
-          isDark ? "text-gray-500" : "text-gray-400"
+  const handleConfirmDelete = () => {
+    onDelete();
+  };
+
+  return (
+    <>
+      <TouchableOpacity
+        activeOpacity={0.95}
+        onPress={onEdit}
+        className={`mb-3 px-6 h-32 rounded-xl flex-row items-center justify-between border  ${
+          isDark ? "bg-zinc-800 border-gray-800" : "bg-gray-50 border-gray-200"
         }`}
       >
-        {alert.repeats === "none"
-          ? dayString
-          : alert.repeats === "daily"
-            ? "Every day"
-            : `${new Intl.DateTimeFormat("en-US", { weekday: "short" }).format(date)}, ${new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date)}`}
-      </Text>
+        <View className="flex-row items-baseline">
+          <Text
+            className={`text-4xl font-medium tracking-tight ${
+              isDark ? "text-white" : "text-gray-900"
+            }`}
+          >
+            {displayHours}:{displayMinutes}
+          </Text>
+          <Text
+            className={`ml-1 text-lg font-medium ${
+              isDark ? "text-gray-400" : "text-gray-500"
+            }`}
+          >
+            {ampm}
+          </Text>
+        </View>
 
-      <TouchableOpacity
-        onPress={onDelete}
-        className="w-10 h-10 items-center justify-center mr-1"
-      >
-        <Ionicons
-          name="trash-outline"
-          size={22}
-          color={isDark ? "#ef4444" : "#dc2626"}
+        <Text
+          className={`ml-4 text-sm font-medium flex-1 text-right mr-3 ${
+            isDark ? "text-gray-500" : "text-gray-400"
+          }`}
+        >
+          {alert.repeats === "none"
+            ? dayString
+            : alert.repeats === "daily"
+              ? "Every day"
+              : `${new Intl.DateTimeFormat("en-US", { weekday: "short" }).format(date)}, ${new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date)}`}
+        </Text>
+
+        <TouchableOpacity
+          onPress={handleDeletePress}
+          className="w-10 h-10 items-center justify-center mr-1"
+        >
+          <Ionicons
+            name="trash-outline"
+            size={22}
+            color={isDark ? "#ef4444" : "#dc2626"}
+          />
+        </TouchableOpacity>
+
+        <Switch
+          value={alert.enabled}
+          onValueChange={onToggle}
+          trackColor={{
+            false: isDark ? "#3A3A3C" : "#E2E8F0",
+            true: "#f97316",
+          }}
+          thumbColor="#fff"
+          ios_backgroundColor={isDark ? "#3A3A3C" : "#E2E8F0"}
         />
       </TouchableOpacity>
 
-      <Switch
-        value={alert.enabled}
-        onValueChange={onToggle}
-        trackColor={{
-          false: isDark ? "#3A3A3C" : "#E2E8F0",
-          true: "#f97316",
+      <ConfirmModal
+        visible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        isDark={isDark}
+        icon="trash-outline"
+        title="Delete Reminder"
+        description="This action will permanently remove this alert from your schedule."
+        buttons={[
+          {
+            label: "Delete",
+            onPress: handleConfirmDelete,
+            variant: "danger",
+          },
+        ]}
+        cancelButton={{
+          label: "Cancel",
         }}
-        thumbColor="#fff"
-        ios_backgroundColor={isDark ? "#3A3A3C" : "#E2E8F0"}
       />
-    </TouchableOpacity>
+    </>
   );
 };
