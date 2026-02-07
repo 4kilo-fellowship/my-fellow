@@ -1,22 +1,22 @@
 import { QuickActions } from "@/components";
-import { TEAMS } from "@/constants/teams";
+import { Team } from "@/constants/teams";
 import { useTheme } from "@/context/ThemeContext";
+import { fetchTeams } from "@/services/teamService";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   FlatList,
+  RefreshControl,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-// --- Types ---
-import type { Team } from "@/constants/teams";
 
 const { width } = Dimensions.get("window");
 const GAP = 12;
@@ -61,12 +61,15 @@ const GridCard = ({ item, onPress }: { item: Team; onPress: () => void }) => (
   >
     {/* Huge Background Icon (Watermark style) */}
     <View className="absolute -right-6 -bottom-6 opacity-20 transform rotate-12">
-      <Ionicons name={item.icon} size={110} color="white" />
+      <Ionicons name={item.icon as any} size={110} color="white" />
     </View>
 
     {/* Content */}
     <View>
-      <Text className="text-white text-lg font-extrabold tracking-wide">
+      <Text
+        className="text-white text-lg font-extrabold tracking-wide"
+        numberOfLines={2}
+      >
         {item.name}
       </Text>
       <View className="bg-black/10 self-start px-2 py-0.5 rounded-md mt-1">
@@ -90,8 +93,33 @@ const Teams = () => {
   const [searchText, setSearchText] = useState("");
   const router = useRouter();
 
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    loadTeams();
+  }, []);
+
+  const loadTeams = async (refresh = false) => {
+    try {
+      if (refresh) setRefreshing(true);
+      const data = await fetchTeams(refresh);
+      setTeams(data);
+    } catch (error) {
+      console.error("Failed to load teams", error);
+    } finally {
+      if (refresh) setRefreshing(false);
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = () => {
+    loadTeams(true);
+  };
+
   // Filter logic
-  const filteredTeams = TEAMS.filter((t) =>
+  const filteredTeams = teams.filter((t) =>
     t.name.toLowerCase().includes(searchText.toLowerCase()),
   );
 
@@ -99,7 +127,7 @@ const Teams = () => {
     <View className={`flex-1 ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      <View style={{ paddingTop: top + 10, paddingBottom: 100 }}>
+      <View style={{ paddingTop: top + 10, paddingBottom: 100, flex: 1 }}>
         {/* HEADER */}
         <View className="px-5 mb-4">
           <Text
@@ -118,49 +146,74 @@ const Teams = () => {
         <QuickActions />
 
         {/* Grid Content */}
-        <FlatList
-          data={filteredTeams}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <GridCard
-              item={item}
-              onPress={() => router.push(`/teams/${item.id}` as any)}
+        {loading && !refreshing && teams.length === 0 ? (
+          <View className="flex-1 justify-center items-center">
+            <ActivityIndicator
+              size="large"
+              color={isDark ? "white" : "black"}
             />
-          )}
-          numColumns={2}
-          columnWrapperStyle={{
-            justifyContent: "space-between",
-            paddingHorizontal: PADDING,
-          }}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          showsVerticalScrollIndicator={false}
-          ListFooterComponent={
-            <View className="mt-4 px-5 mb-10">
-              <View
-                className={`p-6 rounded-2xl items-center ${isDark ? "bg-zinc-900" : "bg-zinc-50 border border-zinc-100"}`}
-              >
-                <Text
-                  className={`font-bold text-lg mb-1 ${isDark ? "text-white" : "text-black"}`}
-                >
-                  Wondering where you fit?
-                </Text>
-                <Text className="text-zinc-500 text-center text-sm mb-4">
-                  Connect with I4U to get guidance and support.
-                </Text>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  className={`bg-black ${isDark ? "bg-white" : "bg-dark"} px-6 py-3 rounded-full`}
+          </View>
+        ) : (
+          <FlatList
+            data={filteredTeams}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <GridCard
+                item={item}
+                onPress={() => router.push(`/teams/${item.id}` as any)}
+              />
+            )}
+            numColumns={2}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={isDark ? "white" : "black"}
+              />
+            }
+            columnWrapperStyle={{
+              justifyContent: "space-between",
+              paddingHorizontal: PADDING,
+            }}
+            contentContainerStyle={{ paddingBottom: 100 }}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              !loading ? (
+                <View className="items-center mt-10">
+                  <Text className={isDark ? "text-zinc-500" : "text-zinc-400"}>
+                    No teams found
+                  </Text>
+                </View>
+              ) : null
+            }
+            ListFooterComponent={
+              <View className="mt-4 px-5 mb-10">
+                <View
+                  className={`p-6 rounded-2xl items-center ${isDark ? "bg-zinc-900" : "bg-zinc-50 border border-zinc-100"}`}
                 >
                   <Text
-                    className={`font-bold ${isDark ? "text-black" : "text-white"}`}
+                    className={`font-bold text-lg mb-1 ${isDark ? "text-white" : "text-black"}`}
                   >
-                    Contact I4U
+                    Wondering where you fit?
                   </Text>
-                </TouchableOpacity>
+                  <Text className="text-zinc-500 text-center text-sm mb-4">
+                    Connect with I4U to get guidance and support.
+                  </Text>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    className={`bg-black ${isDark ? "bg-white" : "bg-dark"} px-6 py-3 rounded-full`}
+                  >
+                    <Text
+                      className={`font-bold ${isDark ? "text-black" : "text-white"}`}
+                    >
+                      Contact I4U
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          }
-        />
+            }
+          />
+        )}
       </View>
     </View>
   );

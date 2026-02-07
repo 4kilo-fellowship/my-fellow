@@ -1,10 +1,12 @@
-import { TEAMS } from "@/constants/teams";
+import { Team } from "@/constants/teams";
 import { useTheme } from "@/context/ThemeContext";
+import { fetchTeams } from "@/services/teamService";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   Image,
   Linking,
@@ -25,7 +27,34 @@ const TeamDetails = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const team = TEAMS.find((t) => t.id === id);
+  const [team, setTeam] = useState<Team | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadTeam = async () => {
+      try {
+        // Fetch from cache (or API if refreshed elsewhere)
+        const teams = await fetchTeams(false);
+        const foundTeam = teams.find((t) => t.id === id);
+        setTeam(foundTeam || null);
+      } catch (error) {
+        console.error("Error loading team details", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadTeam();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <View
+        className={`flex-1 items-center justify-center ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}
+      >
+        <ActivityIndicator size="large" color={isDark ? "white" : "black"} />
+      </View>
+    );
+  }
 
   if (!team) {
     return (
@@ -35,6 +64,9 @@ const TeamDetails = () => {
         <Text className={isDark ? "text-white" : "text-black"}>
           Team not found
         </Text>
+        <TouchableOpacity onPress={() => router.back()} className="mt-4 p-4">
+          <Text className="text-blue-500">Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -75,7 +107,7 @@ const TeamDetails = () => {
       <ScrollView showsVerticalScrollIndicator={false}>
         <View className="relative">
           <Image
-            source={team.image}
+            source={{ uri: team.imageUrl }}
             style={{ width, height: 280 }}
             className="bg-zinc-200"
             resizeMode="cover"
@@ -86,7 +118,7 @@ const TeamDetails = () => {
               style={{ backgroundColor: PRIMARY_COLOR }}
               className="px-4 py-2 rounded-full flex-row items-center"
             >
-              <Ionicons name={team.icon} size={18} color="white" />
+              <Ionicons name={team.icon as any} size={18} color="white" />
               <Text className="text-white font-bold text-sm ml-2">
                 {team.category}
               </Text>
@@ -119,7 +151,7 @@ const TeamDetails = () => {
                   color={isDark ? "#a1a1aa" : "#71717a"}
                 />
                 <Text className="text-zinc-500 ml-2 font-semibold">
-                  {team.day}
+                  {team.meetingDay}
                 </Text>
               </View>
             </View>
@@ -164,7 +196,7 @@ const TeamDetails = () => {
                   <Text
                     className={`font-bold text-base ${isDark ? "text-white" : "text-black"}`}
                   >
-                    {team.day}, {team.time}
+                    {team.meetingDay}, {team.time}
                   </Text>
                 </View>
               </View>
@@ -233,7 +265,7 @@ const TeamDetails = () => {
             >
               <View className="flex-row items-center mb-5">
                 <Image
-                  source={{ uri: team.leader.image }}
+                  source={{ uri: team.leader.imageUrl }}
                   className="w-16 h-16 rounded-full bg-zinc-200"
                 />
                 <View className="ml-4 flex-1">
