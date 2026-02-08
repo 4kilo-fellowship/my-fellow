@@ -1,7 +1,7 @@
 import { QuickActions } from "@/components";
-import { Team } from "@/constants/teams";
 import { useTheme } from "@/context/ThemeContext";
 import { fetchTeams } from "@/services/teamService";
+import { Team } from "@/types/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
