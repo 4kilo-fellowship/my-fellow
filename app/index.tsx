@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
 import Animated, {
   Easing,
@@ -16,31 +16,45 @@ import Animated, {
 export default function AppSplashScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
+  const [barStyle, setBarStyle] = useState<"light" | "dark">("light");
 
   // Diagonal length for translation distance (hypotenuse covers screen)
-  // Multiply by 1.5 to ensure full coverage even with rotation
-  const diagonal = Math.sqrt(width * width + height * height) * 1.5;
+  // Multiply by 1.6 to ensure full coverage even with rotation
+  // using useMemo to calculate it only when dimensions change
+  const diagonal = useMemo(() => {
+    return Math.sqrt(width * width + height * height) * 1.6;
+  }, [width, height]);
 
-  const wipe1 = useSharedValue(diagonal); // Starts off-screen
-  const wipe2 = useSharedValue(diagonal); // Starts off-screen
+  const wipe1 = useSharedValue(diagonal);
+  const wipe2 = useSharedValue(diagonal);
 
   useEffect(() => {
+    // Ensure shared values are set correctly if dimensions loaded late
+    wipe1.value = diagonal;
+    wipe2.value = diagonal;
+
     SplashScreen.hideAsync().catch(() => {});
 
     const startAnimations = async () => {
-      // Small pause before starting
-      await new Promise((r) => setTimeout(r, 1000));
+      // 1. Initial State: Primary BG for a very short time
+      await new Promise((r) => setTimeout(r, 400));
 
-      // 1. Wipe White In (Bottom-Right to Top-Left)
+      // 2. Wipe White In (Bottom-Right to Top-Left)
+      // Change status bar to dark roughly halfway through or at start of wipe?
+      // Better to change it when the background is mostly white.
+      setTimeout(() => setBarStyle("dark"), 400);
+
       wipe1.value = withTiming(0, {
         duration: 800,
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       });
 
-      // Pause briefly on the white screen
-      await new Promise((r) => setTimeout(r, 1200));
+      // Wait for wipe to finish + short pause
+      await new Promise((r) => setTimeout(r, 900)); // 800ms anim + 100ms pause
 
-      // 2. Wipe Primary In (Bottom-Right to Top-Left)
+      // 3. Wipe Primary In (Bottom-Right to Top-Left)
+      setBarStyle("light"); // Back to light for Primary BG
+
       wipe2.value = withTiming(
         0,
         {
@@ -55,15 +69,12 @@ export default function AppSplashScreen() {
       );
     };
 
-    startAnimations();
-  }, [width, height]); // Re-run if dimensions change (unlikely on splash but safe)
+    if (width > 0 && height > 0) {
+      startAnimations();
+    }
+  }, [width, height, diagonal]);
 
   // -- Animated Styles --
-
-  // The wipes are large rotated rectangles that translate along their rotated X-axis.
-  // 45deg rotation makes the X-axis point diagonal-down-right.
-  // Translating from +diagonal to 0 moves them Up-Left to center.
-
   const wipe1Style = useAnimatedStyle(() => ({
     transform: [{ rotate: "45deg" }, { translateX: wipe1.value }],
   }));
@@ -80,9 +91,13 @@ export default function AppSplashScreen() {
     transform: [{ translateX: -wipe2.value }, { rotate: "-45deg" }],
   }));
 
+  if (width === 0 || height === 0) {
+    return null; // Don't render until layout is ready
+  }
+
   return (
     <View style={styles.container}>
-      <StatusBar style="light" backgroundColor={PRIMARY} translucent />
+      <StatusBar style={barStyle} backgroundColor="transparent" translucent />
 
       {/* Layer 0: Initial State (Primary BG, White Logo) */}
       <View style={[StyleSheet.absoluteFill, styles.centered]}>
@@ -108,7 +123,6 @@ export default function AppSplashScreen() {
           wipe1Style,
         ]}
       >
-        {/* Counter-Rotated Inner Container to hold Logo Static */}
         <Animated.View style={[styles.innerContainer, logo1Style]}>
           <Image
             source={require("../assets/images/logo-primary.png")}
@@ -119,7 +133,7 @@ export default function AppSplashScreen() {
         </Animated.View>
       </Animated.View>
 
-      {/* Layer 2: Primary Wipe (Primary BG, White Logo) - Transitions to Home */}
+      {/* Layer 2: Primary Wipe (Primary BG, White Logo) */}
       <Animated.View
         style={[
           styles.wipeContainer,
@@ -135,7 +149,6 @@ export default function AppSplashScreen() {
         ]}
       >
         <Animated.View style={[styles.innerContainer, logo2Style]}>
-          {/* We show the white logo again to complete the cycle before home appears */}
           <Image
             source={require("../assets/images/logo-white.png")}
             style={styles.logo}
@@ -152,13 +165,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: PRIMARY,
-    overflow: "hidden", // Important so the huge rotating views don't mess up layout
+    overflow: "hidden",
   },
   wipeContainer: {
     position: "absolute",
     justifyContent: "center",
     alignItems: "center",
-    overflow: "hidden", // Clips the logo to this sliding window
+    overflow: "hidden",
   },
   innerContainer: {
     width: "100%",
