@@ -18,9 +18,6 @@ export default function AppSplashScreen() {
   const { width, height } = useWindowDimensions();
   const [barStyle, setBarStyle] = useState<"light" | "dark">("light");
 
-  // Diagonal length for translation distance (hypotenuse covers screen)
-  // Multiply by 1.6 to ensure full coverage even with rotation
-  // using useMemo to calculate it only when dimensions change
   const diagonal = useMemo(() => {
     return Math.sqrt(width * width + height * height) * 1.6;
   }, [width, height]);
@@ -29,19 +26,14 @@ export default function AppSplashScreen() {
   const wipe2 = useSharedValue(diagonal);
 
   useEffect(() => {
-    // Ensure shared values are set correctly if dimensions loaded late
     wipe1.value = diagonal;
     wipe2.value = diagonal;
 
     SplashScreen.hideAsync().catch(() => {});
 
     const startAnimations = async () => {
-      // 1. Initial State: Primary BG for a very short time
       await new Promise((r) => setTimeout(r, 2000));
 
-      // 2. Wipe White In (Bottom-Right to Top-Left)
-      // Change status bar to dark roughly halfway through or at start of wipe?
-      // Better to change it when the background is mostly white.
       setTimeout(() => setBarStyle("dark"), 800);
 
       wipe1.value = withTiming(0, {
@@ -49,11 +41,8 @@ export default function AppSplashScreen() {
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       });
 
-      // Wait for wipe to finish + longer pause
-      await new Promise((r) => setTimeout(r, 2000)); // 800ms anim + 1200ms pause
-
-      // 3. Wipe Primary In (Bottom-Right to Top-Left)
-      setBarStyle("light"); // Back to light for Primary BG
+      await new Promise((r) => setTimeout(r, 2000));
+      setBarStyle("light");
 
       wipe2.value = withTiming(
         0,
@@ -74,7 +63,6 @@ export default function AppSplashScreen() {
     }
   }, [width, height, diagonal]);
 
-  // -- Animated Styles --
   const wipe1Style = useAnimatedStyle(() => ({
     transform: [{ rotate: "45deg" }, { translateX: wipe1.value }],
   }));
@@ -92,14 +80,13 @@ export default function AppSplashScreen() {
   }));
 
   if (width === 0 || height === 0) {
-    return null; // Don't render until layout is ready
+    return null;
   }
 
   return (
     <View style={styles.container}>
       <StatusBar style={barStyle} backgroundColor="transparent" translucent />
 
-      {/* Layer 0: Initial State (Primary BG, White Logo) */}
       <View style={[StyleSheet.absoluteFill, styles.centered]}>
         <Image
           source={require("../assets/images/logo-white.png")}
@@ -109,7 +96,6 @@ export default function AppSplashScreen() {
         />
       </View>
 
-      {/* Layer 1: White Wipe (White BG, Primary Logo) */}
       <Animated.View
         style={[
           styles.wipeContainer,
@@ -133,7 +119,6 @@ export default function AppSplashScreen() {
         </Animated.View>
       </Animated.View>
 
-      {/* Layer 2: Primary Wipe (Primary BG, White Logo) */}
       <Animated.View
         style={[
           styles.wipeContainer,
