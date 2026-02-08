@@ -127,94 +127,94 @@ const Teams = () => {
     <View className={`flex-1 ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      <View style={{ paddingTop: top + 10, paddingBottom: 100, flex: 1 }}>
-        {/* HEADER */}
-        <View className="px-5 mb-4">
-          <Text
-            className={`text-4xl font-extrabold ${isDark ? "text-white" : "text-black"}`}
-          >
-            Teams
-          </Text>
-        </View>
-
-        {/* Search & Actions */}
-        <SearchBar
-          isDark={isDark}
-          searchText={searchText}
-          setSearchText={setSearchText}
-        />
-        <QuickActions />
-
-        {/* Grid Content */}
-        {loading && !refreshing && teams.length === 0 ? (
-          <View className="flex-1 justify-center items-center">
-            <ActivityIndicator
-              size="large"
-              color={isDark ? "white" : "black"}
-            />
-          </View>
-        ) : (
-          <FlatList
-            data={filteredTeams}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <GridCard
-                item={item}
-                onPress={() => router.push(`/teams/${item.id}` as any)}
-              />
-            )}
-            numColumns={2}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tintColor={isDark ? "white" : "black"}
-              />
-            }
-            columnWrapperStyle={{
-              justifyContent: "space-between",
-              paddingHorizontal: PADDING,
-            }}
-            contentContainerStyle={{ paddingBottom: 100 }}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              !loading ? (
-                <View className="items-center mt-10">
-                  <Text className={isDark ? "text-zinc-500" : "text-zinc-400"}>
-                    No teams found
-                  </Text>
-                </View>
-              ) : null
-            }
-            ListFooterComponent={
-              <View className="mt-4 px-5 mb-10">
-                <View
-                  className={`p-6 rounded-2xl items-center ${isDark ? "bg-zinc-900" : "bg-zinc-50 border border-zinc-100"}`}
-                >
-                  <Text
-                    className={`font-bold text-lg mb-1 ${isDark ? "text-white" : "text-black"}`}
-                  >
-                    Wondering where you fit?
-                  </Text>
-                  <Text className="text-zinc-500 text-center text-sm mb-4">
-                    Connect with I4U to get guidance and support.
-                  </Text>
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    className={`bg-black ${isDark ? "bg-white" : "bg-dark"} px-6 py-3 rounded-full`}
-                  >
-                    <Text
-                      className={`font-bold ${isDark ? "text-black" : "text-white"}`}
-                    >
-                      Contact I4U
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            }
+      <FlatList
+        data={filteredTeams}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <GridCard
+            item={item}
+            onPress={() => router.push(`/teams/${item.id}` as any)}
           />
         )}
-      </View>
+        numColumns={2}
+        ListHeaderComponent={
+          <View style={{ paddingTop: top + 10 }}>
+            {/* HEADER */}
+            <View className="px-5 mb-4">
+              <Text
+                className={`text-4xl font-extrabold ${isDark ? "text-white" : "text-black"}`}
+              >
+                Teams
+              </Text>
+            </View>
+
+            {/* Search & Actions */}
+            <SearchBar
+              isDark={isDark}
+              searchText={searchText}
+              setSearchText={setSearchText}
+            />
+            <QuickActions />
+          </View>
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={isDark ? "white" : "black"}
+          />
+        }
+        columnWrapperStyle={{
+          justifyContent: "space-between",
+          paddingHorizontal: PADDING,
+        }}
+        contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          loading && !refreshing ? (
+            <View className="flex-1 justify-center items-center mt-20">
+              <ActivityIndicator
+                size="large"
+                color={isDark ? "white" : "black"}
+              />
+            </View>
+          ) : (
+            <View className="items-center mt-10">
+              <Text className={isDark ? "text-zinc-500" : "text-zinc-400"}>
+                No teams found
+              </Text>
+            </View>
+          )
+        }
+        ListFooterComponent={
+          !loading && filteredTeams.length > 0 ? (
+            <View className="mt-4 px-5 mb-10">
+              <View
+                className={`p-6 rounded-2xl items-center ${isDark ? "bg-zinc-900" : "bg-zinc-50 border border-zinc-100"}`}
+              >
+                <Text
+                  className={`font-bold text-lg mb-1 ${isDark ? "text-white" : "text-black"}`}
+                >
+                  Wondering where you fit?
+                </Text>
+                <Text className="text-zinc-500 text-center text-sm mb-4">
+                  Connect with I4U to get guidance and support.
+                </Text>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  className={`bg-black ${isDark ? "bg-white" : "bg-dark"} px-6 py-3 rounded-full`}
+                >
+                  <Text
+                    className={`font-bold ${isDark ? "text-black" : "text-white"}`}
+                  >
+                    Contact I4U
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : null
+        }
+      />
     </View>
   );
 };
