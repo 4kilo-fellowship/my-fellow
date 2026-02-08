@@ -37,20 +37,20 @@ export default function AppSplashScreen() {
 
     const startAnimations = async () => {
       // 1. Initial State: Primary BG for a very short time
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, 2000));
 
       // 2. Wipe White In (Bottom-Right to Top-Left)
       // Change status bar to dark roughly halfway through or at start of wipe?
       // Better to change it when the background is mostly white.
-      setTimeout(() => setBarStyle("dark"), 400);
+      setTimeout(() => setBarStyle("dark"), 800);
 
       wipe1.value = withTiming(0, {
         duration: 800,
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       });
 
-      // Wait for wipe to finish + short pause
-      await new Promise((r) => setTimeout(r, 900)); // 800ms anim + 100ms pause
+      // Wait for wipe to finish + longer pause
+      await new Promise((r) => setTimeout(r, 2000)); // 800ms anim + 1200ms pause
 
       // 3. Wipe Primary In (Bottom-Right to Top-Left)
       setBarStyle("light"); // Back to light for Primary BG
