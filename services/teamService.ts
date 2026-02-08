@@ -1,5 +1,5 @@
-import { Team } from "@/constants/teams";
 import api from "@/services/api";
+import { Team } from "@/types/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system/legacy";
 
@@ -20,7 +20,6 @@ const downloadImage = async (
 ) => {
   if (!url) return null;
   try {
-    // Basic sanitization of filename
     const filename = `${id}_${type}_${url.split("/").pop()?.split("?")[0] || "img"}`;
     const fileUri = IMG_DIR + filename;
 
@@ -29,31 +28,21 @@ const downloadImage = async (
       return fileUri;
     }
 
-    // Download
     const downloadRes = await FileSystem.downloadAsync(url, fileUri);
     return downloadRes.uri;
   } catch (e) {
-    console.error("Image download failed for:", url, e);
-    return url; // Fallback to remote URL
+    return url;
   }
 };
 
 export const fetchTeams = async (forceRefresh = false): Promise<Team[]> => {
   try {
-    // 1. Try Cache first if not refreshing
     if (!forceRefresh) {
       const cached = await AsyncStorage.getItem(CACHE_KEY);
       if (cached) {
-        console.log("Serving teams from cache");
         return JSON.parse(cached);
       }
     }
-
-    // 2. Fetch from API
-    console.log("Fetching teams from API...");
-    // const response = await api.get("/teams"); // Use configured api instance
-    // Note: User prompt says "GET {{baseUrl}}/teams".
-    // Assuming api instance has baseUrl set correctly to backend.
 
     const response = await api.get("/teams");
 
@@ -62,14 +51,11 @@ export const fetchTeams = async (forceRefresh = false): Promise<Team[]> => {
 
       await ensureDirExists();
 
-      // 3. Process and Cache Images
       const processedTeams: Team[] = await Promise.all(
         teamsData.map(async (t: any) => {
-          // Map _id to id
           const team: Team = {
             ...t,
             id: t._id,
-            // Ensure structure matches Team type
             leader: {
               ...t.leader,
               imageUrl: t.leader?.imageUrl || "",
@@ -77,7 +63,6 @@ export const fetchTeams = async (forceRefresh = false): Promise<Team[]> => {
             imageUrl: t.imageUrl || "",
           };
 
-          // Download images to local storage
           if (team.imageUrl) {
             const localUri = await downloadImage(
               team.imageUrl,
@@ -100,7 +85,6 @@ export const fetchTeams = async (forceRefresh = false): Promise<Team[]> => {
         }),
       );
 
-      // 4. Save to Cache
       await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(processedTeams));
 
       return processedTeams;
@@ -108,8 +92,6 @@ export const fetchTeams = async (forceRefresh = false): Promise<Team[]> => {
 
     return [];
   } catch (error) {
-    console.error("Error fetching teams:", error);
-    // If fetch fails, try to return cache even if forceRefresh was true (fallback)
     const cached = await AsyncStorage.getItem(CACHE_KEY);
     if (cached) return JSON.parse(cached);
     return [];

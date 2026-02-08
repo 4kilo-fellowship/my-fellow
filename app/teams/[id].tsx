@@ -1,6 +1,6 @@
-import { Team } from "@/constants/teams";
 import { useTheme } from "@/context/ThemeContext";
 import { fetchTeams } from "@/services/teamService";
+import { Team } from "@/types/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -293,11 +293,22 @@ const TeamDetails = () => {
 
                 <TouchableOpacity
                   onPress={handleTelegram}
-                  className="flex-1 py-3.5 rounded-xl flex-row items-center justify-center shadow-md bg-[#0088cc]"
-                  activeOpacity={0.8}
+                  className={`flex-1 h-12 rounded-2xl flex-row items-center justify-center border ${
+                    isDark
+                      ? "bg-[#2A2A2C] border-gray-700"
+                      : "bg-gray-50 border-gray-200"
+                  }`}
                 >
-                  <Ionicons name="paper-plane" size={18} color="white" />
-                  <Text className="text-white font-bold ml-2">Telegram</Text>
+                  <Ionicons
+                    name="paper-plane"
+                    size={18}
+                    color={isDark ? "#38BDF8" : "#0EA5E9"}
+                  />
+                  <Text
+                    className={`font-bold ml-2 ${isDark ? "text-white" : "text-gray-700"}`}
+                  >
+                    Telegram
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
