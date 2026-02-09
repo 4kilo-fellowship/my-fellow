@@ -1,6 +1,10 @@
+import { ConfirmModal } from "@/components/Modals/ConfirmModal";
 import { PRIMARY } from "@/constants";
+import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { JoinRequest, joinRequestService } from "@/services/joinRequestService";
 import { fetchTeams } from "@/services/teamService";
+import { useUserStore } from "@/stores/user.store";
 import { Team } from "@/types/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -8,6 +12,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
   Linking,
@@ -27,8 +32,24 @@ const TeamDetails = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
+  const { authState } = useAuth();
+  const user = useUserStore((state) => state.user);
   const [team, setTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
+  const [requests, setRequests] = useState<JoinRequest[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fetchUserRequests = async () => {
+    if (authState.authenticated) {
+      try {
+        const myRequests = await joinRequestService.getMyRequests();
+        setRequests(myRequests);
+      } catch (error) {
+        console.error("Error fetching requests", error);
+      }
+    }
+  };
 
   useEffect(() => {
     const loadTeam = async () => {
@@ -44,6 +65,14 @@ const TeamDetails = () => {
     };
     loadTeam();
   }, [id]);
+
+  useEffect(() => {
+    fetchUserRequests();
+  }, [authState.authenticated]);
+
+  const existingRequest = requests.find((r) => r.team === team?.id);
+  const isPending = existingRequest?.status === "pending";
+  const isMember = user?.team === team?.id;
 
   if (loading) {
     return (
@@ -85,6 +114,26 @@ const TeamDetails = () => {
   const handleGetDirections = () => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${team.coordinates.lat},${team.coordinates.lng}`;
     Linking.openURL(url);
+  };
+
+  const handleJoinPress = () => {
+    setIsConfirmModalVisible(true);
+  };
+
+  const confirmJoin = async () => {
+    if (!team) return;
+    setIsSubmitting(true);
+    try {
+      await joinRequestService.createJoinRequest(team.id);
+      await fetchUserRequests();
+      Alert.alert("Success", "Your request to join the team has been sent!");
+    } catch (error: any) {
+      const message =
+        error.response?.data?.message || "Failed to send join request";
+      Alert.alert("Error", message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -131,11 +180,20 @@ const TeamDetails = () => {
 
         <View className="px-5 pt-6 pb-10">
           <View className="mb-6">
-            <Text
-              className={`text-3xl font-extrabold mb-3 ${isDark ? "text-white" : "text-black"}`}
-            >
-              {team.name}
-            </Text>
+            <View className="flex-row items-center justify-between mb-3">
+              <Text
+                className={`text-3xl font-extrabold flex-1 ${isDark ? "text-white" : "text-black"}`}
+              >
+                {team.name}
+              </Text>
+              {isMember && (
+                <View className="bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">
+                  <Text className="text-emerald-500 font-bold text-xs uppercase tracking-wider">
+                    Your Team
+                  </Text>
+                </View>
+              )}
+            </View>
             <View className="flex-row items-center gap-4">
               <View className="flex-row items-center">
                 <Ionicons
@@ -318,15 +376,59 @@ const TeamDetails = () => {
             </View>
           </View>
 
-          <TouchableOpacity
-            style={{ backgroundColor: PRIMARY }}
-            className="py-5 rounded-2xl items-center active:scale-95 transition-all duration-75 shadow-lg mb-4"
-            activeOpacity={1}
-          >
-            <Text className="text-white font-bold text-lg">Join This Team</Text>
-          </TouchableOpacity>
+          {!isMember && (
+            <TouchableOpacity
+              onPress={isPending ? undefined : handleJoinPress}
+              style={{
+                backgroundColor: isPending
+                  ? isDark
+                    ? "#27272a"
+                    : "#f4f4f5"
+                  : PRIMARY,
+              }}
+              className={`py-5 rounded-2xl items-center active:scale-95 transition-all duration-75 shadow-lg mb-4 ${isPending ? "opacity-70" : ""}`}
+              disabled={isPending || isSubmitting}
+              activeOpacity={isPending ? 1 : 0.9}
+            >
+              <Text
+                className={`font-bold text-lg ${isPending ? (isDark ? "text-zinc-500" : "text-zinc-400") : "text-white"}`}
+              >
+                {isPending ? "Pending Request" : "Join This Team"}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
+
+      <ConfirmModal
+        visible={isConfirmModalVisible}
+        onClose={() => setIsConfirmModalVisible(false)}
+        isDark={isDark}
+        title={authState.authenticated ? "Join Team" : "Sign In Required"}
+        description={
+          authState.authenticated
+            ? `Are you sure you want to request to join ${team?.name}?`
+            : "You need to be signed in to join a team. Would you like to sign in now?"
+        }
+        icon={authState.authenticated ? "people" : "log-in-outline"}
+        iconColor={PRIMARY}
+        buttons={[
+          {
+            label: authState.authenticated
+              ? isSubmitting
+                ? "Sending..."
+                : "Confirm Join"
+              : "Go to Sign In",
+            onPress: authState.authenticated
+              ? confirmJoin
+              : () => router.push("/(auth)/sign-in"),
+            variant: "primary",
+          },
+        ]}
+        cancelButton={{
+          label: "Cancel",
+        }}
+      />
     </View>
   );
 };
