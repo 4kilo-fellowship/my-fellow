@@ -2,12 +2,13 @@ import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
-    ActivityIndicator,
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface RegistrationModalProps {
@@ -35,40 +36,43 @@ const RegistrationModal = ({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <View
+      <Pressable style={styles.overlay} onPress={onClose}>
+        <Pressable
+          onPress={(e) => e.stopPropagation()}
           style={[
             styles.container,
-            { backgroundColor: isDark ? "#1A1A1B" : "white" },
+            { backgroundColor: isDark ? "#111827" : "white" },
           ]}
         >
           <View className="items-center mb-6">
-            <View className="w-16 h-16 rounded-full bg-orange-100 items-center justify-center mb-4">
-              <Ionicons name="calendar" size={32} color="#ff6619" />
+            <View className="w-20 h-20 rounded-full bg-orange-100/50 items-center justify-center mb-4">
+              <View className="w-16 h-16 rounded-full bg-orange-100 items-center justify-center">
+                <Ionicons name="calendar-outline" size={32} color="#ff6619" />
+              </View>
             </View>
             <Text
-              className={`text-xl font-bold text-center mb-2 ${
+              className={`text-2xl font-bold text-center mb-2 ${
                 isDark ? "text-white" : "text-gray-900"
               }`}
             >
               Event Registration
             </Text>
             <Text
-              className={`text-base text-center ${
+              className={`text-base text-center px-4 ${
                 isDark ? "text-gray-400" : "text-gray-600"
               }`}
             >
-              Do you want to register for "
-              <Text className="font-bold">{eventTitle}</Text>"?
+              Do you want to register for{" "}
+              <Text className="text-primary font-bold">"{eventTitle}"</Text>?
             </Text>
           </View>
 
-          <View className="space-y-3">
+          <View className="space-y-4">
             <TouchableOpacity
-              activeOpacity={0.85}
+              activeOpacity={0.8}
               onPress={onConfirm}
               disabled={loading}
-              className="w-full bg-[#ff6619] py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30"
+              className="w-full bg-primary py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-primary/30"
             >
               {loading ? (
                 <ActivityIndicator color="white" />
@@ -77,7 +81,7 @@ const RegistrationModal = ({
                   <Text className="text-white text-lg font-bold mr-2">
                     Yes, Register
                   </Text>
-                  <Ionicons name="checkmark-circle" size={20} color="white" />
+                  <Ionicons name="sparkles" size={20} color="white" />
                 </>
               )}
             </TouchableOpacity>
@@ -87,20 +91,20 @@ const RegistrationModal = ({
               onPress={onClose}
               disabled={loading}
               className={`w-full py-4 rounded-2xl items-center justify-center ${
-                isDark ? "bg-gray-800" : "bg-gray-100"
+                isDark ? "bg-slate-800" : "bg-slate-100"
               }`}
             >
               <Text
                 className={`text-lg font-semibold ${
-                  isDark ? "text-gray-300" : "text-gray-700"
+                  isDark ? "text-slate-300" : "text-slate-700"
                 }`}
               >
-                Cancel
+                Maybe Later
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 };

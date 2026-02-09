@@ -1,5 +1,5 @@
-import { ConfirmModal } from "@/components/Modals/ConfirmModal";
-import { PRIMARY } from "@/constants";
+import { ConfirmModal, InfoModal } from "@/components";
+import { PRIMARY } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { JoinRequest, joinRequestService } from "@/services/joinRequestService";
@@ -12,7 +12,6 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   Image,
   Linking,
@@ -39,6 +38,17 @@ const TeamDetails = () => {
   const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
   const [requests, setRequests] = useState<JoinRequest[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [infoModal, setInfoModal] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error";
+  }>({
+    visible: false,
+    title: "",
+    message: "",
+    type: "success",
+  });
 
   const fetchUserRequests = async () => {
     if (authState.authenticated) {
@@ -70,9 +80,35 @@ const TeamDetails = () => {
     fetchUserRequests();
   }, [authState.authenticated]);
 
-  const existingRequest = requests.find((r) => r.team === team?.id);
+  const existingRequest = requests.find((r) => {
+    // Handle different API response structures:
+    // 1. r.teamId as string (from create request)
+    // 2. r.teamId as object with _id (from get my requests - populated)
+    // 3. r.team as fallback (our manual field)
+    const requestTeamId =
+      typeof r.teamId === "string" ? r.teamId : (r.teamId as any)?._id;
+
+    return (
+      requestTeamId === team?.id ||
+      requestTeamId === team?._id ||
+      r.team === team?.id ||
+      r.team === team?._id ||
+      (r as any).teamName?.toLowerCase().trim().replace(/\s+/g, "") ===
+        team?.name.toLowerCase().trim().replace(/\s+/g, "")
+    );
+  });
   const isPending = existingRequest?.status === "pending";
-  const isMember = user?.team === team?.id;
+
+  const normalizedUserTeam = user?.team
+    ?.toLowerCase()
+    .trim()
+    .replace(/\s+/g, "");
+  const normalizedTeamName = team?.name
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "");
+  const isMember =
+    user?.team === team?.id || normalizedUserTeam === normalizedTeamName;
 
   if (loading) {
     return (
@@ -124,15 +160,57 @@ const TeamDetails = () => {
     if (!team) return;
     setIsSubmitting(true);
     try {
-      await joinRequestService.createJoinRequest(team.id);
-      await fetchUserRequests();
-      Alert.alert("Success", "Your request to join the team has been sent!");
+      const response = await joinRequestService.createJoinRequest(team.id);
+
+      // Handle different possible response structures
+      let newRequest = null;
+
+      // Check various possible response structures
+      if (response?.data?.data) {
+        // Structure: { success: true, data: { data: JoinRequest } }
+        newRequest = response.data.data;
+      } else if (response?.data) {
+        // Structure: { success: true, data: JoinRequest } or { data: JoinRequest }
+        newRequest = response.data;
+      } else if (response) {
+        // Structure: JoinRequest directly
+        newRequest = response;
+      }
+
+      // Update local state immediately to disable the button
+      if (newRequest && newRequest._id) {
+        // Ensure the request has the pending status
+        const requestToAdd = {
+          ...newRequest,
+          status: newRequest.status || "pending",
+          team: newRequest.team || team.id,
+        };
+
+        setRequests((prev) => [...prev, requestToAdd]);
+      } else {
+        // Fallback: refetch all requests to ensure state is up to date
+        await fetchUserRequests();
+      }
+
+      setInfoModal({
+        visible: true,
+        title: "Request Sent",
+        message:
+          "Your request to join the team has been sent successfully! We'll notify you once it's approved.",
+        type: "success",
+      });
     } catch (error: any) {
       const message =
         error.response?.data?.message || "Failed to send join request";
-      Alert.alert("Error", message);
+      setInfoModal({
+        visible: true,
+        title: "Error",
+        message: message,
+        type: "error",
+      });
     } finally {
       setIsSubmitting(false);
+      setIsConfirmModalVisible(false); // Close modal to prevent re-submission
     }
   };
 
@@ -187,10 +265,18 @@ const TeamDetails = () => {
                 {team.name}
               </Text>
               {isMember && (
-                <View className="bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">
-                  <Text className="text-emerald-500 font-bold text-xs uppercase tracking-wider">
-                    Your Team
-                  </Text>
+                <View className="flex-row items-center">
+                  <View
+                    style={{ borderColor: `${PRIMARY}33` }}
+                    className="bg-primary/10 px-3 py-1.5 rounded-xl border flex-row items-center shadow-sm shadow-orange-500/10"
+                  >
+                    <View className="bg-primary p-0.5 rounded-full mr-2">
+                      <Ionicons name="sparkles" size={12} color="white" />
+                    </View>
+                    <Text className="text-primary font-extrabold text-[10px] uppercase tracking-wider">
+                      Your Team
+                    </Text>
+                  </View>
                 </View>
               )}
             </View>
@@ -346,10 +432,10 @@ const TeamDetails = () => {
                   onPress={handleCall}
                   style={{ backgroundColor: PRIMARY }}
                   className="flex-1 py-3.5 active:scale-95 transition-all duration-75 rounded-xl flex-row items-center justify-center shadow-md"
-                  activeOpacity={1}
+                  activeOpacity={0.8}
                 >
                   <Ionicons name="call" size={18} color="white" />
-                  <Text className="text-white font-bold ml-2">Call</Text>
+                  <Text className="font-bold ml-2 text-white">Call</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -378,23 +464,64 @@ const TeamDetails = () => {
 
           {!isMember && (
             <TouchableOpacity
-              onPress={isPending ? undefined : handleJoinPress}
+              onPress={
+                isPending
+                  ? () =>
+                      setInfoModal({
+                        visible: true,
+                        title: "Request Pending",
+                        message:
+                          "Your request to join this team is currently under review. We will notify you once it's approved!",
+                        type: "success",
+                      })
+                  : handleJoinPress
+              }
               style={{
                 backgroundColor: isPending
                   ? isDark
-                    ? "#27272a"
-                    : "#f4f4f5"
-                  : PRIMARY,
+                    ? "rgba(113, 113, 122, 0.1)"
+                    : "#F4F4F5"
+                  : isSubmitting
+                    ? `${PRIMARY}80`
+                    : PRIMARY,
+                borderStyle: isPending ? "dashed" : "solid",
               }}
-              className={`py-5 rounded-2xl items-center active:scale-95 transition-all duration-75 shadow-lg mb-4 ${isPending ? "opacity-70" : ""}`}
+              className={`py-5 rounded-3xl items-center mb-4 border ${
+                isPending
+                  ? "border-zinc-500/20"
+                  : "shadow-lg shadow-orange-500/20 border-transparent"
+              }`}
               disabled={isPending || isSubmitting}
-              activeOpacity={isPending ? 1 : 0.9}
+              activeOpacity={isPending ? 1 : 0.8}
             >
-              <Text
-                className={`font-bold text-lg ${isPending ? (isDark ? "text-zinc-500" : "text-zinc-400") : "text-white"}`}
-              >
-                {isPending ? "Pending Request" : "Join This Team"}
-              </Text>
+              <View className="flex-row items-center">
+                {isSubmitting ? (
+                  <View className="flex-row items-center">
+                    <ActivityIndicator size="small" color="white" />
+                    <Text className="text-white font-bold text-lg ml-2">
+                      Sending Request...
+                    </Text>
+                  </View>
+                ) : isPending ? (
+                  <View className="flex-row items-center">
+                    <Ionicons
+                      name="time"
+                      size={20}
+                      color={isDark ? "#71717a" : "#71717a"}
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text
+                      className={`font-bold text-lg ${isDark ? "text-zinc-500" : "text-zinc-500"}`}
+                    >
+                      Pending Approval
+                    </Text>
+                  </View>
+                ) : (
+                  <Text className="text-white font-bold text-lg">
+                    Join This Team
+                  </Text>
+                )}
+              </View>
             </TouchableOpacity>
           )}
         </View>
@@ -428,6 +555,14 @@ const TeamDetails = () => {
         cancelButton={{
           label: "Cancel",
         }}
+      />
+      <InfoModal
+        visible={infoModal.visible}
+        onClose={() => setInfoModal({ ...infoModal, visible: false })}
+        title={infoModal.title}
+        message={infoModal.message}
+        type={infoModal.type}
+        isDark={isDark}
       />
     </View>
   );

@@ -5,6 +5,7 @@ export { default as LeaderCard } from "./Card/LeaderCard";
 export { default as ConfirmationModal } from "./ConfirmationModal";
 export { ConfirmModal } from "./Modals/ConfirmModal";
 export { DeleteConfirmModal } from "./Modals/DeleteConfirmModal";
+export { InfoModal } from "./Modals/InfoModal";
 export { default as QuickAction } from "./QuickAction/HomeQuickActions";
 export { default as QuickActions } from "./QuickAction/TeamsQuickActions";
 export { default as RegistrationModal } from "./RegistrationModal";

@@ -2,8 +2,18 @@ import api from "./api";
 
 export interface JoinRequest {
   _id: string;
-  user: string;
-  team: string;
+  user?: string;
+  userId?: string;
+  team?: string; // Fallback field we add manually
+  teamId?:
+    | string
+    | {
+        // API returns teamId, can be string or populated object
+        _id: string;
+        name: string;
+        icon: string;
+        color: string;
+      };
   status: "pending" | "approved" | "rejected";
   message?: string;
   createdAt: string;

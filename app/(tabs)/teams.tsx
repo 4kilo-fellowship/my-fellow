@@ -1,6 +1,8 @@
 import { QuickActions } from "@/components";
+import { PRIMARY } from "@/constants/colors";
 import { useTheme } from "@/context/ThemeContext";
 import { fetchTeams } from "@/services/teamService";
+import { useUserStore } from "@/stores/user.store";
 import { Team } from "@/types/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -48,7 +50,13 @@ const SearchBar = ({
   </View>
 );
 
-const GridCard = ({ item, onPress }: { item: Team; onPress: () => void }) => (
+const GridCard = ({
+  item,
+  onPress,
+}: {
+  item: Team & { isUserTeam: boolean };
+  onPress: () => void;
+}) => (
   <TouchableOpacity
     activeOpacity={0.9}
     style={{
@@ -79,9 +87,27 @@ const GridCard = ({ item, onPress }: { item: Team; onPress: () => void }) => (
       </View>
     </View>
 
-    {/* Small directional arrow */}
-    <View className="self-end bg-white/20 p-1.5 rounded-full">
-      <Ionicons name="arrow-forward" size={14} color="white" />
+    {/* Small directional arrow or Membership badge */}
+    <View className="flex-row justify-between items-center w-full">
+      {item.isUserTeam && (
+        <View
+          className="bg-white/90 px-3 py-1.5 rounded-xl flex-row items-center shadow-lg shadow-black/20"
+          style={{ transform: [{ translateY: 2 }] }}
+        >
+          <View className="bg-primary/20 p-1 rounded-full mr-2">
+            <Ionicons name="sparkles" size={12} color={PRIMARY} />
+          </View>
+          <Text
+            style={{ color: PRIMARY, letterSpacing: 0.5 }}
+            className="text-[10px] font-black uppercase"
+          >
+            Joined
+          </Text>
+        </View>
+      )}
+      <View className="ml-auto bg-white/20 p-1.5 rounded-full">
+        <Ionicons name="arrow-forward" size={14} color="white" />
+      </View>
     </View>
   </TouchableOpacity>
 );
@@ -127,36 +153,49 @@ const Teams = () => {
     <View className={`flex-1 ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
+      <View style={{ paddingTop: top + 10 }}>
+        {/* HEADER */}
+        <View className="px-5 mb-4">
+          <Text
+            className={`text-4xl font-extrabold ${isDark ? "text-white" : "text-black"}`}
+          >
+            Teams
+          </Text>
+        </View>
+
+        {/* Search & Actions */}
+        <SearchBar
+          isDark={isDark}
+          searchText={searchText}
+          setSearchText={setSearchText}
+        />
+        <QuickActions />
+      </View>
+
       <FlatList
         data={filteredTeams}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <GridCard
-            item={item}
-            onPress={() => router.push(`/teams/${item.id}` as any)}
-          />
-        )}
-        numColumns={2}
-        ListHeaderComponent={
-          <View style={{ paddingTop: top + 10 }}>
-            {/* HEADER */}
-            <View className="px-5 mb-4">
-              <Text
-                className={`text-4xl font-extrabold ${isDark ? "text-white" : "text-black"}`}
-              >
-                Teams
-              </Text>
-            </View>
+        renderItem={({ item }) => {
+          const user = useUserStore.getState().user;
+          const normalizedUserTeam = (user?.team || "")
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, "");
+          const normalizedTeamName = item.name
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, "");
+          const isUserTeam =
+            user?.team === item.id || normalizedUserTeam === normalizedTeamName;
 
-            {/* Search & Actions */}
-            <SearchBar
-              isDark={isDark}
-              searchText={searchText}
-              setSearchText={setSearchText}
+          return (
+            <GridCard
+              item={{ ...item, isUserTeam } as any}
+              onPress={() => router.push(`/teams/${item.id}` as any)}
             />
-            <QuickActions />
-          </View>
-        }
+          );
+        }}
+        numColumns={2}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

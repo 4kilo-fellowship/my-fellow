@@ -133,15 +133,14 @@ export default function SignUpStep2() {
   const renderDropdown = (
     name: DropdownNameProps,
     label: string,
-    options: readonly string[],
+    options: readonly string[] = [],
     placeholder: string,
   ) => {
-    ``;
     const hasError = !!errors[name];
     const errorMessage = errors[name]?.message;
 
     return (
-      <View style={{ zIndex: openDropdown === name ? 30 : 1 }}>
+      <View style={{ zIndex: openDropdown === name ? 50 : 1 }}>
         <Text
           className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
         >
@@ -179,7 +178,7 @@ export default function SignUpStep2() {
                   className={`w-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"} border-2 border-t-0 rounded-b-2xl overflow-hidden`}
                 >
                   <View>
-                    {options.map((option, index) => (
+                    {(options || []).map((option, index) => (
                       <TouchableOpacity
                         key={index}
                         activeOpacity={0.8}
@@ -189,7 +188,7 @@ export default function SignUpStep2() {
                           });
                           closeDropdowns();
                         }}
-                        className={`p-4 ${index !== options.length - 1 ? `border-b ${isDark ? "border-slate-800" : "border-slate-200"}` : ""} flex-row justify-between items-center ${value === option ? (isDark ? "bg-slate-800" : "bg-slate-100") : ""}`}
+                        className={`p-4 ${options && index !== options.length - 1 ? `border-b ${isDark ? "border-slate-800" : "border-slate-200"}` : ""} flex-row justify-between items-center ${value === option ? (isDark ? "bg-slate-800" : "bg-slate-100") : ""}`}
                       >
                         <Text
                           className={`${value === option ? "text-primary font-bold" : isDark ? "text-slate-300" : "text-slate-700"} text-base`}
