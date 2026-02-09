@@ -1,3 +1,4 @@
+import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { fetchTeams } from "@/services/teamService";
 import { Team } from "@/types/types";
@@ -18,7 +19,6 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
-const PRIMARY_COLOR = "#ff6619";
 
 const TeamDetails = () => {
   const { id } = useLocalSearchParams();
@@ -28,12 +28,11 @@ const TeamDetails = () => {
   const isDark = theme === "dark";
 
   const [team, setTeam] = useState<Team | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const loadTeam = async () => {
       try {
-        // Fetch from cache (or API if refreshed elsewhere)
         const teams = await fetchTeams(false);
         const foundTeam = teams.find((t) => t.id === id);
         setTeam(foundTeam || null);
@@ -51,7 +50,7 @@ const TeamDetails = () => {
       <View
         className={`flex-1 items-center justify-center ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}
       >
-        <ActivityIndicator size="large" color={isDark ? "white" : "black"} />
+        <ActivityIndicator size="large" color={PRIMARY} />
       </View>
     );
   }
@@ -59,13 +58,17 @@ const TeamDetails = () => {
   if (!team) {
     return (
       <View
-        className={`flex-1 items-center justify-center ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}
+        className={`flex-1 items-center justify-center ${isDark ? "bg-dark" : "bg-background"}`}
       >
         <Text className={isDark ? "text-white" : "text-black"}>
           Team not found
         </Text>
-        <TouchableOpacity onPress={() => router.back()} className="mt-4 p-4">
-          <Text className="text-blue-500">Go Back</Text>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => router.back()}
+          className="mt-4 p-4 bg-primary rounded-full"
+        >
+          <Text className="text-white">Go Back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -115,7 +118,7 @@ const TeamDetails = () => {
 
           <View className="absolute bottom-4 left-5">
             <View
-              style={{ backgroundColor: PRIMARY_COLOR }}
+              style={{ backgroundColor: PRIMARY }}
               className="px-4 py-2 rounded-full flex-row items-center"
             >
               <Ionicons name={team.icon as any} size={18} color="white" />
@@ -226,9 +229,9 @@ const TeamDetails = () => {
                   </Text>
                   <TouchableOpacity
                     onPress={handleGetDirections}
-                    style={{ backgroundColor: PRIMARY_COLOR }}
-                    className="self-start px-4 py-2 rounded-full flex-row items-center"
-                    activeOpacity={0.8}
+                    style={{ backgroundColor: PRIMARY }}
+                    className="self-start active:scale-95 transition-all duration-75 px-4 py-2 rounded-full flex-row items-center"
+                    activeOpacity={1}
                   >
                     <Ionicons name="navigate" size={16} color="white" />
                     <Text className="text-white font-bold text-sm ml-2">
@@ -283,17 +286,18 @@ const TeamDetails = () => {
               <View className="flex-row gap-3">
                 <TouchableOpacity
                   onPress={handleCall}
-                  style={{ backgroundColor: PRIMARY_COLOR }}
-                  className="flex-1 py-3.5 rounded-xl flex-row items-center justify-center shadow-md"
-                  activeOpacity={0.8}
+                  style={{ backgroundColor: PRIMARY }}
+                  className="flex-1 py-3.5 active:scale-95 transition-all duration-75 rounded-xl flex-row items-center justify-center shadow-md"
+                  activeOpacity={1}
                 >
                   <Ionicons name="call" size={18} color="white" />
                   <Text className="text-white font-bold ml-2">Call</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
+                  activeOpacity={1}
                   onPress={handleTelegram}
-                  className={`flex-1 h-12 rounded-2xl flex-row items-center justify-center border ${
+                  className={`flex-1 h-14 active:scale-95 transition-all duration-75 rounded-2xl flex-row items-center justify-center border ${
                     isDark
                       ? "bg-[#2A2A2C] border-gray-700"
                       : "bg-gray-50 border-gray-200"
@@ -315,9 +319,9 @@ const TeamDetails = () => {
           </View>
 
           <TouchableOpacity
-            style={{ backgroundColor: PRIMARY_COLOR }}
-            className="py-5 rounded-2xl items-center shadow-lg mb-4"
-            activeOpacity={0.9}
+            style={{ backgroundColor: PRIMARY }}
+            className="py-5 rounded-2xl items-center active:scale-95 transition-all duration-75 shadow-lg mb-4"
+            activeOpacity={1}
           >
             <Text className="text-white font-bold text-lg">Join This Team</Text>
           </TouchableOpacity>
