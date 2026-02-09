@@ -245,12 +245,38 @@ const TeamDetails = () => {
         teamId: team.id,
         fullName: user.fullName || "",
         phoneNumber: user.phoneNumber || "",
-        department: user.department || "",
-        year: user.yearOfStudy || "",
-        telegramHandle: user.telegramUserName || "",
-        profileImage: user.profileImage || user.image || null,
-        pastTeam: user.team || user.pastTeam || null,
+        department: user.department || undefined,
+        year: user.yearOfStudy || undefined,
+        telegramHandle: user.telegramUserName || undefined,
+        profileImage: user.profileImage || user.image || undefined,
+        pastTeam: user.team || user.pastTeam || undefined,
       };
+
+      if (!payload.fullName || payload.fullName.trim() === "") {
+        setInfoModal({
+          visible: true,
+          title: "Profile Incomplete",
+          message:
+            "Please update your profile with your full name before joining a team.",
+          type: "error",
+        });
+        setIsSubmitting(false);
+        setIsConfirmModalVisible(false);
+        return;
+      }
+
+      if (!payload.phoneNumber || payload.phoneNumber.trim() === "") {
+        setInfoModal({
+          visible: true,
+          title: "Profile Incomplete",
+          message:
+            "Please update your profile with your phone number before joining a team.",
+          type: "error",
+        });
+        setIsSubmitting(false);
+        setIsConfirmModalVisible(false);
+        return;
+      }
 
       const response = await joinRequestService.createJoinRequest(payload);
 

@@ -93,24 +93,24 @@ const GridCard = ({
       {item.isUserTeam && (
         <View
           style={{
-            backgroundColor: "rgba(255,255,255,0.92)",
-            shadowColor: "#059669",
-            shadowOpacity: 0.12,
-            shadowRadius: 8,
+            backgroundColor: "rgba(255,255,255,0.95)",
+            shadowColor: item.color,
+            shadowOpacity: 0.15,
+            shadowRadius: 6,
             shadowOffset: { width: 0, height: 2 },
-            elevation: 4,
+            elevation: 3,
           }}
-          className="px-3 py-1.5 rounded-full flex-row items-center"
+          className="px-2.5 py-1 rounded-full flex-row items-center"
         >
           <View
-            style={{ backgroundColor: "#ecfdf5" }}
-            className="w-5 h-5 rounded-full items-center justify-center mr-1.5"
+            style={{ backgroundColor: "rgba(0,0,0,0.05)" }}
+            className="w-4 h-4 rounded-full items-center justify-center mr-1"
           >
-            <Ionicons name="checkmark" size={12} color="#059669" />
+            <Ionicons name="checkmark" size={10} color={item.color} />
           </View>
           <Text
-            style={{ color: "#047857", letterSpacing: 0.8 }}
-            className="text-[9px] font-black uppercase"
+            style={{ color: item.color, letterSpacing: 0.5 }}
+            className="text-[8px] font-black uppercase"
           >
             Member
           </Text>

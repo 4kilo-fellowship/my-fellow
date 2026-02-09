@@ -30,9 +30,9 @@ export interface CreateJoinRequestData {
   teamId: string;
   fullName: string;
   phoneNumber: string;
-  department: string;
-  year: string;
-  telegramHandle: string;
+  department?: string;
+  year?: string;
+  telegramHandle?: string;
   profileImage?: string | null;
   pastTeam?: string | null;
   message?: string;
