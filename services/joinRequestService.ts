@@ -4,11 +4,10 @@ export interface JoinRequest {
   _id: string;
   user?: string;
   userId?: string;
-  team?: string; // Fallback field we add manually
+  team?: string;
   teamId?:
     | string
     | {
-        // API returns teamId, can be string or populated object
         _id: string;
         name: string;
         icon: string;

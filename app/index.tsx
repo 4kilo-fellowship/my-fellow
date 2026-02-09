@@ -3,173 +3,55 @@ import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useMemo, useState } from "react";
-import { StyleSheet, View, useWindowDimensions } from "react-native";
-import Animated, {
-  Easing,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import React, { useEffect, useState } from "react";
+import { View } from "react-native";
 
 export default function AppSplashScreen() {
   const router = useRouter();
-  const { width, height } = useWindowDimensions();
-  const [barStyle, setBarStyle] = useState<"light" | "dark">("light");
-
-  const diagonal = useMemo(() => {
-    return Math.sqrt(width * width + height * height) * 1.6;
-  }, [width, height]);
-
-  const wipe1 = useSharedValue(diagonal);
-  const wipe2 = useSharedValue(diagonal);
+  const [phase, setPhase] = useState<"primary" | "white">("primary");
 
   useEffect(() => {
-    wipe1.value = diagonal;
-    wipe2.value = diagonal;
-
     SplashScreen.hideAsync().catch(() => {});
 
-    const startAnimations = async () => {
-      await new Promise((r) => setTimeout(r, 2000));
+    const changeTimeout = setTimeout(() => {
+      setPhase("white");
+    }, 3000);
 
-      setTimeout(() => setBarStyle("dark"), 800);
+    const navTimeout = setTimeout(() => {
+      router.replace("/(tabs)");
+    }, 4000);
 
-      wipe1.value = withTiming(0, {
-        duration: 800,
-        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-      });
-
-      await new Promise((r) => setTimeout(r, 2000));
-      setBarStyle("light");
-
-      wipe2.value = withTiming(
-        0,
-        {
-          duration: 800,
-          easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-        },
-        (finished) => {
-          if (finished) {
-            runOnJS(router.replace)("/(tabs)");
-          }
-        },
-      );
+    return () => {
+      clearTimeout(changeTimeout);
+      clearTimeout(navTimeout);
     };
-
-    if (width > 0 && height > 0) {
-      startAnimations();
-    }
-  }, [width, height, diagonal]);
-
-  const wipe1Style = useAnimatedStyle(() => ({
-    transform: [{ rotate: "45deg" }, { translateX: wipe1.value }],
-  }));
-
-  const logo1Style = useAnimatedStyle(() => ({
-    transform: [{ translateX: -wipe1.value }, { rotate: "-45deg" }],
-  }));
-
-  const wipe2Style = useAnimatedStyle(() => ({
-    transform: [{ rotate: "45deg" }, { translateX: wipe2.value }],
-  }));
-
-  const logo2Style = useAnimatedStyle(() => ({
-    transform: [{ translateX: -wipe2.value }, { rotate: "-45deg" }],
-  }));
-
-  if (width === 0 || height === 0) {
-    return null;
-  }
+  }, []);
 
   return (
-    <View style={styles.container}>
-      <StatusBar style={barStyle} backgroundColor="transparent" translucent />
-
-      <View style={[StyleSheet.absoluteFill, styles.centered]}>
-        <Image
-          source={require("../assets/images/logo-white.png")}
-          style={styles.logo}
-          contentFit="contain"
-          cachePolicy="memory"
-        />
-      </View>
-
-      <Animated.View
-        style={[
-          styles.wipeContainer,
-          {
-            width: diagonal,
-            height: diagonal,
-            top: (height - diagonal) / 2,
-            left: (width - diagonal) / 2,
-            backgroundColor: "#fff",
-          },
-          wipe1Style,
-        ]}
-      >
-        <Animated.View style={[styles.innerContainer, logo1Style]}>
-          <Image
-            source={require("../assets/images/logo-primary.png")}
-            style={styles.logo}
-            contentFit="contain"
-            cachePolicy="memory"
-          />
-        </Animated.View>
-      </Animated.View>
-
-      <Animated.View
-        style={[
-          styles.wipeContainer,
-          {
-            width: diagonal,
-            height: diagonal,
-            top: (height - diagonal) / 2,
-            left: (width - diagonal) / 2,
-            backgroundColor: PRIMARY,
-            zIndex: 10,
-          },
-          wipe2Style,
-        ]}
-      >
-        <Animated.View style={[styles.innerContainer, logo2Style]}>
-          <Image
-            source={require("../assets/images/logo-white.png")}
-            style={styles.logo}
-            contentFit="contain"
-            cachePolicy="memory"
-          />
-        </Animated.View>
-      </Animated.View>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: phase === "primary" ? PRIMARY : "#fff",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <StatusBar
+        style={phase === "primary" ? "light" : "dark"}
+        backgroundColor={phase === "primary" ? PRIMARY : "#fff"}
+        translucent
+      />
+      <Image
+        source={
+          phase === "primary"
+            ? require("../assets/images/logo-white.png")
+            : require("../assets/images/logo-primary.png")
+        }
+        style={{ width: 500, height: 500 }}
+        contentFit="contain"
+        transition={0}
+        cachePolicy="memory"
+      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: PRIMARY,
-    overflow: "hidden",
-  },
-  wipeContainer: {
-    position: "absolute",
-    justifyContent: "center",
-    alignItems: "center",
-    overflow: "hidden",
-  },
-  innerContainer: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  centered: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  logo: {
-    width: 500,
-    height: 500,
-  },
-});

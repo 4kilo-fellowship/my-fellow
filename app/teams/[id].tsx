@@ -81,10 +81,6 @@ const TeamDetails = () => {
   }, [authState.authenticated]);
 
   const existingRequest = requests.find((r) => {
-    // Handle different API response structures:
-    // 1. r.teamId as string (from create request)
-    // 2. r.teamId as object with _id (from get my requests - populated)
-    // 3. r.team as fallback (our manual field)
     const requestTeamId =
       typeof r.teamId === "string" ? r.teamId : (r.teamId as any)?._id;
 
@@ -162,33 +158,24 @@ const TeamDetails = () => {
     try {
       const response = await joinRequestService.createJoinRequest(team.id);
 
-      // Handle different possible response structures
       let newRequest = null;
 
-      // Check various possible response structures
       if (response?.data?.data) {
-        // Structure: { success: true, data: { data: JoinRequest } }
         newRequest = response.data.data;
       } else if (response?.data) {
-        // Structure: { success: true, data: JoinRequest } or { data: JoinRequest }
         newRequest = response.data;
       } else if (response) {
-        // Structure: JoinRequest directly
         newRequest = response;
       }
 
-      // Update local state immediately to disable the button
       if (newRequest && newRequest._id) {
-        // Ensure the request has the pending status
         const requestToAdd = {
           ...newRequest,
           status: newRequest.status || "pending",
           team: newRequest.team || team.id,
         };
-
         setRequests((prev) => [...prev, requestToAdd]);
       } else {
-        // Fallback: refetch all requests to ensure state is up to date
         await fetchUserRequests();
       }
 
@@ -210,7 +197,7 @@ const TeamDetails = () => {
       });
     } finally {
       setIsSubmitting(false);
-      setIsConfirmModalVisible(false); // Close modal to prevent re-submission
+      setIsConfirmModalVisible(false);
     }
   };
 
