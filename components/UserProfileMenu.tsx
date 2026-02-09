@@ -1,5 +1,6 @@
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { JoinRequest, joinRequestService } from "@/services/joinRequestService";
 import { useUserStore } from "@/stores/user.store";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -47,6 +48,7 @@ const UserProfileMenu = () => {
   const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
 
+  const [requests, setRequests] = useState<JoinRequest[]>([]);
   const isAuthenticated = authState.authenticated === true;
 
   // PanResponder for swipe-to-close
@@ -81,13 +83,27 @@ const UserProfileMenu = () => {
 
   // Fetch user data when authenticated and no user data
   useEffect(() => {
-    if (isAuthenticated && !user) {
-      getCurrentUser().catch(console.error);
+    if (isAuthenticated) {
+      if (!user || !user.fullName) getCurrentUser().catch(console.error);
+      fetchUserRequests();
     }
   }, [isAuthenticated, user, getCurrentUser]);
 
+  const fetchUserRequests = async () => {
+    try {
+      const myRequests = await joinRequestService.getMyRequests();
+      setRequests(myRequests);
+    } catch (error) {
+      console.error("Error fetching requests in UserProfileMenu", error);
+    }
+  };
+
   const openMenu = () => {
     setMenuVisible(true);
+    if (isAuthenticated) {
+      getCurrentUser().catch(console.error);
+      fetchUserRequests();
+    }
     Animated.parallel([
       Animated.spring(slideAnim, {
         toValue: 0,
@@ -496,21 +512,47 @@ const UserProfileMenu = () => {
                   >
                     {user.phoneNumber}
                   </Text>
-                  {user.team && (
-                    <View
-                      style={[
-                        styles.teamBadge,
-                        {
-                          backgroundColor: isDark
-                            ? "rgba(255,102,25,0.15)"
-                            : "rgba(255,102,25,0.1)",
-                        },
-                      ]}
-                    >
-                      <MaterialIcons name="groups" size={14} color="#ff6619" />
-                      <Text style={styles.teamText}>{user.team}</Text>
-                    </View>
-                  )}
+                  {(() => {
+                    const approvedRequest = requests.find(
+                      (r) =>
+                        r.status === "approved" ||
+                        (r as any).status === "accepted",
+                    );
+
+                    const getTeamName = () => {
+                      if (!user.team) return (approvedRequest as any)?.teamName;
+                      if (typeof user.team === "string") return user.team;
+                      return (
+                        (user.team as any).name ||
+                        (user.team as any).fullName ||
+                        (approvedRequest as any)?.teamName
+                      );
+                    };
+
+                    const teamToShow = getTeamName();
+
+                    if (!teamToShow) return null;
+
+                    return (
+                      <View
+                        style={[
+                          styles.teamBadge,
+                          {
+                            backgroundColor: isDark
+                              ? "rgba(255,102,25,0.15)"
+                              : "rgba(255,102,25,0.1)",
+                          },
+                        ]}
+                      >
+                        <MaterialIcons
+                          name="groups"
+                          size={14}
+                          color="#ff6619"
+                        />
+                        <Text style={styles.teamText}>{teamToShow}</Text>
+                      </View>
+                    );
+                  })()}
                 </View>
               ) : (
                 <View style={styles.profileInfo}>

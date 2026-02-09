@@ -1,15 +1,16 @@
 import { ConfirmationModal } from "@/components";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { JoinRequest, joinRequestService } from "@/services/joinRequestService";
 import { useUserStore } from "@/stores/user.store";
 import {
   Ionicons,
   MaterialCommunityIcons,
   MaterialIcons,
 } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Alert,
   Image,
@@ -39,12 +40,31 @@ interface SettingItem {
 export default function Settings() {
   const { top } = useSafeAreaInsets();
   const { theme, toggleTheme } = useTheme();
-  const { authState, logout } = useAuth();
+  const { authState, logout, getCurrentUser } = useAuth();
   const { user } = useUserStore();
   const router = useRouter();
   const isDark = theme === "dark";
 
   const isAuthenticated = authState.authenticated === true;
+  const [requests, setRequests] = useState<JoinRequest[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) {
+        getCurrentUser().catch(console.error);
+        fetchUserRequests();
+      }
+    }, [isAuthenticated]),
+  );
+
+  const fetchUserRequests = async () => {
+    try {
+      const myRequests = await joinRequestService.getMyRequests();
+      setRequests(myRequests);
+    } catch (error) {
+      console.error("Error fetching requests in Settings", error);
+    }
+  };
 
   // Local state for toggles (these would connect to real settings in production)
   const [notifications, setNotifications] = useState(true);
@@ -590,6 +610,43 @@ export default function Settings() {
               >
                 {user.phoneNumber}
               </Text>
+              {(() => {
+                const approvedRequest = requests.find(
+                  (r) =>
+                    r.status === "approved" || (r as any).status === "accepted",
+                );
+
+                const getTeamName = () => {
+                  if (!user.team) return (approvedRequest as any)?.teamName;
+                  if (typeof user.team === "string") return user.team;
+                  return (
+                    (user.team as any).name ||
+                    (user.team as any).fullName ||
+                    (approvedRequest as any)?.teamName
+                  );
+                };
+
+                const teamToShow = getTeamName();
+
+                if (!teamToShow) return null;
+
+                return (
+                  <View
+                    style={[
+                      styles.teamBadge,
+                      {
+                        backgroundColor: isDark
+                          ? "rgba(255,102,25,0.15)"
+                          : "rgba(255,102,25,0.1)",
+                        marginTop: 4,
+                      },
+                    ]}
+                  >
+                    <MaterialIcons name="groups" size={12} color="#ff6619" />
+                    <Text style={styles.teamText}>{teamToShow}</Text>
+                  </View>
+                );
+              })()}
             </View>
             <Ionicons
               name="chevron-forward"
@@ -798,5 +855,19 @@ const styles = StyleSheet.create({
   },
   footerVersion: {
     fontSize: 12,
+  },
+  teamBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  teamText: {
+    color: "#ff6619",
+    fontSize: 11,
+    fontWeight: "700",
+    marginLeft: 4,
   },
 });

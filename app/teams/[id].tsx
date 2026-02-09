@@ -7,9 +7,9 @@ import { fetchTeams } from "@/services/teamService";
 import { useUserStore } from "@/stores/user.store";
 import { Team } from "@/types/types";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -31,7 +31,7 @@ const TeamDetails = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const { authState } = useAuth();
+  const { authState, getCurrentUser } = useAuth();
   const user = useUserStore((state) => state.user);
   const [team, setTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -55,17 +55,57 @@ const TeamDetails = () => {
       try {
         const myRequests = await joinRequestService.getMyRequests();
         setRequests(myRequests);
+
+        // Check if any request for THIS team is approved
+        const approvedRequest = myRequests.find((r) => {
+          const requestTeamId =
+            typeof r.teamId === "string" ? r.teamId : (r.teamId as any)?._id;
+          return (
+            (r.status === "approved" || (r as any).status === "accepted") &&
+            (requestTeamId === team?.id ||
+              requestTeamId === team?._id ||
+              r.team === team?.id ||
+              r.team === team?._id)
+          );
+        });
+
+        if (approvedRequest) {
+          // If approved, ensure user profile and team data are synced
+          const [_, freshTeams] = await Promise.all([
+            getCurrentUser(),
+            fetchTeams(true),
+          ]);
+          // Also update the local team state with fresh data
+          const freshTeam = freshTeams.find((t) => t.id === id);
+          if (freshTeam) setTeam(freshTeam);
+        }
       } catch (error) {
         console.error("Error fetching requests", error);
       }
     }
   };
 
+  useFocusEffect(
+    useCallback(() => {
+      if (authState.authenticated) {
+        getCurrentUser().catch(console.error);
+        fetchUserRequests();
+      }
+    }, [authState.authenticated]),
+  );
+
   useEffect(() => {
-    const loadTeam = async () => {
+    const loadTeamData = async () => {
       try {
         const teams = await fetchTeams(false);
-        const foundTeam = teams.find((t) => t.id === id);
+        const normId = norm(id);
+        const foundTeam = teams.find(
+          (t) =>
+            t.id === id ||
+            t._id === id ||
+            norm(t.name) === normId ||
+            norm(t._id) === normId,
+        );
         setTeam(foundTeam || null);
       } catch (error) {
         console.error("Error loading team details", error);
@@ -73,38 +113,83 @@ const TeamDetails = () => {
         setLoading(false);
       }
     };
-    loadTeam();
+    loadTeamData();
   }, [id]);
 
   useEffect(() => {
-    fetchUserRequests();
-  }, [authState.authenticated]);
+    if (team) {
+      fetchUserRequests();
+    }
+  }, [authState.authenticated, team?.id]);
+
+  const getUserTeams = () => {
+    const teamsList: string[] = [];
+    if (!user) return teamsList;
+
+    const add = (val: any) => {
+      if (!val) return;
+      if (typeof val === "string") teamsList.push(val);
+      if (typeof val === "object") {
+        if (val._id) teamsList.push(val._id);
+        if (val.id) teamsList.push(val.id);
+        if (val.name) teamsList.push(val.name);
+      }
+    };
+
+    add(user.team);
+    add(user.pastTeam);
+    return teamsList;
+  };
+
+  const userTeams = getUserTeams();
+  const norm = (s: any) =>
+    String(s || "")
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "");
+
+  // Fuzzy match helper: checks if either string contains the other
+  const fuzzyMatch = (a: string, b: string) =>
+    a !== "" && b !== "" && (a.includes(b) || b.includes(a));
+
+  const normalizedUserTeams = userTeams.map(norm).filter((s) => s !== "");
+  const currentTeamNames = [
+    norm(team?.name),
+    norm(team?.id),
+    norm(team?._id),
+    norm(team?.category),
+  ];
 
   const existingRequest = requests.find((r) => {
     const requestTeamId =
       typeof r.teamId === "string" ? r.teamId : (r.teamId as any)?._id;
+    const requestTeamName =
+      typeof r.teamId === "object"
+        ? (r.teamId as any).name
+        : (r as any).teamName || r.team;
 
-    return (
-      requestTeamId === team?.id ||
-      requestTeamId === team?._id ||
-      r.team === team?.id ||
-      r.team === team?._id ||
-      (r as any).teamName?.toLowerCase().trim().replace(/\s+/g, "") ===
-        team?.name.toLowerCase().trim().replace(/\s+/g, "")
+    const nReqId = norm(requestTeamId);
+    const nReqName = norm(requestTeamName);
+    const nReqTeam = norm(r.team);
+
+    return currentTeamNames.some(
+      (tn) =>
+        (nReqId && fuzzyMatch(tn, nReqId)) ||
+        (nReqName && fuzzyMatch(tn, nReqName)) ||
+        (nReqTeam && fuzzyMatch(tn, nReqTeam)),
     );
   });
-  const isPending = existingRequest?.status === "pending";
 
-  const normalizedUserTeam = user?.team
-    ?.toLowerCase()
-    .trim()
-    .replace(/\s+/g, "");
-  const normalizedTeamName = team?.name
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, "");
+  const isPending = existingRequest?.status === "pending";
+  const isApproved =
+    existingRequest?.status === "approved" ||
+    (existingRequest as any)?.status === "accepted";
+
   const isMember =
-    user?.team === team?.id || normalizedUserTeam === normalizedTeamName;
+    isApproved ||
+    currentTeamNames.some((tn) =>
+      normalizedUserTeams.some((ut) => fuzzyMatch(tn, ut)),
+    );
 
   if (loading) {
     return (
@@ -153,10 +238,21 @@ const TeamDetails = () => {
   };
 
   const confirmJoin = async () => {
-    if (!team) return;
+    if (!team || !user) return;
     setIsSubmitting(true);
     try {
-      const response = await joinRequestService.createJoinRequest(team.id);
+      const payload = {
+        teamId: team.id,
+        fullName: user.fullName || "",
+        phoneNumber: user.phoneNumber || "",
+        department: user.department || "",
+        year: user.yearOfStudy || "",
+        telegramHandle: user.telegramUserName || "",
+        profileImage: user.profileImage || user.image || null,
+        pastTeam: user.team || user.pastTeam || null,
+      };
+
+      const response = await joinRequestService.createJoinRequest(payload);
 
       let newRequest = null;
 
@@ -168,13 +264,15 @@ const TeamDetails = () => {
         newRequest = response;
       }
 
-      if (newRequest && newRequest._id) {
+      if (newRequest && (newRequest._id || newRequest.id)) {
+        const id = newRequest._id || newRequest.id;
         const requestToAdd = {
           ...newRequest,
+          _id: id,
           status: newRequest.status || "pending",
           team: newRequest.team || team.id,
         };
-        setRequests((prev) => [...prev, requestToAdd]);
+        setRequests((prev) => [...prev, requestToAdd as any]);
       } else {
         await fetchUserRequests();
       }
@@ -187,6 +285,7 @@ const TeamDetails = () => {
         type: "success",
       });
     } catch (error: any) {
+      console.error("Join request failed", error);
       const message =
         error.response?.data?.message || "Failed to send join request";
       setInfoModal({
@@ -449,10 +548,17 @@ const TeamDetails = () => {
             </View>
           </View>
 
-          {!isMember && (
-            <TouchableOpacity
-              onPress={
-                isPending
+          <TouchableOpacity
+            onPress={
+              isMember
+                ? () =>
+                    setInfoModal({
+                      visible: true,
+                      title: "Already a Member",
+                      message: `You are already a member of ${team.name}. Welcome to the team!`,
+                      type: "success",
+                    })
+                : isPending
                   ? () =>
                       setInfoModal({
                         visible: true,
@@ -462,55 +568,76 @@ const TeamDetails = () => {
                         type: "success",
                       })
                   : handleJoinPress
-              }
-              style={{
-                backgroundColor: isPending
+            }
+            style={{
+              backgroundColor: isMember
+                ? isDark
+                  ? "rgba(16, 185, 129, 0.1)"
+                  : "#ecfdf5"
+                : isPending
                   ? isDark
                     ? "rgba(113, 113, 122, 0.1)"
                     : "#F4F4F5"
                   : isSubmitting
                     ? `${PRIMARY}80`
                     : PRIMARY,
-                borderStyle: isPending ? "dashed" : "solid",
-              }}
-              className={`py-5 rounded-3xl items-center mb-4 border ${
-                isPending
-                  ? "border-zinc-500/20"
-                  : "shadow-lg shadow-orange-500/20 border-transparent"
-              }`}
-              disabled={isPending || isSubmitting}
-              activeOpacity={isPending ? 1 : 0.8}
-            >
-              <View className="flex-row items-center">
-                {isSubmitting ? (
-                  <View className="flex-row items-center">
-                    <ActivityIndicator size="small" color="white" />
-                    <Text className="text-white font-bold text-lg ml-2">
-                      Sending Request...
-                    </Text>
-                  </View>
-                ) : isPending ? (
-                  <View className="flex-row items-center">
-                    <Ionicons
-                      name="time"
-                      size={20}
-                      color={isDark ? "#71717a" : "#71717a"}
-                      style={{ marginRight: 8 }}
-                    />
-                    <Text
-                      className={`font-bold text-lg ${isDark ? "text-zinc-500" : "text-zinc-500"}`}
-                    >
-                      Pending Approval
-                    </Text>
-                  </View>
-                ) : (
-                  <Text className="text-white font-bold text-lg">
+              borderStyle: isPending || isMember ? "solid" : "solid", // Changed to solid for member state
+              borderColor: isMember
+                ? isDark
+                  ? "rgba(16, 185, 129, 0.2)"
+                  : "#10b981"
+                : isPending
+                  ? isDark
+                    ? "rgba(113, 113, 122, 0.2)"
+                    : "#d1d5db"
+                  : "transparent",
+            }}
+            className={`py-5 rounded-3xl items-center mb-4 border ${
+              !isPending && !isMember ? "shadow-lg shadow-orange-500/20" : ""
+            }`}
+            disabled={isSubmitting}
+            activeOpacity={isSubmitting ? 1 : 0.8}
+          >
+            <View className="flex-row items-center">
+              {isSubmitting ? (
+                <View className="flex-row items-center">
+                  <ActivityIndicator size="small" color="white" />
+                  <Text className="text-white font-bold text-lg ml-2">
+                    Sending Request...
+                  </Text>
+                </View>
+              ) : isMember ? (
+                <View className="flex-row items-center">
+                  <Ionicons name="checkmark-circle" size={24} color="#10b981" />
+                  <Text className="text-[#10b981] font-bold text-lg ml-2">
+                    You're in this Team
+                  </Text>
+                </View>
+              ) : isPending ? (
+                <View className="flex-row items-center">
+                  <Ionicons
+                    name="time"
+                    size={24}
+                    color={isDark ? "#a1a1aa" : "#71717a"}
+                  />
+                  <Text
+                    className={`font-bold text-lg ml-2 ${
+                      isDark ? "text-zinc-400" : "text-zinc-500"
+                    }`}
+                  >
+                    Request Pending
+                  </Text>
+                </View>
+              ) : (
+                <View className="flex-row items-center">
+                  <Ionicons name="add-circle" size={24} color="white" />
+                  <Text className="text-white font-bold text-lg ml-2">
                     Join This Team
                   </Text>
-                )}
-              </View>
-            </TouchableOpacity>
-          )}
+                </View>
+              )}
+            </View>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 

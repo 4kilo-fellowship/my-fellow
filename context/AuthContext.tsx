@@ -36,6 +36,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (token) {
           api.defaults.headers.common.Authorization = `Bearer ${token}`;
           setAuthState({ token, authenticated: true });
+          // Fetch fresh user data if we have a token
+          authService
+            .getCurrentUser()
+            .then((user) => {
+              useUserStore.getState().setUser(user);
+            })
+            .catch(console.error);
         } else {
           setAuthState({ token: null, authenticated: false });
         }
@@ -106,14 +113,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const getCurrentUser = async (): Promise<User> => {
-    const localUser = useUserStore.getState().user;
-    if (localUser) return localUser;
-
     try {
       const user = await authService.getCurrentUser();
       useUserStore.getState().setUser(user);
       return user;
     } catch (error) {
+      const localUser = useUserStore.getState().user;
+      if (localUser) return localUser;
       throw error;
     }
   };

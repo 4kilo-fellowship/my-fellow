@@ -1,13 +1,15 @@
 import { QuickActions } from "@/components";
 import { PRIMARY } from "@/constants/colors";
+import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { JoinRequest, joinRequestService } from "@/services/joinRequestService";
 import { fetchTeams } from "@/services/teamService";
 import { useUserStore } from "@/stores/user.store";
 import { Team } from "@/types/types";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -119,19 +121,43 @@ const Teams = () => {
   const [searchText, setSearchText] = useState("");
   const router = useRouter();
 
+  const { authState, getCurrentUser } = useAuth();
+  const user = useUserStore((state) => state.user);
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [requests, setRequests] = useState<JoinRequest[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (authState.authenticated) {
+        fetchUserRequests();
+        getCurrentUser().catch(console.error);
+      }
+    }, [authState.authenticated]),
+  );
 
   useEffect(() => {
     loadTeams();
   }, []);
+
+  const fetchUserRequests = async () => {
+    try {
+      const myRequests = await joinRequestService.getMyRequests();
+      setRequests(myRequests);
+    } catch (error) {
+      console.error("Error fetching requests", error);
+    }
+  };
 
   const loadTeams = async (refresh = false) => {
     try {
       if (refresh) setRefreshing(true);
       const data = await fetchTeams(refresh);
       setTeams(data);
+      if (refresh && authState.authenticated) {
+        await Promise.all([fetchUserRequests(), getCurrentUser()]);
+      }
     } catch (error) {
       console.error("Failed to load teams", error);
     } finally {
@@ -176,17 +202,75 @@ const Teams = () => {
         data={filteredTeams}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => {
-          const user = useUserStore.getState().user;
-          const normalizedUserTeam = (user?.team || "")
-            .toLowerCase()
-            .trim()
-            .replace(/\s+/g, "");
-          const normalizedTeamName = item.name
-            .toLowerCase()
-            .trim()
-            .replace(/\s+/g, "");
+          const getUserTeams = () => {
+            const teams: string[] = [];
+            if (!user) return teams;
+
+            const add = (val: any) => {
+              if (!val) return;
+              if (typeof val === "string") teams.push(val);
+              if (typeof val === "object") {
+                if (val._id) teams.push(val._id);
+                if (val.id) teams.push(val.id);
+                if (val.name) teams.push(val.name);
+              }
+            };
+
+            add(user.team);
+            add(user.pastTeam);
+            return teams;
+          };
+
+          const userTeams = getUserTeams();
+          const norm = (s: any) =>
+            String(s || "")
+              .toLowerCase()
+              .trim()
+              .replace(/\s+/g, "");
+
+          const normalizedUserTeams = userTeams
+            .map(norm)
+            .filter((s) => s !== "");
+          const currentTeamNames = [
+            norm(item.name),
+            norm(item.id),
+            norm(item._id),
+            norm(item.category),
+          ];
+
+          // Fuzzy match helper: checks if either string contains the other
+          const fuzzyMatch = (a: string, b: string) =>
+            a !== "" && b !== "" && (a.includes(b) || b.includes(a));
+
+          const existingRequest = requests.find((r) => {
+            const requestTeamId =
+              typeof r.teamId === "string" ? r.teamId : (r.teamId as any)?._id;
+            const requestTeamName =
+              typeof r.teamId === "object"
+                ? (r.teamId as any).name
+                : (r as any).teamName || r.team;
+
+            const nReqId = norm(requestTeamId);
+            const nReqName = norm(requestTeamName);
+            const nReqTeam = norm(r.team);
+
+            return currentTeamNames.some(
+              (tn) =>
+                (nReqId && fuzzyMatch(tn, nReqId)) ||
+                (nReqName && fuzzyMatch(tn, nReqName)) ||
+                (nReqTeam && fuzzyMatch(tn, nReqTeam)),
+            );
+          });
+
+          const isApproved =
+            existingRequest?.status === "approved" ||
+            (existingRequest as any)?.status === "accepted";
+
           const isUserTeam =
-            user?.team === item.id || normalizedUserTeam === normalizedTeamName;
+            isApproved ||
+            currentTeamNames.some((tn) =>
+              normalizedUserTeams.some((ut) => fuzzyMatch(tn, ut)),
+            );
 
           return (
             <GridCard

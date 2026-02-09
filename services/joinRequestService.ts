@@ -4,6 +4,13 @@ export interface JoinRequest {
   _id: string;
   user?: string;
   userId?: string;
+  fullName?: string;
+  phoneNumber?: string;
+  profileImage?: string;
+  pastTeam?: string;
+  department?: string;
+  year?: string;
+  telegramHandle?: string;
   team?: string;
   teamId?:
     | string
@@ -19,9 +26,21 @@ export interface JoinRequest {
   updatedAt: string;
 }
 
+export interface CreateJoinRequestData {
+  teamId: string;
+  fullName: string;
+  phoneNumber: string;
+  department: string;
+  year: string;
+  telegramHandle: string;
+  profileImage?: string | null;
+  pastTeam?: string | null;
+  message?: string;
+}
+
 export const joinRequestService = {
-  createJoinRequest: async (teamId: string, message?: string) => {
-    const response = await api.post("/join-requests", { teamId, message });
+  createJoinRequest: async (data: CreateJoinRequestData) => {
+    const response = await api.post("/join-requests", data);
     return response.data;
   },
 

@@ -11,6 +11,7 @@ export type User = {
   email?: string;
   phoneNumber: string;
   team?: string | null;
+  pastTeam?: string | null;
   department?: string | null;
   yearOfStudy?: string | null;
   telegramUserName?: string | null;
@@ -31,6 +32,7 @@ export type SignUpData = {
   password: string;
   confirmPassword?: string;
   team?: string;
+  pastTeam?: string;
   department?: string;
   year?: string;
   telegram?: string;
