@@ -351,15 +351,37 @@ const TeamDetails = () => {
                 {team.name}
               </Text>
               {isMember && (
-                <View className="flex-row items-center">
+                <View className="flex-row items-center ml-3">
                   <View
-                    style={{ borderColor: `${PRIMARY}33` }}
-                    className="bg-primary/10 px-3 py-1.5 rounded-xl border flex-row items-center shadow-sm shadow-orange-500/10"
+                    style={{
+                      backgroundColor: isDark
+                        ? "rgba(5, 150, 105, 0.12)"
+                        : "#ecfdf5",
+                      borderColor: isDark
+                        ? "rgba(5, 150, 105, 0.2)"
+                        : "#a7f3d0",
+                      shadowColor: "#059669",
+                      shadowOpacity: 0.08,
+                      shadowRadius: 6,
+                      shadowOffset: { width: 0, height: 1 },
+                      elevation: 2,
+                    }}
+                    className="px-3 py-1.5 rounded-full border flex-row items-center"
                   >
-                    <View className="bg-primary p-0.5 rounded-full mr-2">
-                      <Ionicons name="sparkles" size={12} color="white" />
+                    <View
+                      style={{ backgroundColor: "#059669" }}
+                      className="w-5 h-5 rounded-full items-center justify-center mr-1.5"
+                    >
+                      <Ionicons
+                        name="shield-checkmark"
+                        size={11}
+                        color="white"
+                      />
                     </View>
-                    <Text className="text-primary font-extrabold text-[10px] uppercase tracking-wider">
+                    <Text
+                      style={{ color: "#047857", letterSpacing: 0.8 }}
+                      className="font-extrabold text-[9px] uppercase"
+                    >
                       Your Team
                     </Text>
                   </View>
@@ -572,7 +594,7 @@ const TeamDetails = () => {
             style={{
               backgroundColor: isMember
                 ? isDark
-                  ? "rgba(16, 185, 129, 0.1)"
+                  ? "rgba(5, 150, 105, 0.08)"
                   : "#ecfdf5"
                 : isPending
                   ? isDark
@@ -581,11 +603,10 @@ const TeamDetails = () => {
                   : isSubmitting
                     ? `${PRIMARY}80`
                     : PRIMARY,
-              borderStyle: isPending || isMember ? "solid" : "solid", // Changed to solid for member state
               borderColor: isMember
                 ? isDark
-                  ? "rgba(16, 185, 129, 0.2)"
-                  : "#10b981"
+                  ? "rgba(5, 150, 105, 0.2)"
+                  : "#a7f3d0"
                 : isPending
                   ? isDark
                     ? "rgba(113, 113, 122, 0.2)"
@@ -608,8 +629,11 @@ const TeamDetails = () => {
                 </View>
               ) : isMember ? (
                 <View className="flex-row items-center">
-                  <Ionicons name="checkmark-circle" size={24} color="#10b981" />
-                  <Text className="text-[#10b981] font-bold text-lg ml-2">
+                  <Ionicons name="shield-checkmark" size={22} color="#059669" />
+                  <Text
+                    style={{ color: "#047857" }}
+                    className="font-bold text-lg ml-2"
+                  >
                     You're in this Team
                   </Text>
                 </View>

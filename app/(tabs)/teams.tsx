@@ -1,5 +1,4 @@
 import { QuickActions } from "@/components";
-import { PRIMARY } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { JoinRequest, joinRequestService } from "@/services/joinRequestService";
@@ -93,17 +92,27 @@ const GridCard = ({
     <View className="flex-row justify-between items-center w-full">
       {item.isUserTeam && (
         <View
-          className="bg-white/90 px-3 py-1.5 rounded-xl flex-row items-center shadow-lg shadow-black/20"
-          style={{ transform: [{ translateY: 2 }] }}
+          style={{
+            backgroundColor: "rgba(255,255,255,0.92)",
+            shadowColor: "#059669",
+            shadowOpacity: 0.12,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 2 },
+            elevation: 4,
+          }}
+          className="px-3 py-1.5 rounded-full flex-row items-center"
         >
-          <View className="bg-primary/20 p-1 rounded-full mr-2">
-            <Ionicons name="sparkles" size={12} color={PRIMARY} />
+          <View
+            style={{ backgroundColor: "#ecfdf5" }}
+            className="w-5 h-5 rounded-full items-center justify-center mr-1.5"
+          >
+            <Ionicons name="checkmark" size={12} color="#059669" />
           </View>
           <Text
-            style={{ color: PRIMARY, letterSpacing: 0.5 }}
-            className="text-[10px] font-black uppercase"
+            style={{ color: "#047857", letterSpacing: 0.8 }}
+            className="text-[9px] font-black uppercase"
           >
-            Joined
+            Member
           </Text>
         </View>
       )}
