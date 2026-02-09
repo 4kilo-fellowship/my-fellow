@@ -1,4 +1,4 @@
-import { RegistrationModal, SignInPromptModal } from "@/components";
+import { InfoModal, RegistrationModal, SignInPromptModal } from "@/components";
 import { API_URL } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -53,6 +53,7 @@ export default function EventDetails() {
   const { authState, getCurrentUser } = useAuth();
   const [modalVisible, setModalVisible] = React.useState(false);
   const [signInModalVisible, setSignInModalVisible] = React.useState(false);
+  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
   const [isGoingBack, setIsGoingBack] = React.useState(false);
 
   const id = (params as any).id as string | undefined;
@@ -122,14 +123,12 @@ export default function EventDetails() {
 
       await addAlert({
         title: `Reminder: ${ev.title}`,
+        description: ev.shortDescription || "Event notification",
         time: ev.startDate,
         repeats: "none",
         remindBefore: 15,
       });
-      Alert.alert(
-        "Alert Set",
-        "We'll notify you 15 minutes before the program starts.",
-      );
+      setShowSuccessModal(true);
       return;
     }
 
@@ -406,7 +405,11 @@ export default function EventDetails() {
               <Text className="text-white text-lg font-bold mr-2">
                 {ctaLabel}
               </Text>
-              <Ionicons name="arrow-forward" size={20} color="white" />
+              {ctaLabel.toLowerCase().includes("notify") ? (
+                <Ionicons name="notifications" size={20} color="white" />
+              ) : (
+                <Ionicons name="arrow-forward" size={20} color="white" />
+              )}
             </>
           )}
         </TouchableOpacity>
@@ -427,6 +430,15 @@ export default function EventDetails() {
           router.push("/(auth)/sign-in");
         }}
         message="You need to be signed in to register for events. Would you like to sign in now?"
+      />
+
+      <InfoModal
+        visible={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="Alert Set"
+        message="We'll notify you 15 minutes before the program starts."
+        type="success"
+        isDark={isDark}
       />
     </View>
   );

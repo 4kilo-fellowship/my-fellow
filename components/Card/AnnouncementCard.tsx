@@ -18,6 +18,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { InfoModal } from "../../components/Modals/InfoModal";
 import RegistrationModal from "../RegistrationModal";
 import SignInPromptModal from "../SignInPromptModal";
 
@@ -49,6 +50,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [signInModalVisible, setSignInModalVisible] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const handlePrimary = async () => {
     const text = ctaText.toLowerCase().trim();
@@ -71,14 +73,12 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
 
       await addAlert({
         title: `Reminder: ${item.title}`,
+        description: item.subtitle || "Event notification",
         time: startTime,
         repeats: "none",
         remindBefore: 15, // 15 minutes before
       });
-      Alert.alert(
-        "Alert Set",
-        "We'll notify you 15 minutes before the program starts.",
-      );
+      setShowSuccessModal(true);
       return;
     }
 
@@ -240,7 +240,11 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
             <Text className="text-white text-base font-bold mr-2">
               {ctaText}
             </Text>
-            <Ionicons name="arrow-forward" size={18} color="white" />
+            {ctaText.toLowerCase().includes("notify") ? (
+              <Ionicons name="notifications" size={18} color="white" />
+            ) : (
+              <Ionicons name="arrow-forward" size={18} color="white" />
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -261,6 +265,15 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
           router.push("/(auth)/sign-in");
         }}
         message="You need to be signed in to register for events. Would you like to sign in now?"
+      />
+
+      <InfoModal
+        visible={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="Alert Set"
+        message="We'll notify you 15 minutes before the program starts."
+        type="success"
+        isDark={!!isDark}
       />
     </TouchableOpacity>
   );
