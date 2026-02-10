@@ -30,9 +30,6 @@
       "tsconfigPaths": true
     },
     "extra": {
-      "eas": {
-        "projectId": "0957bdbf-a7f2-45cf-bf64-47e89c33eca8"
-      },
       "env": {
         "NODE_ENV": "development"
       }

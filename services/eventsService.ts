@@ -25,8 +25,6 @@ const downloadImage = async (url: string) => {
   if (url.startsWith("file://") || url.startsWith("/")) return url;
 
   try {
-    // Create a stable filename based on the URL itself
-    // This prevents flickering if IDs change but images stay the same
     const urlHash = url.split("?")[0].split("/").pop() || "image";
     const cleanName = urlHash.replace(/[^a-zA-Z0-9.-]/g, "_").substring(0, 50);
     const extension = url.split(".").pop()?.split(/[?#]/)[0] || "jpg";
@@ -40,7 +38,7 @@ const downloadImage = async (url: string) => {
 
     const downloadRes = await FileSystem.downloadAsync(encodeURI(url), fileUri);
     if (downloadRes.status !== 200) {
-      return url; // Fallback to remote if download fails
+      return url;
     }
     return downloadRes.uri;
   } catch (e) {
