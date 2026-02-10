@@ -1,10 +1,6 @@
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import { Platform } from "react-native";
 
-/**
- * Robust notification service for Expo.
- */
-
 let Notifications: any;
 const isExpoGo =
   Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
@@ -86,7 +82,6 @@ export const scheduleNotification = async (
 
   let trigger: any;
 
-  // Ensure date is a valid Date object
   const scheduledDate = new Date(date);
 
   if (repeats === "daily") {
