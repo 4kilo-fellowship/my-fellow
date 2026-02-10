@@ -122,7 +122,7 @@ export default function EventDetails() {
       }
 
       await addAlert({
-        title: `Reminder: ${ev.title}`,
+        title: ev.title,
         description: ev.shortDescription || "Event notification",
         time: ev.startDate,
         repeats: "none",

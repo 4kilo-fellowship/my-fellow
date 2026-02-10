@@ -72,7 +72,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
       }
 
       await addAlert({
-        title: `Reminder: ${item.title}`,
+        title: item.title,
         description: item.subtitle || "Event notification",
         time: startTime,
         repeats: "none",

@@ -50,34 +50,53 @@ export const AlertCard = ({
           isDark ? "bg-zinc-800 border-gray-800" : "bg-gray-50 border-gray-200"
         }`}
       >
-        <View className="flex-row items-baseline">
+        <View className="flex-1">
           <Text
-            className={`text-4xl font-medium tracking-tight ${
-              isDark ? "text-white" : "text-gray-900"
+            numberOfLines={1}
+            className={`text-sm font-bold uppercase tracking-wider mb-1 ${
+              isDark ? "text-orange-400" : "text-orange-500"
             }`}
           >
-            {displayHours}:{displayMinutes}
+            {alert.title}
+          </Text>
+          <View className="flex-row items-baseline">
+            <Text
+              className={`text-4xl font-black tracking-tight ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
+            >
+              {displayHours}:{displayMinutes}
+            </Text>
+            <Text
+              className={`ml-1 text-lg font-bold ${
+                isDark ? "text-gray-500" : "text-gray-400"
+              }`}
+            >
+              {ampm}
+            </Text>
+          </View>
+        </View>
+
+        <View className="items-end mr-3">
+          <Text
+            className={`text-[10px] font-black uppercase tracking-widest mb-1 ${
+              isDark ? "text-gray-600" : "text-gray-400"
+            }`}
+          >
+            Schedule
           </Text>
           <Text
-            className={`ml-1 text-lg font-medium ${
+            className={`text-xs font-bold ${
               isDark ? "text-gray-400" : "text-gray-500"
             }`}
           >
-            {ampm}
+            {alert.repeats === "none"
+              ? dayString
+              : alert.repeats === "daily"
+                ? "Every day"
+                : `${new Intl.DateTimeFormat("en-US", { weekday: "short" }).format(date)}, ${new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date)}`}
           </Text>
         </View>
-
-        <Text
-          className={`ml-4 text-sm font-medium flex-1 text-right mr-3 ${
-            isDark ? "text-gray-500" : "text-gray-400"
-          }`}
-        >
-          {alert.repeats === "none"
-            ? dayString
-            : alert.repeats === "daily"
-              ? "Every day"
-              : `${new Intl.DateTimeFormat("en-US", { weekday: "short" }).format(date)}, ${new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date)}`}
-        </Text>
 
         <TouchableOpacity
           activeOpacity={0.8}
