@@ -7,13 +7,13 @@ import React, { useEffect, useState } from "react";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
 import Animated, {
   Easing,
-  runOnJS,
   useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
   withTiming,
 } from "react-native-reanimated";
+import { scheduleOnRN } from "react-native-worklets";
 
 const LOGO_SIZE = 500;
 
@@ -39,7 +39,7 @@ export default function AppSplashScreen() {
         { duration: 1200, easing: Easing.inOut(Easing.exp) },
         (finished) => {
           if (finished) {
-            runOnJS(router.replace)("/(tabs)");
+            scheduleOnRN(router.replace, "/(tabs)");
           }
         },
       ),
@@ -50,7 +50,7 @@ export default function AppSplashScreen() {
     () => progress.value,
     (current, prev) => {
       if (current > 0.6 && (!prev || prev <= 0.6)) {
-        runOnJS(setStatusBarDelay)(true);
+        scheduleOnRN(setStatusBarDelay, true);
       }
     },
   );
