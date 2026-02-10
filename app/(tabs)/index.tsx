@@ -38,9 +38,10 @@ const Home = () => {
 
   const router = useRouter();
 
-  const { events, fetchEvents } = useEventsStore((s: any) => ({
+  const { events, fetchEvents, initialize } = useEventsStore((s: any) => ({
     events: s.events,
     fetchEvents: s.fetchEvents,
+    initialize: s.initialize,
   }));
   const { loading, error } = useEventsStore((s: any) => ({
     loading: s.loading,
@@ -58,10 +59,12 @@ const Home = () => {
   };
 
   useEffect(() => {
-    if (events.length === 0) {
+    const init = async () => {
+      await initialize();
       fetchEvents();
-    }
-  }, [fetchEvents, events.length]);
+    };
+    init();
+  }, []);
 
   return (
     <View className="flex-1">
@@ -95,6 +98,7 @@ const Home = () => {
               refreshing={refreshing}
               onRefresh={onRefresh}
               tintColor={PRIMARY}
+              colors={[PRIMARY]}
             />
           }
         >
@@ -118,7 +122,7 @@ const Home = () => {
                   justifyContent: "center",
                 }}
               >
-                <ActivityIndicator size="large" color={"#ff6619"} />
+                <ActivityIndicator size="large" color={PRIMARY} />
               </View>
             ) : error ? (
               <View

@@ -1,8 +1,5 @@
-import {
-  fetchEventByIdApi,
-  fetchEventsApi,
-  registerForEventApi,
-} from "@/services/events.api";
+import { fetchEventByIdApi, registerForEventApi } from "@/services/events.api";
+import { eventsService } from "@/services/eventsService";
 import { EventDetail, EventSummary } from "@/types/events.types";
 import { create } from "zustand";
 
@@ -13,32 +10,45 @@ type EventsState = {
   loadingDetail: boolean;
   registering: boolean;
   error?: string | null;
-  fetchEvents: () => Promise<void>;
+  initialize: () => Promise<void>;
+  fetchEvents: (forceRefresh?: boolean) => Promise<void>;
   fetchEventById: (id: string) => Promise<void>;
   registerForEvent: (data: any) => Promise<void>;
   clearSelected: () => void;
 };
 
-export const useEventsStore = create<EventsState>((set) => ({
+export const useEventsStore = create<EventsState>((set, get) => ({
   events: [],
   selectedEvent: null,
-  loading: false,
+  loading: true,
   loadingDetail: false,
   registering: false,
   error: null,
 
-  fetchEvents: async () => {
-    set({ loading: true, error: null });
+  initialize: async () => {
+    const cached = await eventsService.getCachedEvents();
+    if (cached && cached.length > 0) {
+      set({ events: cached, loading: false });
+    }
+  },
+
+  fetchEvents: async (forceRefresh = false) => {
+    const currentEvents = get().events;
+
+    // Only show loading if we don't have events yet
+    if (currentEvents.length === 0) {
+      set({ loading: true, error: null });
+    }
+
     try {
-      const events = await fetchEventsApi();
-      set({ events, loading: false });
+      const events = await eventsService.fetchAndCacheEvents();
+      set({ events, loading: false, error: null });
     } catch (err: any) {
-      // try to pull message from axios error shapes
-      // const message =
-      //   err?.response?.data?.message ??
-      //   err?.message ??
-      //   "Failed to fetch events";
-      set({ error: "Something went wrong.", loading: false });
+      if (currentEvents.length === 0) {
+        set({ error: "Something went wrong.", loading: false });
+      } else {
+        set({ loading: false });
+      }
     }
   },
 
@@ -48,8 +58,6 @@ export const useEventsStore = create<EventsState>((set) => ({
       const selectedEvent = await fetchEventByIdApi(id);
       set({ selectedEvent, loadingDetail: false });
     } catch (err: any) {
-      // const message =
-      //   err?.response?.data?.message ?? err?.message ?? "Failed to fetch event";
       set({ error: "Something went wrong.", loadingDetail: false });
     }
   },
@@ -60,12 +68,7 @@ export const useEventsStore = create<EventsState>((set) => ({
       await registerForEventApi(data);
       set({ registering: false });
     } catch (err: any) {
-      // const message =
-      //   err?.response?.data?.message ??
-      //   err?.message ??
-      //   "Registration failed. Please try again.";
       set({ error: "Something went wrong.", registering: false });
-      // throw err;
     }
   },
 

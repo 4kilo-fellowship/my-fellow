@@ -4,33 +4,43 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system/legacy";
 
 const CACHE_KEY = "teams_data";
-const IMG_DIR = FileSystem.documentDirectory + "teams_images/";
+const IMG_DIR = (FileSystem.documentDirectory || "") + "teams_images/";
 
 const ensureDirExists = async () => {
-  const dirInfo = await FileSystem.getInfoAsync(IMG_DIR);
-  if (!dirInfo.exists) {
-    await FileSystem.makeDirectoryAsync(IMG_DIR, { intermediates: true });
+  try {
+    if (!FileSystem.documentDirectory) return;
+    const dirInfo = await FileSystem.getInfoAsync(IMG_DIR);
+    if (!dirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(IMG_DIR, { intermediates: true });
+    }
+  } catch (e) {
+    console.error("Error creating team image directory", e);
   }
 };
 
-const downloadImage = async (
-  url: string,
-  id: string,
-  type: "main" | "leader",
-) => {
-  if (!url) return null;
+const downloadImage = async (url: string, type: "main" | "leader") => {
+  if (!url || typeof url !== "string") return null;
+  if (url.startsWith("file://") || url.startsWith("/")) return url;
+
   try {
-    const filename = `${id}_${type}_${url.split("/").pop()?.split("?")[0] || "img"}`;
+    const urlHash = url.split("?")[0].split("/").pop() || "image";
+    const cleanName = urlHash.replace(/[^a-zA-Z0-9.-]/g, "_").substring(0, 50);
+    const extension = url.split(".").pop()?.split(/[?#]/)[0] || "jpg";
+    const filename = `team_${cleanName}_${type}.${extension}`;
     const fileUri = IMG_DIR + filename;
 
     const fileInfo = await FileSystem.getInfoAsync(fileUri);
-    if (fileInfo.exists) {
+    if (fileInfo.exists && fileInfo.size > 0) {
       return fileUri;
     }
 
-    const downloadRes = await FileSystem.downloadAsync(url, fileUri);
+    const downloadRes = await FileSystem.downloadAsync(encodeURI(url), fileUri);
+    if (downloadRes.status !== 200) {
+      return url;
+    }
     return downloadRes.uri;
   } catch (e) {
+    console.warn(`Failed to download team image: ${url}`, e);
     return url;
   }
 };
@@ -63,19 +73,24 @@ export const fetchTeams = async (forceRefresh = false): Promise<Team[]> => {
             imageUrl: t.imageUrl || "",
           };
 
-          if (team.imageUrl) {
-            const localUri = await downloadImage(
-              team.imageUrl,
-              team.id,
-              "main",
-            );
+          const teamId = team.id || t._id;
+
+          if (
+            team.imageUrl &&
+            (team.imageUrl.startsWith("http") ||
+              team.imageUrl.startsWith("https"))
+          ) {
+            const localUri = await downloadImage(team.imageUrl, "main");
             if (localUri) team.imageUrl = localUri;
           }
 
-          if (team.leader?.imageUrl) {
+          if (
+            team.leader?.imageUrl &&
+            (team.leader.imageUrl.startsWith("http") ||
+              team.leader.imageUrl.startsWith("https"))
+          ) {
             const localUri = await downloadImage(
               team.leader.imageUrl,
-              team.id,
               "leader",
             );
             if (localUri) team.leader.imageUrl = localUri;

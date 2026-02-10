@@ -1,4 +1,5 @@
 import { QuickActions } from "@/components";
+import { PRIMARY } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { JoinRequest, joinRequestService } from "@/services/joinRequestService";
@@ -293,7 +294,8 @@ const Teams = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={isDark ? "white" : "black"}
+            tintColor={PRIMARY}
+            colors={[PRIMARY]}
           />
         }
         columnWrapperStyle={{
