@@ -23,9 +23,9 @@ export default function AppSplashScreen() {
   const [statusBarDelay, setStatusBarDelay] = useState(false);
   const progress = useSharedValue(0);
 
-  const originX = width;
-  const originY = height;
-  const finalRadius = Math.hypot(width, height) * 1.5;
+  const originX = width + 50;
+  const originY = height + 50;
+  const finalRadius = Math.hypot(width + 50, height + 50) * 1.5;
   const logoTargetLeft = (width - LOGO_SIZE) / 2;
   const logoTargetTop = (height - LOGO_SIZE) / 2;
 
