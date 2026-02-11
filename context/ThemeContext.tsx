@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useColorScheme } from "nativewind";
 import React, {
   createContext,
   ReactNode,
@@ -21,7 +22,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setTheme] = useState<Theme>("light");
-
+  const { setColorScheme } = useColorScheme();
   const [isThemeLoaded, setIsThemeLoaded] = useState(false);
 
   useEffect(() => {
@@ -30,9 +31,10 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         const storedTheme = await AsyncStorage.getItem("theme");
         if (storedTheme === "light" || storedTheme === "dark") {
           setTheme(storedTheme);
+          setColorScheme(storedTheme);
         } else {
-          const systemTheme = Appearance.getColorScheme();
-          setTheme(systemTheme === "dark" ? "dark" : "light");
+          setTheme("light");
+          setColorScheme("light");
         }
       } catch (error) {
         console.error("Error loading theme:", error);
@@ -44,19 +46,18 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     loadTheme();
 
     const subscription = Appearance.addChangeListener(({ colorScheme }) => {
-      AsyncStorage.getItem("theme").then((storedTheme) => {
-        if (!storedTheme) {
-          setTheme(colorScheme === "dark" ? "dark" : "light");
-        }
-      });
+      const newTheme = colorScheme === "dark" ? "dark" : "light";
+      setTheme(newTheme);
+      setColorScheme(newTheme);
     });
 
     return () => subscription.remove();
-  }, []);
+  }, [setColorScheme]);
 
   const toggleTheme = useCallback(async () => {
     setTheme((prevTheme) => {
       const newTheme = prevTheme === "light" ? "dark" : "light";
+      setColorScheme(newTheme);
 
       AsyncStorage.setItem("theme", newTheme).catch((e) =>
         console.error("Error saving theme:", e),
@@ -64,7 +65,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
       return newTheme;
     });
-  }, []);
+  }, [setColorScheme]);
 
   const value = useMemo(() => ({ theme, toggleTheme }), [theme, toggleTheme]);
 
