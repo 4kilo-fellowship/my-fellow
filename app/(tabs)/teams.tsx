@@ -1,9 +1,9 @@
-import { QuickActions } from "@/components";
+import { Placeholder, QuickActions } from "@/components";
 import { PRIMARY } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { JoinRequest, joinRequestService } from "@/services/joinRequestService";
-import { fetchTeams } from "@/services/teamService";
+import { useTeamsStore } from "@/stores/teams.store";
 import { useUserStore } from "@/stores/user.store";
 import { Team } from "@/types/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,7 +11,6 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Dimensions,
   FlatList,
   RefreshControl,
@@ -133,9 +132,7 @@ const Teams = () => {
 
   const { authState, getCurrentUser } = useAuth();
   const user = useUserStore((state) => state.user);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { teams, loading, refreshing, loadTeams } = useTeamsStore();
   const [requests, setRequests] = useState<JoinRequest[]>([]);
 
   useFocusEffect(
@@ -143,6 +140,7 @@ const Teams = () => {
       if (authState.authenticated) {
         fetchUserRequests();
         getCurrentUser().catch(console.error);
+        loadTeams(); // Check for updates in background on focus
       }
     }, [authState.authenticated]),
   );
@@ -157,22 +155,6 @@ const Teams = () => {
       setRequests(myRequests);
     } catch (error) {
       console.error("Error fetching requests", error);
-    }
-  };
-
-  const loadTeams = async (refresh = false) => {
-    try {
-      if (refresh) setRefreshing(true);
-      const data = await fetchTeams(refresh);
-      setTeams(data);
-      if (refresh && authState.authenticated) {
-        await Promise.all([fetchUserRequests(), getCurrentUser()]);
-      }
-    } catch (error) {
-      console.error("Failed to load teams", error);
-    } finally {
-      if (refresh) setRefreshing(false);
-      setLoading(false);
     }
   };
 
@@ -306,11 +288,23 @@ const Teams = () => {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           loading && !refreshing ? (
-            <View className="flex-1 justify-center items-center mt-20">
-              <ActivityIndicator
-                size="large"
-                color={isDark ? "white" : "black"}
-              />
+            <View
+              style={{
+                paddingHorizontal: PADDING,
+                flexDirection: "row",
+                flexWrap: "wrap",
+                justifyContent: "space-between",
+              }}
+            >
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Placeholder
+                  key={i}
+                  width={ITEM_WIDTH}
+                  height={ITEM_WIDTH * 0.85}
+                  borderRadius={16}
+                  style={{ marginBottom: GAP }}
+                />
+              ))}
             </View>
           ) : (
             <View className="items-center mt-10">
