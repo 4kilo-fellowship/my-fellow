@@ -1,6 +1,7 @@
 import {
   AnnouncementCard,
   DevotionCard,
+  Placeholder,
   QuickAction,
   UserProfileMenu,
   VideoItem,
@@ -13,7 +14,6 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Animated,
   Dimensions,
   Image,
@@ -114,16 +114,22 @@ const Home = () => {
               </Text>
             </View>
 
-            {loading ? (
-              <View
-                style={{
-                  height: 400,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
+            {loading || refreshing ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 20 }}
               >
-                <ActivityIndicator size="large" color={PRIMARY} />
-              </View>
+                {[1, 2, 3].map((_, i) => (
+                  <Placeholder
+                    key={i}
+                    width={width - 48}
+                    height={400}
+                    borderRadius={20}
+                    style={{ marginRight: 16 }}
+                  />
+                ))}
+              </ScrollView>
             ) : error ? (
               <View
                 style={{

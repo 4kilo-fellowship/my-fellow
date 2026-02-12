@@ -9,10 +9,6 @@ interface PlaceholderProps {
   style?: any;
 }
 
-/**
- * Static, minimalistic placeholder — no animation, no shimmer.
- * Used while data is loading. Clean, modern, lightweight.
- */
 export const Placeholder = memo(
   ({ width, height, borderRadius, style }: PlaceholderProps) => {
     const { theme } = useTheme();
