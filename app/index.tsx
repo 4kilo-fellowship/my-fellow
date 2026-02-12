@@ -3,11 +3,10 @@ import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
 import Animated, {
   Easing,
-  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
@@ -20,7 +19,7 @@ const LOGO_SIZE = 500;
 export default function AppSplashScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
-  const [statusBarDelay, setStatusBarDelay] = useState(false);
+
   const progress = useSharedValue(0);
 
   const originX = width + 50;
@@ -45,15 +44,6 @@ export default function AppSplashScreen() {
       ),
     );
   }, []);
-
-  useAnimatedReaction(
-    () => progress.value,
-    (current, prev) => {
-      if (current > 0.6 && (!prev || prev <= 0.6)) {
-        scheduleOnRN(setStatusBarDelay, true);
-      }
-    },
-  );
 
   const bubbleStyle = useAnimatedStyle(() => {
     const r = progress.value * finalRadius;
@@ -80,11 +70,7 @@ export default function AppSplashScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar
-        style={statusBarDelay ? "dark" : "light"}
-        backgroundColor="transparent"
-        translucent
-      />
+      <StatusBar style="light" backgroundColor="transparent" translucent />
 
       <View style={[StyleSheet.absoluteFill, styles.primaryLayer]}>
         <View
