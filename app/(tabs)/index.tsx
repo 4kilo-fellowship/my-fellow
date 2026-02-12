@@ -40,6 +40,8 @@ const Home = () => {
   const router = useRouter();
 
   const [events, setEvents] = useState<EventSummary[]>([]);
+  const [devotions, setDevotions] = useState<any[]>([]);
+  const [videos, setVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -48,6 +50,8 @@ const Home = () => {
     try {
       const data = await eventsService.fetchEvents();
       setEvents(data);
+      setDevotions(DEVOTIONS);
+      setVideos(VIDEOS);
       setError(null);
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
@@ -304,15 +308,33 @@ const Home = () => {
               </TouchableOpacity>
             </View>
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 20 }}
-            >
-              {DEVOTIONS.map((d, index) => (
-                <DevotionCard key={d.id} item={d as any} isDark={isDark} />
-              ))}
-            </ScrollView>
+            {(loading || refreshing) && devotions.length === 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 20 }}
+              >
+                {[1, 2, 3].map((_, i) => (
+                  <Placeholder
+                    key={i}
+                    width={180}
+                    height={220}
+                    borderRadius={16}
+                    style={{ marginRight: 16 }}
+                  />
+                ))}
+              </ScrollView>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 20 }}
+              >
+                {devotions.map((d, index) => (
+                  <DevotionCard key={d.id} item={d as any} isDark={isDark} />
+                ))}
+              </ScrollView>
+            )}
           </View>
 
           {/* Latest Sermons */}
@@ -324,9 +346,23 @@ const Home = () => {
             >
               Latest Videos
             </Text>
-            {VIDEOS.map((v) => (
-              <VideoItem key={v.id} item={v} isDark={isDark} />
-            ))}
+            {(loading || refreshing) && videos.length === 0 ? (
+              <View>
+                {[1, 2, 3].map((_, i) => (
+                  <Placeholder
+                    key={i}
+                    width={width - 40}
+                    height={100}
+                    borderRadius={12}
+                    style={{ marginBottom: 16 }}
+                  />
+                ))}
+              </View>
+            ) : (
+              videos.map((v) => (
+                <VideoItem key={v.id} item={v} isDark={isDark} />
+              ))
+            )}
           </View>
         </ScrollView>
       </View>
