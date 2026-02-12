@@ -1,7 +1,7 @@
 import { PRIMARY } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 
 import { useAuth } from "@/context/AuthContext";
 import { useAlerts } from "@/hooks/useAlerts";
@@ -11,7 +11,6 @@ import { Image as ExpoImage } from "expo-image";
 import { useRouter } from "expo-router";
 import {
   Alert,
-  Animated,
   Dimensions,
   StyleSheet,
   Text,
@@ -129,29 +128,11 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     "";
   const ctaText = (item as any).cta || (item as any).buttonText || "Register";
 
-  const [loading, setLoading] = useState(true);
-  const shimmerAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.timing(shimmerAnim, {
-        toValue: 1,
-        duration: 1200,
-        useNativeDriver: true,
-      }),
-    ).start();
-  }, [shimmerAnim]);
-
-  const translateX = shimmerAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-width, width],
-  });
-
   return (
     <TouchableOpacity
       activeOpacity={0.92}
       onPress={onPress}
-      style={styles.card}
+      style={[styles.card, { backgroundColor: isDark ? "#2a2a2b" : "#f0f0f0" }]}
     >
       <ExpoImage
         source={
@@ -161,34 +142,9 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         }
         style={StyleSheet.absoluteFill}
         contentFit="cover"
-        transition={300}
-        onLoadStart={() => setLoading(true)}
-        onLoad={() => setLoading(false)}
-        onError={() => setLoading(false)}
+        transition={200}
         cachePolicy="memory-disk"
       />
-
-      {loading && (
-        <View
-          style={[styles.skeleton, StyleSheet.absoluteFill]}
-          pointerEvents="none"
-        >
-          <Animated.View
-            style={[styles.shimmer, { transform: [{ translateX }] }]}
-          >
-            <LinearGradient
-              colors={[
-                "rgba(255,255,255,0)",
-                "rgba(255,255,255,0.4)",
-                "rgba(255,255,255,0)",
-              ]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={{ flex: 1 }}
-            />
-          </Animated.View>
-        </View>
-      )}
 
       <LinearGradient
         colors={[
@@ -286,7 +242,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     width: width - 48,
     height: 400,
-    backgroundColor: "#1a1a1a",
     shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 10,
@@ -348,21 +303,6 @@ const styles = StyleSheet.create({
     color: "#0f172a",
     fontWeight: "600",
     marginRight: 6,
-  },
-  skeleton: {
-    backgroundColor: "#1a1a1a",
-    zIndex: -1,
-    opacity: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  shimmer: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    left: 0,
-    width: width * 2,
-    opacity: 0.6,
   },
 });
 
