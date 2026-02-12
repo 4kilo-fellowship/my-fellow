@@ -11,3 +11,13 @@ export type EventDetail = EventSummary & {
   endDate?: string;
   metadata?: Record<string, any>;
 };
+
+export type EventRegistrationData = {
+  fullName: string;
+  phoneNumber: string;
+  team?: string;
+  department: string;
+  yearOfStudy: string | number;
+  telegramUserName?: string;
+  eventTitle: string;
+};

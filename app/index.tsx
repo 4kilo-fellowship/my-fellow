@@ -28,31 +28,43 @@ export default function AppSplashScreen() {
   const logoTargetLeft = (width - LOGO_SIZE) / 2;
   const logoTargetTop = (height - LOGO_SIZE) / 2;
 
-  useEffect(() => {
-    SplashScreen.hideAsync().catch(() => {});
+  const [imagesLoaded, setImagesLoaded] = React.useState(false);
 
-    progress.value = withDelay(
-      2000,
-      withTiming(
-        1,
-        { duration: 1200, easing: Easing.inOut(Easing.exp) },
-        (finished) => {
-          if (finished) {
-            scheduleOnRN(router.replace, "/(tabs)");
-          }
-        },
-      ),
-    );
-  }, []);
+  useEffect(() => {
+    // Fallback: if images take too long, hide splash anyway
+    const timer = setTimeout(() => {
+      if (!imagesLoaded) setImagesLoaded(true);
+    }, 2000);
+
+    if (imagesLoaded) {
+      SplashScreen.hideAsync().catch(() => {});
+
+      progress.value = withDelay(
+        500, // Reduced delay for faster transition once ready
+        withTiming(
+          1,
+          { duration: 1000, easing: Easing.inOut(Easing.exp) },
+          (finished) => {
+            if (finished) {
+              scheduleOnRN(router.replace, "/(tabs)");
+            }
+          },
+        ),
+      );
+    }
+    return () => clearTimeout(timer);
+  }, [imagesLoaded]);
 
   const bubbleStyle = useAnimatedStyle(() => {
     const r = progress.value * finalRadius;
+    const opacity = progress.value > 0 ? 1 : 0;
     return {
       width: r * 2,
       height: r * 2,
       borderRadius: r,
       left: originX - r,
       top: originY - r,
+      opacity, // Prevent showing white bubble before animation starts
     };
   });
 
@@ -88,6 +100,7 @@ export default function AppSplashScreen() {
             contentFit="contain"
             cachePolicy="memory"
             transition={0}
+            onLoad={() => setImagesLoaded(true)}
           />
         </View>
       </View>
@@ -100,6 +113,9 @@ export default function AppSplashScreen() {
             contentFit="contain"
             cachePolicy="memory"
             transition={0}
+            onLoad={() => {
+              // Both logos should ideally be loaded
+            }}
           />
         </Animated.View>
       </Animated.View>

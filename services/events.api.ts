@@ -1,5 +1,8 @@
-// src/services/events.api.ts
-import { EventDetail, EventSummary } from "@/types/events.types";
+import {
+  EventDetail,
+  EventRegistrationData,
+  EventSummary,
+} from "@/types/events.types";
 import api from "./api";
 
 function unwrap<T>(res: any): T {
@@ -33,15 +36,7 @@ export const fetchEventByIdApi = async (id: string): Promise<EventDetail> => {
   return payload as EventDetail;
 };
 
-export const registerForEventApi = async (data: {
-  fullName: string;
-  phoneNumber: string;
-  team?: string;
-  department: string;
-  yearOfStudy: string | number;
-  telegramUserName?: string;
-  eventTitle: string;
-}) => {
+export const registerForEventApi = async (data: EventRegistrationData) => {
   const res = await api.post("/events/register", data);
   return res.data;
 };
