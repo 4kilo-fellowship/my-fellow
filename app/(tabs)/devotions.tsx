@@ -1,3 +1,5 @@
+import { Placeholder } from "@/components";
+import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
@@ -5,6 +7,7 @@ import React, { useState } from "react";
 import {
   FlatList,
   Image,
+  RefreshControl,
   ScrollView,
   Text,
   ToastAndroid,
@@ -112,8 +115,31 @@ const Devotions = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [selectedCat, setSelectedCat] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [devotions, setDevotions] = useState<Devotion[]>([]);
 
-  const filteredDevotions = DEVOTIONS.filter(
+  const fetchDevotions = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+
+    // Simulate API delay
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setDevotions(DEVOTIONS);
+
+    setLoading(false);
+    setRefreshing(false);
+  };
+
+  React.useEffect(() => {
+    fetchDevotions();
+  }, []);
+
+  const onRefresh = () => {
+    fetchDevotions(true);
+  };
+
+  const filteredDevotions = devotions.filter(
     (item) => selectedCat === "all" || item.type === selectedCat,
   );
 
@@ -250,26 +276,47 @@ const Devotions = () => {
           </ScrollView>
         </View>
 
-        {/* List */}
-        <FlatList
-          data={filteredDevotions}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <DevotionCard item={item} />}
-          contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View className="items-center justify-center mt-20">
-              <Ionicons
-                name="document-text-outline"
-                size={60}
-                color="#cbd5e1"
+        {loading && devotions.length === 0 ? (
+          <View style={{ padding: 20 }}>
+            {[1, 2, 3].map((_, i) => (
+              <Placeholder
+                key={i}
+                width="100%"
+                height={280}
+                borderRadius={24}
+                style={{ marginBottom: 20 }}
               />
-              <Text className="text-zinc-400 mt-4">
-                No devotions found in this category
-              </Text>
-            </View>
-          }
-        />
+            ))}
+          </View>
+        ) : (
+          <FlatList
+            data={filteredDevotions}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <DevotionCard item={item} />}
+            contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={PRIMARY}
+                colors={[PRIMARY]}
+              />
+            }
+            ListEmptyComponent={
+              <View className="items-center justify-center mt-20">
+                <Ionicons
+                  name="document-text-outline"
+                  size={60}
+                  color="#cbd5e1"
+                />
+                <Text className="text-zinc-400 mt-4">
+                  No devotions found in this category
+                </Text>
+              </View>
+            }
+          />
+        )}
       </View>
     </View>
   );
