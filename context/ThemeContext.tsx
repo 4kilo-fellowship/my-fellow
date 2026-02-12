@@ -37,7 +37,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
           setColorScheme("light");
         }
       } catch (error) {
-        console.error("Error loading theme:", error);
+        console.warn("Failed to load theme", error);
       } finally {
         setIsThemeLoaded(true);
       }
@@ -59,9 +59,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       const newTheme = prevTheme === "light" ? "dark" : "light";
       setColorScheme(newTheme);
 
-      AsyncStorage.setItem("theme", newTheme).catch((e) =>
-        console.error("Error saving theme:", e),
-      );
+      AsyncStorage.setItem("theme", newTheme).catch(() => {});
 
       return newTheme;
     });
