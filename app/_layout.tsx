@@ -1,6 +1,6 @@
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
-import { Ionicons, Octicons } from "@expo/vector-icons";
+import { FontAwesome5, Ionicons, Octicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -14,6 +14,7 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     ...Ionicons.font,
     ...Octicons.font,
+    ...FontAwesome5.font,
   });
 
   useEffect(() => {
