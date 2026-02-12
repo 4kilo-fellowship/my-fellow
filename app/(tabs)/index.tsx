@@ -114,7 +114,7 @@ const Home = () => {
               </Text>
             </View>
 
-            {loading || refreshing ? (
+            {(loading || refreshing) && events.length === 0 ? (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
