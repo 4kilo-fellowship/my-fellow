@@ -8,7 +8,8 @@ import {
 } from "@/components";
 import { DEVOTIONS, PRIMARY, QUICK_ACTIONS, VIDEOS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
-import { useEventsStore } from "@/stores/events.store";
+import { eventsService } from "@/services/eventsService";
+import { EventSummary } from "@/types/events.types";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -38,32 +39,31 @@ const Home = () => {
 
   const router = useRouter();
 
-  const { events, fetchEvents, initialize } = useEventsStore((s: any) => ({
-    events: s.events,
-    fetchEvents: s.fetchEvents,
-    initialize: s.initialize,
-  }));
-  const { loading, error } = useEventsStore((s: any) => ({
-    loading: s.loading,
-    error: s.error,
-  }));
+  const [events, setEvents] = useState<EventSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const onRefresh = async () => {
-    setRefreshing(true);
+  const fetchEvents = async () => {
     try {
-      await fetchEvents();
+      const data = await eventsService.fetchEvents();
+      setEvents(data);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || "Something went wrong.");
     } finally {
-      setRefreshing(false);
+      setLoading(false);
     }
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchEvents();
+    setRefreshing(false);
+  };
+
   useEffect(() => {
-    const init = async () => {
-      await initialize();
-      fetchEvents();
-    };
-    init();
+    fetchEvents();
   }, []);
 
   return (

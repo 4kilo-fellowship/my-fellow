@@ -3,8 +3,10 @@ import { API_URL } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useAlerts } from "@/hooks/useAlerts";
+import { fetchEventByIdApi } from "@/services/events.api";
 import { useEventsStore } from "@/stores/events.store";
 import { useUserStore } from "@/stores/user.store";
+import { EventDetail } from "@/types/events.types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image as ExpoImage } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -14,7 +16,6 @@ import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
-  InteractionManager,
   Linking,
   ScrollView,
   Text,
@@ -30,20 +31,13 @@ export default function EventDetails() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const {
-    selectedEvent,
-    fetchEventById,
-    loadingDetail,
-    clearSelected,
-    error,
-    registerForEvent,
-    registering,
-  } = useEventsStore((s: any) => ({
-    selectedEvent: s.selectedEvent,
-    fetchEventById: s.fetchEventById,
-    loadingDetail: s.loadingDetail,
-    clearSelected: s.clearSelected,
-    error: s.error,
+  const [selectedEvent, setSelectedEvent] = React.useState<EventDetail | null>(
+    null,
+  );
+  const [loadingDetail, setLoadingDetail] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const { registerForEvent, registering } = useEventsStore((s: any) => ({
     registerForEvent: s.registerForEvent,
     registering: s.registering,
   }));
@@ -58,14 +52,22 @@ export default function EventDetails() {
 
   const id = (params as any).id as string | undefined;
 
+  const fetchEventById = React.useCallback(async (eventId: string) => {
+    setLoadingDetail(true);
+    setError(null);
+    try {
+      const data = await fetchEventByIdApi(eventId);
+      setSelectedEvent(data);
+    } catch (err: any) {
+      setError(err.message || "Something went wrong.");
+    } finally {
+      setLoadingDetail(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (id) fetchEventById(String(id));
-    return () => {
-      InteractionManager.runAfterInteractions(() => {
-        clearSelected();
-      });
-    };
-  }, [id, fetchEventById, clearSelected]);
+  }, [id, fetchEventById]);
 
   const ev: any = selectedEvent;
 
