@@ -25,7 +25,7 @@ function unwrap<T>(res: any): T {
 }
 
 export const fetchEventsApi = async (): Promise<EventSummary[]> => {
-  const res = await api.get("/events"); // ensure baseURL + path matches your server
+  const res = await api.get("/events");
   const payload = unwrap<any>(res.data ?? res);
   return Array.isArray(payload) ? payload : [];
 };

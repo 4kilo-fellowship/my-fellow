@@ -75,7 +75,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         description: item.subtitle || "Event notification",
         time: startTime,
         repeats: "none",
-        remindBefore: 15, // 15 minutes before
+        remindBefore: 15,
       });
       setShowSuccessModal(true);
       return;
@@ -86,7 +86,6 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
       return;
     }
 
-    // Default behavior if not matched
     onPress?.();
   };
 
@@ -120,13 +119,10 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     }
   };
 
-  const imageUri = (item as any).imageUrl || null;
-  const subtitleText =
-    item.subtitle ||
-    (item as any).shortDescription ||
-    (item as any).short_description ||
-    "";
-  const ctaText = (item as any).cta || (item as any).buttonText || "Register";
+  const imageUri = (item as any).imageUrl;
+  const subtitleText = (item as any).shortDescription;
+
+  const ctaText = (item as any).buttonText;
 
   return (
     <TouchableOpacity
