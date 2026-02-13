@@ -9,6 +9,7 @@ import {
 import { DEVOTIONS, PRIMARY, QUICK_ACTIONS, VIDEOS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { eventsService } from "@/services/eventsService";
+import { useAppStore } from "@/stores/app.store";
 import { EventSummary } from "@/types/events.types";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -30,6 +31,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const Home = () => {
   const { top } = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { hasSeenFeatures, setHasSeenFeatures } = useAppStore();
   const isDark = theme === "dark";
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -57,6 +59,9 @@ const Home = () => {
       setError(err.message || "Something went wrong.");
     } finally {
       setLoading(false);
+      if (!hasSeenFeatures) {
+        setHasSeenFeatures(true);
+      }
     }
   };
 
@@ -252,38 +257,63 @@ const Home = () => {
                 Features
               </Text>
             </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 20 }}
-            >
-              {QUICK_ACTIONS.map((action, index) => (
-                <QuickAction
-                  key={action.id}
-                  item={action as any}
-                  isDark={isDark}
-                  onPress={() => {
-                    if (action.id === "1") {
-                      router.push("/programs");
-                    } else if (action.id === "2") {
-                      router.push("/locations");
-                    } else if (action.id === "3") {
-                      router.push("/leaders");
-                    } else if (action.id === "4") {
-                      router.push("/teams");
-                    } else if (action.id === "5") {
-                      Linking.openURL("https://t.me/4kilo_fellow");
-                    } else if (action.id === "6") {
-                      Linking.openURL("https:://tiktok.com/4kilo_fellowship");
-                    } else if (action.id === "7") {
-                      router.push("/gifts");
-                    } else if (action.id === "8") {
-                      Linking.openURL("https://instagram.com/4kilo_fellowship");
-                    }
-                  }}
-                />
-              ))}
-            </ScrollView>
+            {loading && !hasSeenFeatures ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 20 }}
+              >
+                {[1, 2, 3, 4, 5].map((_, i) => (
+                  <View
+                    key={i}
+                    style={{ alignItems: "center", marginRight: 16 }}
+                  >
+                    <Placeholder width={56} height={56} borderRadius={12} />
+                    <Placeholder
+                      width={40}
+                      height={12}
+                      borderRadius={4}
+                      style={{ marginTop: 8 }}
+                    />
+                  </View>
+                ))}
+              </ScrollView>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 20 }}
+              >
+                {QUICK_ACTIONS.map((action, index) => (
+                  <QuickAction
+                    key={action.id}
+                    item={action as any}
+                    isDark={isDark}
+                    onPress={() => {
+                      if (action.id === "1") {
+                        router.push("/programs");
+                      } else if (action.id === "2") {
+                        router.push("/locations");
+                      } else if (action.id === "3") {
+                        router.push("/leaders");
+                      } else if (action.id === "4") {
+                        router.push("/teams");
+                      } else if (action.id === "5") {
+                        Linking.openURL("https://t.me/4kilo_fellow");
+                      } else if (action.id === "6") {
+                        Linking.openURL("https:://tiktok.com/4kilo_fellowship");
+                      } else if (action.id === "7") {
+                        router.push("/gifts");
+                      } else if (action.id === "8") {
+                        Linking.openURL(
+                          "https://instagram.com/4kilo_fellowship",
+                        );
+                      }
+                    }}
+                  />
+                ))}
+              </ScrollView>
+            )}
           </View>
 
           {/* Recent Devotions */}
