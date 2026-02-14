@@ -25,7 +25,7 @@ export const WEEKLY_PROGRAMS: Program[] = [
     category: "General Fellowship",
     location: "Hibret Amba",
     coordinates: { lat: 9.038952250154978, lng: 38.75831542801892 },
-    image: require("@/assets/images/programs/monday1.png"),
+    image: require("@/assets/images/programs/monday1.jpg"),
   },
   {
     id: "2",
@@ -37,7 +37,7 @@ export const WEEKLY_PROGRAMS: Program[] = [
     category: "Prayer",
     location: "Anglican Church",
     coordinates: { lat: 9.033291325771401, lng: 38.76877997143855 },
-    image: require("@/assets/images/programs/wed.png"),
+    image: require("@/assets/images/programs/wed.jpg"),
   },
 
   {
@@ -50,7 +50,7 @@ export const WEEKLY_PROGRAMS: Program[] = [
     category: "Fresh",
     location: "Anglican Church",
     coordinates: { lat: 9.033291325771401, lng: 38.76877997143855 },
-    image: require("@/assets/images/programs/fresh.png"),
+    image: require("@/assets/images/programs/fresh.jpg"),
   },
   {
     id: "4",
@@ -61,7 +61,7 @@ export const WEEKLY_PROGRAMS: Program[] = [
     category: "Ministry",
     location: "Hibret Amba",
     coordinates: { lat: 9.038952250154978, lng: 38.75831542801892 },
-    image: require("@/assets/images/programs/wer.png"),
+    image: require("@/assets/images/programs/wer.jpg"),
   },
   {
     id: "5",
@@ -83,7 +83,7 @@ export const WEEKLY_PROGRAMS: Program[] = [
     category: "Service",
     location: "6kilo church",
     coordinates: { lat: 9.040462923318069, lng: 38.759740033794586 },
-    image: require("@/assets/images/programs/image.png"),
+    image: require("@/assets/images/programs/image.jpg"),
   },
   {
     id: "7",
@@ -94,7 +94,7 @@ export const WEEKLY_PROGRAMS: Program[] = [
     category: "Outreach",
     location: "Hibret Amba",
     coordinates: { lat: 9.038952250154978, lng: 38.75831542801892 },
-    image: require("@/assets/images/programs/evan.png"),
+    image: require("@/assets/images/programs/evan.jpg"),
   },
   {
     id: "8",
@@ -117,6 +117,6 @@ export const WEEKLY_PROGRAMS: Program[] = [
     category: "Prayer",
     location: "Emmanuel church",
     coordinates: { lat: 9.03037740148045, lng: 38.77196975055801 },
-    image: require("@/assets/images/programs/image2.png"),
+    image: require("@/assets/images/programs/image2.jpg"),
   },
 ];

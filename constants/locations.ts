@@ -18,7 +18,7 @@ export const LOCATIONS: Location[] = [
     id: "1",
     name: "Hibret Amba",
     address: "Arat Kilo, Addis Ababa",
-    image: require("@/assets/images/locations/hibret.png"),
+    image: require("@/assets/images/locations/hibret.jpg"),
     coordinates: {
       latitude: 9.034,
       longitude: 38.762,
@@ -30,7 +30,7 @@ export const LOCATIONS: Location[] = [
     id: "2",
     name: "Emmanuel Church",
     address: "Arat Kilo, Addis Ababa",
-    image: require("@/assets/images/locations/image.png"),
+    image: require("@/assets/images/locations/image.jpg"),
     coordinates: {
       latitude: 9.04,
       longitude: 38.765,
@@ -41,7 +41,7 @@ export const LOCATIONS: Location[] = [
     id: "3",
     name: "Anglican",
     address: "Arat Kilo, Addis Ababa",
-    image: require("@/assets/images/programs/fresh.png"),
+    image: require("@/assets/images/programs/fresh.jpg"),
     coordinates: {
       latitude: 9.03,
       longitude: 38.75,

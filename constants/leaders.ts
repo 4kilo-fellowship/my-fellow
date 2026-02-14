@@ -22,7 +22,7 @@ export const LEADERS: Leader[] = [
     phoneNumber: "0976652663",
     telegram: "@Jesus_is_my_peace",
     isVerified: true,
-    image: require("@/assets/images/leaders/leader1.png"),
+    image: require("@/assets/images/leaders/leader1.jpg"),
     type: "Main",
   },
   {
@@ -33,7 +33,7 @@ export const LEADERS: Leader[] = [
     phoneNumber: "0976652663",
     telegram: "@kefa",
     isVerified: true,
-    image: require("@/assets/images/leaders/leader2.png"),
+    image: require("@/assets/images/leaders/leader2.jpg"),
 
     type: "Main",
   },
@@ -45,7 +45,7 @@ export const LEADERS: Leader[] = [
     phoneNumber: "0976652663",
     telegram: "@dibora",
     isVerified: false,
-    image: require("@/assets/images/leaders/leader3.png"),
+    image: require("@/assets/images/leaders/leader3.jpg"),
 
     type: "Main",
   },
@@ -79,7 +79,7 @@ export const LEADERS: Leader[] = [
     phoneNumber: "0976652663",
     telegram: "@kidist",
     isVerified: true,
-    image: require("@/assets/images/leaders/leader6.png"),
+    image: require("@/assets/images/leaders/leader6.jpg"),
     type: "Main",
   },
   {
@@ -90,7 +90,7 @@ export const LEADERS: Leader[] = [
     phoneNumber: "0976652663",
     telegram: "@waqgari",
     isVerified: true,
-    image: require("@/assets/images/leaders/image.png"),
+    image: require("@/assets/images/leaders/image.jpg"),
     type: "Main",
   },
   {
@@ -101,7 +101,7 @@ export const LEADERS: Leader[] = [
     phoneNumber: TEAM_LEADERS[0].phoneNumber,
     telegram: TEAM_LEADERS[0].telegram,
     isVerified: true,
-    image: require("@/assets/images/leaders/leader3.png"),
+    image: require("@/assets/images/leaders/leader3.jpg"),
     type: "Team",
   },
   {
@@ -123,7 +123,7 @@ export const LEADERS: Leader[] = [
     phoneNumber: TEAM_LEADERS[2].phoneNumber,
     telegram: TEAM_LEADERS[2].telegram,
     isVerified: true,
-    image: require("@/assets/images/leaders/leader1.png"),
+    image: require("@/assets/images/leaders/leader1.jpg"),
     type: "Team",
   },
   {
@@ -134,7 +134,7 @@ export const LEADERS: Leader[] = [
     phoneNumber: TEAM_LEADERS[3].phoneNumber,
     telegram: TEAM_LEADERS[3].telegram,
     isVerified: true,
-    image: require("@/assets/images/leaders/leader2.png"),
+    image: require("@/assets/images/leaders/leader2.jpg"),
     type: "Team",
   },
   {
@@ -156,7 +156,7 @@ export const LEADERS: Leader[] = [
     phoneNumber: TEAM_LEADERS[5].phoneNumber,
     telegram: TEAM_LEADERS[5].telegram,
     isVerified: true,
-    image: require("@/assets/images/leaders/image.png"),
+    image: require("@/assets/images/leaders/image.jpg"),
     type: "Team",
   },
   {
