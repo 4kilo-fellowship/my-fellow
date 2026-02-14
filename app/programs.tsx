@@ -9,6 +9,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
   Linking,
   Platform,
@@ -62,7 +63,7 @@ const ProgramCard = ({ item, isDark }: ProgramProps) => {
           style={isDark ? "light" : "dark"}
           backgroundColor="transparent"
         />
-        {/* Image Section */}
+
         <View className="h-52 w-full relative">
           <Image
             source={item.image}
@@ -81,7 +82,6 @@ const ProgramCard = ({ item, isDark }: ProgramProps) => {
             }}
           />
 
-          {/* Title on Image */}
           <View className="absolute bottom-4 left-5 right-5">
             <Text
               className="text-white text-2xl font-extrabold"
@@ -96,7 +96,6 @@ const ProgramCard = ({ item, isDark }: ProgramProps) => {
           </View>
         </View>
 
-        {/* Content Section */}
         <View className="p-5">
           <Text
             className={`text-[15px] mb-5 leading-6 ${
@@ -107,7 +106,6 @@ const ProgramCard = ({ item, isDark }: ProgramProps) => {
             {item.description}
           </Text>
 
-          {/* Info Row */}
           <View className="flex-row items-center justify-between mb-4">
             <View className="flex-row items-center bg-orange-500/10 px-4 py-2 rounded-xl">
               <Ionicons
@@ -138,12 +136,10 @@ const ProgramCard = ({ item, isDark }: ProgramProps) => {
             </View>
           </View>
 
-          {/* Divider */}
           <View
             className={`h-[1px] w-full mb-4 ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
           />
 
-          {/* Location Row */}
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() =>
@@ -202,8 +198,26 @@ export default function WeeklyPrograms() {
   const isDark = theme === "dark";
   const router = useRouter();
 
-  const FILTERS = ["All", "New", "Weekly", "Daily", "General", "Team"];
   const [selectedFilter, setSelectedFilter] = useState("All");
+
+  const [blinkAnim] = useState(new Animated.Value(0));
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(blinkAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(blinkAnim, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+  }, []);
 
   const { top } = useSafeAreaInsets();
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -243,6 +257,19 @@ export default function WeeklyPrograms() {
       .includes(selectedFilter.toLowerCase());
   });
 
+  const hasNewPrograms = programs.some((p) =>
+    p.category?.toLowerCase().includes("new"),
+  );
+
+  const getFilters = () => {
+    const baseFilters = ["All", "Weekly", "Daily", "General", "Team"];
+    return hasNewPrograms
+      ? ["All", "New", ...baseFilters.slice(1)]
+      : baseFilters;
+  };
+
+  const dynamicFilters = getFilters();
+
   return (
     <>
       <Stack.Screen
@@ -252,7 +279,6 @@ export default function WeeklyPrograms() {
       />
 
       <View className={`flex-1 ${isDark ? "bg-[#0A0A0A]" : "bg-[#f8fafc]"}`}>
-        {/* Custom Header */}
         <View
           className={`px-5 pb-4 flex-col ${isDark ? "bg-[#0A0A0A]" : "bg-[#f8fafc]"}`}
           style={{ paddingTop: top + 10 }}
@@ -289,12 +315,12 @@ export default function WeeklyPrograms() {
             className="mt-4"
             contentContainerStyle={{ paddingRight: 20 }}
           >
-            {FILTERS.map((filter) => (
+            {dynamicFilters.map((filter) => (
               <TouchableOpacity
                 key={filter}
                 activeOpacity={0.7}
                 onPress={() => setSelectedFilter(filter)}
-                className={`px-5 py-2 mr-3 rounded-full border ${
+                className={`px-5 py-2 mr-3 rounded-full border flex-row items-center ${
                   selectedFilter === filter
                     ? "bg-orange-500 border-orange-500"
                     : isDark
@@ -302,6 +328,19 @@ export default function WeeklyPrograms() {
                       : "bg-white border-gray-200"
                 }`}
               >
+                {filter === "New" && (
+                  <Animated.View
+                    style={{
+                      opacity: blinkAnim,
+                      width: 8,
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor:
+                        selectedFilter === "New" ? "white" : "#ef4444",
+                      marginRight: 6,
+                    }}
+                  />
+                )}
                 <Text
                   className={`font-semibold ${
                     selectedFilter === filter

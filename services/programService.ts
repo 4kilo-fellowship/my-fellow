@@ -8,7 +8,6 @@ export const programService = {
       return programs.map((program: any) => ({
         ...program,
         id: program.id || program._id || "unknown",
-        // Ensure image is handled correctly if it's missing or in a different format
         image: program.image || "",
       })) as Program[];
     } catch (error) {
