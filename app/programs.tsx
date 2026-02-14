@@ -12,6 +12,7 @@ import {
   FlatList,
   Linking,
   Platform,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
@@ -79,15 +80,7 @@ const ProgramCard = ({ item, isDark }: ProgramProps) => {
               height: 100,
             }}
           />
-          {/* Category Badge */}
-          <View
-            className="absolute top-4 left-4 px-4 py-2 rounded-full"
-            style={{ backgroundColor: "rgba(255,102,25,0.9)" }}
-          >
-            <Text className="text-white text-xs font-bold uppercase tracking-widest">
-              {item.category}
-            </Text>
-          </View>
+
           {/* Title on Image */}
           <View className="absolute bottom-4 left-5 right-5">
             <Text
@@ -209,6 +202,9 @@ export default function WeeklyPrograms() {
   const isDark = theme === "dark";
   const router = useRouter();
 
+  const FILTERS = ["All", "New", "Weekly", "Daily", "General", "Team"];
+  const [selectedFilter, setSelectedFilter] = useState("All");
+
   const { top } = useSafeAreaInsets();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
@@ -217,7 +213,12 @@ export default function WeeklyPrograms() {
   const loadPrograms = async () => {
     try {
       const data = await programService.fetchPrograms();
-      setPrograms(data);
+      const sortedData = data.sort((a, b) => {
+        if (a.title === "Monday Service") return -1;
+        if (b.title === "Monday Service") return 1;
+        return 0;
+      });
+      setPrograms(sortedData);
     } catch (error) {
       console.error("Failed to load programs", error);
     } finally {
@@ -235,6 +236,13 @@ export default function WeeklyPrograms() {
     loadPrograms();
   };
 
+  const filteredPrograms = programs.filter((program) => {
+    if (selectedFilter === "All") return true;
+    return program.category
+      ?.toLowerCase()
+      .includes(selectedFilter.toLowerCase());
+  });
+
   return (
     <>
       <Stack.Screen
@@ -246,26 +254,68 @@ export default function WeeklyPrograms() {
       <View className={`flex-1 ${isDark ? "bg-[#0A0A0A]" : "bg-[#f8fafc]"}`}>
         {/* Custom Header */}
         <View
-          className={`px-5 pb-4 flex-row items-center ${isDark ? "bg-[#0A0A0A]" : "bg-[#f8fafc]"}`}
+          className={`px-5 pb-4 flex-col ${isDark ? "bg-[#0A0A0A]" : "bg-[#f8fafc]"}`}
           style={{ paddingTop: top + 10 }}
         >
-          <TouchableOpacity
-            onPress={() => router.back()}
-            activeOpacity={0.8}
-            className="w-11 h-11 rounded-full items-center justify-center mr-4"
-            style={{ backgroundColor: isDark ? "#1C1C1E" : "#e2e8f0" }}
-          >
-            <Ionicons
-              name="arrow-back"
-              size={22}
-              color={isDark ? "white" : "#0f172a"}
-            />
-          </TouchableOpacity>
+          <View className="flex-row items-center mb-6">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              activeOpacity={0.8}
+              className="w-11 h-11 rounded-full items-center justify-center mr-4"
+              style={{ backgroundColor: isDark ? "#1C1C1E" : "#e2e8f0" }}
+            >
+              <Ionicons
+                name="arrow-back"
+                size={22}
+                color={isDark ? "white" : "#0f172a"}
+              />
+            </TouchableOpacity>
+            <Text
+              className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+            >
+              Programs
+            </Text>
+          </View>
+
           <Text
-            className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+            className={`text-base leading-6 pr-4 ${isDark ? "text-gray-400" : "text-gray-500"}`}
           >
-            Programs
+            Discover our weekly gatherings. Tap the location to get directions.
           </Text>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="mt-4"
+            contentContainerStyle={{ paddingRight: 20 }}
+          >
+            {FILTERS.map((filter) => (
+              <TouchableOpacity
+                key={filter}
+                activeOpacity={0.7}
+                onPress={() => setSelectedFilter(filter)}
+                className={`px-5 py-2 mr-3 rounded-full border ${
+                  selectedFilter === filter
+                    ? "bg-orange-500 border-orange-500"
+                    : isDark
+                      ? "bg-[#1C1C1E] border-gray-800"
+                      : "bg-white border-gray-200"
+                }`}
+              >
+                <Text
+                  className={`font-semibold ${
+                    selectedFilter === filter
+                      ? "text-white"
+                      : isDark
+                        ? "text-gray-400"
+                        : "text-gray-600"
+                  }`}
+                >
+                  {filter}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
 
         {loading ? (
@@ -274,7 +324,7 @@ export default function WeeklyPrograms() {
           </View>
         ) : (
           <FlatList
-            data={programs}
+            data={filteredPrograms}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <ProgramCard item={item} isDark={isDark} />
@@ -282,22 +332,11 @@ export default function WeeklyPrograms() {
             contentContainerStyle={{
               paddingHorizontal: 20,
               paddingBottom: 40,
+              paddingTop: 20,
             }}
             refreshing={refreshing}
             onRefresh={onRefresh}
             showsVerticalScrollIndicator={false}
-            ListHeaderComponent={
-              <View className="mb-6 mt-2">
-                <Text
-                  className={`text-base leading-6 ${
-                    isDark ? "text-gray-400" : "text-gray-500"
-                  }`}
-                >
-                  Discover our weekly gatherings. Tap the location to get
-                  directions.
-                </Text>
-              </View>
-            }
           />
         )}
       </View>
