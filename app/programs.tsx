@@ -2,7 +2,7 @@ import { InfoModal } from "@/components";
 import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { useAlerts } from "@/hooks/useAlerts";
-import { programService } from "@/services/programService";
+import { useProgramsStore } from "@/stores/programs.store";
 import { Program } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -245,38 +245,18 @@ export default function WeeklyPrograms() {
   }, []);
 
   const { top } = useSafeAreaInsets();
-  const [programs, setPrograms] = useState<Program[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { programs, loading, refreshing, loadPrograms } = useProgramsStore();
 
   const { addAlert, deleteAlert, alerts } = useAlerts();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
-
-  const loadPrograms = async () => {
-    try {
-      const data = await programService.fetchPrograms();
-      const sortedData = data.sort((a, b) => {
-        if (a.title === "Monday Service") return -1;
-        if (b.title === "Monday Service") return 1;
-        return 0;
-      });
-      setPrograms(sortedData);
-    } catch (error) {
-      console.error("Failed to load programs", error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
 
   useEffect(() => {
     loadPrograms();
   }, []);
 
   const onRefresh = () => {
-    setRefreshing(true);
-    loadPrograms();
+    loadPrograms(true);
   };
 
   const parseProgramDate = (dayStr: string, timeStr: string): Date => {
