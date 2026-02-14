@@ -1,13 +1,14 @@
-import { WEEKLY_PROGRAMS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
+import { programService } from "@/services/programService";
 import { Program } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Linking,
   Platform,
@@ -207,7 +208,32 @@ export default function WeeklyPrograms() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const router = useRouter();
+
   const { top } = useSafeAreaInsets();
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadPrograms = async () => {
+    try {
+      const data = await programService.fetchPrograms();
+      setPrograms(data);
+    } catch (error) {
+      console.error("Failed to load programs", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPrograms();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadPrograms();
+  };
 
   return (
     <>
@@ -238,32 +264,42 @@ export default function WeeklyPrograms() {
           <Text
             className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
           >
-            Weekly Programs
+            Programs
           </Text>
         </View>
 
-        <FlatList
-          data={WEEKLY_PROGRAMS}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <ProgramCard item={item} isDark={isDark} />}
-          contentContainerStyle={{
-            paddingHorizontal: 20,
-            paddingBottom: 40,
-          }}
-          showsVerticalScrollIndicator={false}
-          ListHeaderComponent={
-            <View className="mb-6 mt-2">
-              <Text
-                className={`text-base leading-6 ${
-                  isDark ? "text-gray-400" : "text-gray-500"
-                }`}
-              >
-                Discover our weekly gatherings. Tap the location to get
-                directions.
-              </Text>
-            </View>
-          }
-        />
+        {loading ? (
+          <View className="flex-1 justify-center items-center">
+            <ActivityIndicator size="large" color={isDark ? "#fff" : "#000"} />
+          </View>
+        ) : (
+          <FlatList
+            data={programs}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <ProgramCard item={item} isDark={isDark} />
+            )}
+            contentContainerStyle={{
+              paddingHorizontal: 20,
+              paddingBottom: 40,
+            }}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            showsVerticalScrollIndicator={false}
+            ListHeaderComponent={
+              <View className="mb-6 mt-2">
+                <Text
+                  className={`text-base leading-6 ${
+                    isDark ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
+                  Discover our weekly gatherings. Tap the location to get
+                  directions.
+                </Text>
+              </View>
+            }
+          />
+        )}
       </View>
     </>
   );

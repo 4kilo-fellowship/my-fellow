@@ -12,7 +12,7 @@ export type Program = {
     lat: number;
     lng: number;
   };
-  image: ImageSourcePropType;
+  image: string | ImageSourcePropType;
 };
 
 export const WEEKLY_PROGRAMS: Program[] = [
