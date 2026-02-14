@@ -1,4 +1,7 @@
+import { InfoModal } from "@/components";
+import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
+import { useAlerts } from "@/hooks/useAlerts";
 import { programService } from "@/services/programService";
 import { Program } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,6 +16,7 @@ import {
   FlatList,
   Linking,
   Platform,
+  RefreshControl,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -23,6 +27,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 interface ProgramProps {
   item: Program;
   isDark: boolean;
+  isAlertActive: (title: string) => boolean;
+  onToggleAlert: (item: Program) => void;
 }
 const openGoogleMaps = (lat: number, lng: number, label: string) => {
   const scheme = Platform.select({
@@ -44,7 +50,14 @@ const openGoogleMaps = (lat: number, lng: number, label: string) => {
   }
 };
 
-const ProgramCard = ({ item, isDark }: ProgramProps) => {
+const ProgramCard = ({
+  item,
+  isDark,
+  isAlertActive,
+  onToggleAlert,
+}: ProgramProps) => {
+  const isAlertSet = isAlertActive(item.title);
+
   return (
     <View className="flex-1">
       <View
@@ -81,6 +94,18 @@ const ProgramCard = ({ item, isDark }: ProgramProps) => {
               height: 100,
             }}
           />
+
+          <TouchableOpacity
+            onPress={() => onToggleAlert(item)}
+            activeOpacity={0.7}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full items-center justify-center bg-black/40 backdrop-blur-sm"
+          >
+            <Ionicons
+              name={isAlertSet ? "notifications" : "notifications-outline"}
+              size={20}
+              color={isAlertSet ? "#f97316" : "white"}
+            />
+          </TouchableOpacity>
 
           <View className="absolute bottom-4 left-5 right-5">
             <Text
@@ -224,6 +249,10 @@ export default function WeeklyPrograms() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const { addAlert, deleteAlert, alerts } = useAlerts();
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+
   const loadPrograms = async () => {
     try {
       const data = await programService.fetchPrograms();
@@ -248,6 +277,68 @@ export default function WeeklyPrograms() {
   const onRefresh = () => {
     setRefreshing(true);
     loadPrograms();
+  };
+
+  const parseProgramDate = (dayStr: string, timeStr: string): Date => {
+    const now = new Date();
+    const days = [
+      "sunday",
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+    ];
+    const targetDayIndex = days.indexOf(dayStr.toLowerCase().trim());
+
+    if (targetDayIndex === -1) return now;
+
+    const [timePart, meridiem] = timeStr.split(" - ")[0].trim().split(" ");
+    let [hours, minutes] = timePart.split(":").map(Number);
+
+    if (meridiem?.toLowerCase() === "pm" && hours < 12) hours += 12;
+    if (meridiem?.toLowerCase() === "am" && hours === 12) hours = 0;
+
+    const result = new Date(now);
+    result.setHours(hours, minutes || 0, 0, 0);
+
+    const currentDay = now.getDay();
+    let daysToAdd = targetDayIndex - currentDay;
+    if (daysToAdd < 0) daysToAdd += 7;
+
+    result.setDate(now.getDate() + daysToAdd);
+
+    if (result < now) {
+      result.setDate(result.getDate() + 7);
+    }
+
+    return result;
+  };
+
+  const handleToggleAlert = async (program: Program) => {
+    const existingAlert = alerts.find((a) => a.title === program.title);
+
+    if (existingAlert) {
+      await deleteAlert(existingAlert.id);
+    } else {
+      const date = parseProgramDate(program.day, program.time);
+      await addAlert({
+        title: program.title,
+        description: `Reminder for ${program.title}`,
+        time: date.toISOString(),
+        repeats: "weekly",
+        remindBefore: 15,
+      });
+      setAlertMessage(
+        `We'll notify you 15 minutes before the ${program.title} starts.`,
+      );
+      setShowSuccessModal(true);
+    }
+  };
+
+  const isAlertActive = (title: string) => {
+    return alerts.some((a) => a.title === title);
   };
 
   const filteredPrograms = programs.filter((program) => {
@@ -359,26 +450,46 @@ export default function WeeklyPrograms() {
 
         {loading ? (
           <View className="flex-1 justify-center items-center">
-            <ActivityIndicator size="large" color={isDark ? "#fff" : "#000"} />
+            <ActivityIndicator size="large" color={PRIMARY} />
           </View>
         ) : (
           <FlatList
             data={filteredPrograms}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <ProgramCard item={item} isDark={isDark} />
+              <ProgramCard
+                item={item}
+                isDark={isDark}
+                isAlertActive={isAlertActive}
+                onToggleAlert={handleToggleAlert}
+              />
             )}
             contentContainerStyle={{
               paddingHorizontal: 20,
               paddingBottom: 40,
               paddingTop: 20,
             }}
-            refreshing={refreshing}
-            onRefresh={onRefresh}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={PRIMARY}
+                colors={[PRIMARY]}
+              />
+            }
             showsVerticalScrollIndicator={false}
           />
         )}
       </View>
+
+      <InfoModal
+        visible={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="Alert Set"
+        message={alertMessage}
+        type="success"
+        isDark={isDark}
+      />
     </>
   );
 }
