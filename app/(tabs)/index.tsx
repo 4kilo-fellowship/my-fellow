@@ -123,7 +123,8 @@ const Home = () => {
               </Text>
             </View>
 
-            {(loading || refreshing) && events.length === 0 ? (
+            {!hasSeenFeatures ||
+            ((loading || refreshing) && events.length === 0) ? (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -257,7 +258,7 @@ const Home = () => {
                 Features
               </Text>
             </View>
-            {loading && !hasSeenFeatures ? (
+            {!hasSeenFeatures || (loading && events.length === 0) ? (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -326,19 +327,24 @@ const Home = () => {
               >
                 Recent Devotions
               </Text>
-              <TouchableOpacity
-                onPress={() => router.push("/devotions")}
-                activeOpacity={0.6}
-                className="flex-row items-center"
-              >
-                <Text className="text-primary font-semibold mr-2">
-                  View All
-                </Text>
-                <Ionicons name="arrow-forward" size={16} color={PRIMARY} />
-              </TouchableOpacity>
+              {!hasSeenFeatures ? (
+                <Placeholder width={60} height={20} borderRadius={4} />
+              ) : (
+                <TouchableOpacity
+                  onPress={() => router.push("/devotions")}
+                  activeOpacity={0.6}
+                  className="flex-row items-center"
+                >
+                  <Text className="text-primary font-semibold mr-2">
+                    View All
+                  </Text>
+                  <Ionicons name="arrow-forward" size={16} color={PRIMARY} />
+                </TouchableOpacity>
+              )}
             </View>
 
-            {(loading || refreshing) && devotions.length === 0 ? (
+            {!hasSeenFeatures ||
+            ((loading || refreshing) && devotions.length === 0) ? (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -376,7 +382,8 @@ const Home = () => {
             >
               Latest Videos
             </Text>
-            {(loading || refreshing) && videos.length === 0 ? (
+            {!hasSeenFeatures ||
+            ((loading || refreshing) && videos.length === 0) ? (
               <View>
                 {[1, 2, 3].map((_, i) => (
                   <Placeholder

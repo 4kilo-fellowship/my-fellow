@@ -1,15 +1,17 @@
-import { LOCATIONS } from "@/constants";
+import { Placeholder } from "@/components";
+import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
+import { locationService } from "@/services/locationService";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
-
+import React, { useEffect, useState } from "react";
 import {
   FlatList,
   Linking,
   Platform,
+  RefreshControl,
   Text,
   TouchableOpacity,
   View,
@@ -24,17 +26,30 @@ interface Props {
 const LocationCard = ({ item, isDark }: Props) => {
   const handleOpenMaps = () => {
     const scheme = Platform.select({ ios: "maps:", android: "geo:" });
-    const latLng = `${item.coordinates.latitude},${item.coordinates.longitude}`;
+    const latLng =
+      item.coordinates &&
+      item.coordinates.latitude &&
+      item.coordinates.longitude
+        ? `${item.coordinates.latitude},${item.coordinates.longitude}`
+        : null;
     const label = item.name;
-    const url = Platform.select({
-      ios: `${scheme}?q=${label}&ll=${latLng}`,
-      android: `${scheme}0,0?q=${latLng}(${label})`,
-    });
+
+    let url = item.googleMapsUrl;
+
+    if (!url && latLng) {
+      url = Platform.select({
+        ios: `${scheme}?q=${label}&ll=${latLng}`,
+        android: `${scheme}0,0?q=${latLng}(${label})`,
+      });
+    }
 
     if (url) {
       Linking.openURL(url);
     }
   };
+
+  const imageSource =
+    typeof item.image === "string" ? { uri: item.image } : item.image;
 
   return (
     <View
@@ -50,9 +65,10 @@ const LocationCard = ({ item, isDark }: Props) => {
       }}
     >
       <Image
-        source={item.image}
+        source={imageSource}
         style={{ width: "100%", height: 160 }}
         contentFit="cover"
+        transition={300}
       />
       <View className="p-5">
         <Text
@@ -80,21 +96,23 @@ const LocationCard = ({ item, isDark }: Props) => {
 
         {/* Access Times */}
         <View className="mb-5">
-          {item.serviceTimes.map((time: string, index: number) => (
-            <View key={index} className="flex-row items-center mt-1">
-              <Ionicons
-                name="time-outline"
-                size={14}
-                color="#f97316"
-                style={{ marginRight: 6 }}
-              />
-              <Text
-                className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}
-              >
-                {time}
-              </Text>
-            </View>
-          ))}
+          {item.serviceTimes &&
+            Array.isArray(item.serviceTimes) &&
+            item.serviceTimes.map((time: string, index: number) => (
+              <View key={index} className="flex-row items-center mt-1">
+                <Ionicons
+                  name="time-outline"
+                  size={14}
+                  color="#f97316"
+                  style={{ marginRight: 6 }}
+                />
+                <Text
+                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                >
+                  {time}
+                </Text>
+              </View>
+            ))}
         </View>
 
         <TouchableOpacity
@@ -120,6 +138,33 @@ export default function LocationsScreen() {
   const isDark = theme === "dark";
   const router = useRouter();
   const { top } = useSafeAreaInsets();
+
+  const [locations, setLocations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchLocations = async () => {
+    try {
+      setError(null);
+      const data = await locationService.fetchLocations();
+      setLocations(data);
+    } catch (err: any) {
+      setError(err.message || "Failed to fetch locations");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLocations();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchLocations();
+  };
 
   return (
     <>
@@ -162,28 +207,97 @@ export default function LocationsScreen() {
           </Text>
         </View>
 
-        <FlatList
-          data={LOCATIONS}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <LocationCard item={item} isDark={isDark} />
-          )}
-          contentContainerStyle={{
-            padding: 20,
-            paddingBottom: 40,
-          }}
-          showsVerticalScrollIndicator={false}
-          ListHeaderComponent={
+        {loading && !refreshing ? (
+          <View className="px-5 pt-6">
+            <Placeholder
+              height={20}
+              width="100%"
+              borderRadius={4}
+              style={{ marginBottom: 20 }}
+            />
+            {[1, 2, 3].map((_, i) => (
+              <View
+                key={i}
+                className="mb-6 rounded-[24px] overflow-hidden bg-gray-100 dark:bg-[#1C1C1E] h-[350px]"
+              >
+                <Placeholder height={160} width="100%" borderRadius={0} />
+                <View className="p-5">
+                  <Placeholder
+                    height={24}
+                    width="60%"
+                    borderRadius={4}
+                    style={{ marginBottom: 12 }}
+                  />
+                  <Placeholder
+                    height={18}
+                    width="80%"
+                    borderRadius={4}
+                    style={{ marginBottom: 16 }}
+                  />
+                  <Placeholder
+                    height={14}
+                    width="40%"
+                    borderRadius={4}
+                    style={{ marginBottom: 8 }}
+                  />
+                  <Placeholder
+                    height={14}
+                    width="50%"
+                    borderRadius={4}
+                    style={{ marginBottom: 24 }}
+                  />
+                  <Placeholder height={50} width="100%" borderRadius={12} />
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : error ? (
+          <View className="flex-1 items-center justify-center p-5">
+            <Ionicons name="alert-circle-outline" size={64} color={PRIMARY} />
             <Text
-              className={`text-base mb-6 ${
-                isDark ? "text-gray-400" : "text-gray-600"
-              }`}
+              className={`text-lg font-bold mt-4 text-center ${isDark ? "text-white" : "text-gray-900"}`}
             >
-              Find us at these locations for worship and fellowship. We can't
-              wait to see you!
+              {error}
             </Text>
-          }
-        />
+            <TouchableOpacity
+              onPress={fetchLocations}
+              className="mt-6 bg-primary px-8 py-3 rounded-full"
+            >
+              <Text className="text-white font-bold">Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <FlatList
+            data={locations}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <LocationCard item={item} isDark={isDark} />
+            )}
+            contentContainerStyle={{
+              padding: 20,
+              paddingBottom: 40,
+            }}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={PRIMARY}
+                colors={[PRIMARY]}
+              />
+            }
+            showsVerticalScrollIndicator={false}
+            ListHeaderComponent={
+              <Text
+                className={`text-base mb-6 ${
+                  isDark ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                Find us at these locations for worship and fellowship. We can't
+                wait to see you!
+              </Text>
+            }
+          />
+        )}
       </View>
     </>
   );

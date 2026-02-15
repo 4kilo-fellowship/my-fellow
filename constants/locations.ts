@@ -24,7 +24,7 @@ export const LOCATIONS: Location[] = [
       longitude: 38.762,
     },
     serviceTimes: ["Monday: 9:00 AM - 12:00 PM", "Tuesday: 5:30 PM - 7:30 PM"],
-    googleMapsUrl: "https://maps.google.com/?q=joy+worship+chapel",
+    googleMapsUrl: "https://maps.google.com/?q=hibret+amba+kalehiwot",
   },
   {
     id: "2",
