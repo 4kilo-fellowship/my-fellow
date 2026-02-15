@@ -1,6 +1,9 @@
 import { PRIMARY } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import * as FileSystem from "expo-file-system/legacy";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Sharing from "expo-sharing";
 import React, { useState } from "react";
 
 import { useAuth } from "@/context/AuthContext";
@@ -12,6 +15,7 @@ import { useRouter } from "expo-router";
 import {
   Alert,
   Dimensions,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -124,6 +128,48 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
 
   const ctaText = (item as any).buttonText;
 
+  const handleShare = async () => {
+    try {
+      if (!imageUri) {
+        await Share.share({
+          message: `${item.title}\n\n${subtitleText}\n\nShared via My Fellow`,
+        });
+        return;
+      }
+
+      // 1. Define local path
+      const filename = imageUri.split("/").pop() || "event-image.jpg";
+      const localUri = `${FileSystem.cacheDirectory}${filename}`;
+
+      // 2. Download the image
+      const downloadResult = await FileSystem.downloadAsync(imageUri, localUri);
+
+      if (downloadResult.status !== 200) {
+        throw new Error("Failed to download image");
+      }
+
+      // 3. Check if sharing is available
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        Alert.alert("Error", "Sharing is not available on this device");
+        return;
+      }
+
+      // 4. Share the local file
+      await Sharing.shareAsync(downloadResult.uri, {
+        mimeType: "image/jpeg",
+        dialogTitle: `Share ${item.title}`,
+        UTI: "public.image", // For iOS
+      });
+    } catch (error: any) {
+      console.error("Error sharing image:", error);
+      Alert.alert(
+        "Sharing Failed",
+        "Could not share the image. Please try again.",
+      );
+    }
+  };
+
   return (
     <TouchableOpacity
       activeOpacity={0.92}
@@ -154,20 +200,39 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         style={StyleSheet.absoluteFill}
       />
 
-      <TouchableOpacity
-        onPress={onPress}
-        activeOpacity={0.7}
-        className="absolute top-5 right-6 flex-row items-center"
+      <View
+        className="absolute top-4 right-4 flex-row items-center gap-3"
         style={{ zIndex: 10 }}
       >
-        <Text style={styles.detailsText}>LEARN MORE</Text>
-        <Ionicons
-          name="chevron-forward"
-          size={14}
-          color="white"
-          style={{ opacity: 0.8, marginLeft: 2 }}
-        />
-      </TouchableOpacity>
+        <TouchableOpacity
+          onPress={handleShare}
+          activeOpacity={0.7}
+          className="w-10 h-10 rounded-full overflow-hidden items-center justify-center"
+        >
+          <BlurView
+            intensity={40}
+            tint="dark"
+            style={StyleSheet.absoluteFill}
+          />
+          <Ionicons name="share-social-outline" size={18} color="white" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={onPress}
+          activeOpacity={0.7}
+          className="px-3 h-10 rounded-full overflow-hidden flex-row items-center justify-center"
+        >
+          <BlurView
+            intensity={40}
+            tint="dark"
+            style={StyleSheet.absoluteFill}
+          />
+          <Text className="text-white text-[10px] font-bold mr-1 tracking-widest">
+            DETAILS
+          </Text>
+          <Ionicons name="chevron-forward" size={16} color="white" />
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.content}>
         <Text numberOfLines={2} style={styles.title}>

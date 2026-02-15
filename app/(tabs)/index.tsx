@@ -12,6 +12,7 @@ import { eventsService } from "@/services/eventsService";
 import { useAppStore } from "@/stores/app.store";
 import { EventSummary } from "@/types/events.types";
 import { Ionicons } from "@expo/vector-icons";
+import { Image as ExpoImage } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
@@ -55,10 +56,27 @@ const Home = () => {
       setDevotions(DEVOTIONS);
       setVideos(VIDEOS);
       setError(null);
+
+      // Pre-fetch the first 3 event images to prevent flickering when placeholders disappear
+      if (Array.isArray(data) && data.length > 0) {
+        const imageUris = data
+          .slice(0, 3)
+          .map((e: any) => e.imageUrl)
+          .filter((uri): uri is string => !!uri && typeof uri === "string");
+
+        if (imageUris.length > 0) {
+          try {
+            await Promise.all(imageUris.map((url) => ExpoImage.prefetch(url)));
+          } catch (prefetchError) {
+            console.warn("Image prefetch failed:", prefetchError);
+          }
+        }
+      }
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
     } finally {
       setLoading(false);
+      // Only mark as having seen features after content is actually ready
       if (!hasSeenFeatures) {
         setHasSeenFeatures(true);
       }
