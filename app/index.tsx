@@ -31,7 +31,6 @@ export default function AppSplashScreen() {
   const [imagesLoaded, setImagesLoaded] = React.useState(false);
 
   useEffect(() => {
-    // Fallback: if images take too long, hide splash anyway
     const timer = setTimeout(() => {
       if (!imagesLoaded) setImagesLoaded(true);
     }, 2000);
@@ -40,13 +39,15 @@ export default function AppSplashScreen() {
       SplashScreen.hideAsync().catch(() => {});
 
       progress.value = withDelay(
-        500, // Reduced delay for faster transition once ready
+        2000,
         withTiming(
           1,
-          { duration: 1000, easing: Easing.inOut(Easing.exp) },
+          { duration: 800, easing: Easing.inOut(Easing.exp) },
           (finished) => {
             if (finished) {
-              scheduleOnRN(router.replace, "/(tabs)");
+              setTimeout(() => {
+                scheduleOnRN(router.replace, "/(tabs)");
+              }, 400);
             }
           },
         ),
@@ -64,7 +65,7 @@ export default function AppSplashScreen() {
       borderRadius: r,
       left: originX - r,
       top: originY - r,
-      opacity, // Prevent showing white bubble before animation starts
+      opacity,
     };
   });
 
@@ -113,9 +114,7 @@ export default function AppSplashScreen() {
             contentFit="contain"
             cachePolicy="memory"
             transition={0}
-            onLoad={() => {
-              // Both logos should ideally be loaded
-            }}
+            onLoad={() => {}}
           />
         </Animated.View>
       </Animated.View>
