@@ -1,12 +1,12 @@
 import { Placeholder } from "@/components";
 import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
-import { locationService } from "@/services/locationService";
+import { useLocationsStore } from "@/stores/locations.store";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   FlatList,
   Linking,
@@ -139,31 +139,15 @@ export default function LocationsScreen() {
   const router = useRouter();
   const { top } = useSafeAreaInsets();
 
-  const [locations, setLocations] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchLocations = async () => {
-    try {
-      setError(null);
-      const data = await locationService.fetchLocations();
-      setLocations(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to fetch locations");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  const { locations, loading, refreshing, error, loadLocations } =
+    useLocationsStore();
 
   useEffect(() => {
-    fetchLocations();
+    loadLocations();
   }, []);
 
   const onRefresh = () => {
-    setRefreshing(true);
-    fetchLocations();
+    loadLocations(true);
   };
 
   return (
@@ -207,8 +191,10 @@ export default function LocationsScreen() {
           </Text>
         </View>
 
-        {loading && !refreshing ? (
-          <View className="px-5 pt-6">
+        {loading && locations.length === 0 ? (
+          <View
+            className={`px-5 pt-6 flex-1 ${isDark ? "bg-dark" : "bg-white"}`}
+          >
             <Placeholder
               height={20}
               width="100%"
@@ -260,7 +246,7 @@ export default function LocationsScreen() {
               {error}
             </Text>
             <TouchableOpacity
-              onPress={fetchLocations}
+              onPress={() => loadLocations(true)}
               className="mt-6 bg-primary px-8 py-3 rounded-full"
             >
               <Text className="text-white font-bold">Retry</Text>
