@@ -1,4 +1,4 @@
-import { InfoModal } from "@/components";
+import { InfoModal, Placeholder } from "@/components";
 import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { useAlerts } from "@/hooks/useAlerts";
@@ -11,7 +11,6 @@ import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Animated,
   Linking,
   Platform,
@@ -360,10 +359,71 @@ export default function WeeklyPrograms() {
       />
 
       <View className={`flex-1 ${isDark ? "bg-[#0A0A0A]" : "bg-[#f8fafc]"}`}>
-        {loading ? (
-          <View className="flex-1 justify-center items-center">
-            <ActivityIndicator size="large" color={PRIMARY} />
-          </View>
+        {loading && programs.length === 0 ? (
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{
+              paddingTop: TOTAL_HEADER_HEIGHT + 20,
+              paddingHorizontal: 20,
+              paddingBottom: 40,
+            }}
+            showsVerticalScrollIndicator={false}
+          >
+            {[1, 2, 3].map((i) => (
+              <View
+                key={i}
+                className={`mb-6 rounded-[28px] overflow-hidden ${isDark ? "bg-[#1C1C1E]" : "bg-white"}`}
+                style={{
+                  height: 400,
+                  shadowColor: isDark ? "#000" : "#64748b",
+                  shadowOffset: { width: 0, height: 12 },
+                  shadowOpacity: isDark ? 0.5 : 0.12,
+                  shadowRadius: 24,
+                  elevation: 10,
+                }}
+              >
+                <Placeholder height={208} borderRadius={0} />
+                <View className="p-5">
+                  <Placeholder
+                    width="90%"
+                    height={24}
+                    style={{ marginBottom: 12 }}
+                  />
+                  <Placeholder
+                    width="100%"
+                    height={40}
+                    style={{ marginBottom: 20 }}
+                  />
+                  <View className="flex-row justify-between items-center mb-4">
+                    <Placeholder width={100} height={32} borderRadius={12} />
+                    <Placeholder width={120} height={20} />
+                  </View>
+                  <View
+                    className={`h-[1px] w-full mb-4 ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
+                  />
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-row items-center flex-1">
+                      <Placeholder
+                        width={40}
+                        height={40}
+                        borderRadius={20}
+                        style={{ marginRight: 12 }}
+                      />
+                      <View className="flex-1">
+                        <Placeholder
+                          width={80}
+                          height={12}
+                          style={{ marginBottom: 4 }}
+                        />
+                        <Placeholder width={140} height={16} />
+                      </View>
+                    </View>
+                    <Placeholder width={36} height={36} borderRadius={18} />
+                  </View>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
         ) : (
           <Animated.FlatList
             data={filteredPrograms}
