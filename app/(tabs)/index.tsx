@@ -114,13 +114,17 @@ const Home = () => {
           {/* Upcoming Events */}
           <View className="mb-2">
             <View className="px-5 mb-2">
-              <Text
-                className={`text-lg font-extrabold ${
-                  isDark ? "text-white" : "text-gray-900"
-                }`}
-              >
-                Upcoming Events
-              </Text>
+              {!hasSeenFeatures ? (
+                <Placeholder width={150} height={24} borderRadius={4} />
+              ) : (
+                <Text
+                  className={`text-lg font-extrabold ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Upcoming Events
+                </Text>
+              )}
             </View>
 
             {!hasSeenFeatures ||
@@ -250,13 +254,17 @@ const Home = () => {
           {/* Quick Actions */}
           <View className="mt-7">
             <View className="px-5 flex-row mb-3">
-              <Text
-                className={`text-lg font-extrabold ${
-                  isDark ? "text-white" : "text-gray-900"
-                }`}
-              >
-                Features
-              </Text>
+              {!hasSeenFeatures ? (
+                <Placeholder width={100} height={24} borderRadius={4} />
+              ) : (
+                <Text
+                  className={`text-lg font-extrabold ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Features
+                </Text>
+              )}
             </View>
             {!hasSeenFeatures || (loading && events.length === 0) ? (
               <ScrollView
@@ -320,13 +328,17 @@ const Home = () => {
           {/* Recent Devotions */}
           <View className="mt-7">
             <View className="px-5 flex-row justify-between items-center mb-3">
-              <Text
-                className={`text-lg font-extrabold ${
-                  isDark ? "text-white" : "text-gray-900"
-                }`}
-              >
-                Recent Devotions
-              </Text>
+              {!hasSeenFeatures ? (
+                <Placeholder width={150} height={24} borderRadius={4} />
+              ) : (
+                <Text
+                  className={`text-lg font-extrabold ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Recent Devotions
+                </Text>
+              )}
               {!hasSeenFeatures ? (
                 <Placeholder width={60} height={20} borderRadius={4} />
               ) : (
@@ -375,13 +387,22 @@ const Home = () => {
 
           {/* Latest Sermons */}
           <View className="mt-7 px-5">
-            <Text
-              className={`text-lg font-extrabold mb-3 ${
-                isDark ? "text-white" : "text-gray-900"
-              }`}
-            >
-              Latest Videos
-            </Text>
+            {!hasSeenFeatures ? (
+              <Placeholder
+                width={140}
+                height={24}
+                borderRadius={4}
+                style={{ marginBottom: 12 }}
+              />
+            ) : (
+              <Text
+                className={`text-lg font-extrabold mb-3 ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
+                Latest Videos
+              </Text>
+            )}
             {!hasSeenFeatures ||
             ((loading || refreshing) && videos.length === 0) ? (
               <View>
