@@ -9,11 +9,10 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
-  FlatList,
   Linking,
   Platform,
   RefreshControl,
@@ -72,11 +71,6 @@ const ProgramCard = ({
           elevation: 10,
         }}
       >
-        <StatusBar
-          style={isDark ? "light" : "dark"}
-          backgroundColor="transparent"
-        />
-
         <View className="h-52 w-full relative">
           <Image
             source={item.image}
@@ -222,6 +216,19 @@ export default function WeeklyPrograms() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const router = useRouter();
+  const { top } = useSafeAreaInsets();
+
+  // Header Heights
+  const STATIC_HEADER_HEIGHT = top + 80;
+  const FILTER_SECTION_HEIGHT = 100;
+  const TOTAL_HEADER_HEIGHT = STATIC_HEADER_HEIGHT + FILTER_SECTION_HEIGHT;
+
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const diffClamp = Animated.diffClamp(scrollY, 0, FILTER_SECTION_HEIGHT);
+  const translateY = diffClamp.interpolate({
+    inputRange: [0, FILTER_SECTION_HEIGHT],
+    outputRange: [0, -FILTER_SECTION_HEIGHT],
+  });
 
   const [selectedFilter, setSelectedFilter] = useState("All");
 
@@ -244,7 +251,6 @@ export default function WeeklyPrograms() {
     ).start();
   }, []);
 
-  const { top } = useSafeAreaInsets();
   const { programs, loading, refreshing, loadPrograms } = useProgramsStore();
 
   const { addAlert, deleteAlert, alerts } = useAlerts();
@@ -348,13 +354,70 @@ export default function WeeklyPrograms() {
           headerShown: false,
         }}
       />
+      <StatusBar
+        style={isDark ? "light" : "dark"}
+        backgroundColor="transparent"
+      />
 
       <View className={`flex-1 ${isDark ? "bg-[#0A0A0A]" : "bg-[#f8fafc]"}`}>
+        {loading ? (
+          <View className="flex-1 justify-center items-center">
+            <ActivityIndicator size="large" color={PRIMARY} />
+          </View>
+        ) : (
+          <Animated.FlatList
+            data={filteredPrograms}
+            keyExtractor={(item) => item.id}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: true },
+            )}
+            scrollEventThrottle={16}
+            ListHeaderComponent={
+              <View style={{ height: TOTAL_HEADER_HEIGHT }} />
+            }
+            renderItem={({ item }) => (
+              <View style={{ paddingTop: 20 }}>
+                <ProgramCard
+                  item={item}
+                  isDark={isDark}
+                  isAlertActive={isAlertActive}
+                  onToggleAlert={handleToggleAlert}
+                />
+              </View>
+            )}
+            contentContainerStyle={{
+              paddingHorizontal: 20,
+              paddingBottom: 40,
+            }}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={PRIMARY}
+                colors={[PRIMARY]}
+                progressViewOffset={TOTAL_HEADER_HEIGHT}
+              />
+            }
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+
+        {/* Static Header: Back and Title */}
         <View
-          className={`px-5 pb-4 flex-col ${isDark ? "bg-[#0A0A0A]" : "bg-[#f8fafc]"}`}
-          style={{ paddingTop: top + 10 }}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 10,
+            height: STATIC_HEADER_HEIGHT,
+            backgroundColor: isDark ? "#0A0A0A" : "#f8fafc",
+            paddingTop: top + 10,
+            paddingHorizontal: 20,
+          }}
         >
-          <View className="flex-row items-center mb-6">
+          <View className="flex-row items-center">
             <TouchableOpacity
               onPress={() => router.back()}
               activeOpacity={0.8}
@@ -373,9 +436,24 @@ export default function WeeklyPrograms() {
               Programs
             </Text>
           </View>
+        </View>
 
+        {/* Animated Filters and Description */}
+        <Animated.View
+          style={{
+            position: "absolute",
+            top: STATIC_HEADER_HEIGHT,
+            left: 0,
+            right: 0,
+            zIndex: 5,
+            height: FILTER_SECTION_HEIGHT,
+            backgroundColor: isDark ? "#0A0A0A" : "#f8fafc",
+            transform: [{ translateY }],
+          }}
+        >
           <Text
             className={`text-base leading-6 pr-4 ${isDark ? "text-gray-400" : "text-gray-500"}`}
+            style={{ paddingHorizontal: 20 }}
           >
             Discover our weekly gatherings. Tap the location to get directions.
           </Text>
@@ -384,14 +462,14 @@ export default function WeeklyPrograms() {
             horizontal
             showsHorizontalScrollIndicator={false}
             className="mt-4"
-            contentContainerStyle={{ paddingRight: 20 }}
+            contentContainerStyle={{ paddingHorizontal: 20 }}
           >
             {dynamicFilters.map((filter) => (
               <TouchableOpacity
                 key={filter}
                 activeOpacity={0.7}
                 onPress={() => setSelectedFilter(filter)}
-                className={`px-5 py-2 mr-3 rounded-full border flex-row items-center ${
+                className={`px-4 py-1.5 mr-3 rounded-xl border flex-row items-center ${
                   selectedFilter === filter
                     ? "bg-orange-500 border-orange-500"
                     : isDark
@@ -426,40 +504,7 @@ export default function WeeklyPrograms() {
               </TouchableOpacity>
             ))}
           </ScrollView>
-        </View>
-
-        {loading ? (
-          <View className="flex-1 justify-center items-center">
-            <ActivityIndicator size="large" color={PRIMARY} />
-          </View>
-        ) : (
-          <FlatList
-            data={filteredPrograms}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <ProgramCard
-                item={item}
-                isDark={isDark}
-                isAlertActive={isAlertActive}
-                onToggleAlert={handleToggleAlert}
-              />
-            )}
-            contentContainerStyle={{
-              paddingHorizontal: 20,
-              paddingBottom: 40,
-              paddingTop: 20,
-            }}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tintColor={PRIMARY}
-                colors={[PRIMARY]}
-              />
-            }
-            showsVerticalScrollIndicator={false}
-          />
-        )}
+        </Animated.View>
       </View>
 
       <InfoModal

@@ -263,7 +263,7 @@ const UserProfileMenu = () => {
             item.onPress?.();
           }
         }}
-        activeOpacity={0.7}
+        activeOpacity={0.8}
       >
         <View style={styles.menuItemLeft}>
           <View
@@ -422,7 +422,7 @@ const UserProfileMenu = () => {
                 },
               ]}
               onPress={closeMenu}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
               <Ionicons
                 name="close"
