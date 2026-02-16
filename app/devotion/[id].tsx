@@ -173,113 +173,219 @@ const DevotionDetail = () => {
   }
 
   return (
-    <View className={`flex-1 ${isDark ? "bg-zinc-950" : "bg-white"}`}>
-      <StatusBar style="light" />
+    <View className={`flex-1 ${isDark ? "bg-[#0a0a0a]" : "bg-white"}`}>
+      <StatusBar style={isDark ? "light" : "dark"} />
 
-      {/* Hero Header - Background and Overlay */}
+      {/* Fixed Header Bar */}
       <View
-        style={{ position: "absolute", top: 0, width: "100%", height: 400 }}
-      >
-        <Image
-          source={{ uri: devotion.image }}
-          className="w-full h-full"
-          resizeMode="cover"
-        />
-        <View className="absolute inset-0 bg-black/40" />
-      </View>
-
-      <View
-        className="flex-row items-center justify-between px-6 z-10"
-        style={{ marginTop: top + 10 }}
+        className={`absolute z-20 w-full flex-row items-center justify-between px-5 ${
+          isDark ? "bg-[#0a0a0a]" : "bg-white"
+        }`}
+        style={{
+          paddingTop: top + 6,
+          paddingBottom: 12,
+        }}
       >
         <TouchableOpacity
           onPress={() => router.back()}
-          className="w-10 h-10 rounded-full bg-black/30 items-center justify-center backdrop-blur-md border border-white/20"
+          className="w-9 h-9 rounded-full items-center justify-center"
         >
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <Ionicons
+            name="arrow-back"
+            size={22}
+            color={isDark ? "#fff" : "#111"}
+          />
         </TouchableOpacity>
+
+        <Text
+          numberOfLines={1}
+          className={`text-[15px] font-bold flex-1 text-center mx-3 ${
+            isDark ? "text-white" : "text-gray-900"
+          }`}
+        >
+          {devotion.title}
+        </Text>
 
         <TouchableOpacity
           onPress={handleShare}
-          className="w-10 h-10 rounded-full bg-black/30 items-center justify-center backdrop-blur-md border border-white/20"
+          className="w-9 h-9 rounded-full items-center justify-center"
         >
-          <Ionicons name="share-social-outline" size={22} color="white" />
+          <Ionicons
+            name="share-social-outline"
+            size={20}
+            color={isDark ? "#fff" : "#111"}
+          />
         </TouchableOpacity>
       </View>
 
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: 200 }}
+        contentContainerStyle={{ paddingTop: top + 52 }}
       >
-        {/* Content Container with Rounded Corners */}
-        <View className="bg-white dark:bg-zinc-950 rounded-t-[40px] px-6 pt-8 pb-20 mt-20">
-          {/* Metadata */}
-          <View className="flex-row items-center mb-4">
-            <View className="bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
-              <Text className="text-primary text-[10px] font-black uppercase tracking-widest">
-                {devotion.type}
-              </Text>
-            </View>
-            <Text className="text-zinc-400 text-xs ml-3 font-bold uppercase tracking-tighter">
-              {new Date(devotion.date).toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </Text>
-          </View>
+        {/* Scrollable Banner Image */}
+        <View className="w-full h-[280px]">
+          <Image
+            source={{ uri: devotion.image }}
+            className="w-full h-full"
+            resizeMode="cover"
+          />
+        </View>
 
+        {/* Content Area */}
+        <View className="px-5 pt-6">
+          {/* Title */}
           <Text
-            className={`text-4xl font-black leading-[1.1] mb-2 ${isDark ? "text-white" : "text-zinc-900"}`}
+            className={`text-[26px] font-extrabold leading-[33px] mb-4 ${
+              isDark ? "text-white" : "text-gray-900"
+            }`}
           >
             {devotion.title}
           </Text>
-          <Text className="text-primary text-base font-bold mb-8 italic">
-            By {devotion.author}
-          </Text>
 
-          {/* Audio Player at the TOP if it exists */}
-          {devotion.type === "voice" && (
-            <View className="mb-10 bg-zinc-50 dark:bg-zinc-900/50 p-6 rounded-[32px] border border-zinc-100 dark:border-zinc-800">
-              <View className="flex-row items-center mb-6">
-                <View className="w-12 h-12 bg-primary/10 rounded-2xl items-center justify-center">
-                  <Ionicons name="mic" size={24} color={PRIMARY} />
-                </View>
-                <View className="ml-4 flex-1">
-                  <Text
-                    className={`text-lg font-black ${isDark ? "text-white" : "text-zinc-900"}`}
-                  >
-                    Audio Message
-                  </Text>
-                  <Text className="text-zinc-500 text-xs font-medium">
-                    {devotion.caption || "Listen and reflect on the word"}
-                  </Text>
-                </View>
+          {/* Author + Meta Row */}
+          <View
+            className={`flex-row items-center justify-between pb-5 mb-5 border-b ${
+              isDark ? "border-[#1a1a1a]" : "border-gray-100"
+            }`}
+          >
+            <View className="flex-row items-center flex-1">
+              <View
+                className={`w-10 h-10 rounded-full items-center justify-center ${
+                  isDark ? "bg-[#1a1a1a]" : "bg-gray-100"
+                }`}
+              >
+                <Ionicons name="person" size={18} color={PRIMARY} />
+              </View>
+              <View style={{ marginLeft: 10, flex: 1 }}>
+                <Text
+                  className={`text-[14px] font-bold ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                  numberOfLines={1}
+                >
+                  {devotion.author}
+                </Text>
+                <Text
+                  className={`text-[11px] ${
+                    isDark ? "text-gray-500" : "text-gray-400"
+                  }`}
+                >
+                  {new Date(devotion.date).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </Text>
+              </View>
+            </View>
+
+            {/* Actions */}
+            <View className="flex-row items-center" style={{ gap: 14 }}>
+              <TouchableOpacity
+                onPress={handleLike}
+                className="flex-row items-center"
+              >
+                <Ionicons
+                  name={isLiked ? "heart" : "heart-outline"}
+                  size={18}
+                  color={isLiked ? "#ef4444" : isDark ? "#555" : "#aaa"}
+                />
+                <Text
+                  className={`text-[11px] font-bold ml-1 ${
+                    isDark ? "text-gray-500" : "text-gray-400"
+                  }`}
+                >
+                  {likesCount}
+                </Text>
+              </TouchableOpacity>
+
+              <View className="flex-row items-center">
+                <Ionicons
+                  name="eye-outline"
+                  size={18}
+                  color={isDark ? "#555" : "#aaa"}
+                />
+                <Text
+                  className={`text-[11px] font-bold ml-1 ${
+                    isDark ? "text-gray-500" : "text-gray-400"
+                  }`}
+                >
+                  {devotion.views}
+                </Text>
               </View>
 
-              <View className="w-full">
-                <View className="h-2 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden mb-3">
-                  <View
-                    style={{
-                      width:
-                        status.duration > 0
-                          ? `${(status.currentTime / status.duration) * 100}%`
-                          : "0%",
-                    }}
-                    className="h-full bg-primary rounded-full"
+              <View className="flex-row items-center">
+                <Ionicons
+                  name={isDownloading ? "cloud-download" : "cloud-done-outline"}
+                  size={16}
+                  color={isDownloading ? PRIMARY : "#10b981"}
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Audio Player - FIRST for voice devotions */}
+          {devotion.type === "voice" && (
+            <View
+              className={`mb-6 p-5 rounded-2xl border ${
+                isDark
+                  ? "bg-[#111] border-[#1a1a1a]"
+                  : "bg-[#fafafa] border-gray-100"
+              }`}
+            >
+              {/* Player Controls Row */}
+              <View className="flex-row items-center">
+                <TouchableOpacity
+                  onPress={() =>
+                    status.playing ? player.pause() : player.play()
+                  }
+                  className="w-12 h-12 bg-primary rounded-full items-center justify-center"
+                >
+                  <Ionicons
+                    name={status.playing ? "pause" : "play"}
+                    size={22}
+                    color="white"
                   />
-                </View>
-                <View className="flex-row justify-between mb-6">
-                  <Text className="text-zinc-400 text-[10px] font-black">
-                    {formatTime(status.currentTime)}
-                  </Text>
-                  <Text className="text-zinc-400 text-[10px] font-black">
-                    {devotion.duration || formatTime(status.duration)}
-                  </Text>
+                </TouchableOpacity>
+
+                <View className="flex-1 ml-4">
+                  {/* Progress Bar */}
+                  <View
+                    className={`h-1.5 w-full rounded-full overflow-hidden ${
+                      isDark ? "bg-[#222]" : "bg-gray-200"
+                    }`}
+                  >
+                    <View
+                      style={{
+                        width:
+                          status.duration > 0
+                            ? `${(status.currentTime / status.duration) * 100}%`
+                            : "0%",
+                      }}
+                      className="h-full bg-primary rounded-full"
+                    />
+                  </View>
+                  <View className="flex-row justify-between mt-1.5">
+                    <Text
+                      className={`text-[10px] font-medium ${
+                        isDark ? "text-gray-600" : "text-gray-400"
+                      }`}
+                    >
+                      {formatTime(status.currentTime)}
+                    </Text>
+                    <Text
+                      className={`text-[10px] font-medium ${
+                        isDark ? "text-gray-600" : "text-gray-400"
+                      }`}
+                    >
+                      {devotion.duration || formatTime(status.duration)}
+                    </Text>
+                  </View>
                 </View>
 
-                <View className="flex-row items-center justify-center">
+                {/* Skip Controls */}
+                <View className="flex-row items-center ml-3" style={{ gap: 8 }}>
                   <TouchableOpacity
                     onPress={() =>
                       player.seekTo(Math.max(0, status.currentTime - 10000))
@@ -287,24 +393,10 @@ const DevotionDetail = () => {
                   >
                     <Ionicons
                       name="play-back"
-                      size={24}
-                      color={isDark ? "#71717a" : "#18181b"}
+                      size={18}
+                      color={isDark ? "#555" : "#999"}
                     />
                   </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() =>
-                      status.playing ? player.pause() : player.play()
-                    }
-                    className="mx-10 w-16 h-16 bg-primary rounded-full items-center justify-center shadow-lg shadow-primary/30"
-                  >
-                    <Ionicons
-                      name={status.playing ? "pause" : "play"}
-                      size={28}
-                      color="white"
-                    />
-                  </TouchableOpacity>
-
                   <TouchableOpacity
                     onPress={() =>
                       player.seekTo(
@@ -314,8 +406,8 @@ const DevotionDetail = () => {
                   >
                     <Ionicons
                       name="play-forward"
-                      size={24}
-                      color={isDark ? "#71717a" : "#18181b"}
+                      size={18}
+                      color={isDark ? "#555" : "#999"}
                     />
                   </TouchableOpacity>
                 </View>
@@ -323,77 +415,65 @@ const DevotionDetail = () => {
             </View>
           )}
 
-          {/* Quick Stats */}
-          <View className="flex-row justify-between items-center mb-10 py-6 border-y border-zinc-100 dark:border-zinc-900">
-            <TouchableOpacity
-              onPress={handleLike}
-              className="items-center flex-1"
-            >
-              <Ionicons
-                name={isLiked ? "heart" : "heart-outline"}
-                size={24}
-                color={isLiked ? "#ef4444" : "#a1a1aa"}
-              />
-              <Text
-                className={`text-xs font-black mt-1 ${isDark ? "text-zinc-500" : "text-zinc-400"}`}
-              >
-                {likesCount} LIKES
-              </Text>
-            </TouchableOpacity>
-
-            <View className="w-[1px] h-6 bg-zinc-100 dark:bg-zinc-900" />
-
-            <View className="items-center flex-1">
-              <Ionicons name="eye-outline" size={24} color="#a1a1aa" />
-              <Text
-                className={`text-xs font-black mt-1 ${isDark ? "text-zinc-500" : "text-zinc-400"}`}
-              >
-                {devotion.views} VIEWS
-              </Text>
-            </View>
-
-            <View className="w-[1px] h-6 bg-zinc-100 dark:bg-zinc-900" />
-
-            <View className="items-center flex-1">
-              <Ionicons
-                name={isDownloading ? "cloud-download" : "cloud-done-outline"}
-                size={24}
-                color={isDownloading ? PRIMARY : "#10b981"}
-              />
-              <Text
-                className={`text-xs font-black mt-1 ${isDark ? "text-zinc-500" : "text-zinc-400"}`}
-              >
-                {isDownloading ? "SAVING..." : "OFFLINE"}
-              </Text>
-            </View>
-          </View>
-
-          {/* Content Section */}
-          <View className="mb-12">
+          {/* Content Section — Markdown */}
+          <View className="mb-8">
             {devotion.content && (
               <Markdown
                 style={{
                   body: {
-                    color: isDark ? "#d4d4d8" : "#3f3f46",
-                    fontSize: 18,
-                    lineHeight: 30,
-                    textAlign: "left",
+                    color: isDark ? "#d1d5db" : "#374151",
+                    fontSize: 16,
+                    lineHeight: 28,
                   },
                   paragraph: {
-                    marginBottom: 20,
+                    marginBottom: 16,
+                  },
+                  heading2: {
+                    color: isDark ? "#f9fafb" : "#111827",
+                    fontSize: 22,
+                    fontWeight: "800",
+                    marginTop: 28,
+                    marginBottom: 12,
+                    lineHeight: 30,
+                  },
+                  heading3: {
+                    color: isDark ? "#e5e7eb" : "#1f2937",
+                    fontSize: 18,
+                    fontWeight: "700",
+                    marginTop: 24,
+                    marginBottom: 10,
+                    lineHeight: 26,
                   },
                   strong: {
-                    fontWeight: "900",
-                    color: isDark ? "#fff" : "#18181b",
-                    fontSize: 20,
+                    fontWeight: "700",
+                    color: isDark ? "#f3f4f6" : "#111827",
+                  },
+                  em: {
+                    fontStyle: "italic",
+                    color: isDark ? "#d1d5db" : "#4b5563",
                   },
                   blockquote: {
-                    backgroundColor: isDark ? "#18181b" : "#f4f4f5",
+                    backgroundColor: isDark ? "#111" : "#f9fafb",
                     borderLeftColor: PRIMARY,
-                    borderLeftWidth: 4,
-                    padding: 20,
-                    borderRadius: 16,
-                    marginVertical: 20,
+                    borderLeftWidth: 3,
+                    paddingHorizontal: 16,
+                    paddingVertical: 14,
+                    borderRadius: 8,
+                    marginVertical: 16,
+                  },
+                  hr: {
+                    backgroundColor: isDark ? "#1a1a1a" : "#e5e7eb",
+                    height: 1,
+                    marginVertical: 24,
+                  },
+                  list_item: {
+                    marginBottom: 6,
+                  },
+                  bullet_list: {
+                    marginBottom: 16,
+                  },
+                  ordered_list: {
+                    marginBottom: 16,
                   },
                 }}
               >
@@ -401,23 +481,108 @@ const DevotionDetail = () => {
               </Markdown>
             )}
 
+            {/* Caption for voice devotions (rendered as markdown) */}
+            {devotion.type === "voice" && devotion.caption && (
+              <Markdown
+                style={{
+                  body: {
+                    color: isDark ? "#d1d5db" : "#374151",
+                    fontSize: 16,
+                    lineHeight: 28,
+                  },
+                  paragraph: {
+                    marginBottom: 16,
+                  },
+                  heading2: {
+                    color: isDark ? "#f9fafb" : "#111827",
+                    fontSize: 22,
+                    fontWeight: "800",
+                    marginTop: 28,
+                    marginBottom: 12,
+                    lineHeight: 30,
+                  },
+                  heading3: {
+                    color: isDark ? "#e5e7eb" : "#1f2937",
+                    fontSize: 18,
+                    fontWeight: "700",
+                    marginTop: 24,
+                    marginBottom: 10,
+                    lineHeight: 26,
+                  },
+                  strong: {
+                    fontWeight: "700",
+                    color: isDark ? "#f3f4f6" : "#111827",
+                  },
+                  em: {
+                    fontStyle: "italic",
+                    color: isDark ? "#d1d5db" : "#4b5563",
+                  },
+                  blockquote: {
+                    backgroundColor: isDark ? "#111" : "#f9fafb",
+                    borderLeftColor: PRIMARY,
+                    borderLeftWidth: 3,
+                    paddingHorizontal: 16,
+                    paddingVertical: 14,
+                    borderRadius: 8,
+                    marginVertical: 16,
+                  },
+                  hr: {
+                    backgroundColor: isDark ? "#1a1a1a" : "#e5e7eb",
+                    height: 1,
+                    marginVertical: 24,
+                  },
+                  list_item: {
+                    marginBottom: 6,
+                  },
+                  bullet_list: {
+                    marginBottom: 16,
+                  },
+                  ordered_list: {
+                    marginBottom: 16,
+                  },
+                }}
+              >
+                {devotion.caption}
+              </Markdown>
+            )}
+
             {devotion.type === "pdf" && (
-              <View className="bg-zinc-50 dark:bg-zinc-900/30 p-8 rounded-[40px] items-center border border-zinc-100 dark:border-zinc-800">
-                <Ionicons name="document-text" size={60} color="#ef4444" />
+              <View
+                className={`p-6 rounded-2xl items-center border ${
+                  isDark
+                    ? "bg-[#111] border-[#1a1a1a]"
+                    : "bg-[#fafafa] border-gray-100"
+                }`}
+              >
+                <Ionicons name="document-text" size={44} color="#ef4444" />
                 <Text
-                  className={`text-xl font-bold mt-4 ${isDark ? "text-white" : "text-zinc-900"}`}
+                  className={`text-[16px] font-bold mt-3 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
                 >
                   PDF Devotional
                 </Text>
-                <Text className="text-zinc-500 text-center mt-2 mb-6">
+                <Text
+                  className={`text-[12px] text-center mt-1 mb-5 ${
+                    isDark ? "text-gray-500" : "text-gray-400"
+                  }`}
+                >
                   {devotion.pageCount} Pages • Document Study Guide
                 </Text>
                 <TouchableOpacity
-                  className="bg-red-500 px-10 py-4 rounded-2xl flex-row items-center"
+                  className={`px-6 py-2.5 rounded-lg flex-row items-center border ${
+                    isDark
+                      ? "bg-[#1a1a1a] border-[#333]"
+                      : "bg-white border-gray-200"
+                  }`}
                   onPress={() => devotion.pdfUrl && openLink(devotion.pdfUrl)}
                 >
-                  <Ionicons name="eye-outline" size={20} color="white" />
-                  <Text className="text-white font-bold ml-2">
+                  <Ionicons name="eye-outline" size={16} color={PRIMARY} />
+                  <Text
+                    className={`font-bold ml-2 text-[13px] ${
+                      isDark ? "text-white" : "text-gray-800"
+                    }`}
+                  >
                     View Document
                   </Text>
                 </TouchableOpacity>
@@ -425,26 +590,46 @@ const DevotionDetail = () => {
             )}
 
             {devotion.type === "book" && (
-              <View className="bg-zinc-50 dark:bg-zinc-900/30 p-8 rounded-[40px] items-center border border-zinc-100 dark:border-zinc-800">
-                <Ionicons name="book" size={60} color="#3b82f6" />
+              <View
+                className={`p-6 rounded-2xl items-center border ${
+                  isDark
+                    ? "bg-[#111] border-[#1a1a1a]"
+                    : "bg-[#fafafa] border-gray-100"
+                }`}
+              >
+                <Ionicons name="book" size={44} color="#3b82f6" />
                 <Text
-                  className={`text-xl font-bold mt-4 ${isDark ? "text-white" : "text-zinc-900"}`}
+                  className={`text-[16px] font-bold mt-3 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
                 >
                   Study Book
                 </Text>
-                <Text className="text-zinc-500 text-center mt-2 mb-6">
+                <Text
+                  className={`text-[12px] text-center mt-1 mb-5 ${
+                    isDark ? "text-gray-500" : "text-gray-400"
+                  }`}
+                >
                   Format: {devotion.bookFormat?.toUpperCase() || "EPUB"}
                 </Text>
                 <TouchableOpacity
-                  className="bg-blue-600 px-10 py-4 rounded-2xl flex-row items-center"
+                  className={`px-6 py-2.5 rounded-lg flex-row items-center border ${
+                    isDark
+                      ? "bg-[#1a1a1a] border-[#333]"
+                      : "bg-white border-gray-200"
+                  }`}
                   onPress={() => devotion.bookUrl && openLink(devotion.bookUrl)}
                 >
                   <Ionicons
                     name="cloud-download-outline"
-                    size={20}
-                    color="white"
+                    size={16}
+                    color={PRIMARY}
                   />
-                  <Text className="text-white font-bold ml-2">
+                  <Text
+                    className={`font-bold ml-2 text-[13px] ${
+                      isDark ? "text-white" : "text-gray-800"
+                    }`}
+                  >
                     Download Book
                   </Text>
                 </TouchableOpacity>
@@ -454,44 +639,51 @@ const DevotionDetail = () => {
 
           {/* Related Devotions */}
           {relatedDevotions.length > 0 && (
-            <View className="mb-20">
-              <View className="flex-row items-baseline mb-6">
-                <Text
-                  className={`text-2xl font-black ${isDark ? "text-white" : "text-zinc-900"}`}
-                >
-                  Related
-                </Text>
-                <Text className="text-primary ml-2 font-bold">•</Text>
-                <Text className="text-zinc-400 ml-2 font-bold text-xs uppercase tracking-widest">
-                  More for you
-                </Text>
-              </View>
+            <View className="mb-8">
+              <Text
+                className={`text-[18px] font-bold mb-4 ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
+                Related
+              </Text>
 
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                className="-mx-6 px-6"
+                className="-mx-5 px-5"
               >
                 {relatedDevotions.map((item) => (
                   <TouchableOpacity
                     key={item._id}
                     onPress={() => router.push(`/devotion/${item._id}`)}
-                    className="mr-6 w-64"
+                    className="mr-3 w-52"
                   >
-                    <View className="h-40 w-full rounded-[32px] overflow-hidden mb-3">
+                    <View
+                      className={`h-32 w-full rounded-xl overflow-hidden mb-2 border ${
+                        isDark ? "border-[#1a1a1a]" : "border-gray-100"
+                      }`}
+                    >
                       <Image
                         source={{ uri: item.image }}
                         className="w-full h-full"
+                        resizeMode="cover"
                       />
                     </View>
                     <Text
                       numberOfLines={2}
-                      className={`text-lg font-black leading-tight ${isDark ? "text-white" : "text-zinc-900"}`}
+                      className={`text-[14px] font-bold leading-tight ${
+                        isDark ? "text-white" : "text-gray-900"
+                      }`}
                     >
                       {item.title}
                     </Text>
-                    <Text className="text-zinc-500 text-xs font-bold mt-1 uppercase">
-                      By {item.author}
+                    <Text
+                      className={`text-[11px] mt-1 ${
+                        isDark ? "text-gray-500" : "text-gray-400"
+                      }`}
+                    >
+                      {item.author}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -499,7 +691,7 @@ const DevotionDetail = () => {
             </View>
           )}
 
-          <View style={{ height: bottom + 40 }} />
+          <View style={{ height: bottom + 20 }} />
         </View>
       </ScrollView>
     </View>

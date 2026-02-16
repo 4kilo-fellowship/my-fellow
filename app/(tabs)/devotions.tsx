@@ -155,21 +155,19 @@ const Devotions = () => {
     return (
       <TouchableOpacity
         activeOpacity={0.9}
-        className={`mb-6 rounded-[32px] overflow-hidden ${
-          isDark ? "bg-zinc-900" : "bg-white"
-        } border ${isDark ? "border-zinc-800" : "border-zinc-100"} shadow-sm`}
+        className={`mb-5 rounded-[24px] overflow-hidden border ${
+          isDark ? "bg-[#111] border-[#222]" : "bg-[#f9fafb] border-gray-200"
+        }`}
         onPress={() => router.push(`/devotion/${item._id}`)}
       >
-        {/* Image Section */}
-        <View className="relative h-52 w-full">
+        <View className="relative h-48 w-full">
           <Image
             source={{ uri: item.image }}
             className="w-full h-full"
             resizeMode="cover"
           />
 
-          {/* Glass Overlay for Views */}
-          <View className="absolute top-4 right-4 bg-black/40 px-3 py-1.5 rounded-2xl flex-row items-center backdrop-blur-md border border-white/20">
+          <View className="absolute top-3 right-3 bg-black/50 px-2.5 py-1 rounded-lg flex-row items-center">
             <Ionicons name="eye" size={12} color="white" />
             <Text className="text-white text-[11px] ml-1.5 font-bold">
               {item.views > 999
@@ -179,40 +177,39 @@ const Devotions = () => {
           </View>
 
           {recentlyPosted && (
-            <View className="absolute top-4 left-4 bg-primary px-3 py-1.5 rounded-2xl shadow-lg">
-              <Text className="text-white text-[10px] font-black uppercase tracking-widest">
+            <View className="absolute top-3 left-3 bg-primary px-2.5 py-1 rounded-lg">
+              <Text className="text-white text-[10px] font-bold uppercase tracking-wide">
                 New
               </Text>
             </View>
           )}
         </View>
 
-        {/* Content Section */}
         <View className="p-5">
           <View className="flex-row justify-between items-start">
-            <View className="flex-1 mr-4">
+            <View className="flex-1 mr-3">
               <Text
                 numberOfLines={2}
-                className={`text-xl font-black leading-tight ${
-                  isDark ? "text-zinc-100" : "text-zinc-900"
+                className={`text-[17px] font-bold leading-tight ${
+                  isDark ? "text-white" : "text-gray-900"
                 }`}
               >
                 {item.title}
               </Text>
-              <View className="flex-row items-center mt-2.5">
+              <View className="flex-row items-center mt-2">
                 <Text
-                  className={`text-xs font-bold ${
-                    isDark ? "text-zinc-400" : "text-zinc-500"
+                  className={`text-[12px] font-medium ${
+                    isDark ? "text-gray-500" : "text-gray-500"
                   }`}
                 >
                   By {item.author}
                 </Text>
                 <View
-                  className={`mx-2 w-1 h-1 rounded-full ${isDark ? "bg-zinc-700" : "bg-zinc-300"}`}
+                  className={`mx-2 w-1 h-1 rounded-full ${isDark ? "bg-gray-700" : "bg-gray-300"}`}
                 />
                 <Text
-                  className={`text-xs font-medium ${
-                    isDark ? "text-zinc-500" : "text-zinc-400"
+                  className={`text-[12px] font-medium ${
+                    isDark ? "text-gray-600" : "text-gray-400"
                   }`}
                 >
                   {new Date(item.date).toLocaleDateString("en-US", {
@@ -225,33 +222,38 @@ const Devotions = () => {
 
             <TouchableOpacity
               activeOpacity={0.7}
-              className={`p-3 rounded-xl ${
-                isDark ? "bg-zinc-800" : "bg-zinc-100"
-              } border ${isDark ? "border-zinc-700" : "border-zinc-200"}`}
+              className={`p-2.5 rounded-xl border ${
+                isDark
+                  ? "bg-[#1a1a1a] border-[#333]"
+                  : "bg-white border-gray-200"
+              }`}
               onPress={() => handleToggleSave(item)}
             >
               <Ionicons
                 name={
                   isDevotionSaved(item._id) ? "bookmark" : "bookmark-outline"
                 }
-                size={20}
+                size={18}
                 color={
                   isDevotionSaved(item._id)
                     ? PRIMARY
                     : isDark
-                      ? "#71717a"
-                      : "#3f3f46"
+                      ? "#6b7280"
+                      : "#9ca3af"
                 }
               />
             </TouchableOpacity>
           </View>
 
-          {/* Footer Stats */}
-          <View className="flex-row mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800 items-center justify-between">
+          <View
+            className={`flex-row mt-4 pt-3.5 border-t items-center justify-between ${
+              isDark ? "border-[#222]" : "border-gray-100"
+            }`}
+          >
             <View className="flex-row items-center">
-              <Ionicons name="heart" size={16} color={PRIMARY} />
+              <Ionicons name="heart" size={14} color={PRIMARY} />
               <Text
-                className="ml-1.5 text-xs font-black"
+                className="ml-1.5 text-[11px] font-bold"
                 style={{ color: PRIMARY }}
               >
                 {item.likes} Likes
@@ -260,20 +262,20 @@ const Devotions = () => {
 
             {isDevotionRead(item._id) ? (
               <View className="flex-row items-center">
-                <Ionicons name="checkmark-done" size={16} color="#10b981" />
-                <Text className="ml-1.5 text-xs font-black text-emerald-500">
+                <Ionicons name="checkmark-done" size={14} color="#10b981" />
+                <Text className="ml-1.5 text-[11px] font-bold text-emerald-500">
                   Read
                 </Text>
               </View>
             ) : item.type === "voice" ? (
               <View className="flex-row items-center">
                 <Ionicons
-                  name="time-outline"
-                  size={16}
-                  color={isDark ? "#52525b" : "#a1a1aa"}
+                  name="mic-outline"
+                  size={14}
+                  color={isDark ? "#6b7280" : "#9ca3af"}
                 />
                 <Text
-                  className={`ml-1.5 text-xs font-bold ${isDark ? "text-zinc-400" : "text-zinc-500"}`}
+                  className={`ml-1.5 text-[11px] font-bold ${isDark ? "text-gray-500" : "text-gray-400"}`}
                 >
                   {item.duration}
                 </Text>
@@ -282,11 +284,11 @@ const Devotions = () => {
               <View className="flex-row items-center">
                 <Ionicons
                   name="calendar-outline"
-                  size={14}
-                  color={isDark ? "#52525b" : "#a1a1aa"}
+                  size={13}
+                  color={isDark ? "#6b7280" : "#9ca3af"}
                 />
                 <Text
-                  className={`ml-1.5 text-xs font-medium ${isDark ? "text-zinc-500" : "text-zinc-400"}`}
+                  className={`ml-1.5 text-[11px] font-medium ${isDark ? "text-gray-500" : "text-gray-400"}`}
                 >
                   {new Date(item.date).toLocaleDateString("en-US", {
                     month: "short",
@@ -306,7 +308,6 @@ const Devotions = () => {
       <StatusBar style={isDark ? "light" : "dark"} />
 
       <View style={{ paddingTop: top + 10 }} className="flex-1">
-        {/* Header Title */}
         <View className="px-6 mb-6">
           <Text
             className={`text-3xl font-black tracking-tight ${isDark ? "text-white" : "text-zinc-900"}`}
@@ -315,7 +316,6 @@ const Devotions = () => {
           </Text>
         </View>
 
-        {/* Filter Chips */}
         <View className="mb-4">
           <ScrollView
             horizontal
