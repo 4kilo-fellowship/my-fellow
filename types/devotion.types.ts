@@ -23,6 +23,8 @@ export interface Devotion {
   // helper field
   isLiked?: boolean;
   isSaved?: boolean;
+  likesFormatted?: string;
+  viewsFormatted?: string;
 }
 
 export interface DevotionResponse {

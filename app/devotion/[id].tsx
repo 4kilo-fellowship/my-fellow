@@ -1,4 +1,6 @@
+import SignInPromptModal from "@/components/SignInPromptModal";
 import { PRIMARY } from "@/constants";
+import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { devotionsService } from "@/services/devotionsService";
 import { useDevotionsStore } from "@/stores/devotions.store";
@@ -34,8 +36,11 @@ const DevotionDetail = () => {
   const [allDevotions, setAllDevotions] = useState<Devotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
+  const [likesCount, setLikesCount] = useState<number | string>(0);
+  const [viewsCount, setViewsCount] = useState<number | string>(0);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showSignInModal, setShowSignInModal] = useState(false);
+  const { authState } = useAuth();
 
   const player = useAudioPlayer(devotion?.audioUrl || "");
   const status = useAudioPlayerStatus(player);
@@ -47,9 +52,16 @@ const DevotionDetail = () => {
         if (response.success) {
           setDevotion(response.data);
           setIsLiked(response.data.isLiked || false);
-          setLikesCount(response.data.likes);
+          setLikesCount(response.data.likesFormatted || response.data.likes);
+          setViewsCount(response.data.viewsFormatted || response.data.views);
           markAsRead(id);
-          devotionsService.trackView(id);
+
+          devotionsService.trackView(id).then((viewRes) => {
+            if (viewRes.success) {
+              setViewsCount(viewRes.data.viewsFormatted);
+            }
+          });
+
           downloadForOffline(response.data);
         }
 
@@ -106,11 +118,18 @@ const DevotionDetail = () => {
   }, [devotion, allDevotions]);
 
   const handleLike = async () => {
+    if (!authState?.authenticated) {
+      setShowSignInModal(true);
+      return;
+    }
+
+    const action = isLiked ? "unlike" : "like";
+
     try {
-      const response = await devotionsService.likeDevotion(id);
+      const response = await devotionsService.likeDevotion(id, action);
       if (response.success) {
-        setIsLiked(response.isLiked);
-        setLikesCount((prev) => (response.isLiked ? prev + 1 : prev - 1));
+        setIsLiked(!isLiked);
+        setLikesCount(response.data.likesFormatted);
       }
     } catch (error) {
       console.error("Error liking devotion:", error);
@@ -163,6 +182,7 @@ const DevotionDetail = () => {
           Devotion not found
         </Text>
         <TouchableOpacity
+          activeOpacity={0.9}
           onPress={() => router.back()}
           className="mt-4 px-6 py-2 bg-primary rounded-full"
         >
@@ -311,7 +331,7 @@ const DevotionDetail = () => {
                     isDark ? "text-gray-500" : "text-gray-400"
                   }`}
                 >
-                  {devotion.views}
+                  {viewsCount}
                 </Text>
               </View>
 
@@ -655,6 +675,7 @@ const DevotionDetail = () => {
               >
                 {relatedDevotions.map((item) => (
                   <TouchableOpacity
+                    activeOpacity={0.8}
                     key={item._id}
                     onPress={() => router.push(`/devotion/${item._id}`)}
                     className="mr-3 w-52"
@@ -694,6 +715,16 @@ const DevotionDetail = () => {
           <View style={{ height: bottom + 20 }} />
         </View>
       </ScrollView>
+
+      <SignInPromptModal
+        visible={showSignInModal}
+        onClose={() => setShowSignInModal(false)}
+        onSignIn={() => {
+          setShowSignInModal(false);
+          router.push("/(auth)/sign-in");
+        }}
+        message="Sign in to like this devotion and save it to your favorites."
+      />
     </View>
   );
 };

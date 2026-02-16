@@ -23,17 +23,19 @@ export const devotionsService = {
     return response.data;
   },
 
-  likeDevotion: async (id: string) => {
-    const response = await api.post<{ success: boolean; isLiked: boolean }>(
-      `/devotions/${id}/like`,
-    );
+  likeDevotion: async (id: string, action: "like" | "unlike" = "like") => {
+    const response = await api.post<{
+      success: boolean;
+      data: { likes: number; likesFormatted: string };
+    }>(`/devotions/${id}/like`, { action });
     return response.data;
   },
 
   trackView: async (id: string) => {
-    const response = await api.post<{ success: boolean }>(
-      `/devotions/${id}/view`,
-    );
+    const response = await api.post<{
+      success: boolean;
+      data: { views: number; viewsFormatted: string };
+    }>(`/devotions/${id}/view`);
     return response.data;
   },
 };
