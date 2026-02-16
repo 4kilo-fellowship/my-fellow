@@ -53,16 +53,9 @@ const LocationCard = ({ item, isDark }: Props) => {
 
   return (
     <View
-      className={`mb-6 rounded-[24px] overflow-hidden ${
-        isDark ? "bg-[#1C1C1E]" : "bg-white"
+      className={`mb-5 rounded-[24px] overflow-hidden border ${
+        isDark ? "bg-[#111] border-[#222]" : "bg-[#f9fafb] border-gray-200"
       }`}
-      style={{
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: isDark ? 0.4 : 0.1,
-        shadowRadius: 10,
-        elevation: 6,
-      }}
     >
       <Image
         source={imageSource}
@@ -72,61 +65,83 @@ const LocationCard = ({ item, isDark }: Props) => {
       />
       <View className="p-5">
         <Text
-          className={`text-xl font-bold mb-1 ${
+          className={`text-lg font-bold mb-1 ${
             isDark ? "text-white" : "text-gray-900"
           }`}
         >
           {item.name}
         </Text>
-        <View className="flex-row items-center mb-3">
+        <View className="flex-row items-center mb-4">
           <Ionicons
             name="location-sharp"
-            size={16}
-            color="#9ca3af"
+            size={14}
+            color={isDark ? "#6b7280" : "#9ca3af"}
             style={{ marginRight: 4 }}
           />
           <Text
-            className={`text-base font-medium ${
-              isDark ? "text-gray-400" : "text-gray-600"
+            className={`text-[13px] font-medium ${
+              isDark ? "text-gray-500" : "text-gray-500"
             }`}
           >
             {item.address}
           </Text>
         </View>
 
-        {/* Access Times */}
-        <View className="mb-5">
-          {item.serviceTimes &&
-            Array.isArray(item.serviceTimes) &&
-            item.serviceTimes.map((time: string, index: number) => (
-              <View key={index} className="flex-row items-center mt-1">
-                <Ionicons
-                  name="time-outline"
-                  size={14}
-                  color="#f97316"
-                  style={{ marginRight: 6 }}
-                />
-                <Text
-                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}
+        {/* Service Times */}
+        {item.serviceTimes &&
+          Array.isArray(item.serviceTimes) &&
+          item.serviceTimes.length > 0 && (
+            <View
+              className={`rounded-xl p-3.5 mb-5 border ${
+                isDark
+                  ? "bg-[#1a1a1a] border-[#222]"
+                  : "bg-white border-gray-100"
+              }`}
+            >
+              {item.serviceTimes.map((time: string, index: number) => (
+                <View
+                  key={index}
+                  className={`flex-row items-center ${index > 0 ? "mt-2" : ""}`}
                 >
-                  {time}
-                </Text>
-              </View>
-            ))}
-        </View>
+                  <View
+                    className={`w-7 h-7 rounded-full items-center justify-center mr-3 ${
+                      isDark ? "bg-[#222]" : "bg-orange-50"
+                    }`}
+                  >
+                    <Ionicons name="time-outline" size={14} color={PRIMARY} />
+                  </View>
+                  <Text
+                    className={`text-[13px] font-medium ${
+                      isDark ? "text-gray-300" : "text-gray-700"
+                    }`}
+                  >
+                    {time}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
 
         <TouchableOpacity
           onPress={handleOpenMaps}
-          activeOpacity={0.8}
-          className="bg-orange-500 py-3.5 rounded-xl flex-row items-center justify-center"
+          activeOpacity={0.7}
+          className={`py-3 rounded-xl flex-row items-center justify-center border ${
+            isDark ? "bg-[#1C1C1E] border-[#333]" : "bg-white border-gray-200"
+          }`}
         >
           <Ionicons
-            name="map"
-            size={20}
-            color="white"
+            name="navigate"
+            size={18}
+            color={PRIMARY}
             style={{ marginRight: 8 }}
           />
-          <Text className="text-white font-bold text-base">Get Directions</Text>
+          <Text
+            className={`font-bold text-[14px] ${
+              isDark ? "text-white" : "text-gray-800"
+            }`}
+          >
+            Get Directions
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

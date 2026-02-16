@@ -283,7 +283,7 @@ export default function LeadersScreen() {
                         : "text-gray-600"
                   }`}
                 >
-                  {filter} {filter !== "All" ? "Leader" : ""}
+                  {filter} {filter !== "All" ? "Leaders" : ""}
                 </Text>
               </TouchableOpacity>
             ))}

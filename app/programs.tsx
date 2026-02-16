@@ -59,16 +59,9 @@ const ProgramCard = ({
   return (
     <View className="flex-1">
       <View
-        className={`mb-6 rounded-[28px] overflow-hidden ${
-          isDark ? "bg-[#1C1C1E]" : "bg-white"
+        className={`mb-5 rounded-[24px] overflow-hidden border ${
+          isDark ? "bg-[#111] border-[#222]" : "bg-[#f9fafb] border-gray-200"
         }`}
-        style={{
-          shadowColor: isDark ? "#000" : "#64748b",
-          shadowOffset: { width: 0, height: 12 },
-          shadowOpacity: isDark ? 0.5 : 0.12,
-          shadowRadius: 24,
-          elevation: 10,
-        }}
       >
         <View className="h-52 w-full relative">
           <Image
@@ -116,7 +109,7 @@ const ProgramCard = ({
 
         <View className="p-5">
           <Text
-            className={`text-[15px] mb-5 leading-6 ${
+            className={`text-[14px] mb-4 leading-[22px] ${
               isDark ? "text-gray-400" : "text-gray-500"
             }`}
             numberOfLines={2}
@@ -125,28 +118,44 @@ const ProgramCard = ({
           </Text>
 
           <View className="flex-row items-center justify-between mb-4">
-            <View className="flex-row items-center bg-orange-500/10 px-4 py-2 rounded-xl">
+            <View
+              className={`flex-row items-center px-3.5 py-2 rounded-lg border ${
+                isDark
+                  ? "bg-[#1a1a1a] border-[#222]"
+                  : "bg-white border-gray-100"
+              }`}
+            >
               <Ionicons
-                name="calendar"
-                size={15}
-                color="#f97316"
-                style={{ marginRight: 8 }}
+                name="calendar-outline"
+                size={14}
+                color={PRIMARY}
+                style={{ marginRight: 6 }}
               />
-              <Text className="text-orange-500 font-bold text-xs">
+              <Text
+                className={`font-bold text-xs ${
+                  isDark ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
                 {item.day}
               </Text>
             </View>
 
-            <View className="flex-row items-center">
+            <View
+              className={`flex-row items-center px-3.5 py-2 rounded-lg border ${
+                isDark
+                  ? "bg-[#1a1a1a] border-[#222]"
+                  : "bg-white border-gray-100"
+              }`}
+            >
               <Ionicons
                 name="time-outline"
-                size={16}
-                color={isDark ? "#9ca3af" : "#94a3b8"}
+                size={14}
+                color={isDark ? "#9ca3af" : "#6b7280"}
                 style={{ marginRight: 6 }}
               />
               <Text
                 className={`text-xs font-semibold ${
-                  isDark ? "text-gray-400" : "text-gray-500"
+                  isDark ? "text-gray-400" : "text-gray-600"
                 }`}
               >
                 {item.time}
@@ -155,7 +164,7 @@ const ProgramCard = ({
           </View>
 
           <View
-            className={`h-[1px] w-full mb-4 ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
+            className={`h-[1px] w-full mb-4 ${isDark ? "bg-[#222]" : "bg-gray-100"}`}
           />
 
           <TouchableOpacity
@@ -167,29 +176,26 @@ const ProgramCard = ({
                 item.location,
               )
             }
-            className={`flex-row items-center justify-between py-3 px-4 rounded-2xl ${
-              isDark ? "bg-gray-800/50" : "bg-slate-50"
+            className={`flex-row items-center justify-between py-3 px-4 rounded-xl border ${
+              isDark ? "bg-[#1a1a1a] border-[#222]" : "bg-white border-gray-100"
             }`}
           >
             <View className="flex-row items-center flex-1">
               <View
-                className="w-10 h-10 rounded-full items-center justify-center mr-3"
-                style={{ backgroundColor: isDark ? "#374151" : "#e2e8f0" }}
+                className={`w-9 h-9 rounded-full items-center justify-center mr-3 ${
+                  isDark ? "bg-[#222]" : "bg-orange-50"
+                }`}
               >
-                <Ionicons
-                  name="location"
-                  size={20}
-                  color={isDark ? "#fff" : "#000"}
-                />
+                <Ionicons name="location" size={18} color={PRIMARY} />
               </View>
               <View className="flex-1">
                 <Text
-                  className={`text-xs font-medium mb-0.5 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                  className={`text-[11px] font-medium mb-0.5 ${isDark ? "text-gray-500" : "text-gray-400"}`}
                 >
                   Location
                 </Text>
                 <Text
-                  className={`text-sm font-bold ${
+                  className={`text-[13px] font-bold ${
                     isDark ? "text-white" : "text-gray-800"
                   }`}
                   numberOfLines={1}
@@ -199,10 +205,13 @@ const ProgramCard = ({
               </View>
             </View>
             <View
-              className="w-9 h-9 rounded-full items-center justify-center"
-              style={{ backgroundColor: "#f97316" }}
+              className={`w-8 h-8 rounded-full items-center justify-center border ${
+                isDark
+                  ? "bg-[#222] border-[#333]"
+                  : "bg-gray-50 border-gray-200"
+              }`}
             >
-              <Ionicons name="navigate" size={16} color="white" />
+              <Ionicons name="navigate" size={14} color={PRIMARY} />
             </View>
           </TouchableOpacity>
         </View>
