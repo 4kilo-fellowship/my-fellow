@@ -22,6 +22,7 @@ export interface Devotion {
   bookFormat?: string;
   // helper field
   isLiked?: boolean;
+  isSaved?: boolean;
 }
 
 export interface DevotionResponse {
