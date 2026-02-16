@@ -209,7 +209,7 @@ const Devotions = () => {
                     isDark ? "text-zinc-400" : "text-zinc-500"
                   }`}
                 >
-                  {item.author}
+                  By {item.author}
                 </Text>
                 <View
                   className={`mx-2 w-1 h-1 rounded-full ${isDark ? "bg-zinc-700" : "bg-zinc-300"}`}
@@ -283,13 +283,14 @@ const Devotions = () => {
             </View>
 
             <TouchableOpacity
+              activeOpacity={0.8}
               onPress={() => router.push(`/devotion/${item._id}`)}
-              className="flex-row items-center bg-zinc-900 dark:bg-white px-4 py-2 rounded-xl"
+              className="flex-row items-center bg-zinc-900/10 dark:bg-white/10 px-5 py-2.5 rounded-2xl"
             >
               <Text
-                className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-zinc-900" : "text-white"}`}
+                className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-white/80" : "text-zinc-900/80"}`}
               >
-                Read Now
+                {item.type === "voice" ? "Listen Now" : "Read Now"}
               </Text>
             </TouchableOpacity>
           </View>
