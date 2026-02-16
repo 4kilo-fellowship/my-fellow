@@ -106,8 +106,13 @@ const Devotions = () => {
     return true;
   });
 
-  const { saveDevotion, unsaveDevotion, isDevotionSaved, savedDevotions } =
-    useDevotionsStore();
+  const {
+    saveDevotion,
+    unsaveDevotion,
+    isDevotionSaved,
+    savedDevotions,
+    isDevotionRead,
+  } = useDevotionsStore();
 
   const filteredDevotions = devotions.filter((item) => {
     if (selectedCat === "all") return true;
@@ -156,7 +161,7 @@ const Devotions = () => {
         onPress={() => router.push(`/devotion/${item._id}`)}
       >
         {/* Image Section */}
-        <View className="relative h-60 w-full">
+        <View className="relative h-52 w-full">
           <Image
             source={{ uri: item.image }}
             className="w-full h-full"
@@ -180,32 +185,23 @@ const Devotions = () => {
               </Text>
             </View>
           )}
-
-          {/* Category Badge */}
-          <View className="absolute bottom-4 left-4 bg-white/90 dark:bg-zinc-900/90 px-4 py-2 rounded-2xl backdrop-blur-md">
-            <Text
-              className={`text-[10px] font-black uppercase tracking-[2px] ${isDark ? "text-zinc-100" : "text-zinc-900"}`}
-            >
-              {item.type}
-            </Text>
-          </View>
         </View>
 
         {/* Content Section */}
-        <View className="p-6">
+        <View className="p-5">
           <View className="flex-row justify-between items-start">
             <View className="flex-1 mr-4">
               <Text
                 numberOfLines={2}
-                className={`text-2xl font-black leading-tight ${
+                className={`text-xl font-black leading-tight ${
                   isDark ? "text-zinc-100" : "text-zinc-900"
                 }`}
               >
                 {item.title}
               </Text>
-              <View className="flex-row items-center mt-3">
+              <View className="flex-row items-center mt-2.5">
                 <Text
-                  className={`text-sm font-bold ${
+                  className={`text-xs font-bold ${
                     isDark ? "text-zinc-400" : "text-zinc-500"
                   }`}
                 >
@@ -229,7 +225,7 @@ const Devotions = () => {
 
             <TouchableOpacity
               activeOpacity={0.7}
-              className={`p-3.5 rounded-2xl ${
+              className={`p-3 rounded-xl ${
                 isDark ? "bg-zinc-800" : "bg-zinc-100"
               } border ${isDark ? "border-zinc-700" : "border-zinc-200"}`}
               onPress={() => handleToggleSave(item)}
@@ -238,7 +234,7 @@ const Devotions = () => {
                 name={
                   isDevotionSaved(item._id) ? "bookmark" : "bookmark-outline"
                 }
-                size={24}
+                size={20}
                 color={
                   isDevotionSaved(item._id)
                     ? PRIMARY
@@ -251,48 +247,54 @@ const Devotions = () => {
           </View>
 
           {/* Footer Stats */}
-          <View className="flex-row mt-6 pt-5 border-t border-zinc-100 dark:border-zinc-800 items-center justify-between">
-            <View className="flex-row items-center gap-x-4">
-              <View className="flex-row items-center">
-                <Ionicons
-                  name="heart"
-                  size={16}
-                  color={item.isLiked ? "#ef4444" : "#d1d5db"}
-                />
-                <Text
-                  className={`ml-1.5 text-xs font-black ${isDark ? "text-zinc-400" : "text-zinc-500"}`}
-                >
-                  {item.likes}
-                </Text>
-              </View>
-
-              {item.type === "voice" && (
-                <View className="flex-row items-center">
-                  <Ionicons
-                    name="time-outline"
-                    size={16}
-                    color={isDark ? "#52525b" : "#a1a1aa"}
-                  />
-                  <Text
-                    className={`ml-1.5 text-xs font-bold ${isDark ? "text-zinc-400" : "text-zinc-500"}`}
-                  >
-                    {item.duration}
-                  </Text>
-                </View>
-              )}
+          <View className="flex-row mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800 items-center justify-between">
+            <View className="flex-row items-center">
+              <Ionicons name="heart" size={16} color={PRIMARY} />
+              <Text
+                className="ml-1.5 text-xs font-black"
+                style={{ color: PRIMARY }}
+              >
+                {item.likes} Likes
+              </Text>
             </View>
 
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => router.push(`/devotion/${item._id}`)}
-              className="flex-row items-center bg-zinc-900/10 dark:bg-white/10 px-5 py-2.5 rounded-2xl"
-            >
-              <Text
-                className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-white/80" : "text-zinc-900/80"}`}
-              >
-                {item.type === "voice" ? "Listen Now" : "Read Now"}
-              </Text>
-            </TouchableOpacity>
+            {isDevotionRead(item._id) ? (
+              <View className="flex-row items-center">
+                <Ionicons name="checkmark-done" size={16} color="#10b981" />
+                <Text className="ml-1.5 text-xs font-black text-emerald-500">
+                  Read
+                </Text>
+              </View>
+            ) : item.type === "voice" ? (
+              <View className="flex-row items-center">
+                <Ionicons
+                  name="time-outline"
+                  size={16}
+                  color={isDark ? "#52525b" : "#a1a1aa"}
+                />
+                <Text
+                  className={`ml-1.5 text-xs font-bold ${isDark ? "text-zinc-400" : "text-zinc-500"}`}
+                >
+                  {item.duration}
+                </Text>
+              </View>
+            ) : (
+              <View className="flex-row items-center">
+                <Ionicons
+                  name="calendar-outline"
+                  size={14}
+                  color={isDark ? "#52525b" : "#a1a1aa"}
+                />
+                <Text
+                  className={`ml-1.5 text-xs font-medium ${isDark ? "text-zinc-500" : "text-zinc-400"}`}
+                >
+                  {new Date(item.date).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -307,7 +309,7 @@ const Devotions = () => {
         {/* Header Title */}
         <View className="px-6 mb-6">
           <Text
-            className={`text-4xl font-black tracking-tight ${isDark ? "text-white" : "text-zinc-900"}`}
+            className={`text-3xl font-black tracking-tight ${isDark ? "text-white" : "text-zinc-900"}`}
           >
             Devotions
           </Text>
