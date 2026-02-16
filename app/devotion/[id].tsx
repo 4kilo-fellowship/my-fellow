@@ -156,10 +156,10 @@ const DevotionDetail = () => {
     }
   };
 
-  const formatTime = (millis: number) => {
-    const totalSeconds = millis / 1000;
+  const formatTime = (secs: number) => {
+    const totalSeconds = Math.floor(secs);
     const minutes = Math.floor(totalSeconds / 60);
-    const seconds = Math.floor(totalSeconds % 60);
+    const seconds = totalSeconds % 60;
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
@@ -408,7 +408,7 @@ const DevotionDetail = () => {
                 <View className="flex-row items-center ml-3" style={{ gap: 8 }}>
                   <TouchableOpacity
                     onPress={() =>
-                      player.seekTo(Math.max(0, status.currentTime - 10000))
+                      player.seekTo(Math.max(0, status.currentTime - 10))
                     }
                   >
                     <Ionicons
@@ -420,7 +420,7 @@ const DevotionDetail = () => {
                   <TouchableOpacity
                     onPress={() =>
                       player.seekTo(
-                        Math.min(status.duration, status.currentTime + 10000),
+                        Math.min(status.duration, status.currentTime + 10),
                       )
                     }
                   >
