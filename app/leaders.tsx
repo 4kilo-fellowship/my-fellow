@@ -26,7 +26,7 @@ export default function LeadersScreen() {
 
   // Header Heights
   const STATIC_HEADER_HEIGHT = top + 80;
-  const FILTER_SECTION_HEIGHT = 100;
+  const FILTER_SECTION_HEIGHT = 115;
   const TOTAL_HEADER_HEIGHT = STATIC_HEADER_HEIGHT + FILTER_SECTION_HEIGHT;
 
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -68,10 +68,21 @@ export default function LeadersScreen() {
     });
   };
 
-  const filteredLeaders = leaders.filter((leader) => {
-    if (selectedFilter === "All") return true;
-    return leader.type === selectedFilter;
-  });
+  const filteredLeaders = leaders
+    .filter((leader) => {
+      if (selectedFilter === "All") return true;
+      const type = leader.type || "";
+      return type.toLowerCase() === selectedFilter.toLowerCase();
+    })
+    .sort((a: any, b: any) => {
+      // Sort by createdAt if available, otherwise by id (oldest first)
+      if (a.createdAt && b.createdAt) {
+        return (
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+      }
+      return String(a.id || a._id).localeCompare(String(b.id || b._id));
+    });
 
   return (
     <>
@@ -159,29 +170,17 @@ export default function LeadersScreen() {
             )}
             scrollEventThrottle={16}
             ListHeaderComponent={
-              <View style={{ height: TOTAL_HEADER_HEIGHT + 20 }}>
-                <View className="mb-4 mt-6 px-1">
-                  <Text
-                    className={`text-2xl font-black mb-2 ${isDark ? "text-white" : "text-gray-900"}`}
-                  >
-                    Meet Our Leaders
-                  </Text>
-                  <Text
-                    className={`text-base leading-6 ${isDark ? "text-gray-400" : "text-gray-500"}`}
-                  >
-                    Connect with our dedicated leaders who are passionately
-                    serving and building the kingdom.
-                  </Text>
-                </View>
-              </View>
+              <View style={{ height: TOTAL_HEADER_HEIGHT }} />
             }
             renderItem={({ item }) => (
-              <LeaderCard
-                item={item}
-                isDark={isDark}
-                onCall={() => handleCall(item.phoneNumber)}
-                onTelegram={() => handleOpenTelegram(item.telegram)}
-              />
+              <View style={{ paddingTop: 10 }}>
+                <LeaderCard
+                  item={item}
+                  isDark={isDark}
+                  onCall={() => handleCall(item.phoneNumber)}
+                  onTelegram={() => handleOpenTelegram(item.telegram)}
+                />
+              </View>
             )}
             contentContainerStyle={{
               paddingHorizontal: 20,
@@ -235,7 +234,7 @@ export default function LeadersScreen() {
           </View>
         </View>
 
-        {/* Animated Filters */}
+        {/* Animated Filters and Description */}
         <Animated.View
           style={{
             position: "absolute",
@@ -248,18 +247,26 @@ export default function LeadersScreen() {
             transform: [{ translateY }],
           }}
         >
+          <Text
+            className={`text-base leading-6 pr-4 ${isDark ? "text-gray-400" : "text-gray-500"}`}
+            style={{ paddingHorizontal: 20 }}
+          >
+            Connect with our dedicated leaders who are passionately serving and
+            building the kingdom.
+          </Text>
+
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             className="mt-4"
-            contentContainerStyle={{ paddingHorizontal: 20 }}
+            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 10 }}
           >
             {filters.map((filter) => (
               <TouchableOpacity
                 key={filter}
                 activeOpacity={0.7}
                 onPress={() => setSelectedFilter(filter)}
-                className={`px-5 py-2 mr-3 rounded-xl border flex-row items-center h-[40px] ${
+                className={`px-5 py-2 mr-3 rounded-xl border flex-row items-center h-[42px] ${
                   selectedFilter === filter
                     ? "bg-orange-500 border-orange-500"
                     : isDark
@@ -276,7 +283,7 @@ export default function LeadersScreen() {
                         : "text-gray-600"
                   }`}
                 >
-                  {filter} {filter !== "All" ? "Leaders" : ""}
+                  {filter} {filter !== "All" ? "Leader" : ""}
                 </Text>
               </TouchableOpacity>
             ))}
