@@ -25,8 +25,8 @@ const CATEGORIES: {
   value: DevotionType | "all" | "new";
   icon: any;
 }[] = [
-  { label: "New", value: "new", icon: "sparkles-outline" },
   { label: "All", value: "all", icon: "apps-outline" },
+  { label: "New", value: "new", icon: "sparkles-outline" },
   { label: "Text", value: "text", icon: "document-text-outline" },
   { label: "Voice", value: "voice", icon: "mic-outline" },
   { label: "PDF", value: "pdf", icon: "document-outline" },
@@ -97,10 +97,17 @@ const Devotions = () => {
     return diffDays <= 7;
   };
 
+  const hasNew = devotions.some((item) => isNew(item.date));
+
   const filteredDevotions = devotions.filter((item) => {
     if (selectedCat === "all") return true;
     if (selectedCat === "new") return isNew(item.date);
     return item.type === selectedCat;
+  });
+
+  const visibleCategories = CATEGORIES.filter((cat) => {
+    if (cat.value === "new") return hasNew;
+    return true;
   });
 
   const handleShare = async (item: Devotion) => {
@@ -141,8 +148,8 @@ const Devotions = () => {
           </View>
 
           {recentlyPosted && (
-            <View className="absolute top-3 left-3 bg-red-500 px-3 py-1 rounded-full shadow-lg">
-              <Text className="text-white text-[10px] font-bold uppercase">
+            <View className="absolute top-3 left-3 bg-white px-3 py-1 rounded-full shadow-sm">
+              <Text className="text-black text-[10px] font-bold uppercase tracking-wider">
                 New
               </Text>
             </View>
@@ -241,11 +248,6 @@ const Devotions = () => {
           >
             Devotions
           </Text>
-          <Text
-            className={`text-sm mt-1 font-medium ${isDark ? "text-zinc-500" : "text-zinc-400"}`}
-          >
-            Daily spiritual nourishment for your soul.
-          </Text>
         </View>
 
         {/* Filter Chips */}
@@ -255,12 +257,12 @@ const Devotions = () => {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 20 }}
           >
-            {CATEGORIES.map((cat) => (
+            {visibleCategories.map((cat) => (
               <TouchableOpacity
                 activeOpacity={0.8}
                 key={cat.value}
                 onPress={() => setSelectedCat(cat.value)}
-                className={`mr-3 px-5 py-3 rounded-2xl flex-row items-center border ${
+                className={`mr-3 px-4 py-2 rounded-xl flex-row items-center border ${
                   selectedCat === cat.value
                     ? "bg-primary border-primary"
                     : isDark
@@ -272,14 +274,14 @@ const Devotions = () => {
                   <Animated.View style={{ opacity: blinkAnim }}>
                     <Ionicons
                       name={cat.icon}
-                      size={18}
+                      size={16}
                       color={selectedCat === cat.value ? "white" : "#ef4444"}
                     />
                   </Animated.View>
                 ) : (
                   <Ionicons
                     name={cat.icon}
-                    size={18}
+                    size={16}
                     color={
                       selectedCat === cat.value
                         ? "white"
@@ -290,7 +292,7 @@ const Devotions = () => {
                   />
                 )}
                 <Text
-                  className={`ml-2.5 font-bold ${
+                  className={`ml-2 font-bold text-sm ${
                     selectedCat === cat.value
                       ? "text-white"
                       : isDark
