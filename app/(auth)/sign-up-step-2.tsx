@@ -177,7 +177,11 @@ export default function SignUpStep2() {
                 <View
                   className={`w-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"} border-2 border-t-0 rounded-b-2xl overflow-hidden`}
                 >
-                  <View>
+                  <ScrollView
+                    style={{ maxHeight: 200 }}
+                    nestedScrollEnabled
+                    showsVerticalScrollIndicator={true}
+                  >
                     {(options || []).map((option, index) => (
                       <TouchableOpacity
                         key={index}
@@ -204,7 +208,7 @@ export default function SignUpStep2() {
                         )}
                       </TouchableOpacity>
                     ))}
-                  </View>
+                  </ScrollView>
                 </View>
               )}
               {errorMessage ? (
