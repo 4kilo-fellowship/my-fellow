@@ -132,7 +132,8 @@ const Home = () => {
           {/* Upcoming Events */}
           <View className="mb-2">
             <View className="px-5 mb-2">
-              {!hasSeenFeatures ? (
+              {!hasSeenFeatures ||
+              ((loading || refreshing) && events.length === 0) ? (
                 <Placeholder width={150} height={24} borderRadius={4} />
               ) : (
                 <Text
@@ -271,8 +272,8 @@ const Home = () => {
 
           {/* Quick Actions */}
           <View className="mt-7">
-            <View className="px-5 flex-row mb-3">
-              {!hasSeenFeatures ? (
+            <View className="px-5 flex-row justify-between items-center mb-3">
+              {!hasSeenFeatures || (loading && events.length === 0) ? (
                 <Placeholder width={100} height={24} borderRadius={4} />
               ) : (
                 <Text
@@ -282,6 +283,19 @@ const Home = () => {
                 >
                   Features
                 </Text>
+              )}
+              {!hasSeenFeatures || (loading && events.length === 0) ? (
+                <Placeholder width={60} height={20} borderRadius={4} />
+              ) : (
+                <TouchableOpacity
+                  activeOpacity={0.6}
+                  className="flex-row items-center"
+                >
+                  <Text className="text-primary font-semibold mr-2">
+                    View All
+                  </Text>
+                  <Ionicons name="arrow-forward" size={16} color={PRIMARY} />
+                </TouchableOpacity>
               )}
             </View>
             {!hasSeenFeatures || (loading && events.length === 0) ? (
@@ -346,7 +360,8 @@ const Home = () => {
           {/* Recent Devotions */}
           <View className="mt-7">
             <View className="px-5 flex-row justify-between items-center mb-3">
-              {!hasSeenFeatures ? (
+              {!hasSeenFeatures ||
+              ((loading || refreshing) && devotions.length === 0) ? (
                 <Placeholder width={150} height={24} borderRadius={4} />
               ) : (
                 <Text
@@ -357,7 +372,8 @@ const Home = () => {
                   Recent Devotions
                 </Text>
               )}
-              {!hasSeenFeatures ? (
+              {!hasSeenFeatures ||
+              ((loading || refreshing) && devotions.length === 0) ? (
                 <Placeholder width={60} height={20} borderRadius={4} />
               ) : (
                 <TouchableOpacity
@@ -405,7 +421,8 @@ const Home = () => {
 
           {/* Latest Sermons */}
           <View className="mt-7 px-5">
-            {!hasSeenFeatures ? (
+            {!hasSeenFeatures ||
+            ((loading || refreshing) && videos.length === 0) ? (
               <Placeholder
                 width={140}
                 height={24}

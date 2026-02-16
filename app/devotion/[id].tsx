@@ -48,18 +48,11 @@ const DevotionDetail = () => {
           setDevotion(response.data);
           setIsLiked(response.data.isLiked || false);
           setLikesCount(response.data.likes);
-
-          // Mark as read
           markAsRead(id);
-
-          // Track view
           devotionsService.trackView(id);
-
-          // Trigger offline download
           downloadForOffline(response.data);
         }
 
-        // Fetch all devotions for related section
         const allResponse = await devotionsService.getDevotions();
         if (allResponse.success) {
           setAllDevotions(allResponse.data);
@@ -80,25 +73,20 @@ const DevotionDetail = () => {
       const folder = `${FileSystem.documentDirectory}devotions/${item._id}/`;
       await FileSystem.makeDirectoryAsync(folder, { intermediates: true });
 
-      // Download main image
       if (item.image) {
         const imageFile = folder + "image.jpg";
         await FileSystem.downloadAsync(item.image, imageFile);
       }
 
-      // Download audio if applicable
       if (item.audioUrl) {
         const audioFile = folder + "audio.mp3";
         await FileSystem.downloadAsync(item.audioUrl, audioFile);
       }
 
-      // Download PDF if applicable
       if (item.pdfUrl) {
         const pdfFile = folder + "document.pdf";
         await FileSystem.downloadAsync(item.pdfUrl, pdfFile);
       }
-
-      console.log("Devotion downloaded for offline use");
     } catch (error) {
       console.error("Error downloading for offline:", error);
     } finally {
