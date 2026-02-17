@@ -248,8 +248,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   illustration: {
-    width: ILLUSTRATION_SIZE * 0.95,
-    height: ILLUSTRATION_SIZE * 0.95,
+    width: ILLUSTRATION_SIZE * 1.15,
+    height: ILLUSTRATION_SIZE * 1.15,
   },
   textContainer: {
     alignItems: "center",
