@@ -30,6 +30,10 @@ export default function RootLayout() {
       <ThemeProvider>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" options={{ title: "Splash" }} />
+          <Stack.Screen
+            name="onboarding"
+            options={{ title: "Onboarding", animation: "fade" }}
+          />
           <Stack.Screen name="(tabs)" options={{ title: "Home" }} />
           <Stack.Screen name="(auth)" options={{ title: "Auth" }} />
           <Stack.Screen name="events/[id]" options={{ title: "Events" }} />

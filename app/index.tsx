@@ -1,4 +1,5 @@
 import { PRIMARY } from "@/constants";
+import { useAppStore } from "@/stores/app.store";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -19,6 +20,7 @@ const LOGO_SIZE = 500;
 export default function AppSplashScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
+  const hasCompletedOnboarding = useAppStore((s) => s.hasCompletedOnboarding);
 
   const progress = useSharedValue(0);
 
@@ -46,7 +48,11 @@ export default function AppSplashScreen() {
           (finished) => {
             if (finished) {
               setTimeout(() => {
-                scheduleOnRN(router.replace, "/(tabs)");
+                if (hasCompletedOnboarding) {
+                  scheduleOnRN(router.replace, "/(tabs)");
+                } else {
+                  scheduleOnRN(router.replace, "/onboarding");
+                }
               }, 400);
             }
           },

@@ -5,6 +5,8 @@ import { createJSONStorage, persist } from "zustand/middleware";
 interface AppState {
   hasSeenFeatures: boolean;
   setHasSeenFeatures: (value: boolean) => void;
+  hasCompletedOnboarding: boolean;
+  setHasCompletedOnboarding: (value: boolean) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -12,6 +14,9 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       hasSeenFeatures: false,
       setHasSeenFeatures: (value) => set({ hasSeenFeatures: value }),
+      hasCompletedOnboarding: false,
+      setHasCompletedOnboarding: (value) =>
+        set({ hasCompletedOnboarding: value }),
     }),
     {
       name: "app-storage",
