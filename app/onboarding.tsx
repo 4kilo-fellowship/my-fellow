@@ -1,7 +1,5 @@
-import { PRIMARY } from "@/constants";
 import { useAppStore } from "@/stores/app.store";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useRef, useState } from "react";
@@ -26,42 +24,36 @@ import Animated, {
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
+const ILLUSTRATION_SIZE = SCREEN_WIDTH * 0.7;
+
 interface Slide {
   id: number;
-  icon: keyof typeof Ionicons.glyphMap;
-  iconBg: string[];
+  image: any;
   title: string;
   subtitle: string;
-  accent: string;
 }
 
 const SLIDES: Slide[] = [
   {
     id: 1,
-    icon: "people",
-    iconBg: ["#ff6719", "#ff8a50"],
+    image: require("@/assets/images/onboarding-community.png"),
     title: "Welcome to\nYour Fellowship",
     subtitle:
       "Join a vibrant community of believers growing together in faith, love, and purpose.",
-    accent: "#ff6719",
   },
   {
     id: 2,
-    icon: "book",
-    iconBg: ["#ff6719", "#e85d10"],
+    image: require("@/assets/images/onboarding-devotion.png"),
     title: "Daily\nDevotions",
     subtitle:
       "Nourish your spirit with daily devotions, insightful readings, and guided prayers.",
-    accent: "#ff6719",
   },
   {
     id: 3,
-    icon: "notifications",
-    iconBg: ["#ff6719", "#ff8a50"],
+    image: require("@/assets/images/onboarding-connected.png"),
     title: "Stay\nConnected",
     subtitle:
       "Never miss an event, announcement, or program. Stay in the loop with your community.",
-    accent: "#ff6719",
   },
 ];
 
@@ -73,7 +65,7 @@ function DotIndicator({
   total: number;
 }) {
   return (
-    <View style={styles.dotsContainer}>
+    <View style={styles.dotsRow}>
       {Array.from({ length: total }).map((_, i) => (
         <Dot key={i} active={i === currentIndex} />
       ))}
@@ -82,23 +74,23 @@ function DotIndicator({
 }
 
 function Dot({ active }: { active: boolean }) {
-  const width = useSharedValue(active ? 28 : 8);
-  const opacity = useSharedValue(active ? 1 : 0.3);
+  const width = useSharedValue(active ? 24 : 8);
+  const bgOpacity = useSharedValue(active ? 1 : 0.25);
 
   React.useEffect(() => {
-    width.value = withSpring(active ? 28 : 8, {
-      damping: 15,
-      stiffness: 200,
+    width.value = withSpring(active ? 24 : 8, {
+      damping: 16,
+      stiffness: 180,
     });
-    opacity.value = withSpring(active ? 1 : 0.3, {
-      damping: 15,
-      stiffness: 200,
+    bgOpacity.value = withSpring(active ? 1 : 0.25, {
+      damping: 16,
+      stiffness: 180,
     });
   }, [active]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     width: width.value,
-    opacity: opacity.value,
+    opacity: bgOpacity.value,
   }));
 
   return <Animated.View style={[styles.dot, animatedStyle]} />;
@@ -144,20 +136,9 @@ export default function OnboardingScreen() {
     <View style={styles.container}>
       <StatusBar style="dark" />
 
-      {/* Skip */}
-      <Animated.View
-        entering={FadeIn.delay(600).duration(500)}
-        style={styles.skipContainer}
-      >
-        <TouchableOpacity
-          onPress={handleComplete}
-          activeOpacity={0.7}
-          style={styles.skipButton}
-        >
-          <Text style={styles.skipText}>Skip</Text>
-          <Ionicons name="chevron-forward" size={16} color="#94a3b8" />
-        </TouchableOpacity>
-      </Animated.View>
+      {/* Decorative accent dots */}
+      <View style={[styles.accentDot, styles.accentDotTopLeft]} />
+      <View style={[styles.accentDot, styles.accentDotBottomRight]} />
 
       {/* Slides */}
       <ScrollView
@@ -169,122 +150,68 @@ export default function OnboardingScreen() {
         scrollEventThrottle={16}
         bounces={false}
         decelerationRate="fast"
+        style={styles.scrollArea}
       >
         {SLIDES.map((slide, index) => (
           <View key={slide.id} style={styles.slide}>
-            <View style={styles.slideContent}>
-              {/* Icon Area */}
-              <Animated.View
-                entering={FadeInDown.delay(200 + index * 100)
-                  .duration(700)
-                  .springify()
-                  .damping(14)}
-                style={styles.illustrationArea}
-              >
-                {/* Decorative rings */}
-                <View style={styles.iconWrapper}>
-                  <View
-                    style={[
-                      styles.outerRing,
-                      { borderColor: `${slide.accent}15` },
-                    ]}
-                  />
-                  <View
-                    style={[
-                      styles.middleRing,
-                      { borderColor: `${slide.accent}20` },
-                    ]}
-                  />
-                  <View
-                    style={[
-                      styles.innerRing,
-                      { borderColor: `${slide.accent}28` },
-                    ]}
-                  />
-                  <LinearGradient
-                    colors={slide.iconBg as [string, string]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.iconCircle}
-                  >
-                    <Ionicons name={slide.icon} size={56} color="#fff" />
-                  </LinearGradient>
-                </View>
-
-                {/* Floating particles */}
-                <Animated.View
-                  entering={FadeIn.delay(700).duration(600)}
-                  style={[
-                    styles.particle,
-                    styles.particleTopRight,
-                    { backgroundColor: `${slide.accent}30` },
-                  ]}
+            {/* Illustration */}
+            <Animated.View
+              entering={FadeInDown.delay(150 + index * 80)
+                .duration(600)
+                .springify()
+                .damping(16)}
+              style={styles.illustrationContainer}
+            >
+              <View style={styles.illustrationCircle}>
+                <Image
+                  source={slide.image}
+                  style={styles.illustration}
+                  contentFit="contain"
+                  cachePolicy="memory"
                 />
-                <Animated.View
-                  entering={FadeIn.delay(900).duration(600)}
-                  style={[
-                    styles.particle,
-                    styles.particleBottomLeft,
-                    { backgroundColor: `${slide.accent}20` },
-                  ]}
-                />
-                <Animated.View
-                  entering={FadeIn.delay(800).duration(600)}
-                  style={[
-                    styles.particleSmall,
-                    styles.particleMidRight,
-                    { backgroundColor: `${slide.accent}40` },
-                  ]}
-                />
-              </Animated.View>
-
-              {/* Text */}
-              <View style={styles.textArea}>
-                <Animated.Text
-                  entering={FadeInUp.delay(350 + index * 100).duration(600)}
-                  style={styles.title}
-                >
-                  {slide.title}
-                </Animated.Text>
-                <Animated.Text
-                  entering={FadeInUp.delay(500 + index * 100).duration(600)}
-                  style={styles.subtitle}
-                >
-                  {slide.subtitle}
-                </Animated.Text>
               </View>
+            </Animated.View>
+
+            {/* Text */}
+            <View style={styles.textContainer}>
+              <Animated.Text
+                entering={FadeInUp.delay(300 + index * 80).duration(500)}
+                style={styles.title}
+              >
+                {slide.title}
+              </Animated.Text>
+              <Animated.Text
+                entering={FadeInUp.delay(450 + index * 80).duration(500)}
+                style={styles.subtitle}
+              >
+                {slide.subtitle}
+              </Animated.Text>
             </View>
           </View>
         ))}
       </ScrollView>
 
-      {/* Bottom controls */}
+      {/* Bottom bar: Skip — Dots — Next */}
       <Animated.View
-        entering={FadeInUp.delay(700).duration(500)}
-        style={styles.bottomArea}
+        entering={FadeIn.delay(600).duration(400)}
+        style={styles.bottomBar}
       >
+        <TouchableOpacity
+          onPress={handleComplete}
+          activeOpacity={0.6}
+          style={styles.bottomAction}
+        >
+          <Text style={styles.skipText}>Skip</Text>
+        </TouchableOpacity>
+
         <DotIndicator currentIndex={currentIndex} total={SLIDES.length} />
 
         <TouchableOpacity
-          activeOpacity={0.85}
           onPress={handleNext}
-          style={styles.ctaButtonOuter}
+          activeOpacity={0.7}
+          style={styles.bottomAction}
         >
-          <LinearGradient
-            colors={["#ff6719", "#e85d10"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.ctaButton}
-          >
-            {isLastSlide ? (
-              <Text style={styles.ctaText}>Get Started</Text>
-            ) : (
-              <View style={styles.ctaInner}>
-                <Text style={styles.ctaText}>Next</Text>
-                <Ionicons name="arrow-forward" size={20} color="#fff" />
-              </View>
-            )}
-          </LinearGradient>
+          <Text style={styles.nextText}>{isLastSlide ? "Start" : "Next"}</Text>
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -294,172 +221,104 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#fafafa",
   },
-  skipContainer: {
-    position: "absolute",
-    top: 56,
-    right: 24,
-    zIndex: 10,
-  },
-  skipButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: "#f8fafc",
-  },
-  skipText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#94a3b8",
-    marginRight: 2,
+  scrollArea: {
+    flex: 1,
   },
   slide: {
     width: SCREEN_WIDTH,
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    paddingTop: SCREEN_HEIGHT * 0.08,
   },
-  slideContent: {
-    flex: 1,
+  illustrationContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 32,
-    paddingTop: 80,
+    marginBottom: 36,
   },
-  illustrationArea: {
+  illustrationCircle: {
+    width: ILLUSTRATION_SIZE,
+    height: ILLUSTRATION_SIZE,
+    borderRadius: ILLUSTRATION_SIZE / 2,
+    backgroundColor: "#eef0f4",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 40,
+    overflow: "hidden",
   },
-  iconWrapper: {
-    width: 220,
-    height: 220,
-    justifyContent: "center",
+  illustration: {
+    width: ILLUSTRATION_SIZE * 0.95,
+    height: ILLUSTRATION_SIZE * 0.95,
+  },
+  textContainer: {
     alignItems: "center",
-  },
-  outerRing: {
-    position: "absolute",
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    borderWidth: 1.5,
-  },
-  middleRing: {
-    position: "absolute",
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    borderWidth: 1.5,
-  },
-  innerRing: {
-    position: "absolute",
-    width: 148,
-    height: 148,
-    borderRadius: 74,
-    borderWidth: 1,
-  },
-  iconCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: PRIMARY,
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.35,
-    shadowRadius: 28,
-    elevation: 18,
-  },
-  particle: {
-    position: "absolute",
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-  },
-  particleSmall: {
-    position: "absolute",
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  particleTopRight: {
-    top: 8,
-    right: -12,
-  },
-  particleBottomLeft: {
-    bottom: 8,
-    left: -8,
-  },
-  particleMidRight: {
-    top: "45%" as unknown as number,
-    right: -22,
-  },
-  textArea: {
-    alignItems: "center",
-    paddingHorizontal: 12,
+    paddingHorizontal: 40,
   },
   title: {
-    fontSize: 34,
+    fontSize: 30,
     fontWeight: "800",
-    color: "#0f172a",
+    color: "#1a1a2e",
     textAlign: "center",
-    lineHeight: 44,
-    letterSpacing: -0.5,
+    lineHeight: 40,
+    letterSpacing: -0.3,
     marginBottom: 14,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#64748b",
+    fontSize: 15,
+    color: "#8a8a9a",
     textAlign: "center",
-    lineHeight: 26,
+    lineHeight: 24,
     fontWeight: "400",
-    maxWidth: 300,
+    maxWidth: 280,
   },
-  dotsContainer: {
+  bottomBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 32,
+    paddingBottom: 50,
+    paddingTop: 16,
+  },
+  bottomAction: {
+    width: 60,
+    alignItems: "center",
+  },
+  skipText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#b0b0be",
+  },
+  nextText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1a1a2e",
+  },
+  dotsRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    marginBottom: 32,
+    gap: 6,
   },
   dot: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: PRIMARY,
+    backgroundColor: "#1a1a2e",
   },
-  bottomArea: {
-    paddingHorizontal: 32,
-    paddingBottom: 48,
-    alignItems: "center",
+  accentDot: {
+    position: "absolute",
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#ff6719",
+    zIndex: 5,
   },
-  ctaButtonOuter: {
-    width: "100%",
-    borderRadius: 20,
-    overflow: "hidden",
-    shadowColor: PRIMARY,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 10,
+  accentDotTopLeft: {
+    top: SCREEN_HEIGHT * 0.45,
+    left: 20,
   },
-  ctaButton: {
-    paddingVertical: 18,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  ctaInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  ctaText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-    letterSpacing: 0.3,
+  accentDotBottomRight: {
+    bottom: SCREEN_HEIGHT * 0.15,
+    right: 24,
   },
 });
