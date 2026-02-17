@@ -114,7 +114,7 @@ export default function OnboardingScreen() {
 
   const handleComplete = useCallback(() => {
     setHasCompletedOnboarding(true);
-    router.replace("/(auth)/sign-in");
+    router.replace("/(tabs)");
   }, []);
 
   const handleNext = useCallback(() => {
@@ -172,26 +172,33 @@ export default function OnboardingScreen() {
       >
         {SLIDES.map((slide, index) => (
           <View key={slide.id} style={styles.slide}>
-            {/* Icon Area */}
-            <View style={styles.illustrationArea}>
+            <View style={styles.slideContent}>
+              {/* Icon Area */}
               <Animated.View
                 entering={FadeInDown.delay(200 + index * 100)
                   .duration(700)
                   .springify()
                   .damping(14)}
+                style={styles.illustrationArea}
               >
                 {/* Decorative rings */}
                 <View style={styles.iconWrapper}>
                   <View
                     style={[
                       styles.outerRing,
-                      { borderColor: `${slide.accent}10` },
+                      { borderColor: `${slide.accent}15` },
                     ]}
                   />
                   <View
                     style={[
                       styles.middleRing,
-                      { borderColor: `${slide.accent}18` },
+                      { borderColor: `${slide.accent}20` },
+                    ]}
+                  />
+                  <View
+                    style={[
+                      styles.innerRing,
+                      { borderColor: `${slide.accent}28` },
                     ]}
                   />
                   <LinearGradient
@@ -200,7 +207,7 @@ export default function OnboardingScreen() {
                     end={{ x: 1, y: 1 }}
                     style={styles.iconCircle}
                   >
-                    <Ionicons name={slide.icon} size={52} color="#fff" />
+                    <Ionicons name={slide.icon} size={56} color="#fff" />
                   </LinearGradient>
                 </View>
 
@@ -230,22 +237,22 @@ export default function OnboardingScreen() {
                   ]}
                 />
               </Animated.View>
-            </View>
 
-            {/* Text */}
-            <View style={styles.textArea}>
-              <Animated.Text
-                entering={FadeInUp.delay(350 + index * 100).duration(600)}
-                style={styles.title}
-              >
-                {slide.title}
-              </Animated.Text>
-              <Animated.Text
-                entering={FadeInUp.delay(500 + index * 100).duration(600)}
-                style={styles.subtitle}
-              >
-                {slide.subtitle}
-              </Animated.Text>
+              {/* Text */}
+              <View style={styles.textArea}>
+                <Animated.Text
+                  entering={FadeInUp.delay(350 + index * 100).duration(600)}
+                  style={styles.title}
+                >
+                  {slide.title}
+                </Animated.Text>
+                <Animated.Text
+                  entering={FadeInUp.delay(500 + index * 100).duration(600)}
+                  style={styles.subtitle}
+                >
+                  {slide.subtitle}
+                </Animated.Text>
+              </View>
             </View>
           </View>
         ))}
@@ -312,36 +319,47 @@ const styles = StyleSheet.create({
   slide: {
     width: SCREEN_WIDTH,
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
+  },
+  slideContent: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 32,
+    paddingTop: 80,
   },
   illustrationArea: {
-    flex: 1,
-    justifyContent: "flex-end",
     alignItems: "center",
-    paddingBottom: 24,
-    marginTop: SCREEN_HEIGHT * 0.1,
+    justifyContent: "center",
+    marginBottom: 40,
   },
   iconWrapper: {
-    width: 200,
-    height: 200,
+    width: 220,
+    height: 220,
     justifyContent: "center",
     alignItems: "center",
   },
   outerRing: {
     position: "absolute",
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
     borderWidth: 1.5,
   },
   middleRing: {
     position: "absolute",
-    width: 160,
-    height: 160,
-    borderRadius: 80,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
     borderWidth: 1.5,
+  },
+  innerRing: {
+    position: "absolute",
+    width: 148,
+    height: 148,
+    borderRadius: 74,
+    borderWidth: 1,
   },
   iconCircle: {
     width: 120,
@@ -350,10 +368,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     shadowColor: PRIMARY,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.3,
-    shadowRadius: 24,
-    elevation: 16,
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.35,
+    shadowRadius: 28,
+    elevation: 18,
   },
   particle: {
     position: "absolute",
@@ -368,30 +386,29 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   particleTopRight: {
-    top: 10,
-    right: -10,
+    top: 8,
+    right: -12,
   },
   particleBottomLeft: {
-    bottom: 10,
-    left: -6,
+    bottom: 8,
+    left: -8,
   },
   particleMidRight: {
-    top: "50%" as unknown as number,
-    right: -20,
+    top: "45%" as unknown as number,
+    right: -22,
   },
   textArea: {
-    flex: 0.65,
     alignItems: "center",
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
   },
   title: {
     fontSize: 34,
     fontWeight: "800",
     color: "#0f172a",
     textAlign: "center",
-    lineHeight: 42,
+    lineHeight: 44,
     letterSpacing: -0.5,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   subtitle: {
     fontSize: 16,
