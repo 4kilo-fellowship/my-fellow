@@ -48,13 +48,11 @@ export default function AppSplashScreen() {
           (finished) => {
             if (finished) {
               setTimeout(() => {
-                // TODO: restore onboarding check after testing
-                // if (hasCompletedOnboarding) {
-                //   scheduleOnRN(router.replace, "/(tabs)");
-                // } else {
-                //   scheduleOnRN(router.replace, "/onboarding");
-                // }
-                scheduleOnRN(router.replace, "/onboarding");
+                if (hasCompletedOnboarding) {
+                  scheduleOnRN(router.replace, "/(tabs)");
+                } else {
+                  scheduleOnRN(router.replace, "/onboarding");
+                }
               }, 400);
             }
           },
