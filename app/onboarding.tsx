@@ -217,7 +217,7 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fafafa",
+    backgroundColor: "#ffffff",
   },
   scrollArea: {
     flex: 1,
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
     width: ILLUSTRATION_SIZE,
     height: ILLUSTRATION_SIZE,
     borderRadius: ILLUSTRATION_SIZE / 2,
-    backgroundColor: "#eef0f4",
+    backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
