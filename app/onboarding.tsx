@@ -136,10 +136,6 @@ export default function OnboardingScreen() {
     <View style={styles.container}>
       <StatusBar style="dark" />
 
-      {/* Decorative accent dots */}
-      <View style={[styles.accentDot, styles.accentDotTopLeft]} />
-      <View style={[styles.accentDot, styles.accentDotBottomRight]} />
-
       {/* Slides */}
       <ScrollView
         ref={scrollRef}
@@ -304,21 +300,5 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: "#1a1a2e",
-  },
-  accentDot: {
-    position: "absolute",
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#ff6719",
-    zIndex: 5,
-  },
-  accentDotTopLeft: {
-    top: SCREEN_HEIGHT * 0.45,
-    left: 20,
-  },
-  accentDotBottomRight: {
-    bottom: SCREEN_HEIGHT * 0.15,
-    right: 24,
   },
 });
