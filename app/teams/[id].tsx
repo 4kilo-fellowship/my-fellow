@@ -248,7 +248,7 @@ const TeamDetails = () => {
         department: user.department || undefined,
         year: user.yearOfStudy || undefined,
         telegramHandle: user.telegramUserName || undefined,
-        profileImage: user.profileImage || user.image || undefined,
+        profileImage: user.profileImage || undefined,
         pastTeam: user.team || user.pastTeam || undefined,
       };
 

@@ -20,9 +20,13 @@ export const authService = {
       });
 
       const data = response.data.data || response.data;
+      const user = data.user || data;
+      if (user && user.image && !user.profileImage) {
+        user.profileImage = user.image;
+      }
       return {
         token: data.token,
-        user: data.user || data,
+        user: user,
       };
     } catch (error) {
       if (isAxiosError(error)) {
@@ -88,10 +92,14 @@ export const authService = {
 
       const json = await res.json();
       const result = json.data || json;
+      const user = result.user || result;
+      if (user && user.image && !user.profileImage) {
+        user.profileImage = user.image;
+      }
 
       return {
         token: result.token,
-        user: result.user || result,
+        user: user,
       };
     } catch (e: any) {
       throw new Error(e.message || "Registration failed");
@@ -101,8 +109,11 @@ export const authService = {
   getCurrentUser: async (): Promise<User> => {
     try {
       const response = await api.get<any>("/auth/me");
-      // Backend usually returns { success: true, data: user } or just user
-      return response.data.data || response.data.user || response.data;
+      const user = response.data.data || response.data.user || response.data;
+      if (user && user.image && !user.profileImage) {
+        user.profileImage = user.image;
+      }
+      return user;
     } catch (error) {
       if (isAxiosError(error)) {
         throw new Error(
@@ -131,14 +142,13 @@ export const authService = {
       let headers = {};
 
       if (
-        data.image ||
-        (data.profileImage &&
-          typeof data.profileImage === "string" &&
-          (data.profileImage.startsWith("file://") ||
-            data.profileImage.startsWith("content://")))
+        data.profileImage &&
+        typeof data.profileImage === "string" &&
+        (data.profileImage.startsWith("file://") ||
+          data.profileImage.startsWith("content://"))
       ) {
         const formData = new FormData();
-        const imageUri = data.image || data.profileImage;
+        const imageUri = data.profileImage;
         const filename = imageUri.split("/").pop() || "image.jpg";
         const match = /\.(\w+)$/.exec(filename);
         const type = match ? `image/${match[1]}` : "image/jpeg";
@@ -166,7 +176,11 @@ export const authService = {
       const response = await api.patch<any>("/auth/profile", payload, {
         headers,
       });
-      return response.data.data || response.data.user || response.data;
+      const user = response.data.data || response.data.user || response.data;
+      if (user && user.image && !user.profileImage) {
+        user.profileImage = user.image;
+      }
+      return user;
     } catch (error) {
       if (isAxiosError(error)) {
         const message =

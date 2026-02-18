@@ -572,9 +572,9 @@ export default function Settings() {
             }
           >
             <View style={styles.userImageContainer}>
-              {user.profileImage || user.image ? (
+              {user.profileImage ? (
                 <Image
-                  source={{ uri: user.profileImage || user.image || "" }}
+                  source={{ uri: user.profileImage }}
                   style={styles.userImage}
                   resizeMode="cover"
                 />
