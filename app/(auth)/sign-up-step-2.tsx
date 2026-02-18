@@ -1,6 +1,7 @@
 import { DEPARTMENTS, TEAM_NAMES, YEARS } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { SignUpData } from "@/types";
 import { SignUpStep2FormValues, signUpStep2Schema } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -102,15 +103,16 @@ export default function SignUpStep2() {
     setLoading(true);
 
     try {
-      const registrationData = {
+      const registrationData: SignUpData = {
         fullName: params.fullName as string,
         phone: params.phone as string,
         password: params.password as string,
         confirmPassword: params.password as string,
         team: data.team,
+        pastTeam: "", // Default to empty if not collected in step 2
         department: data.department,
-        year: data.year,
-        telegram: data.telegram || undefined,
+        yearOfStudy: data.year,
+        telegramUserName: data.telegram || "",
         profileImage: image || undefined,
       };
 
