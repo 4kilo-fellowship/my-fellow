@@ -1,9 +1,4 @@
-import {
-  LoginResponse,
-  SignUpData,
-  SignUpResponse,
-  User,
-} from "@/types/auth.types";
+import { LoginResponse, SignUpData, SignUpResponse, User } from "@/types";
 import { isAxiosError } from "axios";
 import api from "./api";
 
@@ -54,11 +49,11 @@ export const authService = {
     if (data.department) {
       formData.append("department", data.department);
     }
-    if (data.year) {
-      formData.append("yearOfStudy", data.year);
+    if (data.yearOfStudy) {
+      formData.append("yearOfStudy", data.yearOfStudy);
     }
-    if (data.telegram) {
-      formData.append("telegramUserName", data.telegram);
+    if (data.telegramUserName) {
+      formData.append("telegramUserName", data.telegramUserName);
     }
     if (data.pastTeam) {
       formData.append("pastTeam", data.pastTeam);
