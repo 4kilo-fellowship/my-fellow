@@ -1,4 +1,9 @@
-import { LoginResponse, SignUpData, SignUpResponse, User } from "@/types/types";
+import {
+  LoginResponse,
+  SignUpData,
+  SignUpResponse,
+  User,
+} from "@/types/auth.types";
 import { isAxiosError } from "axios";
 import api from "./api";
 
@@ -14,7 +19,6 @@ export const authService = {
         password,
       });
 
-      // Handle both wrapped and unwrapped responses
       const data = response.data.data || response.data;
       return {
         token: data.token,

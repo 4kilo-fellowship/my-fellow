@@ -9,7 +9,7 @@ import {
   SignUpData,
   SignUpResponse,
   User,
-} from "@/types/types";
+} from "@/types/auth.types";
 import * as SecureStore from "expo-secure-store";
 import { createContext, useContext, useEffect, useState } from "react";
 

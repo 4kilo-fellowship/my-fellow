@@ -5,7 +5,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { JoinRequest, joinRequestService } from "@/services/joinRequestService";
 import { fetchTeams } from "@/services/teamService";
 import { useUserStore } from "@/stores/user.store";
-import { Team } from "@/types/types";
+import { Team } from "@/types/auth.types";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
