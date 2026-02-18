@@ -10,12 +10,12 @@ export type User = {
   fullName: string;
   email?: string;
   phoneNumber: string;
-  team?: string | null;
-  pastTeam?: string | null;
-  department?: string | null;
-  yearOfStudy?: string | null;
-  telegramUserName?: string | null;
-  image?: string | null;
+  team: string;
+  pastTeam: string;
+  department: string;
+  yearOfStudy: string;
+  telegramUserName: string;
+  image?: string;
   profileImage?: string | null;
   createdAt?: string;
   [key: string]: unknown;
@@ -23,7 +23,7 @@ export type User = {
 
 export type LoginResponse = {
   token: string;
-  user?: User;
+  user: User;
 };
 
 export type SignUpData = {
@@ -55,33 +55,3 @@ export type AuthContextType = {
 export type AuthProviderProps = {
   children: ReactNode;
 };
-
-import { Ionicons } from "@expo/vector-icons";
-
-export type TeamLeader = {
-  name: string;
-  role: string;
-  imageUrl: string;
-  telegram: string;
-  phone: string;
-};
-
-export type Team = {
-  id: string;
-  _id: string;
-  name: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-  members: number;
-  description: string;
-  about: string;
-  meetingDay: string;
-  time: string;
-  category: string;
-  location: string;
-  coordinates: { lat: number; lng: number };
-  imageUrl: string;
-  leader: TeamLeader;
-};
-
-export const TEAMS: Team[] = [];

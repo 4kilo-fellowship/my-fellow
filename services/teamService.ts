@@ -1,5 +1,5 @@
 import api from "@/services/api";
-import { Team } from "@/types/auth.types";
+import { Team } from "@/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system/legacy";
 
