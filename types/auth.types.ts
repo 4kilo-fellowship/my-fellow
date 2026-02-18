@@ -29,12 +29,12 @@ export type SignUpData = {
   fullName: string;
   phone: string;
   password: string;
-  confirmPassword?: string;
-  team?: string;
-  pastTeam?: string;
-  department?: string;
-  year?: string;
-  telegram?: string;
+  confirmPassword: string;
+  team: string;
+  pastTeam: string;
+  department: string;
+  yearOfStudy: string;
+  telegramUserName: string;
   profileImage?: string | null;
 };
 
