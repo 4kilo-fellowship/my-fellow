@@ -258,21 +258,21 @@ export default function SignIn() {
                     className={`text-center text-xs ${isDark ? "text-slate-500" : "text-slate-500"} leading-5`}
                   >
                     By signing in, you agree to our{" "}
-                    <Link href="/(auth)/legal?section=terms" asChild>
-                      <TouchableOpacity activeOpacity={0.7}>
-                        <Text className="text-primary font-bold">
-                          Terms of Use
-                        </Text>
-                      </TouchableOpacity>
-                    </Link>{" "}
+                    <Text
+                      className="text-primary font-bold text-xs"
+                      onPress={() => router.push("/(auth)/legal?section=terms")}
+                    >
+                      Terms of Use
+                    </Text>{" "}
                     and{" "}
-                    <Link href="/(auth)/legal?section=privacy" asChild>
-                      <TouchableOpacity activeOpacity={0.7}>
-                        <Text className="text-primary font-bold">
-                          Privacy Policy
-                        </Text>
-                      </TouchableOpacity>
-                    </Link>
+                    <Text
+                      className="text-primary font-bold text-xs"
+                      onPress={() =>
+                        router.push("/(auth)/legal?section=privacy")
+                      }
+                    >
+                      Privacy Policy
+                    </Text>
                     .
                   </Text>
                 </View>
