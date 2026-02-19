@@ -82,8 +82,8 @@ export default function SignUpStep2() {
         Animated.spring(slideAnim, {
           toValue: 0,
           useNativeDriver: true,
-          damping: 25,
-          stiffness: 300,
+          damping: 40,
+          stiffness: 200,
         }),
         Animated.timing(backdropAnim, {
           toValue: 1,
