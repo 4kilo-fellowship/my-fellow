@@ -25,7 +25,7 @@ const HEADER_HEIGHT = SCREEN_HEIGHT * 0.4;
 const signUpStep1Schema = z
   .object({
     fullName: z.string().min(3, "Full name must be at least 3 characters"),
-    phone: z
+    phoneNumber: z
       .string()
       .min(1, "Phone number is required")
       .regex(/^(09|07)\d{8}$/, "Enter a valid phone number"),
@@ -53,7 +53,7 @@ export default function SignUpStep1() {
     resolver: zodResolver(signUpStep1Schema),
     defaultValues: {
       fullName: "",
-      phone: "",
+      phoneNumber: "",
       password: "",
       confirmPassword: "",
     },
@@ -64,7 +64,7 @@ export default function SignUpStep1() {
       pathname: "/sign-up-step-2",
       params: {
         fullName: data.fullName.trim(),
-        phone: data.phone.trim(),
+        phoneNumber: data.phoneNumber.trim(),
         password: data.password,
       },
     });
@@ -86,7 +86,6 @@ export default function SignUpStep1() {
           style={{ flex: 1 }}
           keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
-          {/* header */}
           <View
             className="bg-primary"
             style={{
@@ -95,7 +94,6 @@ export default function SignUpStep1() {
               borderBottomRightRadius: 40,
             }}
           >
-            {/* back button */}
             <View className="absolute top-12 left-6 z-50">
               <TouchableOpacity
                 activeOpacity={0.9}
@@ -122,11 +120,9 @@ export default function SignUpStep1() {
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
           >
-            {/* Form Container */}
             <View
               className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} pt-8 px-6`}
             >
-              {/* Form Fields */}
               <View className="space-y-5">
                 <View>
                   <Text
@@ -177,12 +173,12 @@ export default function SignUpStep1() {
                   </Text>
                   <Controller
                     control={control}
-                    name="phone"
+                    name="phoneNumber"
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View className="relative">
                         <TextInput
                           className={`w-full ${isDark ? "bg-slate-900 text-white focus:border-primary border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 text-base focus:bg-transparent ${
-                            errors.phone
+                            errors.phoneNumber
                               ? "border-red-500"
                               : "focus:border-primary"
                           }`}
@@ -203,9 +199,9 @@ export default function SignUpStep1() {
                       </View>
                     )}
                   />
-                  {errors.phone?.message ? (
+                  {errors.phoneNumber?.message ? (
                     <Text className="text-red-500 text-xs mt-1 ml-1">
-                      {errors.phone.message}
+                      {errors.phoneNumber.message}
                     </Text>
                   ) : null}
                 </View>
@@ -318,7 +314,6 @@ export default function SignUpStep1() {
                 </View>
               </View>
 
-              {/* Footer */}
               <View className="mt-8 mb-6">
                 <TouchableOpacity
                   activeOpacity={0.9}

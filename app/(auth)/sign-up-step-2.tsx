@@ -70,7 +70,6 @@ export default function SignUpStep2() {
   });
 
   const pickImage = async () => {
-    // Ask for gallery library permission
     const permissionResult =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) return;
@@ -90,8 +89,7 @@ export default function SignUpStep2() {
   const handleComplete: (data: SignUpStep2FormValues) => Promise<void> = async (
     data,
   ) => {
-    // Validate step 1 data from params
-    if (!params.fullName || !params.phone || !params.password) {
+    if (!params.fullName || !params.phoneNumber || !params.password) {
       Alert.alert(
         "Missing Information",
         "Please complete all required fields.",
@@ -105,11 +103,11 @@ export default function SignUpStep2() {
     try {
       const registrationData: SignUpData = {
         fullName: params.fullName as string,
-        phone: params.phone as string,
+        phoneNumber: params.phoneNumber as string,
         password: params.password as string,
         confirmPassword: params.password as string,
         team: data.team,
-        pastTeam: "", // Default to empty if not collected in step 2
+        pastTeam: "",
         department: data.department,
         yearOfStudy: data.year,
         telegramUserName: data.telegram || "",
@@ -233,7 +231,6 @@ export default function SignUpStep2() {
           style={{ flex: 1 }}
           keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
-          {/* header */}
           <View
             className={`${isDark ? "bg-dark shadow-gray-900/10" : "bg-white shadow-slate-100"}`}
             style={{
@@ -246,7 +243,6 @@ export default function SignUpStep2() {
               className="flex-1 justify-center items-center px-6"
               style={{ paddingTop: 60 }}
             >
-              {/* back */}
               <View className="absolute top-4 left-6">
                 <TouchableOpacity
                   activeOpacity={0.9}
@@ -271,11 +267,9 @@ export default function SignUpStep2() {
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
           >
-            {/* Form */}
             <View
               className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} pt-8 px-6`}
             >
-              {/* Image Picker */}
               <View className="items-center mb-6">
                 <TouchableOpacity
                   onPress={pickImage}
@@ -315,12 +309,9 @@ export default function SignUpStep2() {
                 </TouchableOpacity>
               </View>
 
-              {/* Form Fields */}
               <View className="space-y-5">
-                {/* Team Dropdown */}
                 {renderDropdown("team", "Team", TEAM_NAMES, "Select your team")}
 
-                {/* Department Dropdown */}
                 {renderDropdown(
                   "department",
                   "Department",
@@ -328,7 +319,6 @@ export default function SignUpStep2() {
                   "Select your department",
                 )}
 
-                {/* Year Dropdown */}
                 {renderDropdown(
                   "year",
                   "Year",
@@ -336,7 +326,6 @@ export default function SignUpStep2() {
                   "Select your academic year",
                 )}
 
-                {/* Telegram Input */}
                 <View>
                   <Text
                     className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
@@ -379,7 +368,6 @@ export default function SignUpStep2() {
                 </View>
               </View>
 
-              {/* Footer Button */}
               <View className="mt-8 mb-6">
                 <TouchableOpacity
                   activeOpacity={0.8}

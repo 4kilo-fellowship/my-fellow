@@ -4,6 +4,11 @@ import * as SecureStore from "expo-secure-store";
 
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
+  timeout: 15000,
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
 });
 
 api.interceptors.request.use(
@@ -15,9 +20,28 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    }
+
     return config;
   },
   (error: unknown): Promise<never> => Promise.reject(error),
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.code === "ECONNABORTED" && !originalRequest._retry) {
+      originalRequest._retry = true;
+      return api(originalRequest);
+    }
+
+    return Promise.reject(error);
+  },
 );
 
 export default api;

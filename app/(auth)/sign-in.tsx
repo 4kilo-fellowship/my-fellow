@@ -85,7 +85,6 @@ export default function SignIn() {
           style={{ flex: 1 }}
           keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
-          {/* head */}
           <View
             className="bg-primary"
             style={{
@@ -112,11 +111,9 @@ export default function SignIn() {
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
           >
-            {/* form */}
             <View
               className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} pt-8 px-6`}
             >
-              {/* fields*/}
               <View className="space-y-5">
                 <View>
                   <Text
@@ -214,7 +211,6 @@ export default function SignIn() {
                   ) : null}
                 </View>
 
-                {/* Login error from server (invalid credentials) */}
                 {loginError ? (
                   <Text className="text-red-500 text-sm mt-3 ml-1">
                     {loginError}
@@ -224,7 +220,6 @@ export default function SignIn() {
                 <ForgotPasswordModal />
               </View>
 
-              {/* Action Buttons */}
               <View className="mt-8 mb-6">
                 <TouchableOpacity
                   activeOpacity={0.8}
@@ -241,7 +236,6 @@ export default function SignIn() {
                   )}
                 </TouchableOpacity>
 
-                {/* Footer */}
                 <View className="flex-row justify-center mt-6">
                   <Text
                     className={`${isDark ? "text-slate-400" : "text-slate-600"} font-medium text-base`}
@@ -257,7 +251,6 @@ export default function SignIn() {
                   </Link>
                 </View>
 
-                {/* Terms */}
                 <View className="mt-6 px-2">
                   <Text
                     className={`text-center text-xs ${isDark ? "text-slate-500" : "text-slate-500"} leading-5`}

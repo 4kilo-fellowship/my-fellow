@@ -1,128 +1,226 @@
-import { LoginResponse, SignUpData, SignUpResponse, User } from "@/types";
-import { isAxiosError } from "axios";
+import {
+  ApiResponse,
+  LoginResponse,
+  SignUpData,
+  SignUpResponse,
+  User,
+} from "@/types";
+import { AxiosError, AxiosRequestConfig } from "axios";
+import * as SecureStore from "expo-secure-store";
 import api from "./api";
 
-export const authService = {
-  login: async (
+export class ApiError extends Error {
+  constructor(
+    public message: string,
+    public status?: number,
+    public serverMessage?: string,
+    public originalError?: unknown,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+interface ReactNativeFile {
+  uri: string;
+  name: string;
+  type: string;
+}
+
+export class AuthService {
+  private static normalizeUser(userData: any): User {
+    if (!userData) return userData;
+
+    return {
+      id: userData.id,
+      fullName: userData.fullName,
+      phoneNumber: userData.phoneNumber,
+      role: userData.role,
+      team: userData.team,
+      department: userData.department,
+      yearOfStudy: userData.yearOfStudy,
+      telegramUserName: userData.telegramUserName,
+      pastTeam: userData.pastTeam,
+      profileImage: userData.profileImage || null,
+      createdAt: userData.createdAt,
+    };
+  }
+
+  private static normalizeResponse<T>(response: ApiResponse<T>): {
+    user: User;
+    token: string;
+    message?: string;
+  } {
+    return {
+      user: this.normalizeUser(response.user),
+      token: response.token || "",
+      message: response.message,
+    };
+  }
+
+  private static createFormDataFile(uri: string): ReactNativeFile {
+    const filename = uri.split("/").pop() || "image.jpg";
+    const match = /\.(\w+)$/.exec(filename);
+    const type = match ? `image/${match[1]}` : "image/jpeg";
+
+    return {
+      uri,
+      name: filename,
+      type,
+    };
+  }
+
+  private static handleError(error: unknown, defaultMessage: string): never {
+    if (error instanceof AxiosError) {
+      const serverMessage =
+        error.response?.data?.message || error.response?.data?.error;
+      const status = error.response?.status;
+
+      throw new ApiError(
+        `${defaultMessage}: ${serverMessage || error.message}`,
+        status,
+        serverMessage,
+        error,
+      );
+    }
+
+    if (error instanceof Error) {
+      throw new ApiError(error.message, undefined, undefined, error);
+    }
+
+    throw new ApiError(defaultMessage, undefined, undefined, error);
+  }
+
+  static async login(
     phoneNumber: string,
     password: string,
-  ): Promise<LoginResponse> => {
+    config?: AxiosRequestConfig,
+  ): Promise<LoginResponse> {
     try {
-      const response = await api.post<any>("/auth/signin", {
-        phoneNumber,
-        phone: phoneNumber,
-        password,
-      });
-
-      const data = response.data.data || response.data;
-      const user = data.user || data;
-      if (user && user.image && !user.profileImage) {
-        user.profileImage = user.image;
+      if (!phoneNumber || !password) {
+        throw new Error("Phone number and password are required");
       }
-      return {
-        token: data.token,
-        user: user,
-      };
+
+      const response = await api.post<ApiResponse<any>>(
+        "/auth/signin",
+        {
+          phoneNumber,
+          password,
+        },
+        config,
+      );
+
+      const { user, token } = this.normalizeResponse(response.data);
+      return { user, token };
     } catch (error) {
-      if (isAxiosError(error)) {
-        throw new Error(
-          `Login failed: ${error.response?.status || "network error"}`,
-        );
-      }
-      throw error;
+      return this.handleError(error, "Login failed");
     }
-  },
+  }
 
-  signup: async (data: SignUpData): Promise<SignUpResponse> => {
-    const formData = new FormData();
-
-    formData.append("fullName", data.fullName);
-    formData.append("phoneNumber", data.phone);
-    formData.append("password", data.password);
-    if (data.confirmPassword) {
-      formData.append("confirmPassword", data.confirmPassword);
-    }
-
-    if (data.team) {
-      formData.append("team", data.team);
-    }
-    if (data.department) {
-      formData.append("department", data.department);
-    }
-    if (data.yearOfStudy) {
-      formData.append("yearOfStudy", data.yearOfStudy);
-    }
-    if (data.telegramUserName) {
-      formData.append("telegramUserName", data.telegramUserName);
-    }
-    if (data.pastTeam) {
-      formData.append("pastTeam", data.pastTeam);
-    }
-
-    if (data.profileImage) {
-      const imageUri = data.profileImage;
-      const filename = imageUri.split("/").pop() || "image.jpg";
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : "image/jpeg";
-
-      formData.append("image", {
-        uri: imageUri,
-        name: filename,
-        type: type,
-      } as any);
-    }
+  static async signup(
+    data: SignUpData,
+    config?: AxiosRequestConfig,
+  ): Promise<SignUpResponse> {
     try {
-      const base = (api.defaults.baseURL ?? "").replace(/\/$/, "");
-      const url = `${base}/auth/signup`;
+      const formData = new FormData();
 
-      const res = await fetch(url, {
-        method: "POST",
-        body: formData as any,
-      });
+      formData.append("fullName", data.fullName);
+      formData.append("phoneNumber", data.phoneNumber);
 
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(`Registration failed: ${res.status} ${text}`);
+      if (data.password) formData.append("password", data.password);
+      if (data.confirmPassword)
+        formData.append("confirmPassword", data.confirmPassword);
+      if (data.team) formData.append("team", data.team);
+      if (data.department) formData.append("department", data.department);
+      if (data.yearOfStudy) formData.append("yearOfStudy", data.yearOfStudy);
+      if (data.telegramUserName)
+        formData.append("telegramUserName", data.telegramUserName);
+      if (data.pastTeam) formData.append("pastTeam", data.pastTeam);
+
+      if (
+        data.profileImage &&
+        (data.profileImage.startsWith("file://") ||
+          data.profileImage.startsWith("content://"))
+      ) {
+        const file = this.createFormDataFile(data.profileImage);
+        formData.append("file", file as any);
       }
 
-      const json = await res.json();
-      const result = json.data || json;
-      const user = result.user || result;
-      if (user && user.image && !user.profileImage) {
-        user.profileImage = user.image;
-      }
+      const response = await api.post<ApiResponse<any>>(
+        "/auth/signup",
+        formData,
+        config,
+      );
+      const { user, token } = this.normalizeResponse(response.data);
 
-      return {
-        token: result.token,
-        user: user,
-      };
-    } catch (e: any) {
-      throw new Error(e.message || "Registration failed");
-    }
-  },
-
-  getCurrentUser: async (): Promise<User> => {
-    try {
-      const response = await api.get<any>("/auth/me");
-      const user = response.data.data || response.data.user || response.data;
-      if (user && user.image && !user.profileImage) {
-        user.profileImage = user.image;
-      }
-      return user;
+      return { user, token };
     } catch (error) {
-      if (isAxiosError(error)) {
-        throw new Error(
-          `getCurrentUser failed: ${error.response?.status || "network error"}`,
-        );
-      }
-      throw error;
+      return this.handleError(error, "Registration failed");
     }
-  },
+  }
 
-  verifyToken: async (token: string): Promise<boolean> => {
+  static async getCurrentUser(config?: AxiosRequestConfig): Promise<User> {
+    try {
+      const response = await api.get<ApiResponse<any>>("/auth/me", config);
+      return this.normalizeUser(response.data.user);
+    } catch (error) {
+      return this.handleError(error, "Failed to get current user");
+    }
+  }
+
+  static async updateProfile(
+    data: Partial<SignUpData>,
+    config?: AxiosRequestConfig,
+  ): Promise<User> {
+    try {
+      let payload: any = data;
+      const hasImage =
+        data.profileImage &&
+        (data.profileImage.startsWith("file://") ||
+          data.profileImage.startsWith("content://"));
+
+      if (hasImage) {
+        const formData = new FormData();
+        const file = this.createFormDataFile(data.profileImage!);
+        formData.append("file", file as any);
+
+        Object.entries(data).forEach(([key, value]) => {
+          if (key !== "profileImage" && value !== undefined && value !== null) {
+            formData.append(key, String(value));
+          }
+        });
+        payload = formData;
+      }
+
+      const response = await api.patch<ApiResponse<any>>(
+        "/auth/profile",
+        payload,
+        config,
+      );
+      return this.normalizeUser(response.data.user);
+    } catch (error) {
+      return this.handleError(error, "Profile update failed");
+    }
+  }
+
+  static async logout(): Promise<void> {
+    await SecureStore.deleteItemAsync("userToken");
+    delete api.defaults.headers.common.Authorization;
+  }
+
+  static async refreshToken(): Promise<string | null> {
+    return null;
+  }
+
+  static async verifyToken(
+    token: string,
+    config?: AxiosRequestConfig,
+  ): Promise<boolean> {
     try {
       await api.get("/verify", {
+        ...config,
         headers: {
+          ...config?.headers,
           Authorization: `Bearer ${token}`,
         },
       });
@@ -130,59 +228,13 @@ export const authService = {
     } catch {
       return false;
     }
-  },
-  updateProfile: async (data: any): Promise<User> => {
-    try {
-      let payload: any = data;
-      let headers = {};
+  }
+}
 
-      if (
-        data.profileImage &&
-        typeof data.profileImage === "string" &&
-        (data.profileImage.startsWith("file://") ||
-          data.profileImage.startsWith("content://"))
-      ) {
-        const formData = new FormData();
-        const imageUri = data.profileImage;
-        const filename = imageUri.split("/").pop() || "image.jpg";
-        const match = /\.(\w+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : "image/jpeg";
-
-        formData.append("image", {
-          uri: imageUri,
-          name: filename,
-          type: type,
-        } as any);
-
-        Object.keys(data).forEach((key) => {
-          if (
-            key !== "image" &&
-            key !== "profileImage" &&
-            data[key] !== undefined &&
-            data[key] !== null
-          ) {
-            formData.append(key, data[key]);
-          }
-        });
-        payload = formData;
-        headers = { "Content-Type": "multipart/form-data" };
-      }
-
-      const response = await api.patch<any>("/auth/profile", payload, {
-        headers,
-      });
-      const user = response.data.data || response.data.user || response.data;
-      if (user && user.image && !user.profileImage) {
-        user.profileImage = user.image;
-      }
-      return user;
-    } catch (error) {
-      if (isAxiosError(error)) {
-        const message =
-          error.response?.data?.message || "Profile update failed";
-        throw new Error(message);
-      }
-      throw error;
-    }
-  },
+export const authService = {
+  login: AuthService.login.bind(AuthService),
+  signup: AuthService.signup.bind(AuthService),
+  getCurrentUser: AuthService.getCurrentUser.bind(AuthService),
+  verifyToken: AuthService.verifyToken.bind(AuthService),
+  updateProfile: AuthService.updateProfile.bind(AuthService),
 };

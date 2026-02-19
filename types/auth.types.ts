@@ -5,51 +5,58 @@ export type AuthState = {
   authenticated: boolean | null;
 };
 
-export type User = {
+export interface User {
   id: string;
   fullName: string;
-  email?: string;
   phoneNumber: string;
-  team: string;
-  pastTeam: string;
-  department: string;
-  yearOfStudy: string;
-  telegramUserName: string;
+  role?: string;
   profileImage?: string | null;
+  team?: string;
+  department?: string;
+  yearOfStudy?: string;
+  telegramUserName?: string;
+  pastTeam?: string;
   createdAt?: string;
-  [key: string]: unknown;
-};
+}
 
-export type LoginResponse = {
-  token: string;
+export interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data?: T;
+  user?: T extends { user: infer U } ? U : User;
+  token?: string;
+}
+
+export interface AuthResponse {
   user: User;
-};
-
-export type SignUpData = {
-  fullName: string;
-  phone: string;
-  password: string;
-  confirmPassword: string;
-  team: string;
-  pastTeam: string;
-  department: string;
-  yearOfStudy: string;
-  telegramUserName: string;
-  profileImage?: string | null;
-};
-
-export type SignUpResponse = {
   token: string;
-  user?: User;
-};
+}
 
-export type AuthContextType = {
+export type LoginResponse = AuthResponse;
+
+export interface SignUpData {
+  fullName: string;
+  phoneNumber: string;
+  password?: string;
+  confirmPassword?: string;
+  team?: string;
+  department?: string;
+  yearOfStudy?: string;
+  telegramUserName?: string;
+  pastTeam?: string;
+  profileImage?: string | null;
+}
+
+export type SignUpResponse = AuthResponse;
+
+export interface AuthContextType {
   authState: AuthState;
   login: (phoneNumber: string, password: string) => Promise<LoginResponse>;
   signup: (data: SignUpData) => Promise<SignUpResponse>;
   logout: () => Promise<void>;
   getCurrentUser: () => Promise<User>;
-};
+  updateProfile: (data: Partial<SignUpData>) => Promise<User>;
+}
 
 export type AuthProviderProps = {
   children: ReactNode;
