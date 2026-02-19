@@ -284,19 +284,6 @@ const Home = () => {
                   Features
                 </Text>
               )}
-              {!hasSeenFeatures || (loading && events.length === 0) ? (
-                <Placeholder width={60} height={20} borderRadius={4} />
-              ) : (
-                <TouchableOpacity
-                  activeOpacity={0.6}
-                  className="flex-row items-center"
-                >
-                  <Text className="text-primary font-semibold mr-2">
-                    View All
-                  </Text>
-                  <Ionicons name="arrow-forward" size={16} color={PRIMARY} />
-                </TouchableOpacity>
-              )}
             </View>
             {!hasSeenFeatures || (loading && events.length === 0) ? (
               <ScrollView
