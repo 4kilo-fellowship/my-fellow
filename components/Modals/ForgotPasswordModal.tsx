@@ -1,3 +1,4 @@
+import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -14,7 +15,7 @@ import {
 const ForgotPasswordModal = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const [modalVisible, setModalVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
 
   const openLink = (url: string) => {
     Linking.openURL(url).catch((err) =>
@@ -24,10 +25,9 @@ const ForgotPasswordModal = () => {
 
   return (
     <>
-      {/* Button to open modal */}
       <TouchableOpacity
         activeOpacity={0.8}
-        className="items-end mt-2"
+        className="mt-2"
         onPress={() => setModalVisible(true)}
       >
         <Text className="text-primary font-bold text-base">
@@ -55,7 +55,6 @@ const ForgotPasswordModal = () => {
                 isDark ? "bg-zinc-900 border border-zinc-700" : "bg-white"
               }`}
             >
-              {/* Header */}
               <View className="flex-row justify-between items-center mb-6">
                 <Text
                   className={`text-xl font-bold ${
@@ -74,18 +73,17 @@ const ForgotPasswordModal = () => {
                 </TouchableOpacity>
               </View>
 
-              {/* Phone */}
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => {
                   setModalVisible(false);
-                  openLink("tel:+251911234567");
+                  openLink("tel:+251994627985");
                 }}
                 className={`flex-row items-center p-4 mb-4 rounded-2xl ${
                   isDark ? "bg-zinc-800" : "bg-zinc-100"
                 }`}
               >
-                <Ionicons name="call" size={24} color="#ff6619" />
+                <Ionicons name="call" size={24} color={PRIMARY} />
                 <Text
                   className={`ml-4 text-lg flex-1 ${isDark ? "text-white" : "text-zinc-900"}`}
                 >
@@ -98,11 +96,10 @@ const ForgotPasswordModal = () => {
                 />
               </TouchableOpacity>
 
-              {/* Telegram */}
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => {
-                  openLink("https://t.me/myfellow_bot");
+                  openLink("https://t.me/natitam1");
                   setModalVisible(false);
                 }}
                 className={`flex-row items-center p-4 rounded-2xl ${
@@ -113,7 +110,7 @@ const ForgotPasswordModal = () => {
                 <Text
                   className={`ml-4 text-lg flex-1 ${isDark ? "text-white" : "text-zinc-900"}`}
                 >
-                  @myfellow_bot
+                  @natitam1
                 </Text>
                 <Ionicons
                   name="chevron-forward"

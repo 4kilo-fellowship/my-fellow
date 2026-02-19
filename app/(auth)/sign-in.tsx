@@ -217,7 +217,9 @@ export default function SignIn() {
                   </Text>
                 ) : null}
 
-                <ForgotPasswordModal />
+                <View className="items-end">
+                  <ForgotPasswordModal />
+                </View>
               </View>
 
               <View className="mt-8 mb-6">
