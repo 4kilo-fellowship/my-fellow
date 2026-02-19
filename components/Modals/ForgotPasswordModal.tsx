@@ -2,6 +2,7 @@ import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
+import * as WebBrowser from "expo-web-browser";
 import React, { useState } from "react";
 import {
   Linking,
@@ -17,10 +18,14 @@ const ForgotPasswordModal = () => {
   const isDark = theme === "dark";
   const [modalVisible, setModalVisible] = useState<boolean>(false);
 
-  const openLink = (url: string) => {
-    Linking.openURL(url).catch((err) =>
-      console.error("An error occurred", err),
-    );
+  const openLink = async (url: string) => {
+    if (url.startsWith("http")) {
+      await WebBrowser.openBrowserAsync(url);
+    } else {
+      Linking.openURL(url).catch((err) =>
+        console.error("An error occurred", err),
+      );
+    }
   };
 
   return (
@@ -51,7 +56,7 @@ const ForgotPasswordModal = () => {
             <TouchableOpacity
               activeOpacity={1}
               onPress={(e) => e.stopPropagation()}
-              className={`w-full rounded-3xl p-6 ${
+              className={`w-full rounded-3xl p-6 pb-10 ${
                 isDark ? "bg-zinc-900 border border-zinc-700" : "bg-white"
               }`}
             >
