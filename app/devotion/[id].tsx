@@ -30,7 +30,8 @@ const DevotionDetail = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const { markAsRead, savedDevotions } = useDevotionsStore();
+  const { markAsRead, savedDevotions, cacheDevotion, getCachedDevotion } =
+    useDevotionsStore();
 
   const [devotion, setDevotion] = useState<Devotion | null>(null);
   const [allDevotions, setAllDevotions] = useState<Devotion[]>([]);
@@ -39,11 +40,35 @@ const DevotionDetail = () => {
   const [likesCount, setLikesCount] = useState<number | string>(0);
   const [viewsCount, setViewsCount] = useState<number | string>(0);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
   const [showSignInModal, setShowSignInModal] = useState(false);
   const { authState } = useAuth();
 
+  const cachedDevotion = useMemo(() => getCachedDevotion(id), [id]);
+
+  useEffect(() => {
+    if (cachedDevotion) {
+      setDevotion(cachedDevotion);
+      setIsLiked(cachedDevotion.isLiked || false);
+      setLikesCount(cachedDevotion.likesFormatted || cachedDevotion.likes);
+      setViewsCount(cachedDevotion.viewsFormatted || cachedDevotion.views);
+      setLoading(false);
+    }
+  }, [cachedDevotion]);
+
   const player = useAudioPlayer(devotion?.audioUrl || "");
   const status = useAudioPlayerStatus(player);
+
+  useEffect(() => {
+    if (devotion && player) {
+      player.metadata = {
+        title: devotion.title,
+        artist: devotion.author,
+        artwork: devotion.image,
+      };
+      player.staysActiveInBackground = true;
+    }
+  }, [devotion, player]);
 
   useEffect(() => {
     const loadDevotion = async () => {
@@ -51,6 +76,7 @@ const DevotionDetail = () => {
         const response = await devotionsService.getDevotionById(id);
         if (response.success) {
           setDevotion(response.data);
+          cacheDevotion(response.data);
           setIsLiked(response.data.isLiked || false);
           setLikesCount(response.data.likesFormatted || response.data.likes);
           setViewsCount(response.data.viewsFormatted || response.data.views);
@@ -59,10 +85,16 @@ const DevotionDetail = () => {
           devotionsService.trackView(id).then((viewRes) => {
             if (viewRes.success) {
               setViewsCount(viewRes.data.viewsFormatted);
+              cacheDevotion({
+                ...response.data,
+                viewsFormatted: viewRes.data.viewsFormatted,
+              });
             }
           });
 
-          downloadForOffline(response.data);
+          if (response.data.type !== "text") {
+            downloadForOffline(response.data);
+          }
         }
 
         const allResponse = await devotionsService.getDevotions();
@@ -82,27 +114,69 @@ const DevotionDetail = () => {
   const downloadForOffline = async (item: Devotion) => {
     try {
       setIsDownloading(true);
+      setDownloadProgress(0);
+
       const folder = `${FileSystem.documentDirectory}devotions/${item._id}/`;
       await FileSystem.makeDirectoryAsync(folder, { intermediates: true });
 
+      const downloads = [];
+      let totalFiles = 0;
+      if (item.image) totalFiles++;
+      const mediaUrl = item.audioUrl || item.pdfUrl || item.bookUrl;
+      if (mediaUrl) totalFiles++;
+
+      let completedFiles = 0;
+
+      const onProgress = (downloadProgress: {
+        totalBytesWritten: number;
+        totalBytesExpectedToWrite: number;
+      }) => {
+        const progress =
+          downloadProgress.totalBytesWritten /
+          downloadProgress.totalBytesExpectedToWrite;
+        // Estimate overall progress based on which file we are on
+        const overallProgress =
+          (completedFiles / totalFiles + progress / totalFiles) * 100;
+        setDownloadProgress(Math.min(overallProgress, 100));
+      };
+
       if (item.image) {
         const imageFile = folder + "image.jpg";
-        await FileSystem.downloadAsync(item.image, imageFile);
+        const imageInfo = await FileSystem.getInfoAsync(imageFile);
+        if (!imageInfo.exists) {
+          const downloadResumable = FileSystem.createDownloadResumable(
+            item.image,
+            imageFile,
+            {},
+            onProgress,
+          );
+          await downloadResumable.downloadAsync();
+        }
+        completedFiles++;
+        setDownloadProgress((completedFiles / totalFiles) * 100);
       }
 
-      if (item.audioUrl) {
-        const audioFile = folder + "audio.mp3";
-        await FileSystem.downloadAsync(item.audioUrl, audioFile);
-      }
-
-      if (item.pdfUrl) {
-        const pdfFile = folder + "document.pdf";
-        await FileSystem.downloadAsync(item.pdfUrl, pdfFile);
+      if (mediaUrl) {
+        const ext = item.audioUrl ? "mp3" : item.pdfUrl ? "pdf" : "epub";
+        const mediaFile = folder + `media.${ext}`;
+        const mediaInfo = await FileSystem.getInfoAsync(mediaFile);
+        if (!mediaInfo.exists) {
+          const downloadResumable = FileSystem.createDownloadResumable(
+            mediaUrl,
+            mediaFile,
+            {},
+            onProgress,
+          );
+          await downloadResumable.downloadAsync();
+        }
+        completedFiles++;
+        setDownloadProgress((completedFiles / totalFiles) * 100);
       }
     } catch (error) {
       console.error("Error downloading for offline:", error);
     } finally {
       setIsDownloading(false);
+      setDownloadProgress(100);
     }
   };
 
@@ -163,7 +237,7 @@ const DevotionDetail = () => {
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
-  if (loading) {
+  if (loading && !devotion) {
     return (
       <View
         className={`flex-1 items-center justify-center ${isDark ? "bg-zinc-950" : "bg-gray-50"}`}
@@ -336,11 +410,22 @@ const DevotionDetail = () => {
               </View>
 
               <View className="flex-row items-center">
-                <Ionicons
-                  name={isDownloading ? "cloud-download" : "cloud-done-outline"}
-                  size={16}
-                  color={isDownloading ? PRIMARY : "#10b981"}
-                />
+                {isDownloading ? (
+                  <View className="flex-row items-center">
+                    <Text
+                      className={`text-[10px] font-bold mr-2 ${isDark ? "text-primary" : "text-primary"}`}
+                    >
+                      {Math.round(downloadProgress)}%
+                    </Text>
+                    <ActivityIndicator size="small" color={PRIMARY} />
+                  </View>
+                ) : (
+                  <Ionicons
+                    name="cloud-done-outline"
+                    size={16}
+                    color="#10b981"
+                  />
+                )}
               </View>
             </View>
           </View>

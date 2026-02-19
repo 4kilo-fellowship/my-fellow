@@ -6,9 +6,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": [
-      "assets/*"
-    ],
+    "assetBundlePatterns": ["assets/*"],
     "icon": "./assets/images/4kk.png",
     "splash": {
       "image": "./assets/images/primary.png",
@@ -18,10 +16,18 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.natitam1.myfellow",
-      "icon": "./assets/images/4kk.png"
+      "icon": "./assets/images/4kk.png",
+      "infoPlist": {
+        "UIBackgroundModes": ["audio"]
+      }
     },
     "android": {
       "package": "com.natitam1.myfellow",
+      "permissions": [
+        "WAKE_LOCK",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/4kk.png",
         "backgroundColor": "#ff6719"
@@ -40,11 +46,6 @@
         "projectId": "18b30bd0-8687-42cc-b007-63b5c23ef01d"
       }
     },
-    "plugins": [
-      "expo-font",
-      "expo-router",
-      "expo-splash-screen",
-      "expo-audio"
-    ]
+    "plugins": ["expo-font", "expo-router", "expo-splash-screen", "expo-audio"]
   }
 }
