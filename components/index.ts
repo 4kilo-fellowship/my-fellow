@@ -3,6 +3,7 @@ export { default as AnnouncementCard } from "./Card/AnnouncementCard";
 export { default as DevotionCard } from "./Card/DevotionCard";
 export { default as LeaderCard } from "./Card/LeaderCard";
 export { default as ConfirmationModal } from "./ConfirmationModal";
+export { default as ConnectionToaster } from "./ConnectionToaster";
 export { ConfirmModal } from "./Modals/ConfirmModal";
 export { DeleteConfirmModal } from "./Modals/DeleteConfirmModal";
 export { InfoModal } from "./Modals/InfoModal";

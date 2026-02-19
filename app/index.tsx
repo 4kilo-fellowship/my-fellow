@@ -4,7 +4,7 @@ import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
 import Animated, {
   Easing,
@@ -27,10 +27,8 @@ export default function AppSplashScreen() {
   const originX = width + 50;
   const originY = height + 50;
   const finalRadius = Math.hypot(width + 50, height + 50) * 1.5;
-  const logoTargetLeft = (width - LOGO_SIZE) / 2;
-  const logoTargetTop = (height - LOGO_SIZE) / 2;
 
-  const [imagesLoaded, setImagesLoaded] = React.useState(false);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -77,13 +75,16 @@ export default function AppSplashScreen() {
 
   const innerLogoStyle = useAnimatedStyle(() => {
     const r = progress.value * finalRadius;
-
     const containerLeft = originX - r;
     const containerTop = originY - r;
 
     return {
-      left: logoTargetLeft - containerLeft,
-      top: logoTargetTop - containerTop,
+      width,
+      height,
+      transform: [
+        { translateX: -containerLeft },
+        { translateY: -containerTop },
+      ],
     };
   });
 
@@ -91,27 +92,19 @@ export default function AppSplashScreen() {
     <View style={styles.container}>
       <StatusBar style="light" backgroundColor="transparent" translucent />
 
-      <View style={[StyleSheet.absoluteFill, styles.primaryLayer]}>
-        <View
-          style={{
-            position: "absolute",
-            width: LOGO_SIZE,
-            height: LOGO_SIZE,
-            left: logoTargetLeft,
-            top: logoTargetTop,
-          }}
-        >
-          <Image
-            source={require("../assets/images/logo-white.png")}
-            style={styles.logo}
-            contentFit="contain"
-            cachePolicy="memory"
-            transition={0}
-            onLoad={() => setImagesLoaded(true)}
-          />
-        </View>
+      {/* Primary Base Layer - Now forced to the exact width/height of the window */}
+      <View style={[styles.primaryLayer, { width, height }]}>
+        <Image
+          source={require("../assets/images/logo-white.png")}
+          style={styles.logo}
+          contentFit="contain"
+          cachePolicy="memory"
+          transition={0}
+          onLoad={() => setImagesLoaded(true)}
+        />
       </View>
 
+      {/* Reveal Animation Layer */}
       <Animated.View style={[styles.revealContainer, bubbleStyle]}>
         <Animated.View style={[styles.innerLogoContainer, innerLogoStyle]}>
           <Image
@@ -134,8 +127,13 @@ const styles = StyleSheet.create({
     backgroundColor: PRIMARY,
   },
   primaryLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
     backgroundColor: PRIMARY,
     zIndex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   revealContainer: {
     position: "absolute",
@@ -145,8 +143,10 @@ const styles = StyleSheet.create({
   },
   innerLogoContainer: {
     position: "absolute",
-    width: LOGO_SIZE,
-    height: LOGO_SIZE,
+    top: 0,
+    left: 0,
+    justifyContent: "center",
+    alignItems: "center",
   },
   logo: {
     width: LOGO_SIZE,

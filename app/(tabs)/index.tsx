@@ -61,12 +61,17 @@ const Home = () => {
       if (Array.isArray(data) && data.length > 0) {
         const imageUris = data
           .slice(0, 3)
-          .map((e: any) => e.imageUrl)
+          .map((e: any) => e.imageUrl || e.image)
           .filter((uri): uri is string => !!uri && typeof uri === "string");
 
         if (imageUris.length > 0) {
           try {
-            await Promise.all(imageUris.map((url) => ExpoImage.prefetch(url)));
+            await Promise.all(
+              imageUris.map((url) => {
+                if (url.startsWith("http")) return ExpoImage.prefetch(url);
+                return Promise.resolve();
+              }),
+            );
           } catch (prefetchError) {
             console.warn("Image prefetch failed:", prefetchError);
           }
@@ -76,7 +81,6 @@ const Home = () => {
       setError(err.message || "Something went wrong.");
     } finally {
       setLoading(false);
-      // Only mark as having seen features after content is actually ready
       if (!hasSeenFeatures) {
         setHasSeenFeatures(true);
       }

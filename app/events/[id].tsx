@@ -1,9 +1,14 @@
-import { InfoModal, RegistrationModal, SignInPromptModal } from "@/components";
+import {
+  ConnectionToaster,
+  InfoModal,
+  RegistrationModal,
+  SignInPromptModal,
+} from "@/components";
 import { API_URL } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useAlerts } from "@/hooks/useAlerts";
-import { fetchEventByIdApi } from "@/services/events.api";
+import { eventsService } from "@/services/eventsService";
 import { useEventsStore } from "@/stores/events.store";
 import { useUserStore } from "@/stores/user.store";
 import { EventDetail } from "@/types/events.types";
@@ -49,6 +54,7 @@ export default function EventDetails() {
   const [signInModalVisible, setSignInModalVisible] = React.useState(false);
   const [showSuccessModal, setShowSuccessModal] = React.useState(false);
   const [isGoingBack, setIsGoingBack] = React.useState(false);
+  const [showOfflineToaster, setShowOfflineToaster] = React.useState(false);
 
   const id = (params as any).id as string | undefined;
 
@@ -56,7 +62,7 @@ export default function EventDetails() {
     setLoadingDetail(true);
     setError(null);
     try {
-      const data = await fetchEventByIdApi(eventId);
+      const data = await eventsService.fetchEventById(eventId);
       setSelectedEvent(data);
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
@@ -176,7 +182,17 @@ export default function EventDetails() {
     } catch (err: any) {
       const message =
         err?.response?.data?.message || err?.message || "Registration failed";
-      Alert.alert("Error", message);
+
+      // If network error, show the minimalistic toaster
+      if (
+        err.message === "Network Error" ||
+        err.code === "ERR_NETWORK" ||
+        !err.response
+      ) {
+        setShowOfflineToaster(true);
+      } else {
+        Alert.alert("Error", message);
+      }
     }
   };
 
@@ -441,6 +457,11 @@ export default function EventDetails() {
         message="We'll notify you 15 minutes before the program starts."
         type="success"
         isDark={isDark}
+      />
+
+      <ConnectionToaster
+        visible={showOfflineToaster}
+        onHide={() => setShowOfflineToaster(false)}
       />
     </View>
   );
