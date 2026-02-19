@@ -7,18 +7,22 @@ import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Dimensions,
+  FlatList,
   Image,
   Keyboard,
   KeyboardAvoidingView,
-  LayoutAnimation,
+  Modal,
   Platform,
+  Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -30,6 +34,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const HEADER_HEIGHT = SCREEN_HEIGHT * 0.08;
 
+type DropdownNameProps = "team" | "department" | "year";
+
+interface DropdownModalConfig {
+  name: DropdownNameProps;
+  label: string;
+  options: readonly string[];
+  placeholder: string;
+}
+
 export default function SignUpStep2() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -39,25 +52,17 @@ export default function SignUpStep2() {
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const [openDropdown, setOpenDropdown] = useState<
-    "team" | "department" | "year" | null
-  >(null);
-
-  type DropdownNameProps = "team" | "department" | "year";
-
-  const toggleDropdown = (type: "team" | "department" | "year") => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setOpenDropdown(openDropdown === type ? null : type);
-  };
-
-  const closeDropdowns = () => {
-    setOpenDropdown(null);
-  };
+  const [modalConfig, setModalConfig] = useState<DropdownModalConfig | null>(
+    null,
+  );
+  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const backdropAnim = useRef(new Animated.Value(0)).current;
 
   const {
     control,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<SignUpStep2FormValues>({
     resolver: zodResolver(signUpStep2Schema),
@@ -68,6 +73,52 @@ export default function SignUpStep2() {
       telegram: "",
     },
   });
+
+  const openModal = useCallback(
+    (config: DropdownModalConfig) => {
+      Keyboard.dismiss();
+      setModalConfig(config);
+      Animated.parallel([
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          useNativeDriver: true,
+          damping: 25,
+          stiffness: 300,
+        }),
+        Animated.timing(backdropAnim, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    },
+    [slideAnim, backdropAnim],
+  );
+
+  const closeModal = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: SCREEN_HEIGHT,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backdropAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setModalConfig(null);
+    });
+  }, [slideAnim, backdropAnim]);
+
+  const selectOption = useCallback(
+    (name: DropdownNameProps, option: string) => {
+      setValue(name, option, { shouldValidate: true });
+      closeModal();
+    },
+    [setValue, closeModal],
+  );
 
   const pickImage = async () => {
     const permissionResult =
@@ -130,17 +181,17 @@ export default function SignUpStep2() {
     }
   };
 
-  const renderDropdown = (
+  const renderDropdownField = (
     name: DropdownNameProps,
     label: string,
-    options: readonly string[] = [],
+    options: readonly string[],
     placeholder: string,
   ) => {
     const hasError = !!errors[name];
     const errorMessage = errors[name]?.message;
 
     return (
-      <View style={{ zIndex: openDropdown === name ? 50 : 1 }}>
+      <View>
         <Text
           className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
         >
@@ -153,8 +204,8 @@ export default function SignUpStep2() {
             <View>
               <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={() => toggleDropdown(name)}
-                className={`w-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"} border-2 ${openDropdown === name ? "rounded-t-2xl rounded-b-none border-b-0" : "rounded-2xl"} p-4 flex-row justify-between items-center ${
+                onPress={() => openModal({ name, label, options, placeholder })}
+                className={`w-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"} border-2 rounded-2xl p-4 flex-row justify-between items-center ${
                   hasError ? "border-red-500" : ""
                 }`}
               >
@@ -168,49 +219,11 @@ export default function SignUpStep2() {
                   {value || placeholder}
                 </Text>
                 <Ionicons
-                  name={openDropdown === name ? "chevron-up" : "chevron-down"}
+                  name="chevron-down"
                   size={20}
                   color={isDark ? "#4b5563" : "#94a3b8"}
                 />
               </TouchableOpacity>
-              {openDropdown === name && (
-                <View
-                  className={`w-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"} border-2 border-t-0 rounded-b-2xl overflow-hidden`}
-                >
-                  <ScrollView
-                    style={{ maxHeight: 200 }}
-                    nestedScrollEnabled
-                    showsVerticalScrollIndicator={true}
-                  >
-                    {(options || []).map((option, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        activeOpacity={0.8}
-                        onPress={() => {
-                          setValue(name, option, {
-                            shouldValidate: true,
-                          });
-                          closeDropdowns();
-                        }}
-                        className={`p-4 ${options && index !== options.length - 1 ? `border-b ${isDark ? "border-slate-800" : "border-slate-200"}` : ""} flex-row justify-between items-center ${value === option ? (isDark ? "bg-slate-800" : "bg-slate-100") : ""}`}
-                      >
-                        <Text
-                          className={`${value === option ? "text-primary font-bold" : isDark ? "text-slate-300" : "text-slate-700"} text-base`}
-                        >
-                          {option}
-                        </Text>
-                        {value === option && (
-                          <Ionicons
-                            name="checkmark"
-                            size={18}
-                            color="#ff6719"
-                          />
-                        )}
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
               {errorMessage ? (
                 <Text className="text-red-500 text-xs mt-1 ml-1">
                   {errorMessage}
@@ -220,6 +233,51 @@ export default function SignUpStep2() {
           )}
         />
       </View>
+    );
+  };
+
+  const renderModalOption = ({
+    item,
+    index,
+  }: {
+    item: string;
+    index: number;
+  }) => {
+    if (!modalConfig) return null;
+    const currentValue = watch(modalConfig.name);
+    const isSelected = currentValue === item;
+    const isLast = index === modalConfig.options.length - 1;
+
+    return (
+      <TouchableOpacity
+        activeOpacity={0.6}
+        onPress={() => selectOption(modalConfig.name, item)}
+        style={[
+          styles.optionItem,
+          {
+            backgroundColor: isSelected
+              ? isDark
+                ? "#1e293b"
+                : "#f1f5f9"
+              : "transparent",
+            borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth,
+            borderBottomColor: isDark ? "#1e293b" : "#e2e8f0",
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.optionText,
+            {
+              color: isSelected ? "#ff6719" : isDark ? "#cbd5e1" : "#334155",
+              fontWeight: isSelected ? "700" : "400",
+            },
+          ]}
+        >
+          {item}
+        </Text>
+        {isSelected && <Ionicons name="checkmark" size={20} color="#ff6719" />}
+      </TouchableOpacity>
     );
   };
 
@@ -310,16 +368,21 @@ export default function SignUpStep2() {
               </View>
 
               <View className="space-y-5">
-                {renderDropdown("team", "Team", TEAM_NAMES, "Select your team")}
+                {renderDropdownField(
+                  "team",
+                  "Team",
+                  TEAM_NAMES,
+                  "Select your team",
+                )}
 
-                {renderDropdown(
+                {renderDropdownField(
                   "department",
                   "Department",
                   DEPARTMENTS,
                   "Select your department",
                 )}
 
-                {renderDropdown(
+                {renderDropdownField(
                   "year",
                   "Year",
                   YEARS,
@@ -388,6 +451,156 @@ export default function SignUpStep2() {
           </ScrollView>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
+
+      <Modal
+        visible={modalConfig !== null}
+        transparent
+        animationType="none"
+        statusBarTranslucent
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalContainer}>
+          <Animated.View
+            style={[
+              styles.backdrop,
+              {
+                opacity: backdropAnim,
+              },
+            ]}
+          >
+            <Pressable style={StyleSheet.absoluteFill} onPress={closeModal} />
+          </Animated.View>
+
+          <Animated.View
+            style={[
+              styles.sheet,
+              {
+                backgroundColor: isDark ? "#0f172a" : "#ffffff",
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
+            <View style={styles.handleContainer}>
+              <View
+                style={[
+                  styles.handle,
+                  {
+                    backgroundColor: isDark ? "#334155" : "#cbd5e1",
+                  },
+                ]}
+              />
+            </View>
+
+            <View
+              style={[
+                styles.sheetHeader,
+                {
+                  borderBottomColor: isDark ? "#1e293b" : "#f1f5f9",
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.sheetTitle,
+                  { color: isDark ? "#f1f5f9" : "#0f172a" },
+                ]}
+              >
+                {modalConfig?.label}
+              </Text>
+              <TouchableOpacity
+                onPress={closeModal}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={[
+                  styles.closeButton,
+                  {
+                    backgroundColor: isDark ? "#1e293b" : "#f1f5f9",
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="close"
+                  size={18}
+                  color={isDark ? "#94a3b8" : "#64748b"}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={modalConfig?.options ? [...modalConfig.options] : []}
+              keyExtractor={(item, index) => `${item}-${index}`}
+              renderItem={renderModalOption}
+              showsVerticalScrollIndicator={false}
+              style={styles.optionsList}
+              contentContainerStyle={{ paddingBottom: 40 }}
+            />
+          </Animated.View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  sheet: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: SCREEN_HEIGHT * 0.55,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 20,
+  },
+  handleContainer: {
+    alignItems: "center",
+    paddingTop: 12,
+    paddingBottom: 4,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+  },
+  sheetHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  sheetTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  optionsList: {
+    paddingHorizontal: 8,
+  },
+  optionItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    marginHorizontal: 8,
+    borderRadius: 12,
+  },
+  optionText: {
+    fontSize: 16,
+  },
+});
