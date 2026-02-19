@@ -286,7 +286,7 @@ export default function Settings() {
           iconFamily: "ionicons",
           label: "Privacy Policy",
           type: "navigation",
-          onPress: () => Linking.openURL("https://4kilofellowship.org/privacy"),
+          onPress: () => router.push("/(auth)/legal?section=privacy"),
         },
         {
           id: "terms",
@@ -294,7 +294,7 @@ export default function Settings() {
           iconFamily: "ionicons",
           label: "Terms of Service",
           type: "navigation",
-          onPress: () => Linking.openURL("https://4kilofellowship.org/terms"),
+          onPress: () => router.push("/(auth)/legal?section=terms"),
         },
         {
           id: "dataUsage",
