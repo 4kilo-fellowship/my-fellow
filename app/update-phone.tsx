@@ -165,7 +165,7 @@ export default function UpdatePhoneScreen() {
             <TouchableOpacity
               style={styles.saveButton}
               onPress={handleUpdatePhone}
-              activeOpacity={0.7}
+              activeOpacity={1}
               disabled={isUpdating}
             >
               {isUpdating ? (
@@ -220,6 +220,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 10,
+    shadowColor: "#ff6619",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   saveButtonText: {
     color: "white",

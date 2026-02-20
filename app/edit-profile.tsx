@@ -283,7 +283,7 @@ export default function EditProfileScreen() {
             <TouchableOpacity
               style={styles.saveButton}
               onPress={handleUpdateProfile}
-              activeOpacity={0.7}
+              activeOpacity={1}
               disabled={isUpdatingProfile}
             >
               {isUpdatingProfile ? (

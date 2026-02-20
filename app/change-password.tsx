@@ -188,7 +188,7 @@ export default function ChangePasswordScreen() {
             <TouchableOpacity
               style={styles.saveButton}
               onPress={handleChangePassword}
-              activeOpacity={0.7}
+              activeOpacity={1}
               disabled={isChanging}
             >
               {isChanging ? (
@@ -231,12 +231,17 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   saveButton: {
-    backgroundColor: "#000000",
+    backgroundColor: "#ff6619",
     height: 52,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 10,
+    shadowColor: "#ff6619",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   saveButtonText: {
     color: "white",
