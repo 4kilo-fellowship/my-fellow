@@ -38,6 +38,11 @@ export default function EditProfileScreen() {
     user?.telegramUserName || "",
   );
   const [pastTeam, setPastTeam] = useState(user?.pastTeam || "");
+  const [team, setTeam] = useState(
+    typeof user?.team === "string"
+      ? user.team
+      : (user?.team as any)?.name || (user?.team as any)?.fullName || "",
+  );
   const [profileImage, setProfileImage] = useState<string | null>(
     user?.profileImage || null,
   );
@@ -70,6 +75,7 @@ export default function EditProfileScreen() {
         yearOfStudy,
         telegramUserName,
         pastTeam,
+        team,
         profileImage,
       });
       Alert.alert("Success", "Profile updated successfully");
@@ -253,6 +259,30 @@ export default function EditProfileScreen() {
                 placeholder="@username"
                 placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
                 autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text
+                style={[
+                  styles.inputLabel,
+                  { color: isDark ? "#9ca3af" : "#666" },
+                ]}
+              >
+                Current Team
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    color: isDark ? "#fff" : "#000",
+                    borderColor: isDark ? "#333" : "#e5e7eb",
+                  },
+                ]}
+                value={team}
+                onChangeText={setTeam}
+                placeholder="Current team"
+                placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
               />
             </View>
 
