@@ -1,14 +1,16 @@
+import { InfoModal } from "@/components";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useUserStore } from "@/stores/user.store";
 import { Ionicons } from "@expo/vector-icons";
+import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -21,6 +23,17 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { z } from "zod";
+
+const editProfileSchema = z.object({
+  fullName: z.string().min(3, "Full name must be at least 3 characters"),
+  department: z.string().optional(),
+  yearOfStudy: z.string().optional(),
+  telegramUserName: z.string().optional(),
+  team: z.string().optional(),
+});
+
+type EditProfileFormValues = z.infer<typeof editProfileSchema>;
 
 export default function EditProfileScreen() {
   const { top, bottom } = useSafeAreaInsets();
@@ -30,22 +43,36 @@ export default function EditProfileScreen() {
   const router = useRouter();
   const isDark = theme === "dark";
 
-  // Basic Info State
-  const [fullName, setFullName] = useState(user?.fullName || "");
-  const [department, setDepartment] = useState(user?.department || "");
-  const [yearOfStudy, setYearOfStudy] = useState(user?.yearOfStudy || "");
-  const [telegramUserName, setTelegramUserName] = useState(
-    user?.telegramUserName || "",
-  );
-  const [team, setTeam] = useState(
-    typeof user?.team === "string"
-      ? user.team
-      : (user?.team as any)?.name || (user?.team as any)?.fullName || "",
-  );
+  // Modal State
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{
+    title: string;
+    message: string;
+    type: "success" | "error";
+  }>({ title: "", message: "", type: "success" });
+
   const [profileImage, setProfileImage] = useState<string | null>(
     user?.profileImage || null,
   );
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<EditProfileFormValues>({
+    resolver: zodResolver(editProfileSchema),
+    defaultValues: {
+      fullName: user?.fullName || "",
+      department: user?.department || "",
+      yearOfStudy: user?.yearOfStudy || "",
+      telegramUserName: user?.telegramUserName || "",
+      team:
+        typeof user?.team === "string"
+          ? user.team
+          : (user?.team as any)?.name || (user?.team as any)?.fullName || "",
+    },
+  });
 
   const handlePickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -60,25 +87,26 @@ export default function EditProfileScreen() {
     }
   };
 
-  const handleUpdateProfile = async () => {
-    if (!fullName.trim()) {
-      Alert.alert("Error", "Full name is required");
-      return;
-    }
-
+  const onSave = async (data: EditProfileFormValues) => {
     setIsUpdatingProfile(true);
     try {
       await updateProfile({
-        fullName,
-        department,
-        yearOfStudy,
-        telegramUserName,
-        team,
+        ...data,
         profileImage,
       });
-      Alert.alert("Success", "Profile updated successfully");
+      setModalConfig({
+        title: "Success",
+        message: "Profile updated successfully",
+        type: "success",
+      });
+      setModalVisible(true);
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to update profile");
+      setModalConfig({
+        title: "Error",
+        message: error.message || "Failed to update profile",
+        type: "error",
+      });
+      setModalVisible(true);
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -133,7 +161,7 @@ export default function EditProfileScreen() {
           <View style={styles.imageSection}>
             <TouchableOpacity
               onPress={handlePickImage}
-              activeOpacity={0.7}
+              activeOpacity={1}
               style={styles.imageContainer}
             >
               {profileImage ? (
@@ -172,19 +200,33 @@ export default function EditProfileScreen() {
               >
                 Full Name
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    color: isDark ? "#fff" : "#000",
-                    borderColor: isDark ? "#333" : "#e5e7eb",
-                  },
-                ]}
-                value={fullName}
-                onChangeText={setFullName}
-                placeholder="Full name"
-                placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+              <Controller
+                control={control}
+                name="fullName"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        color: isDark ? "#fff" : "#000",
+                        borderColor: errors.fullName
+                          ? "#ef4444"
+                          : isDark
+                            ? "#333"
+                            : "#e5e7eb",
+                      },
+                    ]}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    placeholder="Full name"
+                    placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+                  />
+                )}
               />
+              {errors.fullName && (
+                <Text style={styles.errorText}>{errors.fullName.message}</Text>
+              )}
             </View>
 
             <View style={styles.inputGroup}>
@@ -196,18 +238,25 @@ export default function EditProfileScreen() {
               >
                 Department
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    color: isDark ? "#fff" : "#000",
-                    borderColor: isDark ? "#333" : "#e5e7eb",
-                  },
-                ]}
-                value={department}
-                onChangeText={setDepartment}
-                placeholder="Department"
-                placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+              <Controller
+                control={control}
+                name="department"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        color: isDark ? "#fff" : "#000",
+                        borderColor: isDark ? "#333" : "#e5e7eb",
+                      },
+                    ]}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    placeholder="Department"
+                    placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+                  />
+                )}
               />
             </View>
 
@@ -220,18 +269,25 @@ export default function EditProfileScreen() {
               >
                 Year of Study
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    color: isDark ? "#fff" : "#000",
-                    borderColor: isDark ? "#333" : "#e5e7eb",
-                  },
-                ]}
-                value={yearOfStudy}
-                onChangeText={setYearOfStudy}
-                placeholder="Year of study"
-                placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+              <Controller
+                control={control}
+                name="yearOfStudy"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        color: isDark ? "#fff" : "#000",
+                        borderColor: isDark ? "#333" : "#e5e7eb",
+                      },
+                    ]}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    placeholder="Year of study"
+                    placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+                  />
+                )}
               />
             </View>
 
@@ -244,19 +300,26 @@ export default function EditProfileScreen() {
               >
                 Telegram Handle
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    color: isDark ? "#fff" : "#000",
-                    borderColor: isDark ? "#333" : "#e5e7eb",
-                  },
-                ]}
-                value={telegramUserName}
-                onChangeText={setTelegramUserName}
-                placeholder="@username"
-                placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
-                autoCapitalize="none"
+              <Controller
+                control={control}
+                name="telegramUserName"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        color: isDark ? "#fff" : "#000",
+                        borderColor: isDark ? "#333" : "#e5e7eb",
+                      },
+                    ]}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    placeholder="@username"
+                    placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+                    autoCapitalize="none"
+                  />
+                )}
               />
             </View>
 
@@ -269,24 +332,31 @@ export default function EditProfileScreen() {
               >
                 Team
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    color: isDark ? "#fff" : "#000",
-                    borderColor: isDark ? "#333" : "#e5e7eb",
-                  },
-                ]}
-                value={team}
-                onChangeText={setTeam}
-                placeholder="Team name"
-                placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+              <Controller
+                control={control}
+                name="team"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        color: isDark ? "#fff" : "#000",
+                        borderColor: isDark ? "#333" : "#e5e7eb",
+                      },
+                    ]}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    placeholder="Team name"
+                    placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+                  />
+                )}
               />
             </View>
 
             <TouchableOpacity
               style={styles.saveButton}
-              onPress={handleUpdateProfile}
+              onPress={handleSubmit(onSave)}
               activeOpacity={1}
               disabled={isUpdatingProfile}
             >
@@ -299,6 +369,20 @@ export default function EditProfileScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <InfoModal
+        visible={modalVisible}
+        onClose={() => {
+          setModalVisible(false);
+          if (modalConfig.type === "success") {
+            router.back();
+          }
+        }}
+        isDark={isDark}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </View>
   );
 }
@@ -362,6 +446,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     fontSize: 15,
+  },
+  errorText: {
+    color: "#ef4444",
+    fontSize: 12,
+    marginLeft: 4,
   },
   saveButton: {
     backgroundColor: "#ff6619",

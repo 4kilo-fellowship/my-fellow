@@ -1,13 +1,15 @@
+import { InfoModal } from "@/components";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useUserStore } from "@/stores/user.store";
 import { Ionicons } from "@expo/vector-icons";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -19,6 +21,17 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { z } from "zod";
+
+const updatePhoneSchema = z.object({
+  newPhoneNumber: z
+    .string()
+    .min(1, "Phone number is required")
+    .regex(/^(09|07)\d{8}$/, "Enter a valid phone number"),
+  password: z.string().min(1, "Password is required"),
+});
+
+type UpdatePhoneFormValues = z.infer<typeof updatePhoneSchema>;
 
 export default function UpdatePhoneScreen() {
   const { top, bottom } = useSafeAreaInsets();
@@ -28,32 +41,58 @@ export default function UpdatePhoneScreen() {
   const router = useRouter();
   const isDark = theme === "dark";
 
-  const [newPhoneNumber, setNewPhoneNumber] = useState(user?.phoneNumber || "");
-  const [password, setPassword] = useState("");
+  // Modal State
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{
+    title: string;
+    message: string;
+    type: "success" | "error";
+  }>({ title: "", message: "", type: "success" });
+
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleUpdatePhone = async () => {
-    if (!newPhoneNumber || !password) {
-      Alert.alert("Error", "All fields are required");
-      return;
-    }
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<UpdatePhoneFormValues>({
+    resolver: zodResolver(updatePhoneSchema),
+    defaultValues: {
+      newPhoneNumber: user?.phoneNumber || "",
+      password: "",
+    },
+  });
 
-    if (newPhoneNumber === user?.phoneNumber) {
-      Alert.alert("Info", "This is already your current phone number");
+  const onSubmit = async (data: UpdatePhoneFormValues) => {
+    if (data.newPhoneNumber === user?.phoneNumber) {
+      setModalConfig({
+        title: "Info",
+        message: "This is already your current phone number",
+        type: "error",
+      });
+      setModalVisible(true);
       return;
     }
 
     setIsUpdating(true);
     try {
       await updatePhone({
-        phoneNumber: newPhoneNumber,
-        password: password,
+        phoneNumber: data.newPhoneNumber,
+        password: data.password,
       });
-      Alert.alert("Success", "Phone number updated successfully", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      setModalConfig({
+        title: "Success",
+        message: "Phone number updated successfully",
+        type: "success",
+      });
+      setModalVisible(true);
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to update phone number");
+      setModalConfig({
+        title: "Error",
+        message: error.message || "Failed to update phone number",
+        type: "error",
+      });
+      setModalVisible(true);
     } finally {
       setIsUpdating(false);
     }
@@ -121,20 +160,36 @@ export default function UpdatePhoneScreen() {
               >
                 New Phone Number
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    color: isDark ? "#fff" : "#000",
-                    borderColor: isDark ? "#333" : "#e5e7eb",
-                  },
-                ]}
-                value={newPhoneNumber}
-                onChangeText={setNewPhoneNumber}
-                keyboardType="phone-pad"
-                placeholder="254..."
-                placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+              <Controller
+                control={control}
+                name="newPhoneNumber"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        color: isDark ? "#fff" : "#000",
+                        borderColor: errors.newPhoneNumber
+                          ? "#ef4444"
+                          : isDark
+                            ? "#333"
+                            : "#e5e7eb",
+                      },
+                    ]}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    keyboardType="phone-pad"
+                    placeholder="254..."
+                    placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+                  />
+                )}
               />
+              {errors.newPhoneNumber && (
+                <Text style={styles.errorText}>
+                  {errors.newPhoneNumber.message}
+                </Text>
+              )}
             </View>
 
             <View style={styles.inputGroup}>
@@ -146,25 +201,39 @@ export default function UpdatePhoneScreen() {
               >
                 Password
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    color: isDark ? "#fff" : "#000",
-                    borderColor: isDark ? "#333" : "#e5e7eb",
-                  },
-                ]}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                placeholder="Current password"
-                placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+              <Controller
+                control={control}
+                name="password"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        color: isDark ? "#fff" : "#000",
+                        borderColor: errors.password
+                          ? "#ef4444"
+                          : isDark
+                            ? "#333"
+                            : "#e5e7eb",
+                      },
+                    ]}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    secureTextEntry
+                    placeholder="Current password"
+                    placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+                  />
+                )}
               />
+              {errors.password && (
+                <Text style={styles.errorText}>{errors.password.message}</Text>
+              )}
             </View>
 
             <TouchableOpacity
               style={styles.saveButton}
-              onPress={handleUpdatePhone}
+              onPress={handleSubmit(onSubmit)}
               activeOpacity={1}
               disabled={isUpdating}
             >
@@ -177,6 +246,20 @@ export default function UpdatePhoneScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <InfoModal
+        visible={modalVisible}
+        onClose={() => {
+          setModalVisible(false);
+          if (modalConfig.type === "success") {
+            router.back();
+          }
+        }}
+        isDark={isDark}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </View>
   );
 }
@@ -212,6 +295,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     fontSize: 15,
+  },
+  errorText: {
+    color: "#ef4444",
+    fontSize: 12,
+    marginLeft: 4,
   },
   saveButton: {
     backgroundColor: "#ff6619",

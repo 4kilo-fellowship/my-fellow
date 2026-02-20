@@ -1,12 +1,14 @@
+import { InfoModal } from "@/components";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -18,6 +20,22 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { z } from "zod";
+
+const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z
+      .string()
+      .min(6, "New password must be at least 6 characters"),
+    confirmNewPassword: z.string().min(1, "Please confirm your new password"),
+  })
+  .refine((data) => data.newPassword === data.confirmNewPassword, {
+    path: ["confirmNewPassword"],
+    message: "Passwords do not match",
+  });
+
+type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 
 export default function ChangePasswordScreen() {
   const { top, bottom } = useSafeAreaInsets();
@@ -26,39 +44,46 @@ export default function ChangePasswordScreen() {
   const router = useRouter();
   const isDark = theme === "dark";
 
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  // Modal State
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{
+    title: string;
+    message: string;
+    type: "success" | "error";
+  }>({ title: "", message: "", type: "success" });
+
   const [isChanging, setIsChanging] = useState(false);
 
-  const handleChangePassword = async () => {
-    if (!currentPassword || !newPassword || !confirmNewPassword) {
-      Alert.alert("Error", "All fields are required");
-      return;
-    }
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ChangePasswordFormValues>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmNewPassword: "",
+    },
+  });
 
-    if (newPassword !== confirmNewPassword) {
-      Alert.alert("Error", "Passwords do not match");
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      Alert.alert("Error", "New password must be at least 6 characters");
-      return;
-    }
-
+  const onSubmit = async (data: ChangePasswordFormValues) => {
     setIsChanging(true);
     try {
-      await changePassword({
-        currentPassword,
-        newPassword,
-        confirmNewPassword,
+      await changePassword(data);
+      setModalConfig({
+        title: "Success",
+        message: "Password updated successfully",
+        type: "success",
       });
-      Alert.alert("Success", "Password updated successfully", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      setModalVisible(true);
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to update password");
+      setModalConfig({
+        title: "Error",
+        message: error.message || "Failed to update password",
+        type: "error",
+      });
+      setModalVisible(true);
     } finally {
       setIsChanging(false);
     }
@@ -119,20 +144,36 @@ export default function ChangePasswordScreen() {
               >
                 Current Password
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    color: isDark ? "#fff" : "#000",
-                    borderColor: isDark ? "#333" : "#e5e7eb",
-                  },
-                ]}
-                value={currentPassword}
-                onChangeText={setCurrentPassword}
-                secureTextEntry
-                placeholder="Current password"
-                placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+              <Controller
+                control={control}
+                name="currentPassword"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        color: isDark ? "#fff" : "#000",
+                        borderColor: errors.currentPassword
+                          ? "#ef4444"
+                          : isDark
+                            ? "#333"
+                            : "#e5e7eb",
+                      },
+                    ]}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    secureTextEntry
+                    placeholder="Current password"
+                    placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+                  />
+                )}
               />
+              {errors.currentPassword && (
+                <Text style={styles.errorText}>
+                  {errors.currentPassword.message}
+                </Text>
+              )}
             </View>
 
             <View style={styles.inputGroup}>
@@ -144,20 +185,36 @@ export default function ChangePasswordScreen() {
               >
                 New Password
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    color: isDark ? "#fff" : "#000",
-                    borderColor: isDark ? "#333" : "#e5e7eb",
-                  },
-                ]}
-                value={newPassword}
-                onChangeText={setNewPassword}
-                secureTextEntry
-                placeholder="Minimum 6 characters"
-                placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+              <Controller
+                control={control}
+                name="newPassword"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        color: isDark ? "#fff" : "#000",
+                        borderColor: errors.newPassword
+                          ? "#ef4444"
+                          : isDark
+                            ? "#333"
+                            : "#e5e7eb",
+                      },
+                    ]}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    secureTextEntry
+                    placeholder="Minimum 6 characters"
+                    placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+                  />
+                )}
               />
+              {errors.newPassword && (
+                <Text style={styles.errorText}>
+                  {errors.newPassword.message}
+                </Text>
+              )}
             </View>
 
             <View style={styles.inputGroup}>
@@ -169,25 +226,41 @@ export default function ChangePasswordScreen() {
               >
                 Confirm New Password
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    color: isDark ? "#fff" : "#000",
-                    borderColor: isDark ? "#333" : "#e5e7eb",
-                  },
-                ]}
-                value={confirmNewPassword}
-                onChangeText={setConfirmNewPassword}
-                secureTextEntry
-                placeholder="Confirm your new password"
-                placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+              <Controller
+                control={control}
+                name="confirmNewPassword"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        color: isDark ? "#fff" : "#000",
+                        borderColor: errors.confirmNewPassword
+                          ? "#ef4444"
+                          : isDark
+                            ? "#333"
+                            : "#e5e7eb",
+                      },
+                    ]}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    secureTextEntry
+                    placeholder="Confirm your new password"
+                    placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+                  />
+                )}
               />
+              {errors.confirmNewPassword && (
+                <Text style={styles.errorText}>
+                  {errors.confirmNewPassword.message}
+                </Text>
+              )}
             </View>
 
             <TouchableOpacity
               style={styles.saveButton}
-              onPress={handleChangePassword}
+              onPress={handleSubmit(onSubmit)}
               activeOpacity={1}
               disabled={isChanging}
             >
@@ -200,6 +273,20 @@ export default function ChangePasswordScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <InfoModal
+        visible={modalVisible}
+        onClose={() => {
+          setModalVisible(false);
+          if (modalConfig.type === "success") {
+            router.back();
+          }
+        }}
+        isDark={isDark}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </View>
   );
 }
@@ -229,6 +316,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     fontSize: 15,
+  },
+  errorText: {
+    color: "#ef4444",
+    fontSize: 12,
+    marginLeft: 4,
   },
   saveButton: {
     backgroundColor: "#ff6619",
