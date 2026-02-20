@@ -446,7 +446,7 @@ export default function Settings() {
           item.onPress?.();
         }
       }}
-      activeOpacity={0.7}
+      activeOpacity={1}
     >
       <View style={styles.settingItemLeft}>
         <View
@@ -552,7 +552,7 @@ export default function Settings() {
               styles.userCard,
               { backgroundColor: isDark ? "#1c1c1e" : "#ffffff" },
             ]}
-            activeOpacity={0.7}
+            activeOpacity={1}
             onPress={() => router.push("/edit-profile")}
           >
             <View style={styles.userImageContainer}>

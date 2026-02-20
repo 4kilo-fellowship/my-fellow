@@ -68,32 +68,26 @@ export default function UpdatePhoneScreen() {
     >
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      {/* Header */}
       <View
-        style={[
-          styles.header,
-          {
-            paddingTop: top + 10,
-            borderBottomColor: isDark ? "#1f2937" : "#e5e7eb",
-          },
-        ]}
+        className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"}`}
+        style={{ paddingTop: top + 10 }}
       >
         <Pressable
           onPress={() => router.back()}
-          style={styles.backButton}
+          className="w-11 h-11 rounded-full items-center justify-center mr-4"
           android_ripple={{
-            color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
+            color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
             borderless: true,
           }}
         >
           <Ionicons
             name="arrow-back"
             size={24}
-            color={isDark ? "white" : "#000"}
+            color={isDark ? "white" : "#0f172a"}
           />
         </Pressable>
         <Text
-          style={[styles.headerTitle, { color: isDark ? "white" : "#000" }]}
+          className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
         >
           Update Phone Number
         </Text>
@@ -190,25 +184,6 @@ export default function UpdatePhoneScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 15,
-    flexDirection: "row",
-    alignItems: "center",
-    borderBottomWidth: 1,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 10,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
   },
   scrollContent: {
     padding: 24,
