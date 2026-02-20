@@ -24,7 +24,6 @@ export default function NotificationsScreen() {
         style={StyleSheet.absoluteFillObject}
       />
 
-      {/* Header */}
       <View
         className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"}`}
         style={{ paddingTop: insets.top + 10 }}
@@ -87,7 +86,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 40,
-    paddingBottom: 100, // offset for visual center
+    paddingBottom: 100,
   },
   iconContainer: {
     width: 100,

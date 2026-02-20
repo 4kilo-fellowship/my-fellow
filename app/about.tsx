@@ -24,7 +24,6 @@ export default function AboutScreen() {
         style={StyleSheet.absoluteFillObject}
       />
 
-      {/* Header */}
       <View
         className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"}`}
         style={{ paddingTop: insets.top + 10 }}
@@ -57,7 +56,6 @@ export default function AboutScreen() {
           { paddingBottom: insets.bottom + 40 },
         ]}
       >
-        {/* Hero Section */}
         <View style={styles.heroSection}>
           <Text
             style={[styles.appName, { color: isDark ? "#fff" : "#1e293b" }]}
@@ -133,7 +131,6 @@ export default function AboutScreen() {
           </Text>
         </View>
 
-        {/* Footer info */}
         <View style={styles.footerInfo}>
           <Text
             style={[

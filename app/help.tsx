@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -29,8 +30,8 @@ export default function HelpScreen() {
     Linking.openURL("tel:0994627985");
   };
 
-  const handleTelegram = () => {
-    Linking.openURL("https://t.me/natitam1");
+  const handleTelegram = async () => {
+    await WebBrowser.openBrowserAsync("https://t.me/natitam1");
   };
 
   const pickImage = async () => {
@@ -48,7 +49,6 @@ export default function HelpScreen() {
 
   const handleSend = () => {
     if (!message.trim() && !selectedImage) return;
-    // For now just clear the input as per request to have it look like a chat app
     setMessage("");
     setSelectedImage(null);
   };
@@ -64,7 +64,6 @@ export default function HelpScreen() {
         style={StyleSheet.absoluteFillObject}
       />
 
-      {/* Header - Kept outside KeyboardAvoidingView to stay fixed at top */}
       <View
         className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"}`}
         style={{ paddingTop: insets.top + 10 }}
@@ -139,7 +138,7 @@ export default function HelpScreen() {
               <Ionicons
                 name="call-outline"
                 size={22}
-                color={isDark ? "#94a3b8" : "#64748b"}
+                color={isDark ? "#fff" : "#1e293b"}
               />
               <View style={styles.itemContent}>
                 <Text
@@ -162,7 +161,7 @@ export default function HelpScreen() {
               <Ionicons
                 name="chevron-forward"
                 size={18}
-                color={isDark ? "#1e293b" : "#e2e8f0"}
+                color={isDark ? "#fff" : "#000"}
               />
             </Pressable>
 
@@ -181,7 +180,7 @@ export default function HelpScreen() {
               <Ionicons
                 name="paper-plane-outline"
                 size={22}
-                color={isDark ? "#94a3b8" : "#64748b"}
+                color={isDark ? "#fff" : "#1e293b"}
               />
               <View style={styles.itemContent}>
                 <Text
@@ -204,13 +203,12 @@ export default function HelpScreen() {
               <Ionicons
                 name="chevron-forward"
                 size={18}
-                color={isDark ? "#1e293b" : "#e2e8f0"}
+                color={isDark ? "#fff" : "#000"}
               />
             </Pressable>
           </View>
         </ScrollView>
 
-        {/* Input Bar */}
         <View
           style={[
             styles.inputBar,
@@ -222,6 +220,16 @@ export default function HelpScreen() {
             },
           ]}
         >
+          <View
+            style={{
+              position: "absolute",
+              bottom: -200,
+              left: 0,
+              right: 0,
+              height: 200,
+              backgroundColor: isDark ? "#0A0A0A" : "#fff",
+            }}
+          />
           <View
             style={[
               styles.inputContainer,
@@ -266,8 +274,8 @@ export default function HelpScreen() {
                   message.trim() || selectedImage
                     ? "#fff"
                     : isDark
-                      ? "#475569"
-                      : "#94a3b8"
+                      ? "#94a3b8"
+                      : "#64748b"
                 }
               />
             </Pressable>
