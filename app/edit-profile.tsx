@@ -37,7 +37,6 @@ export default function EditProfileScreen() {
   const [telegramUserName, setTelegramUserName] = useState(
     user?.telegramUserName || "",
   );
-  const [pastTeam, setPastTeam] = useState(user?.pastTeam || "");
   const [team, setTeam] = useState(
     typeof user?.team === "string"
       ? user.team
@@ -74,7 +73,6 @@ export default function EditProfileScreen() {
         department,
         yearOfStudy,
         telegramUserName,
-        pastTeam,
         team,
         profileImage,
       });
@@ -269,7 +267,7 @@ export default function EditProfileScreen() {
                   { color: isDark ? "#9ca3af" : "#666" },
                 ]}
               >
-                Current Team
+                Team
               </Text>
               <TextInput
                 style={[
@@ -281,31 +279,7 @@ export default function EditProfileScreen() {
                 ]}
                 value={team}
                 onChangeText={setTeam}
-                placeholder="Current team"
-                placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text
-                style={[
-                  styles.inputLabel,
-                  { color: isDark ? "#9ca3af" : "#666" },
-                ]}
-              >
-                Previous Team
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    color: isDark ? "#fff" : "#000",
-                    borderColor: isDark ? "#333" : "#e5e7eb",
-                  },
-                ]}
-                value={pastTeam}
-                onChangeText={setPastTeam}
-                placeholder="Past team name"
+                placeholder="Team name"
                 placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
               />
             </View>

@@ -318,9 +318,9 @@ export default function Settings() {
           icon: "chatbubble-ellipses-outline",
           iconFamily: "ionicons",
           label: "Contact Us",
-          description: "Send us a message",
+          description: "Give us a call",
           type: "navigation",
-          onPress: () => Linking.openURL("mailto:support@4kilofellowship.org"),
+          onPress: () => Linking.openURL("tel:0994627985"),
         },
         {
           id: "feedback",
