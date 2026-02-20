@@ -400,6 +400,29 @@ export default function SignUpStep2() {
                 </TouchableOpacity>
               </View>
 
+              <View
+                style={{
+                  height: 0,
+                  width: 0,
+                  opacity: 0,
+                  position: "absolute",
+                }}
+              >
+                <TextInput
+                  value={params.phoneNumber as string}
+                  textContentType="username"
+                  autoComplete="username"
+                  importantForAutofill="yes"
+                />
+                <TextInput
+                  value={params.password as string}
+                  textContentType="newPassword"
+                  autoComplete="password-new"
+                  importantForAutofill="yes"
+                  secureTextEntry
+                />
+              </View>
+
               <View className="space-y-5">
                 {renderDropdownField(
                   "team",

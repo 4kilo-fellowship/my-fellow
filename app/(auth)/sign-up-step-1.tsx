@@ -159,6 +159,9 @@ export default function SignUpStep1() {
                           onChangeText={onChange}
                           onBlur={onBlur}
                           autoCapitalize="words"
+                          textContentType="name"
+                          autoComplete="name"
+                          importantForAutofill="yes"
                         />
                         <View className="absolute left-4 top-4">
                           <Ionicons
@@ -201,6 +204,9 @@ export default function SignUpStep1() {
                           value={value}
                           onChangeText={onChange}
                           onBlur={onBlur}
+                          textContentType="username"
+                          autoComplete="username"
+                          importantForAutofill="yes"
                         />
                         <View className="absolute left-4 top-4">
                           <Ionicons
@@ -242,6 +248,9 @@ export default function SignUpStep1() {
                           value={value}
                           onChangeText={onChange}
                           onBlur={onBlur}
+                          textContentType="newPassword"
+                          autoComplete="password-new"
+                          importantForAutofill="yes"
                         />
                         <View className="absolute left-4 top-4">
                           <Ionicons
@@ -295,6 +304,9 @@ export default function SignUpStep1() {
                           value={value}
                           onChangeText={onChange}
                           onBlur={onBlur}
+                          textContentType="newPassword"
+                          autoComplete="password-new"
+                          importantForAutofill="yes"
                         />
                         <View className="absolute left-4 top-4">
                           <Ionicons

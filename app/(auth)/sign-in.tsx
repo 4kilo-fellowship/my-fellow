@@ -132,13 +132,16 @@ export default function SignIn() {
                               ? "border-red-500"
                               : "focus:border-primary"
                           }`}
-                          placeholder="e.g. 0994627985"
+                          placeholder="e.g. 0923627985"
                           placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           value={value}
                           onChangeText={onChange}
                           onBlur={onBlur}
                           keyboardType="phone-pad"
                           autoCapitalize="none"
+                          textContentType="username"
+                          autoComplete="username"
+                          importantForAutofill="yes"
                         />
                         <View className="absolute left-4 top-4">
                           <Ionicons
@@ -180,6 +183,9 @@ export default function SignIn() {
                           onChangeText={onChange}
                           onBlur={onBlur}
                           secureTextEntry={!showPassword}
+                          textContentType="password"
+                          autoComplete="password"
+                          importantForAutofill="yes"
                         />
                         <View className="absolute left-4 top-4">
                           <Ionicons
