@@ -1,3 +1,4 @@
+import { InfoModal } from "@/components/Modals/InfoModal";
 import { DEPARTMENTS, TEAM_NAMES, YEARS } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -51,6 +52,17 @@ export default function SignUpStep2() {
   const isDark = theme === "dark";
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [errorModal, setErrorModal] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    isRegisteredError: boolean;
+  }>({
+    visible: false,
+    title: "",
+    message: "",
+    isRegisteredError: false,
+  });
 
   const [modalConfig, setModalConfig] = useState<DropdownModalConfig | null>(
     null,
@@ -112,6 +124,18 @@ export default function SignUpStep2() {
     });
   }, [slideAnim, backdropAnim]);
 
+  const handleErrorModalClose = () => {
+    const wasRegisteredError = errorModal.isRegisteredError;
+    setErrorModal((prev) => ({ ...prev, visible: false }));
+
+    if (wasRegisteredError) {
+      router.push({
+        pathname: "/sign-up-step-1",
+        params: { focus: "phoneNumber" },
+      });
+    }
+  };
+
   const selectOption = useCallback(
     (name: DropdownNameProps, option: string) => {
       setValue(name, option, { shouldValidate: true });
@@ -170,12 +194,21 @@ export default function SignUpStep2() {
       router.replace("/(tabs)");
     } catch (error: any) {
       console.error("Registration error:", error);
-      Alert.alert(
-        "Registration Failed",
+      const errorMessage =
         error.response?.data?.message ||
-          error.message ||
-          "Something went wrong. Please try again.",
-      );
+        error.message ||
+        "Something went wrong. Please try again.";
+      const isRegisteredError =
+        errorMessage.toLowerCase().includes("registered") ||
+        errorMessage.toLowerCase().includes("already exists") ||
+        errorMessage.toLowerCase().includes("phone number already in use");
+
+      setErrorModal({
+        visible: true,
+        title: isRegisteredError ? "Account Exists" : "Registration Failed",
+        message: errorMessage,
+        isRegisteredError,
+      });
     } finally {
       setLoading(false);
     }
@@ -536,6 +569,15 @@ export default function SignUpStep2() {
           </Animated.View>
         </View>
       </Modal>
+
+      <InfoModal
+        visible={errorModal.visible}
+        onClose={handleErrorModalClose}
+        title={errorModal.title}
+        message={errorModal.message}
+        type="error"
+        isDark={isDark}
+      />
     </SafeAreaView>
   );
 }

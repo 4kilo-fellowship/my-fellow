@@ -457,7 +457,7 @@ export default function Settings() {
           item.onPress?.();
         }
       }}
-      activeOpacity={0.7}
+      activeOpacity={0.9}
     >
       <View style={styles.settingItemLeft}>
         <View

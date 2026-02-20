@@ -1,7 +1,7 @@
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -45,6 +45,8 @@ export default function SignUpStep1() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
+  const phoneInputRef = React.useRef<TextInput>(null);
+
   const {
     control,
     handleSubmit,
@@ -58,6 +60,16 @@ export default function SignUpStep1() {
       confirmPassword: "",
     },
   });
+
+  const params = useLocalSearchParams();
+
+  React.useEffect(() => {
+    if (params.focus === "phoneNumber") {
+      setTimeout(() => {
+        phoneInputRef.current?.focus();
+      }, 500);
+    }
+  }, [params.focus]);
 
   const onNext = (data: SignUpStep1FormValues) => {
     router.push({
@@ -177,6 +189,7 @@ export default function SignUpStep1() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View className="relative">
                         <TextInput
+                          ref={phoneInputRef}
                           className={`w-full ${isDark ? "bg-slate-900 text-white focus:border-primary border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 text-base focus:bg-transparent ${
                             errors.phoneNumber
                               ? "border-red-500"
