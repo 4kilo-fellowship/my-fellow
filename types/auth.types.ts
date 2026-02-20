@@ -47,6 +47,24 @@ export interface SignUpData {
   profileImage?: string | null;
 }
 
+export interface ChangePasswordData {
+  currentPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
+}
+
+export interface UpdatePhoneData {
+  phoneNumber: string;
+  password: string;
+}
+
+export interface UpdatePhoneResponse {
+  success: boolean;
+  message: string;
+  token: string;
+  user: User;
+}
+
 export type SignUpResponse = AuthResponse;
 
 export interface AuthContextType {
@@ -56,6 +74,8 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   getCurrentUser: () => Promise<User>;
   updateProfile: (data: Partial<SignUpData>) => Promise<User>;
+  changePassword: (data: ChangePasswordData) => Promise<ApiResponse<void>>;
+  updatePhone: (data: UpdatePhoneData) => Promise<UpdatePhoneResponse>;
 }
 
 export type AuthProviderProps = {

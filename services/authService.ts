@@ -1,5 +1,6 @@
 import { LoginResponse, SignUpData, SignUpResponse, User } from "@/types";
 import { isAxiosError } from "axios";
+import * as SecureStore from "expo-secure-store";
 import api from "./api";
 
 export const authService = {
@@ -185,6 +186,41 @@ export const authService = {
       if (isAxiosError(error)) {
         const message =
           error.response?.data?.message || "Profile update failed";
+        throw new Error(message);
+      }
+      throw error;
+    }
+  },
+
+  changePassword: async (data: any): Promise<any> => {
+    try {
+      const response = await api.post("/auth/change-password", data);
+      return response.data;
+    } catch (error) {
+      if (isAxiosError(error)) {
+        const message =
+          error.response?.data?.message || "Password update failed";
+        throw new Error(message);
+      }
+      throw error;
+    }
+  },
+
+  updatePhone: async (data: any): Promise<any> => {
+    try {
+      const response = await api.post("/auth/update-phone", data);
+      const result = response.data.data || response.data;
+
+      if (result.token) {
+        api.defaults.headers.common.Authorization = `Bearer ${result.token}`;
+        await SecureStore.setItemAsync("userToken", result.token);
+      }
+
+      return result;
+    } catch (error) {
+      if (isAxiosError(error)) {
+        const message =
+          error.response?.data?.message || "Phone number update failed";
         throw new Error(message);
       }
       throw error;

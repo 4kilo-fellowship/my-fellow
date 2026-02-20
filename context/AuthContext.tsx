@@ -2,12 +2,16 @@ import api from "@/services/api";
 import { authService } from "@/services/authService";
 import { useUserStore } from "@/stores/user.store";
 import {
+  ApiResponse,
   AuthContextType,
   AuthProviderProps,
   AuthState,
+  ChangePasswordData,
   LoginResponse,
   SignUpData,
   SignUpResponse,
+  UpdatePhoneData,
+  UpdatePhoneResponse,
   User,
 } from "@/types/auth.types";
 import * as SecureStore from "expo-secure-store";
@@ -134,6 +138,34 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const changePassword = async (
+    data: ChangePasswordData,
+  ): Promise<ApiResponse<void>> => {
+    try {
+      return await authService.changePassword(data);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const updatePhone = async (
+    data: UpdatePhoneData,
+  ): Promise<UpdatePhoneResponse> => {
+    try {
+      const response = await authService.updatePhone(data);
+      const { token, user } = response;
+
+      if (token) {
+        setAuthState({ token, authenticated: true });
+        useUserStore.getState().setUser(user);
+      }
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -143,6 +175,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         logout,
         getCurrentUser,
         updateProfile,
+        changePassword,
+        updatePhone,
       }}
     >
       {children}

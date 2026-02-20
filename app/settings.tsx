@@ -15,6 +15,7 @@ import {
   Alert,
   Image,
   Linking,
+  Pressable,
   ScrollView,
   StyleSheet,
   Switch,
@@ -122,11 +123,7 @@ export default function Settings() {
           label: "Edit Profile",
           description: "Update your name, photo, and info",
           type: "navigation",
-          onPress: () =>
-            Alert.alert(
-              "Coming Soon",
-              "Profile editing will be available soon.",
-            ),
+          onPress: () => router.push("/edit-profile"),
         },
         {
           id: "password",
@@ -135,11 +132,7 @@ export default function Settings() {
           label: "Change Password",
           description: "Update your password",
           type: "navigation",
-          onPress: () =>
-            Alert.alert(
-              "Coming Soon",
-              "Password change will be available soon.",
-            ),
+          onPress: () => router.push("/change-password"),
         },
         {
           id: "phone",
@@ -148,11 +141,7 @@ export default function Settings() {
           label: "Phone Number",
           description: user?.phoneNumber || "Not set",
           type: "navigation",
-          onPress: () =>
-            Alert.alert(
-              "Coming Soon",
-              "Phone number update will be available soon.",
-            ),
+          onPress: () => router.push("/update-phone"),
         },
       ],
     },
@@ -457,7 +446,7 @@ export default function Settings() {
           item.onPress?.();
         }
       }}
-      activeOpacity={0.9}
+      activeOpacity={0.7}
     >
       <View style={styles.settingItemLeft}>
         <View
@@ -520,7 +509,7 @@ export default function Settings() {
     <View
       style={[
         styles.container,
-        { backgroundColor: isDark ? "#000000" : "#f9fafb" },
+        { backgroundColor: isDark ? "#000000" : "#f8fafc" },
       ]}
     >
       <StatusBar style={isDark ? "light" : "dark"} />
@@ -530,26 +519,26 @@ export default function Settings() {
         className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"}`}
         style={{ paddingTop: top + 10 }}
       >
-        <TouchableOpacity
+        <Pressable
           onPress={() => router.back()}
-          activeOpacity={0.8}
           className="w-11 h-11 rounded-full items-center justify-center mr-4"
-          style={{ backgroundColor: isDark ? "#1C1C1E" : "#e2e8f0" }}
+          android_ripple={{
+            color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+            borderless: true,
+          }}
         >
           <Ionicons
             name="arrow-back"
-            size={22}
+            size={24}
             color={isDark ? "white" : "#0f172a"}
           />
-        </TouchableOpacity>
+        </Pressable>
         <Text
           className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
         >
           Settings
         </Text>
       </View>
-
-      <View className="h-4" />
 
       <ScrollView
         style={styles.scrollView}
@@ -564,12 +553,7 @@ export default function Settings() {
               { backgroundColor: isDark ? "#1c1c1e" : "#ffffff" },
             ]}
             activeOpacity={0.7}
-            onPress={() =>
-              Alert.alert(
-                "Coming Soon",
-                "Profile editing will be available soon.",
-              )
-            }
+            onPress={() => router.push("/edit-profile")}
           >
             <View style={styles.userImageContainer}>
               {user.profileImage ? (
@@ -742,6 +726,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 40,
   },
   userCard: {
