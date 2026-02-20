@@ -222,11 +222,20 @@ export default function HelpScreen() {
             },
           ]}
         >
-          <View style={styles.inputContainer}>
+          <View
+            style={[
+              styles.inputContainer,
+              {
+                backgroundColor: isDark
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(0,0,0,0.05)",
+              },
+            ]}
+          >
             <Pressable onPress={pickImage} style={styles.attachBtn}>
               <Ionicons
                 name="image-outline"
-                size={24}
+                size={22}
                 color={
                   selectedImage ? "#ff6619" : isDark ? "#94a3b8" : "#64748b"
                 }
@@ -252,7 +261,7 @@ export default function HelpScreen() {
             >
               <Ionicons
                 name="send"
-                size={20}
+                size={18}
                 color={
                   message.trim() || selectedImage
                     ? "#fff"
@@ -320,19 +329,15 @@ const styles = StyleSheet.create({
   },
   inputBar: {
     paddingHorizontal: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    // Enhanced anchoring feel
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
+    paddingTop: 10,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
-    gap: 8,
+    gap: 4,
+    borderRadius: 28,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
   },
   attachBtn: {
     width: 44,
@@ -342,13 +347,11 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
-    minHeight: 44,
+    minHeight: 40,
     maxHeight: 120,
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 10,
-    backgroundColor: "rgba(0,0,0,0.04)",
+    paddingHorizontal: 8,
+    paddingTop: 8,
+    paddingBottom: 8,
     fontSize: 15,
   },
   sendBtn: {
