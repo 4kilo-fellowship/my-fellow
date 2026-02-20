@@ -7,16 +7,17 @@ import {
   Dimensions,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import Animated, {
+  Extrapolation,
   FadeIn,
-  FadeInDown,
-  FadeInUp,
+  interpolate,
+  SharedValue,
+  useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -96,13 +97,112 @@ function Dot({ active }: { active: boolean }) {
   return <Animated.View style={[styles.dot, animatedStyle]} />;
 }
 
+interface OnboardingSlideProps {
+  slide: Slide;
+  index: number;
+  scrollX: SharedValue<number>;
+}
+
+function OnboardingSlide({ slide, index, scrollX }: OnboardingSlideProps) {
+  const animatedStyle = useAnimatedStyle(() => {
+    const inputRange = [
+      (index - 1) * SCREEN_WIDTH,
+      index * SCREEN_WIDTH,
+      (index + 1) * SCREEN_WIDTH,
+    ];
+
+    const opacity = interpolate(
+      scrollX.value,
+      inputRange,
+      [0, 1, 0],
+      Extrapolation.CLAMP,
+    );
+
+    const scale = interpolate(
+      scrollX.value,
+      inputRange,
+      [0.8, 1, 0.8],
+      Extrapolation.CLAMP,
+    );
+
+    const translateY = interpolate(
+      scrollX.value,
+      inputRange,
+      [50, 0, 50],
+      Extrapolation.CLAMP,
+    );
+
+    return {
+      opacity,
+      transform: [{ scale }, { translateY }],
+    };
+  });
+
+  const textAnimatedStyle = useAnimatedStyle(() => {
+    const inputRange = [
+      (index - 1) * SCREEN_WIDTH,
+      index * SCREEN_WIDTH,
+      (index + 1) * SCREEN_WIDTH,
+    ];
+
+    const translateY = interpolate(
+      scrollX.value,
+      inputRange,
+      [100, 0, 100],
+      Extrapolation.CLAMP,
+    );
+
+    const opacity = interpolate(
+      scrollX.value,
+      inputRange,
+      [-0.5, 1, -0.5],
+      Extrapolation.CLAMP,
+    );
+
+    return {
+      opacity,
+      transform: [{ translateY }],
+    };
+  });
+
+  return (
+    <View style={styles.slide}>
+      {/* Illustration */}
+      <Animated.View style={[styles.illustrationContainer, animatedStyle]}>
+        <View style={styles.illustrationCircle}>
+          <Image
+            source={slide.image}
+            style={styles.illustration}
+            contentFit="contain"
+            cachePolicy="memory"
+          />
+        </View>
+      </Animated.View>
+
+      {/* Text */}
+      <Animated.View style={[styles.textContainer, textAnimatedStyle]}>
+        <Text style={styles.title}>{slide.title}</Text>
+        <Text style={styles.subtitle}>{slide.subtitle}</Text>
+      </Animated.View>
+    </View>
+  );
+}
+
 export default function OnboardingScreen() {
   const router = useRouter();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<Animated.ScrollView>(null);
+  const scrollX = useSharedValue(0);
   const [currentIndex, setCurrentIndex] = useState(0);
+
   const setHasCompletedOnboarding = useAppStore(
     (s) => s.setHasCompletedOnboarding,
   );
+
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollX.value = event.contentOffset.x;
+    },
+  });
 
   const handleComplete = useCallback(() => {
     setHasCompletedOnboarding(true);
@@ -120,7 +220,7 @@ export default function OnboardingScreen() {
     }
   }, [currentIndex]);
 
-  const handleScroll = useCallback(
+  const handleMomentumScrollEnd = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
       if (index !== currentIndex && index >= 0 && index < SLIDES.length) {
@@ -137,55 +237,27 @@ export default function OnboardingScreen() {
       <StatusBar style="dark" />
 
       {/* Slides */}
-      <ScrollView
+      <Animated.ScrollView
         ref={scrollRef}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={handleScroll}
+        onScroll={onScroll}
+        onMomentumScrollEnd={handleMomentumScrollEnd}
         scrollEventThrottle={16}
         bounces={false}
         decelerationRate="fast"
         style={styles.scrollArea}
       >
         {SLIDES.map((slide, index) => (
-          <View key={slide.id} style={styles.slide}>
-            {/* Illustration */}
-            <Animated.View
-              entering={FadeInDown.delay(150 + index * 80)
-                .duration(600)
-                .springify()
-                .damping(16)}
-              style={styles.illustrationContainer}
-            >
-              <View style={styles.illustrationCircle}>
-                <Image
-                  source={slide.image}
-                  style={styles.illustration}
-                  contentFit="contain"
-                  cachePolicy="memory"
-                />
-              </View>
-            </Animated.View>
-
-            {/* Text */}
-            <View style={styles.textContainer}>
-              <Animated.Text
-                entering={FadeInUp.delay(300 + index * 80).duration(500)}
-                style={styles.title}
-              >
-                {slide.title}
-              </Animated.Text>
-              <Animated.Text
-                entering={FadeInUp.delay(450 + index * 80).duration(500)}
-                style={styles.subtitle}
-              >
-                {slide.subtitle}
-              </Animated.Text>
-            </View>
-          </View>
+          <OnboardingSlide
+            key={slide.id}
+            slide={slide}
+            index={index}
+            scrollX={scrollX}
+          />
         ))}
-      </ScrollView>
+      </Animated.ScrollView>
 
       {/* Bottom bar: Skip — Dots — Next */}
       <Animated.View
