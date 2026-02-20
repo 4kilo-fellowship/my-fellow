@@ -47,6 +47,12 @@ export default function RootLayout() {
             name="reminders/manage"
             options={{ title: "Manage Alert" }}
           />
+          <Stack.Screen name="about" options={{ title: "About" }} />
+          <Stack.Screen name="help" options={{ title: "Help & Support" }} />
+          <Stack.Screen
+            name="notifications"
+            options={{ title: "Notifications" }}
+          />
         </Stack>
         <Toast />
       </ThemeProvider>

@@ -195,7 +195,9 @@ const UserProfileMenu = () => {
       type: "navigation",
       onPress: () => {
         closeMenu();
-        router.push("/reminders" as any);
+        setTimeout(() => {
+          router.push("/notifications" as any);
+        }, 250);
       },
     },
     {
@@ -203,14 +205,24 @@ const UserProfileMenu = () => {
       icon: "help-circle-outline",
       label: "Help & Support",
       type: "navigation",
-      onPress: handleSettings,
+      onPress: () => {
+        closeMenu();
+        setTimeout(() => {
+          router.push("/help" as any);
+        }, 250);
+      },
     },
     {
       id: "about",
       icon: "information-circle-outline",
       label: "About",
       type: "navigation",
-      onPress: handleSettings,
+      onPress: () => {
+        closeMenu();
+        setTimeout(() => {
+          router.push("/about" as any);
+        }, 250);
+      },
     },
     {
       id: "divider2",
