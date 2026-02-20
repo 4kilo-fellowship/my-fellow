@@ -4,7 +4,7 @@ import * as SecureStore from "expo-secure-store";
 
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
-  timeout: 15000,
+  timeout: 30000,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -22,7 +22,11 @@ api.interceptors.request.use(
     }
 
     if (config.data instanceof FormData) {
-      delete config.headers["Content-Type"];
+      if (typeof config.headers.delete === "function") {
+        config.headers.delete("Content-Type");
+      } else {
+        delete config.headers["Content-Type"];
+      }
     }
 
     return config;

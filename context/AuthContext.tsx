@@ -1,5 +1,5 @@
 import api from "@/services/api";
-import { AuthService } from "@/services/authService";
+import { authService } from "@/services/authService";
 import { useUserStore } from "@/stores/user.store";
 import {
   AuthContextType,
@@ -37,7 +37,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           api.defaults.headers.common.Authorization = `Bearer ${token}`;
           setAuthState({ token, authenticated: true });
           // Fetch fresh user data if we have a token
-          AuthService.getCurrentUser()
+          authService
+            .getCurrentUser()
             .then((user) => {
               useUserStore.getState().setUser(user);
             })
@@ -57,7 +58,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     password: string,
   ): Promise<LoginResponse> => {
     try {
-      const response = await AuthService.login(phoneNumber, password);
+      const response = await authService.login(phoneNumber, password);
       const { token, user } = response;
 
       await SecureStore.setItemAsync("userToken", token);
@@ -78,7 +79,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signup = async (data: SignUpData): Promise<SignUpResponse> => {
     try {
-      const response = await AuthService.signup(data);
+      const response = await authService.signup(data);
       const { token, user } = response;
 
       await SecureStore.setItemAsync("userToken", token);
@@ -113,7 +114,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const getCurrentUser = async (): Promise<User> => {
     try {
-      const user = await AuthService.getCurrentUser();
+      const user = await authService.getCurrentUser();
       useUserStore.getState().setUser(user);
       return user;
     } catch (error) {
@@ -125,7 +126,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const updateProfile = async (data: Partial<SignUpData>): Promise<User> => {
     try {
-      const updatedUser = await AuthService.updateProfile(data);
+      const updatedUser = await authService.updateProfile(data);
       useUserStore.getState().setUser(updatedUser);
       return updatedUser;
     } catch (error) {

@@ -263,7 +263,7 @@ const UserProfileMenu = () => {
             item.onPress?.();
           }
         }}
-        activeOpacity={0.8}
+        activeOpacity={0.9}
       >
         <View style={styles.menuItemLeft}>
           <View
