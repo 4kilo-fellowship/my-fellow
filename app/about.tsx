@@ -16,11 +16,11 @@ export default function AboutScreen() {
     <View
       style={[
         styles.container,
-        { backgroundColor: isDark ? "#000000" : "#f9fafb" },
+        { backgroundColor: isDark ? "#000000" : "#f8fafc" },
       ]}
     >
       <LinearGradient
-        colors={isDark ? ["#1a1a1a", "#000000"] : ["#f8fafc", "#ffffff"]}
+        colors={isDark ? ["#0a0a0a", "#000000"] : ["#ffffff", "#f1f5f9"]}
         style={StyleSheet.absoluteFillObject}
       />
 
@@ -35,7 +35,7 @@ export default function AboutScreen() {
             color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
             borderless: true,
           }}
-          className="w-11 h-11 rounded-full items-center justify-center mr-3"
+          className="w-11 h-11 rounded-full items-center justify-center mr-4"
         >
           <Ionicons
             name="arrow-back"
@@ -51,25 +51,49 @@ export default function AboutScreen() {
       </View>
 
       <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: insets.bottom + 20 },
+          { paddingBottom: insets.bottom + 40 },
         ]}
       >
-        <View style={styles.card}>
-          <Text style={[styles.title, { color: isDark ? "#fff" : "#1f2937" }]}>
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          <Text
+            style={[styles.appName, { color: isDark ? "#fff" : "#1e293b" }]}
+          >
             4 Kilo Fellowship
           </Text>
-          <Text
-            style={[styles.version, { color: isDark ? "#9ca3af" : "#6b7280" }]}
+          <View
+            style={[
+              styles.versionBadge,
+              { backgroundColor: isDark ? "#1e293b" : "#f1f5f9" },
+            ]}
           >
-            Version 1.0.0
-          </Text>
+            <Text
+              style={[
+                styles.versionText,
+                { color: isDark ? "#94a3b8" : "#64748b" },
+              ]}
+            >
+              VERSION 1.0.0 (STABLE)
+            </Text>
+          </View>
+        </View>
 
+        <View style={styles.section}>
+          <Text
+            style={[
+              styles.sectionTitle,
+              { color: isDark ? "#fff" : "#1e293b" },
+            ]}
+          >
+            Our Mission
+          </Text>
           <Text
             style={[
               styles.paragraph,
-              { color: isDark ? "#d1d5db" : "#4b5563" },
+              { color: isDark ? "#94a3b8" : "#475569" },
             ]}
           >
             Welcome to the 4 Kilo Fellowship application. Our mission is to
@@ -77,10 +101,21 @@ export default function AboutScreen() {
             platform for our members to engage with events, teams, and devotions
             seamlessly.
           </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text
+            style={[
+              styles.sectionTitle,
+              { color: isDark ? "#fff" : "#1e293b" },
+            ]}
+          >
+            Our Community
+          </Text>
           <Text
             style={[
               styles.paragraph,
-              { color: isDark ? "#d1d5db" : "#4b5563" },
+              { color: isDark ? "#94a3b8" : "#475569" },
             ]}
           >
             This modern application serves as a hub for spiritual growth, where
@@ -90,11 +125,23 @@ export default function AboutScreen() {
           <Text
             style={[
               styles.paragraph,
-              { color: isDark ? "#d1d5db" : "#4b5563" },
+              { color: isDark ? "#94a3b8" : "#475569" },
             ]}
           >
             Driven by passion and built with love, 4 Kilo Fellowship is here to
             support your journey. Thank you for being a part of our community.
+          </Text>
+        </View>
+
+        {/* Footer info */}
+        <View style={styles.footerInfo}>
+          <Text
+            style={[
+              styles.copyright,
+              { color: isDark ? "#475569" : "#94a3b8" },
+            ]}
+          >
+            © 2026 4 Kilo Fellowship. All rights reserved.
           </Text>
         </View>
       </ScrollView>
@@ -105,33 +152,49 @@ export default function AboutScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingHorizontal: 24,
+    paddingTop: 32,
   },
-  card: {
-    marginTop: 20,
-    padding: 20,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.03)",
+  heroSection: {
+    alignItems: "center",
+    marginBottom: 48,
   },
-  title: {
-    fontSize: 28,
+  appName: {
+    fontSize: 24,
     fontWeight: "800",
     marginBottom: 8,
     letterSpacing: -0.5,
   },
-  version: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: 24,
-    textTransform: "uppercase",
+  versionBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  versionText: {
+    fontSize: 11,
+    fontWeight: "700",
     letterSpacing: 1,
   },
+  section: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 12,
+  },
   paragraph: {
-    fontSize: 16,
-    lineHeight: 28,
-    marginBottom: 20,
-    fontStyle: "italic",
+    fontSize: 15,
+    lineHeight: 24,
+    marginBottom: 16,
     fontWeight: "400",
+  },
+  footerInfo: {
+    marginTop: 16,
+    alignItems: "center",
+  },
+  copyright: {
+    fontSize: 12,
+    fontWeight: "500",
   },
 });

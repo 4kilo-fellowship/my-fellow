@@ -35,7 +35,7 @@ export default function NotificationsScreen() {
             color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
             borderless: true,
           }}
-          className="w-11 h-11 rounded-full items-center justify-center mr-3"
+          className="w-11 h-11 rounded-full items-center justify-center mr-4"
         >
           <Ionicons
             name="arrow-back"
