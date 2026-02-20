@@ -38,12 +38,11 @@ export default function AboutScreen() {
         <TouchableOpacity
           onPress={() => router.back()}
           activeOpacity={0.8}
-          className="w-11 h-11 rounded-full items-center justify-center mr-4"
-          style={{ backgroundColor: isDark ? "#1C1C1E" : "#e2e8f0" }}
+          className="w-11 h-11 rounded-full items-center justify-center mr-3"
         >
           <Ionicons
             name="arrow-back"
-            size={22}
+            size={24}
             color={isDark ? "white" : "#0f172a"}
           />
         </TouchableOpacity>
@@ -109,11 +108,12 @@ export default function AboutScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: {
-    padding: 24,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   card: {
     marginTop: 20,
-    padding: 24,
+    padding: 20,
     borderRadius: 20,
     backgroundColor: "rgba(255,255,255,0.03)",
   },
