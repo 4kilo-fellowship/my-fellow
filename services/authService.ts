@@ -21,9 +21,11 @@ export const authService = {
       };
     } catch (error) {
       if (isAxiosError(error)) {
-        throw new Error(
-          `Login failed: ${error.response?.status || "network error"}`,
-        );
+        const message =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          `Login failed: ${error.response?.status || "network error"}`;
+        throw new Error(message);
       }
       throw error;
     }
@@ -79,8 +81,14 @@ export const authService = {
       });
 
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(`Registration failed: ${res.status} ${text}`);
+        let message = `Registration failed: ${res.status}`;
+        try {
+          const json = await res.json();
+          message = json.message || json.error || message;
+        } catch (e) {
+          // If not JSON, use status
+        }
+        throw new Error(message);
       }
 
       const json = await res.json();
@@ -90,8 +98,17 @@ export const authService = {
         token: result.token,
         user: result.user || result,
       };
-    } catch (e: any) {
-      throw new Error(e.message || "Registration failed");
+    } catch (error: any) {
+      let message = error.message || "Registration failed";
+
+      // Handle MongoDB duplicate key errors (E11000)
+      if (message.includes("E11000") && message.includes("phoneNumber")) {
+        message = "This phone number is already registered.";
+      } else if (message.includes("E11000")) {
+        message = "A record with this information already exists.";
+      }
+
+      throw new Error(message);
     }
   },
 
