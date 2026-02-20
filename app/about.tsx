@@ -3,13 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function AboutScreen() {
@@ -35,9 +29,12 @@ export default function AboutScreen() {
         className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"}`}
         style={{ paddingTop: insets.top + 10 }}
       >
-        <TouchableOpacity
+        <Pressable
           onPress={() => router.back()}
-          activeOpacity={0.8}
+          android_ripple={{
+            color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+            borderless: true,
+          }}
           className="w-11 h-11 rounded-full items-center justify-center mr-3"
         >
           <Ionicons
@@ -45,7 +42,7 @@ export default function AboutScreen() {
             size={24}
             color={isDark ? "white" : "#0f172a"}
           />
-        </TouchableOpacity>
+        </Pressable>
         <Text
           className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
         >

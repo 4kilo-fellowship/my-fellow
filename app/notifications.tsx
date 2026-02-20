@@ -14,7 +14,10 @@ export default function NotificationsScreen() {
 
   return (
     <View
-      style={[styles.container, { backgroundColor: isDark ? "#000" : "#fff" }]}
+      style={[
+        styles.container,
+        { backgroundColor: isDark ? "#000000" : "#f9fafb" },
+      ]}
     >
       <LinearGradient
         colors={isDark ? ["#1a1a1a", "#000000"] : ["#f8fafc", "#ffffff"]}
@@ -22,28 +25,29 @@ export default function NotificationsScreen() {
       />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+      <View
+        className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"}`}
+        style={{ paddingTop: insets.top + 10 }}
+      >
         <Pressable
-          style={[
-            styles.backButton,
-            {
-              backgroundColor: isDark
-                ? "rgba(255,255,255,0.1)"
-                : "rgba(0,0,0,0.05)",
-            },
-          ]}
           onPress={() => router.back()}
+          android_ripple={{
+            color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+            borderless: true,
+          }}
+          className="w-11 h-11 rounded-full items-center justify-center mr-3"
         >
           <Ionicons
-            name="chevron-back"
+            name="arrow-back"
             size={24}
-            color={isDark ? "#fff" : "#000"}
+            color={isDark ? "white" : "#0f172a"}
           />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: isDark ? "#fff" : "#000" }]}>
+        <Text
+          className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+        >
           Notifications
         </Text>
-        <View style={styles.backButton} />
       </View>
 
       <View style={styles.content}>
@@ -78,25 +82,6 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    zIndex: 10,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
   content: {
     flex: 1,
     alignItems: "center",

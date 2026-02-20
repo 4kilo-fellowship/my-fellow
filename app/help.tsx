@@ -3,13 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HelpScreen() {
@@ -35,18 +29,20 @@ export default function HelpScreen() {
         className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"}`}
         style={{ paddingTop: insets.top + 10 }}
       >
-        <TouchableOpacity
+        <Pressable
           onPress={() => router.back()}
-          activeOpacity={0.8}
-          className="w-11 h-11 rounded-full items-center justify-center mr-4"
-          style={{ backgroundColor: isDark ? "#1C1C1E" : "#e2e8f0" }}
+          android_ripple={{
+            color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+            borderless: true,
+          }}
+          className="w-11 h-11 rounded-full items-center justify-center mr-3"
         >
           <Ionicons
             name="arrow-back"
-            size={22}
+            size={24}
             color={isDark ? "white" : "#0f172a"}
           />
-        </TouchableOpacity>
+        </Pressable>
         <Text
           className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
         >
@@ -128,11 +124,12 @@ export default function HelpScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: {
-    padding: 24,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   card: {
     marginTop: 20,
-    padding: 24,
+    padding: 20,
     borderRadius: 20,
     backgroundColor: "rgba(255,255,255,0.03)",
   },
