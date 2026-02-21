@@ -6,8 +6,9 @@ import {
   UserProfileMenu,
   VideoItem,
 } from "@/components";
-import { DEVOTIONS, PRIMARY, QUICK_ACTIONS, VIDEOS } from "@/constants";
+import { PRIMARY, QUICK_ACTIONS, VIDEOS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
+import { devotionsService } from "@/services/devotionsService";
 import { eventsService } from "@/services/eventsService";
 import { useAppStore } from "@/stores/app.store";
 import { EventSummary } from "@/types/events.types";
@@ -51,9 +52,22 @@ const Home = () => {
 
   const fetchEvents = async () => {
     try {
-      const data = await eventsService.fetchEvents();
+      const [eventsData, devotionsData] = await Promise.all([
+        eventsService.fetchEvents(),
+        devotionsService.getDevotions({ limit: 6, page: 1 }),
+      ]);
+      const data = eventsData;
       setEvents(data);
-      setDevotions(DEVOTIONS);
+      setDevotions(
+        (devotionsData.data || []).map((d) => ({
+          id: d._id,
+          image: { uri: d.image },
+          title: d.title,
+          date: d.date,
+          views: d.views,
+          likes: d.likes,
+        })),
+      );
       setVideos(VIDEOS);
       setError(null);
 
@@ -400,8 +414,13 @@ const Home = () => {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ paddingHorizontal: 20 }}
               >
-                {devotions.map((d, index) => (
-                  <DevotionCard key={d.id} item={d as any} isDark={isDark} />
+                {devotions.map((d) => (
+                  <DevotionCard
+                    key={d.id}
+                    item={d as any}
+                    isDark={isDark}
+                    onPress={() => router.push(`/devotion/${d.id}` as any)}
+                  />
                 ))}
               </ScrollView>
             )}

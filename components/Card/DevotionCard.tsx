@@ -23,18 +23,19 @@ type DevotionItem = {
 type DevotionCardProps = {
   item: DevotionItem;
   isDark: boolean;
+  onPress?: () => void;
 };
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = 180;
 const CARD_HEIGHT = 220;
 
-function DevotionCard({ item, isDark }: DevotionCardProps) {
+function DevotionCard({ item, isDark, onPress }: DevotionCardProps) {
   const handlePress = () => {
-    if (Platform.OS === "android") {
+    if (onPress) {
+      onPress();
+    } else if (Platform.OS === "android") {
       ToastAndroid.show("Coming Soon...", ToastAndroid.SHORT);
-    } else {
-      console.log("Coming Soon");
     }
   };
 
