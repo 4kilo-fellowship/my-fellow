@@ -167,7 +167,6 @@ function OnboardingSlide({ slide, index, scrollX }: OnboardingSlideProps) {
 
   return (
     <View style={styles.slide}>
-      {/* Illustration */}
       <Animated.View style={[styles.illustrationContainer, animatedStyle]}>
         <View style={styles.illustrationCircle}>
           <Image
@@ -179,7 +178,6 @@ function OnboardingSlide({ slide, index, scrollX }: OnboardingSlideProps) {
         </View>
       </Animated.View>
 
-      {/* Text */}
       <Animated.View style={[styles.textContainer, textAnimatedStyle]}>
         <Text style={styles.title}>{slide.title}</Text>
         <Text style={styles.subtitle}>{slide.subtitle}</Text>
@@ -242,7 +240,6 @@ export default function OnboardingScreen() {
     <View style={styles.container}>
       <StatusBar style="dark" />
 
-      {/* Slides */}
       <Animated.ScrollView
         ref={scrollRef}
         horizontal
@@ -263,11 +260,10 @@ export default function OnboardingScreen() {
             scrollX={scrollX}
           />
         ))}
-        {/* Dummy slide to trigger navigation on swipe past last slide */}
+
         <View style={{ width: SCREEN_WIDTH }} />
       </Animated.ScrollView>
 
-      {/* Bottom bar: Skip — Dots — Next */}
       <Animated.View
         entering={FadeIn.delay(600).duration(400)}
         style={styles.bottomBar}
