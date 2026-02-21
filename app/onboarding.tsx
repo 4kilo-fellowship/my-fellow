@@ -37,21 +37,21 @@ interface Slide {
 const SLIDES: Slide[] = [
   {
     id: 1,
-    image: require("@/assets/images/onboarding-community.png"),
+    image: require("@/assets/images/onboarding-community.jpg"),
     title: "Welcome to\nYour Fellowship",
     subtitle:
       "Join a vibrant community of believers growing together in faith, love, and purpose.",
   },
   {
     id: 2,
-    image: require("@/assets/images/onboarding-devotion.png"),
+    image: require("@/assets/images/onboarding-devotion.jpg"),
     title: "Daily\nDevotions",
     subtitle:
       "Nourish your spirit with daily devotions, insightful readings, and guided prayers.",
   },
   {
     id: 3,
-    image: require("@/assets/images/onboarding-connected.png"),
+    image: require("@/assets/images/onboarding-connected.jpg"),
     title: "Stay\nConnected",
     subtitle:
       "Never miss an event, announcement, or program. Stay in the loop with your community.",
