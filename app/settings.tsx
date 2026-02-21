@@ -1,4 +1,4 @@
-import { ConfirmationModal } from "@/components";
+import { ConfirmModal, ConfirmationModal } from "@/components";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { JoinRequest, joinRequestService } from "@/services/joinRequestService";
@@ -76,6 +76,15 @@ export default function Settings() {
   const [autoPlay, setAutoPlay] = useState(false);
   const [dataSync, setDataSync] = useState(true);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
+
+  const handleAuthRequired = (action: () => void) => {
+    if (!isAuthenticated) {
+      setShowSignInPrompt(true);
+    } else {
+      action();
+    }
+  };
 
   const handleSignOut = () => {
     setShowSignOutConfirm(true);
@@ -123,7 +132,7 @@ export default function Settings() {
           label: "Edit Profile",
           description: "Update your name, photo, and info",
           type: "navigation",
-          onPress: () => router.push("/edit-profile"),
+          onPress: () => handleAuthRequired(() => router.push("/edit-profile")),
         },
         {
           id: "password",
@@ -132,7 +141,8 @@ export default function Settings() {
           label: "Change Password",
           description: "Update your password",
           type: "navigation",
-          onPress: () => router.push("/change-password"),
+          onPress: () =>
+            handleAuthRequired(() => router.push("/change-password")),
         },
         {
           id: "phone",
@@ -141,7 +151,7 @@ export default function Settings() {
           label: "Phone Number",
           description: user?.phoneNumber || "Not set",
           type: "navigation",
-          onPress: () => router.push("/update-phone"),
+          onPress: () => handleAuthRequired(() => router.push("/update-phone")),
         },
       ],
     },
@@ -545,7 +555,6 @@ export default function Settings() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* User Card (if authenticated) */}
         {isAuthenticated && user && (
           <TouchableOpacity
             style={[
@@ -712,6 +721,23 @@ export default function Settings() {
         message="Are you sure you want to sign out of your account?"
         confirmLabel="Sign Out"
         danger
+      />
+      <ConfirmModal
+        visible={showSignInPrompt}
+        onClose={() => setShowSignInPrompt(false)}
+        isDark={isDark}
+        icon="log-in-outline"
+        iconColor="#ff6619"
+        title="Sign In Required"
+        description="You need to sign in to access this feature. Would you like to sign in now?"
+        buttons={[
+          {
+            label: "Sign In",
+            onPress: () => router.push("/(auth)/sign-in"),
+            variant: "primary",
+          },
+        ]}
+        cancelButton={{ label: "Cancel" }}
       />
     </View>
   );
