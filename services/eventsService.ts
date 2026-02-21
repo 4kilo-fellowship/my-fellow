@@ -16,13 +16,11 @@ export const eventsService = {
         id: event.id || event._id || "unknown",
       })) as EventSummary[];
 
-      // Update cache
       await cache.set(CACHE_KEYS.EVENTS_LIST, mappedEvents);
       return mappedEvents;
     } catch (error) {
       console.error("Error fetching events, trying cache:", error);
 
-      // Try to get from cache
       const cachedEvents = await cache.get<EventSummary[]>(
         CACHE_KEYS.EVENTS_LIST,
       );
@@ -38,13 +36,11 @@ export const eventsService = {
     try {
       const event = await fetchEventByIdApi(id);
 
-      // Update cache
       await cache.set(CACHE_KEYS.EVENT_DETAIL(id), event);
       return event;
     } catch (error) {
       console.error(`Error fetching event ${id}, trying cache:`, error);
 
-      // Try to get from cache
       const cachedEvent = await cache.get<EventDetail>(
         CACHE_KEYS.EVENT_DETAIL(id),
       );

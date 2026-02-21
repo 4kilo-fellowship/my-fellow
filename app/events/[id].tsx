@@ -10,7 +10,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useAlerts } from "@/hooks/useAlerts";
 import { eventsService } from "@/services/eventsService";
 import { useEventsStore } from "@/stores/events.store";
-import { useUserStore } from "@/stores/user.store";
+
 import { EventDetail } from "@/types/events.types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image as ExpoImage } from "expo-image";
@@ -77,13 +77,10 @@ export default function EventDetails() {
 
   const ev: any = selectedEvent;
 
-  useEffect(() => {
-    // console.log("[EventDetails] Loaded Event:", JSON.stringify(ev, null, 2));
-  }, [ev]);
+  useEffect(() => {}, [ev]);
 
-  /* Safe Image Handling */
   let imageSource = require("@/assets/images/header.png");
-  // Check both 'image' and 'imageUrl'
+
   const imgPath = ev?.image || ev?.imageUrl;
 
   if (imgPath) {
@@ -158,32 +155,13 @@ export default function EventDetails() {
 
   const onConfirmRegistration = async () => {
     try {
-      const user = useUserStore.getState().user;
-
-      if (!user) {
-        setModalVisible(false);
-        setSignInModalVisible(true);
-        return;
-      }
-
-      const registrationData = {
-        fullName: user.fullName,
-        phoneNumber: user.phoneNumber,
-        team: user.team || "",
-        department: (user.department as string) || "",
-        yearOfStudy: (user.yearOfStudy as string) || "",
-        telegramUserName: user.telegramUserName || "",
-        eventTitle: ev.title,
-      };
-
-      await registerForEvent(registrationData);
+      await registerForEvent({ eventId: ev._id || ev.id });
       setModalVisible(false);
       Alert.alert("Success", "You have successfully registered for the event");
     } catch (err: any) {
       const message =
         err?.response?.data?.message || err?.message || "Registration failed";
 
-      // If network error, show the minimalistic toaster
       if (
         err.message === "Network Error" ||
         err.code === "ERR_NETWORK" ||
@@ -281,7 +259,6 @@ export default function EventDetails() {
     <View className={`flex-1 ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}>
       <StatusBar style="light" />
 
-      {/* Immersive Header Image */}
       <View className="h-[45vh] w-full relative">
         <ExpoImage
           source={imageSource}
@@ -294,7 +271,6 @@ export default function EventDetails() {
           className="absolute inset-0"
         />
 
-        {/* Back Button */}
         <TouchableOpacity
           onPress={handleBack}
           activeOpacity={0.8}
@@ -308,7 +284,6 @@ export default function EventDetails() {
           )}
         </TouchableOpacity>
 
-        {/* Header Content Overlay */}
         <View className="absolute bottom-6 left-5 right-5">
           <View className="flex-row items-center mb-2">
             <View className="bg-[#ff6619] px-2.5 py-1 rounded-md mr-2">
@@ -348,7 +323,6 @@ export default function EventDetails() {
         </View>
       </View>
 
-      {/* Content Scroll */}
       <View
         className={`flex-1 -mt-6 rounded-t-3xl px-6 pt-8 ${
           isDark ? "bg-[#1A1A1B]" : "bg-white"
@@ -374,7 +348,6 @@ export default function EventDetails() {
             </Text>
           </View>
 
-          {/* Additional meta info could go here (location, organizers, etc) */}
           {ev.location && (
             <View
               className={`p-4 rounded-xl border mb-6 flex-row items-start ${
@@ -403,7 +376,6 @@ export default function EventDetails() {
         </ScrollView>
       </View>
 
-      {/* Floating Bottom Action Bar */}
       <View
         className={`absolute bottom-0 left-0 right-0 px-6 pt-4 border-t ${
           isDark ? "bg-[#1A1A1B] border-gray-800" : "bg-white border-gray-100"

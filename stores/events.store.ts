@@ -19,7 +19,9 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       await registerForEventApi(data);
       set({ registering: false });
     } catch (err: any) {
-      set({ error: "Something went wrong.", registering: false });
+      const message =
+        err?.response?.data?.message || err?.message || "Something went wrong.";
+      set({ error: message, registering: false });
       throw err;
     }
   },

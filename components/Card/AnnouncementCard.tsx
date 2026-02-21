@@ -9,7 +9,7 @@ import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useAlerts } from "@/hooks/useAlerts";
 import { useEventsStore } from "@/stores/events.store";
-import { useUserStore } from "@/stores/user.store";
+
 import { Image as ExpoImage } from "expo-image";
 import { useRouter } from "expo-router";
 import {
@@ -95,25 +95,9 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
 
   const onConfirmRegistration = async () => {
     try {
-      const user = useUserStore.getState().user;
-
-      if (!user) {
-        setModalVisible(false);
-        setSignInModalVisible(true);
-        return;
-      }
-
-      const registrationData = {
-        fullName: user.fullName,
-        phoneNumber: user.phoneNumber,
-        team: user.team || "",
-        department: (user.department as string) || "",
-        yearOfStudy: (user.yearOfStudy as string) || "",
-        telegramUserName: user.telegramUserName || "",
-        eventTitle: item.title,
-      };
-
-      await registerForEvent(registrationData);
+      await registerForEvent({
+        eventId: (item as any)._id || (item as any).id,
+      });
       setModalVisible(false);
       Alert.alert("Success", "You have successfully registered for the event");
     } catch (err: any) {
@@ -137,29 +121,25 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         return;
       }
 
-      // 1. Define local path
       const filename = imageUri.split("/").pop() || "event-image.jpg";
       const localUri = `${FileSystem.cacheDirectory}${filename}`;
 
-      // 2. Download the image
       const downloadResult = await FileSystem.downloadAsync(imageUri, localUri);
 
       if (downloadResult.status !== 200) {
         throw new Error("Failed to download image");
       }
 
-      // 3. Check if sharing is available
       const isAvailable = await Sharing.isAvailableAsync();
       if (!isAvailable) {
         Alert.alert("Error", "Sharing is not available on this device");
         return;
       }
 
-      // 4. Share the local file
       await Sharing.shareAsync(downloadResult.uri, {
         mimeType: "image/jpeg",
         dialogTitle: `Share ${item.title}`,
-        UTI: "public.image", // For iOS
+        UTI: "public.image",
       });
     } catch (error: any) {
       console.error("Error sharing image:", error);

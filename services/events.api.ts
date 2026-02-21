@@ -6,12 +6,6 @@ import {
 import api from "./api";
 
 function unwrap<T>(res: any): T {
-  // Try to find the useful payload in several common shapes:
-  // - Array directly
-  // - { data: ... }
-  // - { events: [...] }
-  // - { results: [...] }
-  // - { items: [...] }
   if (res == null) return res;
   if (Array.isArray(res)) return res as any;
   if (typeof res === "object") {

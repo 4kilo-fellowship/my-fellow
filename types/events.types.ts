@@ -13,11 +13,5 @@ export type EventDetail = EventSummary & {
 };
 
 export type EventRegistrationData = {
-  fullName: string;
-  phoneNumber: string;
-  team: string;
-  department: string;
-  yearOfStudy: string | number;
-  telegramUserName: string;
-  eventTitle: string;
+  eventId: string;
 };
