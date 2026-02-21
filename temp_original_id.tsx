@@ -59,7 +59,16 @@ const DevotionDetail = () => {
   const player = useAudioPlayer(devotion?.audioUrl || "");
   const status = useAudioPlayerStatus(player);
 
-  useEffect(() => {}, [devotion, player]);
+  useEffect(() => {
+    if (devotion && player) {
+      player.metadata = {
+        title: devotion.title,
+        artist: devotion.author,
+        artwork: devotion.image,
+      };
+      player.staysActiveInBackground = true;
+    }
+  }, [devotion, player]);
 
   useEffect(() => {
     const loadDevotion = async () => {
@@ -125,6 +134,7 @@ const DevotionDetail = () => {
         const progress =
           downloadProgress.totalBytesWritten /
           downloadProgress.totalBytesExpectedToWrite;
+        // Estimate overall progress based on which file we are on
         const overallProgress =
           (completedFiles / totalFiles + progress / totalFiles) * 100;
         setDownloadProgress(Math.min(overallProgress, 100));
@@ -260,6 +270,7 @@ const DevotionDetail = () => {
     <View className={`flex-1 ${isDark ? "bg-[#0a0a0a]" : "bg-white"}`}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
+      {/* Fixed Header Bar */}
       <View
         className={`absolute z-20 w-full flex-row items-center justify-between px-5 ${
           isDark ? "bg-[#0a0a0a]" : "bg-white"
@@ -306,6 +317,7 @@ const DevotionDetail = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: top + 52 }}
       >
+        {/* Scrollable Banner Image */}
         <View className="w-full h-[280px]">
           <Image
             source={{ uri: devotion.image }}
@@ -314,7 +326,9 @@ const DevotionDetail = () => {
           />
         </View>
 
+        {/* Content Area */}
         <View className="px-5 pt-6">
+          {/* Title */}
           <Text
             className={`text-[26px] font-extrabold leading-[33px] mb-4 ${
               isDark ? "text-white" : "text-gray-900"
@@ -323,6 +337,7 @@ const DevotionDetail = () => {
             {devotion.title}
           </Text>
 
+          {/* Author + Meta Row */}
           <View
             className={`flex-row items-center justify-between pb-5 mb-5 border-b ${
               isDark ? "border-[#1a1a1a]" : "border-gray-100"
@@ -359,6 +374,7 @@ const DevotionDetail = () => {
               </View>
             </View>
 
+            {/* Actions */}
             <View className="flex-row items-center" style={{ gap: 14 }}>
               <TouchableOpacity
                 onPress={handleLike}
@@ -414,6 +430,7 @@ const DevotionDetail = () => {
             </View>
           </View>
 
+          {/* Audio Player - FIRST for voice devotions */}
           {devotion.type === "voice" && (
             <View
               className={`mb-6 p-5 rounded-2xl border ${
@@ -422,9 +439,9 @@ const DevotionDetail = () => {
                   : "bg-[#fafafa] border-gray-100"
               }`}
             >
+              {/* Player Controls Row */}
               <View className="flex-row items-center">
                 <TouchableOpacity
-                  activeOpacity={1}
                   onPress={() =>
                     status.playing ? player.pause() : player.play()
                   }
@@ -438,6 +455,7 @@ const DevotionDetail = () => {
                 </TouchableOpacity>
 
                 <View className="flex-1 ml-4">
+                  {/* Progress Bar */}
                   <View
                     className={`h-1.5 w-full rounded-full overflow-hidden ${
                       isDark ? "bg-[#222]" : "bg-gray-200"
@@ -471,6 +489,7 @@ const DevotionDetail = () => {
                   </View>
                 </View>
 
+                {/* Skip Controls */}
                 <View className="flex-row items-center ml-3" style={{ gap: 8 }}>
                   <TouchableOpacity
                     onPress={() =>
@@ -501,6 +520,7 @@ const DevotionDetail = () => {
             </View>
           )}
 
+          {/* Content Section — Markdown */}
           <View className="mb-8">
             {devotion.content && (
               <Markdown
@@ -566,6 +586,7 @@ const DevotionDetail = () => {
               </Markdown>
             )}
 
+            {/* Caption for voice devotions (rendered as markdown) */}
             {devotion.type === "voice" && devotion.caption && (
               <Markdown
                 style={{
@@ -721,6 +742,7 @@ const DevotionDetail = () => {
             )}
           </View>
 
+          {/* Related Devotions */}
           {relatedDevotions.length > 0 && (
             <View className="mb-8">
               <Text
