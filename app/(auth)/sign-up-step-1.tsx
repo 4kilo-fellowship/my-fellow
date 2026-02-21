@@ -2,7 +2,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   Dimensions,
@@ -45,7 +45,7 @@ export default function SignUpStep1() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const phoneInputRef = React.useRef<TextInput>(null);
+  const phoneInputRef = useRef<TextInput>(null);
 
   const {
     control,
@@ -63,7 +63,7 @@ export default function SignUpStep1() {
 
   const params = useLocalSearchParams();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (params.focus === "phoneNumber") {
       setTimeout(() => {
         phoneInputRef.current?.focus();

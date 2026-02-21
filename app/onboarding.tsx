@@ -204,10 +204,14 @@ export default function OnboardingScreen() {
     },
   });
 
+  const isCompleting = useRef(false);
+
   const handleComplete = useCallback(() => {
+    if (isCompleting.current) return;
+    isCompleting.current = true;
     setHasCompletedOnboarding(true);
     router.replace("/(tabs)");
-  }, []);
+  }, [setHasCompletedOnboarding, router]);
 
   const handleNext = useCallback(() => {
     if (currentIndex < SLIDES.length - 1) {
@@ -223,11 +227,13 @@ export default function OnboardingScreen() {
   const handleMomentumScrollEnd = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-      if (index !== currentIndex && index >= 0 && index < SLIDES.length) {
+      if (index >= SLIDES.length) {
+        handleComplete();
+      } else if (index !== currentIndex && index >= 0) {
         setCurrentIndex(index);
       }
     },
-    [currentIndex],
+    [currentIndex, handleComplete],
   );
 
   const isLastSlide = currentIndex === SLIDES.length - 1;
@@ -245,7 +251,7 @@ export default function OnboardingScreen() {
         onScroll={onScroll}
         onMomentumScrollEnd={handleMomentumScrollEnd}
         scrollEventThrottle={16}
-        bounces={false}
+        bounces={true}
         decelerationRate="fast"
         style={styles.scrollArea}
       >
@@ -257,6 +263,8 @@ export default function OnboardingScreen() {
             scrollX={scrollX}
           />
         ))}
+        {/* Dummy slide to trigger navigation on swipe past last slide */}
+        <View style={{ width: SCREEN_WIDTH }} />
       </Animated.ScrollView>
 
       {/* Bottom bar: Skip — Dots — Next */}

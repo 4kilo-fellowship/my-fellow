@@ -109,7 +109,6 @@ const Home = () => {
           backgroundColor="transparent"
         />
 
-        {/* header */}
         <View className="px-4 flex-row justify-between items-center">
           <Image
             source={require("@/assets/images/logo-primary.png")}
@@ -133,7 +132,6 @@ const Home = () => {
             />
           }
         >
-          {/* Upcoming Events */}
           <View className="mb-2">
             <View className="px-5 mb-2">
               {!hasSeenFeatures ||
@@ -274,7 +272,6 @@ const Home = () => {
             )}
           </View>
 
-          {/* Quick Actions */}
           <View className="mt-7">
             <View className="px-5 flex-row justify-between items-center mb-3">
               {!hasSeenFeatures || (loading && events.length === 0) ? (
