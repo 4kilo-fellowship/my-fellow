@@ -7,6 +7,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { Appearance } from "react-native";
@@ -24,17 +25,17 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setTheme] = useState<Theme>("light");
   const { setColorScheme } = useColorScheme();
   const [isThemeLoaded, setIsThemeLoaded] = useState(false);
+  const userHasOverridden = useRef(false);
 
   useEffect(() => {
     const loadTheme = async () => {
       try {
         const storedTheme = await AsyncStorage.getItem("theme");
         if (storedTheme === "light" || storedTheme === "dark") {
+          userHasOverridden.current = true;
           setTheme(storedTheme);
-          setColorScheme(storedTheme);
         } else {
           setTheme("light");
-          setColorScheme("light");
         }
       } catch (error) {
         console.warn("Failed to load theme", error);
@@ -44,26 +45,33 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     };
 
     loadTheme();
+  }, []);
 
+  useEffect(() => {
+    if (isThemeLoaded) {
+      setColorScheme(theme);
+    }
+  }, [theme, isThemeLoaded]);
+
+  useEffect(() => {
     const subscription = Appearance.addChangeListener(({ colorScheme }) => {
-      const newTheme = colorScheme === "dark" ? "dark" : "light";
-      setTheme(newTheme);
-      setColorScheme(newTheme);
+      if (!userHasOverridden.current) {
+        const newTheme: Theme = colorScheme === "dark" ? "dark" : "light";
+        setTheme(newTheme);
+      }
     });
 
     return () => subscription.remove();
-  }, [setColorScheme]);
+  }, []);
 
-  const toggleTheme = useCallback(async () => {
-    setTheme((prevTheme) => {
-      const newTheme = prevTheme === "light" ? "dark" : "light";
-      setColorScheme(newTheme);
-
-      AsyncStorage.setItem("theme", newTheme).catch(() => {});
-
-      return newTheme;
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => {
+      const next: Theme = prev === "light" ? "dark" : "light";
+      userHasOverridden.current = true;
+      AsyncStorage.setItem("theme", next).catch(() => {});
+      return next;
     });
-  }, [setColorScheme]);
+  }, []);
 
   const value = useMemo(() => ({ theme, toggleTheme }), [theme, toggleTheme]);
 
