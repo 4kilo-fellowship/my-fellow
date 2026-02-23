@@ -193,13 +193,12 @@ export default function SignUpStep2() {
 
       router.replace("/(tabs)");
     } catch (error: any) {
-      console.error("Registration error:", error);
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
         "Something went wrong. Please try again.";
       const isRegisteredError =
-        errorMessage.toLowerCase().includes("registered") ||
+        errorMessage.toLowerCase().includes("already registered") ||
         errorMessage.toLowerCase().includes("already exists") ||
         errorMessage.toLowerCase().includes("phone number already in use");
 
