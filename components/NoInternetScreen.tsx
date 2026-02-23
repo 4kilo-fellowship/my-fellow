@@ -1,19 +1,24 @@
 import { PRIMARY } from "@/constants";
-import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Dimensions,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Animated, {
   Easing,
   interpolate,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
+  withSequence,
   withTiming,
 } from "react-native-reanimated";
-import Svg, { Circle, Path } from "react-native-svg";
 
-const AnimatedPath = Animated.createAnimatedComponent(Path);
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const { width } = Dimensions.get("window");
 
 interface NoInternetScreenProps {
   onRetry: () => void;
@@ -24,91 +29,97 @@ export default function NoInternetScreen({
   onRetry,
   isRetrying = false,
 }: NoInternetScreenProps) {
-  const tilt = useSharedValue(0);
   const floating = useSharedValue(0);
-  const pulse = useSharedValue(1);
+  const pulse = useSharedValue(0);
+  const fadeIn = useSharedValue(0);
+  const buttonScale = useSharedValue(1);
 
   useEffect(() => {
-    tilt.value = withRepeat(
-      withTiming(10, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true,
-    );
+    fadeIn.value = withTiming(1, {
+      duration: 800,
+      easing: Easing.out(Easing.ease),
+    });
+
     floating.value = withRepeat(
-      withTiming(-20, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
+      withSequence(
+        withTiming(-12, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+      ),
       -1,
-      true,
+      false,
     );
+
     pulse.value = withRepeat(
-      withTiming(1.2, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+      withSequence(
+        withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+      ),
       -1,
-      true,
+      false,
     );
   }, []);
 
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { translateY: floating.value },
-        { rotate: `${tilt.value}deg` },
-      ],
-    };
-  });
+  const illustrationStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: floating.value }],
+  }));
 
-  const pulseStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: pulse.value }],
-      opacity: interpolate(pulse.value, [1, 1.2], [0.6, 0.2]),
-    };
-  });
+  const pulseRingStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: interpolate(pulse.value, [0, 1], [0.9, 1.15]) }],
+    opacity: interpolate(pulse.value, [0, 1], [0.35, 0]),
+  }));
+
+  const containerFadeStyle = useAnimatedStyle(() => ({
+    opacity: fadeIn.value,
+    transform: [{ translateY: interpolate(fadeIn.value, [0, 1], [30, 0]) }],
+  }));
+
+  const buttonAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: buttonScale.value }],
+  }));
+
+  const handlePressIn = () => {
+    buttonScale.value = withTiming(0.95, { duration: 100 });
+  };
+
+  const handlePressOut = () => {
+    buttonScale.value = withTiming(1, { duration: 100 });
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.illustrationContainer}>
-        {/* Pulsing Background */}
-        <Animated.View style={[styles.pulseCircle, pulseStyle]} />
+      <Animated.View style={[styles.content, containerFadeStyle]}>
+        <View style={styles.illustrationContainer}>
+          <Animated.View style={[styles.pulseRing, pulseRingStyle]} />
 
-        {/* Animated No Internet SVG */}
-        <Animated.View style={[styles.svgWrapper, animatedStyle]}>
-          <Svg width="140" height="140" viewBox="0 0 48 48" fill="none">
-            {/* Cloud Outline */}
-            <Path
-              d="M13.5 19.5A10.5 10.5 0 0 1 34.5 19.5 7.5 7.5 0 0 1 34.5 34.5H13.5a7.5 7.5 0 0 1 0-15Z"
-              stroke={PRIMARY}
-              strokeWidth="3.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          <Animated.View style={[styles.imageWrapper, illustrationStyle]}>
+            <Image
+              source={require("../assets/images/no-internet.png")}
+              style={styles.illustration}
+              resizeMode="contain"
             />
-            {/* Diagonal Slash */}
-            <Path
-              d="M10 10l28 28"
-              stroke={PRIMARY}
-              strokeWidth="3.5"
-              strokeLinecap="round"
-            />
-          </Svg>
-        </Animated.View>
-
-        <View style={styles.iconOverlay}>
-          <Ionicons name="cloud-offline-outline" size={40} color="white" />
+          </Animated.View>
         </View>
-      </View>
 
-      <Text style={styles.title}>Offline</Text>
-      <Text style={styles.message}>
-        Connect to the internet to get started on your journey.
-      </Text>
-
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={onRetry}
-        disabled={isRetrying}
-        style={[styles.button, isRetrying && styles.buttonDisabled]}
-      >
-        <Text style={styles.buttonText}>
-          {isRetrying ? "Checking..." : "Try Again"}
+        <Text style={styles.title}>No Connection</Text>
+        <Text style={styles.message}>
+          Connect to the internet to get started{"\n"}on your journey.
         </Text>
-      </TouchableOpacity>
+
+        <Animated.View style={buttonAnimStyle}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={onRetry}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            disabled={isRetrying}
+            style={[styles.button, isRetrying && styles.buttonDisabled]}
+          >
+            <Text style={styles.buttonText}>
+              {isRetrying ? "Checking..." : "Try Again"}
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </Animated.View>
     </View>
   );
 }
@@ -118,73 +129,70 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "white",
+    backgroundColor: "#ffffff",
+  },
+  content: {
+    alignItems: "center",
     paddingHorizontal: 40,
   },
   illustrationContainer: {
-    width: 200,
-    height: 200,
+    width: width * 0.65,
+    height: width * 0.65,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 40,
+    marginBottom: 32,
   },
-  svgWrapper: {
-    width: 120,
-    height: 120,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pulseCircle: {
+  pulseRing: {
     position: "absolute",
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: PRIMARY,
+    width: width * 0.55,
+    height: width * 0.55,
+    borderRadius: (width * 0.55) / 2,
+    borderWidth: 2.5,
+    borderColor: PRIMARY,
+    opacity: 0.3,
   },
-  iconOverlay: {
-    position: "absolute",
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: PRIMARY,
+  imageWrapper: {
+    width: width * 0.6,
+    height: width * 0.6,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: PRIMARY,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-    elevation: 10,
+  },
+  illustration: {
+    width: "100%",
+    height: "100%",
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "800",
     color: "#1e293b",
-    marginBottom: 12,
+    marginBottom: 10,
+    letterSpacing: -0.3,
   },
   message: {
-    fontSize: 16,
-    color: "#64748b",
+    fontSize: 15,
+    color: "#94a3b8",
     textAlign: "center",
-    lineHeight: 24,
+    lineHeight: 23,
     marginBottom: 40,
   },
   button: {
     backgroundColor: PRIMARY,
-    paddingHorizontal: 48,
+    paddingHorizontal: 52,
     paddingVertical: 16,
     borderRadius: 100,
     shadowColor: PRIMARY,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   buttonText: {
-    color: "white",
+    color: "#ffffff",
     fontSize: 16,
     fontWeight: "700",
+    letterSpacing: 0.2,
   },
 });
