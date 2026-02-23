@@ -1,4 +1,5 @@
-export const DEPARTMENTS = [
+export const DEPARTMENTS: string[] = [
+  "Freshman",
   "Applied Chemistry",
   "Applied Mathematics",
   "Applied Biology",
