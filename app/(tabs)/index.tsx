@@ -1,6 +1,7 @@
 import {
   AnnouncementCard,
   DevotionCard,
+  NoInternetScreen,
   Placeholder,
   QuickAction,
   UserProfileMenu,
@@ -128,6 +129,16 @@ const Home = () => {
       setWasOffline(true);
     }
   }, [isConnected]);
+
+  // Show No Internet screen if offline and no cached data exists
+  if (
+    !isConnected &&
+    events.length === 0 &&
+    devotions.length === 0 &&
+    !loading
+  ) {
+    return <NoInternetScreen onRetry={onRefresh} isRetrying={refreshing} />;
+  }
 
   return (
     <View className="flex-1">
