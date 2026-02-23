@@ -8,10 +8,12 @@ import {
 } from "@/components";
 import { PRIMARY, QUICK_ACTIONS, VIDEOS } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
+import { useNetwork } from "@/hooks/useNetwork";
 import { devotionsService } from "@/services/devotionsService";
 import { eventsService } from "@/services/eventsService";
 import { useAppStore } from "@/stores/app.store";
-import { EventSummary } from "@/types/events.types";
+import { useDevotionsStore } from "@/stores/devotions.store";
+import { useEventsStore } from "@/stores/events.store";
 import { Ionicons } from "@expo/vector-icons";
 import { Image as ExpoImage } from "expo-image";
 import { useRouter } from "expo-router";
@@ -43,12 +45,24 @@ const Home = () => {
 
   const router = useRouter();
 
-  const [events, setEvents] = useState<EventSummary[]>([]);
-  const [devotions, setDevotions] = useState<any[]>([]);
+  const { eventsList: events, setEventsList } = useEventsStore();
+  const { devotionsList, setDevotionsList } = useDevotionsStore();
+  const { isConnected } = useNetwork();
+
+  const devotions = (devotionsList || []).map((d) => ({
+    id: d._id,
+    image: { uri: d.image },
+    title: d.title,
+    date: d.date,
+    views: d.views,
+    likes: d.likes,
+  }));
+
   const [videos, setVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [wasOffline, setWasOffline] = useState(!isConnected);
 
   const fetchEvents = async () => {
     try {
@@ -56,32 +70,25 @@ const Home = () => {
         eventsService.fetchEvents(),
         devotionsService.getDevotions({ limit: 6, page: 1 }),
       ]);
-      const data = eventsData;
-      setEvents(data);
-      setDevotions(
-        (devotionsData.data || []).map((d) => ({
-          id: d._id,
-          image: { uri: d.image },
-          title: d.title,
-          date: d.date,
-          views: d.views,
-          likes: d.likes,
-        })),
-      );
+
+      setEventsList(eventsData);
+      setDevotionsList(devotionsData.data || []);
       setVideos(VIDEOS);
       setError(null);
 
       // Pre-fetch the first 3 event images to prevent flickering when placeholders disappear
-      if (Array.isArray(data) && data.length > 0) {
-        const imageUris = data
+      if (Array.isArray(eventsData) && eventsData.length > 0) {
+        const imageUris = eventsData
           .slice(0, 3)
           .map((e: any) => e.imageUrl || e.image)
-          .filter((uri): uri is string => !!uri && typeof uri === "string");
+          .filter(
+            (uri: string): uri is string => !!uri && typeof uri === "string",
+          );
 
         if (imageUris.length > 0) {
           try {
             await Promise.all(
-              imageUris.map((url) => {
+              imageUris.map((url: string) => {
                 if (url.startsWith("http")) return ExpoImage.prefetch(url);
                 return Promise.resolve();
               }),
@@ -110,6 +117,17 @@ const Home = () => {
   useEffect(() => {
     fetchEvents();
   }, []);
+
+  // Sync when returning online
+  useEffect(() => {
+    if (isConnected && wasOffline) {
+      console.log("Returned online, refreshing data...");
+      onRefresh();
+      setWasOffline(false);
+    } else if (!isConnected) {
+      setWasOffline(true);
+    }
+  }, [isConnected]);
 
   return (
     <View className="flex-1">

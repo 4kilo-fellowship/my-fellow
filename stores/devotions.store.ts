@@ -4,9 +4,11 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 interface DevotionsStore {
+  devotionsList: Devotion[];
   savedDevotions: Devotion[];
   readDevotions: string[];
   cachedDevotions: Record<string, Devotion>;
+  setDevotionsList: (devotions: Devotion[]) => void;
   saveDevotion: (devotion: Devotion) => void;
   unsaveDevotion: (id: string) => void;
   isDevotionSaved: (id: string) => boolean;
@@ -19,9 +21,11 @@ interface DevotionsStore {
 export const useDevotionsStore = create<DevotionsStore>()(
   persist(
     (set, get) => ({
+      devotionsList: [],
       savedDevotions: [],
       readDevotions: [],
       cachedDevotions: {},
+      setDevotionsList: (devotions) => set({ devotionsList: devotions }),
       saveDevotion: (devotion) => {
         const { savedDevotions } = get();
         if (!savedDevotions.find((d) => d._id === devotion._id)) {

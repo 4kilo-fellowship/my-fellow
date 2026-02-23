@@ -51,7 +51,7 @@ export default function SignUpStep2() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [image, setImage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [errorModal, setErrorModal] = useState<{
     visible: boolean;
     title: string;
