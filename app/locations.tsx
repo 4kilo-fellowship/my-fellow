@@ -189,7 +189,6 @@ export default function LocationsScreen() {
             onPress={() => router.back()}
             activeOpacity={0.8}
             className="w-11 h-11 rounded-full items-center justify-center mr-4"
-            style={{ backgroundColor: isDark ? "#1C1C1E" : "#e2e8f0" }}
           >
             <Ionicons
               name="arrow-back"
@@ -219,35 +218,58 @@ export default function LocationsScreen() {
             {[1, 2, 3].map((_, i) => (
               <View
                 key={i}
-                className="mb-6 rounded-[24px] overflow-hidden bg-gray-100 dark:bg-[#1C1C1E] h-[350px]"
+                className={`mb-5 rounded-[24px] overflow-hidden border ${
+                  isDark
+                    ? "bg-[#111] border-[#222]"
+                    : "bg-[#f9fafb] border-gray-200"
+                }`}
               >
                 <Placeholder height={160} width="100%" borderRadius={0} />
                 <View className="p-5">
                   <Placeholder
-                    height={24}
+                    height={22}
                     width="60%"
                     borderRadius={4}
-                    style={{ marginBottom: 12 }}
+                    style={{ marginBottom: 10 }}
                   />
-                  <Placeholder
-                    height={18}
-                    width="80%"
-                    borderRadius={4}
-                    style={{ marginBottom: 16 }}
-                  />
-                  <Placeholder
-                    height={14}
-                    width="40%"
-                    borderRadius={4}
-                    style={{ marginBottom: 8 }}
-                  />
-                  <Placeholder
-                    height={14}
-                    width="50%"
-                    borderRadius={4}
-                    style={{ marginBottom: 24 }}
-                  />
-                  <Placeholder height={50} width="100%" borderRadius={12} />
+                  <View className="flex-row items-center mb-4">
+                    <Placeholder
+                      height={14}
+                      width={14}
+                      borderRadius={2}
+                      style={{ marginRight: 6 }}
+                    />
+                    <Placeholder height={14} width="80%" borderRadius={4} />
+                  </View>
+
+                  <View
+                    className={`rounded-xl p-3.5 mb-5 border ${
+                      isDark
+                        ? "bg-[#1a1a1a] border-[#222]"
+                        : "bg-white border-gray-100"
+                    }`}
+                  >
+                    <View className="flex-row items-center">
+                      <Placeholder
+                        width={28}
+                        height={28}
+                        borderRadius={14}
+                        style={{ marginRight: 12 }}
+                      />
+                      <Placeholder width="70%" height={14} borderRadius={4} />
+                    </View>
+                    <View className="flex-row items-center mt-2">
+                      <Placeholder
+                        width={28}
+                        height={28}
+                        borderRadius={14}
+                        style={{ marginRight: 12 }}
+                      />
+                      <Placeholder width="50%" height={14} borderRadius={4} />
+                    </View>
+                  </View>
+
+                  <Placeholder height={46} width="100%" borderRadius={12} />
                 </View>
               </View>
             ))}

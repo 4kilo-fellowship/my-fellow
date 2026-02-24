@@ -232,10 +232,24 @@ export default function WeeklyPrograms() {
   const TOTAL_HEADER_HEIGHT = STATIC_HEADER_HEIGHT + FILTER_SECTION_HEIGHT;
 
   const scrollY = useRef(new Animated.Value(0)).current;
-  const diffClamp = Animated.diffClamp(scrollY, 0, FILTER_SECTION_HEIGHT);
+
+  // Use a clamped value for diffClamp to prevent glitches during scroll bouncing
+  const clampedScrollY = scrollY.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+    extrapolateLeft: "clamp",
+  });
+
+  const diffClamp = Animated.diffClamp(
+    clampedScrollY,
+    0,
+    FILTER_SECTION_HEIGHT,
+  );
+
   const translateY = diffClamp.interpolate({
     inputRange: [0, FILTER_SECTION_HEIGHT],
     outputRange: [0, -FILTER_SECTION_HEIGHT],
+    extrapolate: "clamp",
   });
 
   const [selectedFilter, setSelectedFilter] = useState("All");
