@@ -247,7 +247,7 @@ export default function EventDetails() {
             <Animated.View style={[offlineStyles.pulseRing, pulseRingStyle]} />
             <View style={offlineStyles.imageWrapper}>
               <Image
-                source={require("@/assets/images/no-internet.png")}
+                source={require("@/assets/images/no-internet.jpg")}
                 style={offlineStyles.illustration}
                 resizeMode="contain"
               />

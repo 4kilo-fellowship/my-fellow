@@ -92,7 +92,6 @@ export default function AppSplashScreen() {
     <View style={styles.container}>
       <StatusBar style="light" backgroundColor="transparent" translucent />
 
-      {/* Primary Base Layer - Now forced to the exact width/height of the window */}
       <View style={[styles.primaryLayer, { width, height }]}>
         <Image
           source={require("../assets/images/logo-white.png")}
@@ -104,7 +103,6 @@ export default function AppSplashScreen() {
         />
       </View>
 
-      {/* Reveal Animation Layer */}
       <Animated.View style={[styles.revealContainer, bubbleStyle]}>
         <Animated.View style={[styles.innerLogoContainer, innerLogoStyle]}>
           <Image
