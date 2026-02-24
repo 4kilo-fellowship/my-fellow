@@ -10,6 +10,7 @@ import { Controller, useForm } from "react-hook-form";
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -115,18 +116,20 @@ export default function ManageAlertScreen() {
           className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"}`}
           style={{ paddingTop: insets.top + 10 }}
         >
-          <TouchableOpacity
+          <Pressable
             onPress={() => router.back()}
-            activeOpacity={0.8}
+            android_ripple={{
+              color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+              borderless: true,
+            }}
             className="w-11 h-11 rounded-full items-center justify-center mr-4"
-            style={{ backgroundColor: isDark ? "#1C1C1E" : "#e2e8f0" }}
           >
             <Ionicons
               name="arrow-back"
-              size={22}
+              size={24}
               color={isDark ? "white" : "#0f172a"}
             />
-          </TouchableOpacity>
+          </Pressable>
           <Text
             className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
           >
