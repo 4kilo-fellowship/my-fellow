@@ -30,10 +30,24 @@ export default function LeadersScreen() {
   const TOTAL_HEADER_HEIGHT = STATIC_HEADER_HEIGHT + FILTER_SECTION_HEIGHT;
 
   const scrollY = useRef(new Animated.Value(0)).current;
-  const diffClamp = Animated.diffClamp(scrollY, 0, FILTER_SECTION_HEIGHT);
+
+  // Use a clamped value for diffClamp to prevent glitches during scroll bouncing
+  const clampedScrollY = scrollY.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+    extrapolateLeft: "clamp",
+  });
+
+  const diffClamp = Animated.diffClamp(
+    clampedScrollY,
+    0,
+    FILTER_SECTION_HEIGHT,
+  );
+
   const translateY = diffClamp.interpolate({
     inputRange: [0, FILTER_SECTION_HEIGHT],
     outputRange: [0, -FILTER_SECTION_HEIGHT],
+    extrapolate: "clamp",
   });
 
   const [selectedFilter, setSelectedFilter] = useState("All");
@@ -110,52 +124,51 @@ export default function LeadersScreen() {
             {[1, 2, 3, 4].map((i) => (
               <View
                 key={i}
-                className={`mb-5 rounded-[28px] p-6 border ${
+                className={`mb-4 rounded-[24px] p-5 border ${
                   isDark
-                    ? "bg-[#1C1C1E] border-gray-800"
-                    : "bg-white border-gray-100"
+                    ? "bg-[#111] border-[#222]"
+                    : "bg-[#f9fafb] border-gray-200"
                 }`}
                 style={{
-                  height: 280,
                   shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 8 },
-                  shadowOpacity: isDark ? 0.4 : 0.05,
-                  shadowRadius: 16,
-                  elevation: 8,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: isDark ? 0.3 : 0.05,
+                  shadowRadius: 10,
+                  elevation: 2,
                 }}
               >
-                <View className="flex-row items-start">
-                  <Placeholder width={72} height={72} borderRadius={36} />
-                  <View className="flex-1 ml-4 pt-1">
+                <View className="flex-row items-center">
+                  <Placeholder width={56} height={56} borderRadius={28} />
+                  <View className="flex-1 ml-4">
                     <View className="flex-row items-center justify-between">
                       <View className="flex-1 mr-2">
                         <Placeholder
-                          width="70%"
-                          height={20}
-                          style={{ marginBottom: 8 }}
+                          width="60%"
+                          height={18}
+                          style={{ marginBottom: 6 }}
                         />
                         <Placeholder width="40%" height={12} />
                       </View>
-                      <Placeholder width={80} height={24} borderRadius={12} />
+                      <Placeholder width={70} height={24} borderRadius={8} />
                     </View>
                   </View>
                 </View>
-                <View className="mt-6">
+                <View className="mt-4 mb-5">
                   <Placeholder
                     width="100%"
-                    height={16}
-                    style={{ marginBottom: 8 }}
+                    height={14}
+                    style={{ marginBottom: 6 }}
                   />
                   <Placeholder
-                    width="90%"
-                    height={16}
-                    style={{ marginBottom: 8 }}
+                    width="100%"
+                    height={14}
+                    style={{ marginBottom: 6 }}
                   />
-                  <Placeholder width="60%" height={16} />
+                  <Placeholder width="70%" height={14} />
                 </View>
-                <View className="mt-6 flex-row gap-3">
-                  <Placeholder width="48%" height={48} borderRadius={16} />
-                  <Placeholder width="48%" height={48} borderRadius={16} />
+                <View className="flex-row gap-3">
+                  <Placeholder width="48%" height={44} borderRadius={12} />
+                  <Placeholder width="48%" height={44} borderRadius={12} />
                 </View>
               </View>
             ))}
@@ -218,7 +231,6 @@ export default function LeadersScreen() {
               onPress={() => router.back()}
               activeOpacity={0.8}
               className="w-11 h-11 rounded-full items-center justify-center mr-4"
-              style={{ backgroundColor: isDark ? "#1C1C1E" : "#e2e8f0" }}
             >
               <Ionicons
                 name="arrow-back"
