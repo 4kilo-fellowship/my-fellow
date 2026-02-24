@@ -491,7 +491,6 @@ export default function WeeklyPrograms() {
               onPress={() => router.back()}
               activeOpacity={0.8}
               className="w-11 h-11 rounded-full items-center justify-center mr-4"
-              style={{ backgroundColor: isDark ? "#1C1C1E" : "#e2e8f0" }}
             >
               <Ionicons
                 name="arrow-back"

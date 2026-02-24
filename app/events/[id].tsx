@@ -4,7 +4,7 @@ import {
   RegistrationModal,
   SignInPromptModal,
 } from "@/components";
-import { API_URL } from "@/constants";
+import { API_URL, PRIMARY } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useAlerts } from "@/hooks/useAlerts";
@@ -21,13 +21,27 @@ import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
+  Image,
   Linking,
   ScrollView,
+  StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import Animated, {
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function EventDetails() {
   const params = useLocalSearchParams();
@@ -41,6 +55,10 @@ export default function EventDetails() {
   );
   const [loadingDetail, setLoadingDetail] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [isNetworkError, setIsNetworkError] = React.useState(false);
+
+  const pulse = useSharedValue(0);
+  const fadeIn = useSharedValue(0);
 
   const { registerForEvent, registering } = useEventsStore((s: any) => ({
     registerForEvent: s.registerForEvent,
@@ -58,26 +76,58 @@ export default function EventDetails() {
 
   const id = (params as any).id as string | undefined;
 
-  const fetchEventById = React.useCallback(async (eventId: string) => {
-    setLoadingDetail(true);
-    setError(null);
-    try {
-      const data = await eventsService.fetchEventById(eventId);
-      setSelectedEvent(data);
-    } catch (err: any) {
-      setError(err.message || "Something went wrong.");
-    } finally {
-      setLoadingDetail(false);
-    }
+  const startAnimations = React.useCallback(() => {
+    fadeIn.value = withTiming(1, {
+      duration: 800,
+      easing: Easing.out(Easing.ease),
+    });
+    pulse.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+      ),
+      -1,
+      false,
+    );
   }, []);
+
+  const pulseRingStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: interpolate(pulse.value, [0, 1], [0.9, 1.15]) }],
+    opacity: interpolate(pulse.value, [0, 1], [0.35, 0]),
+  }));
+
+  const containerFadeStyle = useAnimatedStyle(() => ({
+    opacity: fadeIn.value,
+  }));
+
+  const fetchEventById = React.useCallback(
+    async (eventId: string) => {
+      setLoadingDetail(true);
+      setError(null);
+      setIsNetworkError(false);
+      try {
+        const data = await eventsService.fetchEventById(eventId);
+        setSelectedEvent(data);
+      } catch (err: any) {
+        const isOffline =
+          err.message === "Network Error" ||
+          err.code === "ERR_NETWORK" ||
+          !err.response;
+        setIsNetworkError(isOffline);
+        setError(err.message || "Something went wrong.");
+        if (isOffline) startAnimations();
+      } finally {
+        setLoadingDetail(false);
+      }
+    },
+    [startAnimations],
+  );
 
   useEffect(() => {
     if (id) fetchEventById(String(id));
   }, [id, fetchEventById]);
 
   const ev: any = selectedEvent;
-
-  useEffect(() => {}, [ev]);
 
   let imageSource = require("@/assets/images/header.png");
 
@@ -147,9 +197,7 @@ export default function EventDetails() {
       try {
         await Linking.openURL(url);
         return;
-      } catch (e) {
-        console.warn("Failed to open url", url, e);
-      }
+      } catch (e) {}
     }
   };
 
@@ -186,6 +234,73 @@ export default function EventDetails() {
     );
   }
 
+  if (error && isNetworkError) {
+    return (
+      <View
+        style={[
+          offlineStyles.container,
+          { backgroundColor: isDark ? "#1A1A1B" : "#ffffff" },
+        ]}
+      >
+        <Animated.View style={[offlineStyles.content, containerFadeStyle]}>
+          <View style={offlineStyles.illustrationContainer}>
+            <Animated.View style={[offlineStyles.pulseRing, pulseRingStyle]} />
+            <View style={offlineStyles.imageWrapper}>
+              <Image
+                source={require("@/assets/images/no-internet.png")}
+                style={offlineStyles.illustration}
+                resizeMode="contain"
+              />
+            </View>
+          </View>
+
+          <Text
+            style={[
+              offlineStyles.title,
+              { color: isDark ? "#ffffff" : "#1e293b" },
+            ]}
+          >
+            No Connection
+          </Text>
+          <Text
+            style={[
+              offlineStyles.message,
+              { color: isDark ? "#94a3b8" : "#94a3b8" },
+            ]}
+          >
+            Connect to the internet to view{"\n"}this event's details.
+          </Text>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => id && fetchEventById(id)}
+            disabled={loadingDetail}
+            style={[offlineStyles.button, loadingDetail && { opacity: 0.6 }]}
+          >
+            <Text style={offlineStyles.buttonText}>
+              {loadingDetail ? "Checking..." : "Try Again"}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={handleBack} style={{ marginTop: 16 }}>
+            {isGoingBack ? (
+              <ActivityIndicator
+                size="small"
+                color={isDark ? "#fff" : "#64748b"}
+              />
+            ) : (
+              <Text
+                style={{ color: isDark ? "#94a3b8" : "#64748b", fontSize: 15 }}
+              >
+                Go Back
+              </Text>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+    );
+  }
+
   if (error) {
     return (
       <View
@@ -193,11 +308,7 @@ export default function EventDetails() {
           isDark ? "bg-[#1A1A1B]" : "bg-gray-50"
         }`}
       >
-        <Ionicons
-          name="alert-circle-outline"
-          size={64}
-          color={isDark ? "#ff6619" : "#ff6619"}
-        />
+        <Ionicons name="alert-circle-outline" size={64} color="#ff6619" />
         <Text
           className={`text-lg font-bold mt-4 text-center ${
             isDark ? "text-white" : "text-gray-900"
@@ -438,3 +549,70 @@ export default function EventDetails() {
     </View>
   );
 }
+
+const offlineStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  content: {
+    alignItems: "center",
+    paddingHorizontal: 40,
+  },
+  illustrationContainer: {
+    width: SCREEN_WIDTH * 0.8,
+    height: SCREEN_WIDTH * 0.8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 32,
+  },
+  pulseRing: {
+    position: "absolute",
+    width: SCREEN_WIDTH * 0.7,
+    height: SCREEN_WIDTH * 0.7,
+    borderRadius: (SCREEN_WIDTH * 0.7) / 2,
+    borderWidth: 2.5,
+    borderColor: PRIMARY,
+    opacity: 0.3,
+  },
+  imageWrapper: {
+    width: SCREEN_WIDTH * 0.75,
+    height: SCREEN_WIDTH * 0.75,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  illustration: {
+    width: "100%",
+    height: "100%",
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: "800",
+    marginBottom: 10,
+    letterSpacing: -0.3,
+  },
+  message: {
+    fontSize: 15,
+    textAlign: "center",
+    lineHeight: 23,
+    marginBottom: 40,
+  },
+  button: {
+    backgroundColor: PRIMARY,
+    paddingHorizontal: 52,
+    paddingVertical: 16,
+    borderRadius: 100,
+    shadowColor: PRIMARY,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  buttonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.2,
+  },
+});
