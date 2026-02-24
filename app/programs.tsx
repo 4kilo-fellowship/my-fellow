@@ -381,53 +381,79 @@ export default function WeeklyPrograms() {
             {[1, 2, 3].map((i) => (
               <View
                 key={i}
-                className={`mb-6 rounded-[28px] overflow-hidden ${isDark ? "bg-[#1C1C1E]" : "bg-white"}`}
+                className={`mb-5 rounded-[24px] overflow-hidden border ${
+                  isDark
+                    ? "bg-[#111] border-[#222]"
+                    : "bg-[#f9fafb] border-gray-200"
+                }`}
                 style={{
-                  height: 400,
                   shadowColor: isDark ? "#000" : "#64748b",
-                  shadowOffset: { width: 0, height: 12 },
-                  shadowOpacity: isDark ? 0.5 : 0.12,
-                  shadowRadius: 24,
-                  elevation: 10,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: isDark ? 0.3 : 0.05,
+                  shadowRadius: 10,
+                  elevation: 2,
                 }}
               >
                 <Placeholder height={208} borderRadius={0} />
                 <View className="p-5">
                   <Placeholder
-                    width="90%"
-                    height={24}
+                    width="70%"
+                    height={28}
                     style={{ marginBottom: 12 }}
                   />
                   <Placeholder
                     width="100%"
-                    height={40}
+                    height={18}
+                    style={{ marginBottom: 6 }}
+                  />
+                  <Placeholder
+                    width="60%"
+                    height={18}
                     style={{ marginBottom: 20 }}
                   />
-                  <View className="flex-row justify-between items-center mb-4">
-                    <Placeholder width={100} height={32} borderRadius={12} />
-                    <Placeholder width={120} height={20} />
+
+                  <View className="flex-row items-center justify-between mb-4">
+                    <Placeholder width={110} height={36} borderRadius={8} />
+                    <Placeholder width={100} height={36} borderRadius={8} />
                   </View>
+
                   <View
-                    className={`h-[1px] w-full mb-4 ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
+                    className={`h-[1px] w-full mb-4 ${isDark ? "bg-[#222]" : "bg-gray-100"}`}
                   />
-                  <View className="flex-row items-center justify-between">
+
+                  <View
+                    className={`flex-row items-center justify-between py-3 px-4 rounded-xl border ${
+                      isDark
+                        ? "bg-[#1a1a1a] border-[#222]"
+                        : "bg-white border-gray-100"
+                    }`}
+                  >
                     <View className="flex-row items-center flex-1">
-                      <Placeholder
-                        width={40}
-                        height={40}
-                        borderRadius={20}
-                        style={{ marginRight: 12 }}
-                      />
+                      <View
+                        className={`w-9 h-9 rounded-full items-center justify-center mr-3 ${
+                          isDark ? "bg-[#222]" : "bg-orange-50"
+                        }`}
+                      >
+                        <Placeholder width={18} height={18} borderRadius={9} />
+                      </View>
                       <View className="flex-1">
                         <Placeholder
-                          width={80}
-                          height={12}
+                          width={60}
+                          height={10}
                           style={{ marginBottom: 4 }}
                         />
-                        <Placeholder width={140} height={16} />
+                        <Placeholder width={120} height={14} />
                       </View>
                     </View>
-                    <Placeholder width={36} height={36} borderRadius={18} />
+                    <View
+                      className={`w-8 h-8 rounded-full items-center justify-center border ${
+                        isDark
+                          ? "bg-[#222] border-[#333]"
+                          : "bg-gray-50 border-gray-200"
+                      }`}
+                    >
+                      <Placeholder width={14} height={14} borderRadius={7} />
+                    </View>
                   </View>
                 </View>
               </View>
