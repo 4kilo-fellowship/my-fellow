@@ -41,7 +41,7 @@ function DevotionCard({ item, isDark, onPress }: DevotionCardProps) {
 
   return (
     <TouchableOpacity
-      activeOpacity={0.7}
+      activeOpacity={0.9}
       onPress={handlePress}
       style={{
         marginRight: 16,
