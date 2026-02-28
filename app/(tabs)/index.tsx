@@ -283,6 +283,8 @@ const Home = () => {
                 decelerationRate="fast"
                 snapToInterval={itemWidth}
                 snapToAlignment="start"
+                disableIntervalMomentum={true}
+                overScrollMode="never"
                 contentContainerStyle={{ paddingHorizontal: 20 }}
                 onMomentumScrollEnd={(e) => {
                   const newIndex = Math.round(
