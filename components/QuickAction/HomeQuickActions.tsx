@@ -18,7 +18,7 @@ interface QuickActionProps {
 const QuickAction = ({ item, isDark = false, onPress }: QuickActionProps) => {
   return (
     <TouchableOpacity
-      activeOpacity={0.7}
+      activeOpacity={1}
       style={styles.container}
       onPress={onPress}
     >
@@ -37,7 +37,7 @@ const QuickAction = ({ item, isDark = false, onPress }: QuickActionProps) => {
         ) : (
           <Ionicons
             name={item.icon}
-            size={40}
+            size={36}
             color={isDark ? "#e2e8f0" : "#121212"}
           />
         )}
