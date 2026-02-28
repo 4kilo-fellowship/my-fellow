@@ -129,6 +129,35 @@ export default function EventDetails() {
 
   const ev: any = selectedEvent;
 
+  const getFormattedDate = () => {
+    if (!ev?.startDate) return "";
+    const start = new Date(ev.startDate);
+    if (!ev.endDate) {
+      return start.toLocaleDateString(undefined, {
+        month: "long",
+        day: "numeric",
+      });
+    }
+    const end = new Date(ev.endDate);
+    if (start.toDateString() === end.toDateString()) {
+      return start.toLocaleDateString(undefined, {
+        month: "long",
+        day: "numeric",
+      });
+    }
+    return `${start.toLocaleDateString(undefined, { month: "short", day: "numeric" })} - ${end.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
+  };
+
+  const getFormattedTime = () => {
+    if (!ev?.startDate) return "";
+    const start = new Date(ev.startDate);
+    const options: Intl.DateTimeFormatOptions = {
+      hour: "2-digit",
+      minute: "2-digit",
+    };
+    return start.toLocaleTimeString(undefined, options);
+  };
+
   let imageSource = require("@/assets/images/header.png");
 
   const imgPath = ev?.image || ev?.imageUrl;
@@ -404,10 +433,7 @@ export default function EventDetails() {
             </View>
             {ev.startDate && (
               <Text className="text-gray-300 font-medium text-sm">
-                {new Date(ev.startDate).toLocaleDateString(undefined, {
-                  month: "long",
-                  day: "numeric",
-                })}
+                {getFormattedDate()}
               </Text>
             )}
           </View>
@@ -424,10 +450,7 @@ export default function EventDetails() {
                 color="rgba(255,255,255,0.8)"
               />
               <Text className="text-gray-200 ml-1.5 font-medium">
-                {new Date(ev.startDate).toLocaleTimeString(undefined, {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {getFormattedTime()}
               </Text>
             </View>
           )}
