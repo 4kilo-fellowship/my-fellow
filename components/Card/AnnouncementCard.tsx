@@ -21,9 +21,9 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { ConfirmModal } from "../../components/Modals/ConfirmModal";
 import { InfoModal } from "../../components/Modals/InfoModal";
 import RegistrationModal from "../RegistrationModal";
-import SignInPromptModal from "../SignInPromptModal";
 
 // interface ...
 
@@ -274,14 +274,28 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         eventTitle={item.title}
       />
 
-      <SignInPromptModal
+      <ConfirmModal
         visible={signInModalVisible}
         onClose={() => setSignInModalVisible(false)}
-        onSignIn={() => {
-          setSignInModalVisible(false);
-          router.push("/(auth)/sign-in");
+        isDark={!!isDark}
+        title="Sign In Required"
+        description="You need to be signed in to perform this action. Would you like to sign in now?"
+        icon="log-in-outline"
+        iconColor={PRIMARY}
+        buttons={[
+          {
+            label: "Go to Sign In",
+            onPress: () => {
+              setSignInModalVisible(false);
+              router.push("/(auth)/sign-in");
+            },
+            variant: "primary",
+          },
+        ]}
+        cancelButton={{
+          label: "Cancel",
+          onPress: () => setSignInModalVisible(false),
         }}
-        message="You need to be signed in to register for events. Would you like to sign in now?"
       />
 
       <InfoModal

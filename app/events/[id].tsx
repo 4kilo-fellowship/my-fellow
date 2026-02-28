@@ -1,8 +1,8 @@
 import {
+  ConfirmModal,
   ConnectionToaster,
   InfoModal,
   RegistrationModal,
-  SignInPromptModal,
 } from "@/components";
 import { API_URL, PRIMARY } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
@@ -546,14 +546,27 @@ export default function EventDetails() {
         eventTitle={ev.title}
       />
 
-      <SignInPromptModal
+      <ConfirmModal
         visible={signInModalVisible}
         onClose={() => setSignInModalVisible(false)}
-        onSignIn={() => {
-          setSignInModalVisible(false);
-          router.push("/(auth)/sign-in");
+        isDark={isDark}
+        title="Sign In Required"
+        description="You need to be signed in to perform this action. Would you like to sign in now?"
+        icon="log-in-outline"
+        iconColor={PRIMARY}
+        buttons={[
+          {
+            label: "Go to Sign In",
+            onPress: () => {
+              setSignInModalVisible(false);
+              router.push("/(auth)/sign-in");
+            },
+            variant: "primary",
+          },
+        ]}
+        cancelButton={{
+          label: "Cancel",
         }}
-        message="You need to be signed in to register for events. Would you like to sign in now?"
       />
 
       <InfoModal
