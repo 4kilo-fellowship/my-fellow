@@ -195,6 +195,7 @@ const Home = () => {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
+                overScrollMode="never"
                 contentContainerStyle={{ paddingHorizontal: 20 }}
               >
                 {[1, 2, 3].map((_, i) => (
@@ -334,6 +335,7 @@ const Home = () => {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
+                overScrollMode="never"
                 contentContainerStyle={{ paddingHorizontal: 20 }}
               >
                 {[1, 2, 3, 4, 5].map((_, i) => (
@@ -355,6 +357,7 @@ const Home = () => {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
+                overScrollMode="never"
                 contentContainerStyle={{ paddingHorizontal: 20 }}
               >
                 {QUICK_ACTIONS.map((action, index) => (
@@ -426,6 +429,7 @@ const Home = () => {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
+                overScrollMode="never"
                 contentContainerStyle={{ paddingHorizontal: 20 }}
               >
                 {[1, 2, 3].map((_, i) => (
@@ -442,6 +446,7 @@ const Home = () => {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
+                overScrollMode="never"
                 contentContainerStyle={{ paddingHorizontal: 20 }}
               >
                 {devotions.map((d) => (
