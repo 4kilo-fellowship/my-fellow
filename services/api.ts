@@ -4,7 +4,7 @@ import * as SecureStore from "expo-secure-store";
 
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
-  timeout: 30000,
+  timeout: 59000,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",

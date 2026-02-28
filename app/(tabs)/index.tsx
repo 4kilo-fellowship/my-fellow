@@ -77,7 +77,6 @@ const Home = () => {
       setVideos(VIDEOS);
       setError(null);
 
-      // Pre-fetch the first 3 event images to prevent flickering when placeholders disappear
       if (Array.isArray(eventsData) && eventsData.length > 0) {
         const imageUris = eventsData
           .slice(0, 3)
