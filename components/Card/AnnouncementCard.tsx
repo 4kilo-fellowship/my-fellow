@@ -14,18 +14,18 @@ import { Image as ExpoImage } from "expo-image";
 import { useRouter } from "expo-router";
 import {
   Alert,
-  Dimensions,
   Share,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { InfoModal } from "../../components/Modals/InfoModal";
 import RegistrationModal from "../RegistrationModal";
 import SignInPromptModal from "../SignInPromptModal";
 
-const { width } = Dimensions.get("window");
+// interface ...
 
 interface AnnouncementItem {
   image: string;
@@ -43,7 +43,14 @@ interface AnnouncementCardProps {
 
 const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
   const router = useRouter();
+  const { width: windowWidth } = useWindowDimensions();
   const { authState, getCurrentUser } = useAuth();
+
+  // Proportional scaling
+  const cardWidth = windowWidth - 48;
+  const cardHeight = Math.min(windowWidth * 1.1, 460);
+  const titleFontSize = Math.min(cardWidth * 0.08, 30);
+  const subtitleFontSize = Math.min(cardWidth * 0.04, 16);
   const { registerForEvent, registering } = useEventsStore((s: any) => ({
     registerForEvent: s.registerForEvent,
     registering: s.registering,
@@ -154,7 +161,14 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     <TouchableOpacity
       activeOpacity={0.92}
       onPress={onPress}
-      style={[styles.card, { backgroundColor: isDark ? "#2a2a2b" : "#f0f0f0" }]}
+      style={[
+        styles.card,
+        {
+          backgroundColor: isDark ? "#2a2a2b" : "#f0f0f0",
+          width: cardWidth,
+          height: cardHeight,
+        },
+      ]}
     >
       <ExpoImage
         source={
@@ -215,11 +229,17 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
       </View>
 
       <View style={styles.content}>
-        <Text numberOfLines={2} style={styles.title}>
+        <Text
+          numberOfLines={2}
+          style={[styles.title, { fontSize: titleFontSize }]}
+        >
           {item.title}
         </Text>
 
-        <Text numberOfLines={3} style={styles.subtitle}>
+        <Text
+          numberOfLines={3}
+          style={[styles.subtitle, { fontSize: subtitleFontSize }]}
+        >
           {subtitleText}
         </Text>
 
@@ -281,8 +301,6 @@ const styles = StyleSheet.create({
     marginRight: 16,
     overflow: "hidden",
     borderRadius: 20,
-    width: width - 48,
-    height: 400,
     shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 10,

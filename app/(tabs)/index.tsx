@@ -22,13 +22,13 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
-  Dimensions,
   Image,
   Linking,
   RefreshControl,
   ScrollView,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -40,7 +40,7 @@ const Home = () => {
   const isDark = theme === "dark";
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
-  const { width } = Dimensions.get("window");
+  const { width } = useWindowDimensions();
   const cardWidth = width - 48;
   const itemWidth = cardWidth + 16;
 
