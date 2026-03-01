@@ -13,6 +13,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   Dimensions,
   FlatList,
+  Linking,
   RefreshControl,
   Text,
   TextInput,
@@ -330,6 +331,7 @@ const Teams = () => {
                 </Text>
                 <TouchableOpacity
                   activeOpacity={0.8}
+                  onPress={() => Linking.openURL("https://t.me/I4U_TEAM_bot")}
                   className={`bg-black ${isDark ? "bg-white" : "bg-dark"} px-6 py-3 rounded-full`}
                 >
                   <Text
