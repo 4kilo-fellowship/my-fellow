@@ -1,36 +1,52 @@
 import {
-  EventDetail,
+  ApiResponse,
+  AppEvent,
+  EventRegistration,
   EventRegistrationData,
-  EventSummary,
+  PopulatedRegistration,
 } from "@/types/events.types";
 import api from "./api";
 
-function unwrap<T>(res: any): T {
-  if (res == null) return res;
-  if (Array.isArray(res)) return res as any;
-  if (typeof res === "object") {
-    if ("data" in res) return unwrap(res.data);
-    if ("events" in res && Array.isArray(res.events)) return res.events as any;
-    if ("results" in res && Array.isArray(res.results))
-      return res.results as any;
-    if ("items" in res && Array.isArray(res.items)) return res.items as any;
-  }
-  return res;
-}
-
-export const fetchEventsApi = async (): Promise<EventSummary[]> => {
-  const res = await api.get("/events");
-  const payload = unwrap<any>(res.data ?? res);
-  return Array.isArray(payload) ? payload : [];
+export const fetchEventsApi = async (
+  sort: "asc" | "desc" = "asc",
+): Promise<ApiResponse<AppEvent[]>> => {
+  const res = await api.get<ApiResponse<AppEvent[]>>("/events", {
+    params: { sort },
+  });
+  return res.data;
 };
 
-export const fetchEventByIdApi = async (id: string): Promise<EventDetail> => {
-  const res = await api.get(`/events/${id}`);
-  const payload = unwrap<any>(res.data ?? res);
-  return payload as EventDetail;
+export const fetchEventByIdApi = async (
+  id: string,
+): Promise<ApiResponse<AppEvent>> => {
+  const res = await api.get<ApiResponse<AppEvent>>(`/events/${id}`);
+  return res.data;
 };
 
-export const registerForEventApi = async (data: EventRegistrationData) => {
-  const res = await api.post("/events/register", data);
+export const registerForEventApi = async (
+  data: EventRegistrationData,
+): Promise<ApiResponse<EventRegistration>> => {
+  const res = await api.post<ApiResponse<EventRegistration>>(
+    "/events/register",
+    data,
+  );
+  return res.data;
+};
+
+export const fetchAllRegistrationsApi = async (): Promise<
+  ApiResponse<PopulatedRegistration[]>
+> => {
+  const res = await api.get<ApiResponse<PopulatedRegistration[]>>(
+    "/events/registrations",
+  );
+  return res.data;
+};
+
+export const fetchRegistrationsByEventApi = async (
+  eventId: string,
+): Promise<ApiResponse<PopulatedRegistration[]>> => {
+  const res = await api.get<ApiResponse<PopulatedRegistration[]>>(
+    `/events/registrations/${eventId}`,
+  );
   return res.data;
 };
