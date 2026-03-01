@@ -74,7 +74,7 @@ export default function AboutScreen() {
                 { color: isDark ? "#94a3b8" : "#64748b" },
               ]}
             >
-              VERSION 1.0.0 (STABLE)
+              VERSION v1.1.0 (STABLE)
             </Text>
           </View>
         </View>

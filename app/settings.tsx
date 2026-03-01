@@ -360,7 +360,7 @@ export default function Settings() {
           icon: "information-circle-outline",
           iconFamily: "ionicons",
           label: "App Version",
-          description: "1.0.0 (Build 1)",
+          description: "1.1.0 (Build 2)",
           type: "navigation",
           onPress: () => {},
         },
@@ -707,7 +707,7 @@ export default function Settings() {
               { color: isDark ? "#4b5563" : "#d1d5db" },
             ]}
           >
-            Version 1.0.0
+            Version v1.1.0
           </Text>
         </View>
       </ScrollView>
