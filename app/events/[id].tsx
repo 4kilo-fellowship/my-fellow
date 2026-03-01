@@ -20,7 +20,6 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   Image,
   Linking,
@@ -60,19 +59,24 @@ export default function EventDetails() {
   const pulse = useSharedValue(0);
   const fadeIn = useSharedValue(0);
 
+  const id = (params as any).id as string | undefined;
+
   const {
     registerForEvent,
     registering,
-    isRegistered,
-    checkingRegistration,
+    registeredEvents,
+    checkingRegistrationMap,
     checkRegistrationStatus,
   } = useEventsStore((s: any) => ({
     registerForEvent: s.registerForEvent,
     registering: s.registering,
-    isRegistered: s.isRegistered,
-    checkingRegistration: s.checkingRegistration,
+    registeredEvents: s.registeredEvents,
+    checkingRegistrationMap: s.checkingRegistration,
     checkRegistrationStatus: s.checkRegistrationStatus,
   }));
+
+  const isRegisteredForThisEvent = id ? !!registeredEvents[id] : false;
+  const isCheckingThisEvent = id ? !!checkingRegistrationMap[id] : false;
 
   const { addAlert } = useAlerts();
 
@@ -82,8 +86,19 @@ export default function EventDetails() {
   const [showSuccessModal, setShowSuccessModal] = React.useState(false);
   const [isGoingBack, setIsGoingBack] = React.useState(false);
   const [showOfflineToaster, setShowOfflineToaster] = React.useState(false);
+  const [infoModal, setInfoModal] = React.useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "info";
+  }>({ visible: false, title: "", message: "", type: "info" });
 
-  const id = (params as any).id as string | undefined;
+  const showInfoModalFn = React.useCallback(
+    (title: string, message: string, type: "success" | "error" | "info" = "info") => {
+      setInfoModal({ visible: true, title, message, type });
+    },
+    [],
+  );
 
   const startAnimations = React.useCallback(() => {
     fadeIn.value = withTiming(1, {
@@ -208,9 +223,9 @@ export default function EventDetails() {
   const isRegisterCta =
     ctaLabel.toLowerCase().trim().includes("register") ||
     ctaLabel.toLowerCase().trim().includes("join");
-  const buttonDisabled = registering || (isRegisterCta && isRegistered);
+  const buttonDisabled = registering || (isRegisterCta && isRegisteredForThisEvent);
   const displayLabel =
-    isRegisterCta && isRegistered ? "Already Registered" : ctaLabel;
+    isRegisterCta && isRegisteredForThisEvent ? "Already Registered" : ctaLabel;
 
   const handleCta = async () => {
     const text = ctaLabel.toLowerCase().trim();
@@ -226,7 +241,7 @@ export default function EventDetails() {
 
     if (text.includes("notify")) {
       if (!ev?.startDate) {
-        Alert.alert("Warning", "Program time not available for notification.");
+        showInfoModalFn("Warning", "Program time not available for notification.", "info");
         return;
       }
 
@@ -259,7 +274,7 @@ export default function EventDetails() {
     try {
       await registerForEvent({ eventId: ev._id || ev.id });
       setModalVisible(false);
-      Alert.alert("Success", "You have successfully registered for the event");
+      showInfoModalFn("Success", "You have successfully registered for the event", "success");
     } catch (err: any) {
       const message =
         err?.response?.data?.message || err?.message || "Registration failed";
@@ -271,7 +286,7 @@ export default function EventDetails() {
       ) {
         setShowOfflineToaster(true);
       } else {
-        Alert.alert("Error", message);
+        showInfoModalFn("Error", message, "error");
       }
     }
   };
@@ -548,23 +563,23 @@ export default function EventDetails() {
           className={`w-full py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30 ${buttonDisabled ? "opacity-60" : ""}`}
           style={{
             backgroundColor:
-              isRegisterCta && isRegistered
+              isRegisterCta && isRegisteredForThisEvent
                 ? isDark
                   ? "#27272a"
                   : "#d1d5db"
                 : "#ff6619",
           }}
         >
-          {registering || (isRegisterCta && checkingRegistration) ? (
+          {registering || (isRegisterCta && isCheckingThisEvent) ? (
             <ActivityIndicator color="white" />
           ) : (
             <>
               <Text
-                className={`text-lg font-bold mr-2 ${isRegisterCta && isRegistered ? (isDark ? "text-gray-400" : "text-gray-500") : "text-white"}`}
+                className={`text-lg font-bold mr-2 ${isRegisterCta && isRegisteredForThisEvent ? (isDark ? "text-gray-400" : "text-gray-500") : "text-white"}`}
               >
                 {displayLabel}
               </Text>
-              {isRegisterCta && isRegistered ? (
+              {isRegisterCta && isRegisteredForThisEvent ? (
                 <Ionicons
                   name="checkmark-circle"
                   size={20}
@@ -622,6 +637,15 @@ export default function EventDetails() {
       <ConnectionToaster
         visible={showOfflineToaster}
         onHide={() => setShowOfflineToaster(false)}
+      />
+
+      <InfoModal
+        visible={infoModal.visible}
+        onClose={() => setInfoModal((prev) => ({ ...prev, visible: false }))}
+        title={infoModal.title}
+        message={infoModal.message}
+        type={infoModal.type}
+        isDark={isDark}
       />
     </View>
   );

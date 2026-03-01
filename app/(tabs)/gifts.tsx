@@ -1,4 +1,5 @@
 import GiftCard from "@/components/GiftCard";
+import { InfoModal } from "@/components/Modals/InfoModal";
 import { GIFT_ITEMS } from "@/constants/gifts";
 import { useTheme } from "@/context/ThemeContext";
 import api from "@/services/api";
@@ -16,7 +17,6 @@ import React, { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -38,6 +38,21 @@ const Gifts = () => {
   const { top } = useSafeAreaInsets();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+
+  const [infoModal, setInfoModal] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "info";
+  }>({ visible: false, title: "", message: "", type: "info" });
+
+  const showInfoModal = (
+    title: string,
+    message: string,
+    type: "success" | "error" | "info" = "info",
+  ) => {
+    setInfoModal({ visible: true, title, message, type });
+  };
 
   const { user } = useUserStore();
   const { txRef, setTxRef } = usePaymentStore();
@@ -124,7 +139,7 @@ const Gifts = () => {
 
     // Check for required Chapa fields if not provided
     if (!data.email) {
-      Alert.alert(
+      showInfoModal(
         "Missing Information",
         "Please provide a valid email address for the receipt.",
       );
@@ -160,11 +175,12 @@ const Gifts = () => {
       await WebBrowser.openBrowserAsync(checkout_url);
     } catch (error: any) {
       console.error("Payment initialization failed:", error);
-      Alert.alert(
+      showInfoModal(
         "Error",
         error.message ||
           error.response?.data?.message ||
           "Failed to start payment process.",
+        "error",
       );
     } finally {
       setLoading(false);
@@ -382,6 +398,14 @@ const Gifts = () => {
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
+      <InfoModal
+        visible={infoModal.visible}
+        onClose={() => setInfoModal((prev) => ({ ...prev, visible: false }))}
+        title={infoModal.title}
+        message={infoModal.message}
+        type={infoModal.type}
+        isDark={isDark}
+      />
     </View>
   );
 };

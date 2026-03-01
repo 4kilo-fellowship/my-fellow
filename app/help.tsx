@@ -1,3 +1,4 @@
+import { InfoModal } from "@/components/Modals/InfoModal";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -26,6 +27,12 @@ export default function HelpScreen() {
   const isDark = theme === "dark";
   const [message, setMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [infoModal, setInfoModal] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "info";
+  }>({ visible: false, title: "", message: "", type: "info" });
 
   const handlePhoneCall = () => {
     Linking.openURL("tel:0994627985");
@@ -54,9 +61,13 @@ export default function HelpScreen() {
     if (Platform.OS === "android") {
       ToastAndroid.show("Coming Soon...", ToastAndroid.SHORT);
     } else {
-      // For iOS/Web, we can just use a simple alert or ignore if only toast is requested
-      // but usually users want some feedback.
-      alert("Coming Soon...");
+      // For iOS/Web, show an InfoModal
+      setInfoModal({
+        visible: true,
+        title: "Coming Soon",
+        message: "This feature will be available soon.",
+        type: "info",
+      });
     }
 
     setMessage("");
@@ -292,6 +303,15 @@ export default function HelpScreen() {
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      <InfoModal
+        visible={infoModal.visible}
+        onClose={() => setInfoModal((prev) => ({ ...prev, visible: false }))}
+        title={infoModal.title}
+        message={infoModal.message}
+        type={infoModal.type}
+        isDark={isDark}
+      />
     </View>
   );
 }

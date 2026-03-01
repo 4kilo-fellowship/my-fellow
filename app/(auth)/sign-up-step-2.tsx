@@ -12,7 +12,6 @@ import React, { useCallback, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   Dimensions,
   FlatList,
@@ -165,10 +164,12 @@ export default function SignUpStep2() {
     data,
   ) => {
     if (!params.fullName || !params.phoneNumber || !params.password) {
-      Alert.alert(
-        "Missing Information",
-        "Please complete all required fields.",
-      );
+      setErrorModal({
+        visible: true,
+        title: "Missing Information",
+        message: "Please complete all required fields.",
+        isRegisteredError: false,
+      });
       router.back();
       return;
     }

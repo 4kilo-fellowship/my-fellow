@@ -1,4 +1,4 @@
-import { ConfirmModal, ConfirmationModal } from "@/components";
+import { ConfirmModal, ConfirmationModal, InfoModal } from "@/components";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { JoinRequest, joinRequestService } from "@/services/joinRequestService";
@@ -12,7 +12,6 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useState } from "react";
 import {
-  Alert,
   Image,
   Linking,
   Pressable,
@@ -77,6 +76,21 @@ export default function Settings() {
   const [dataSync, setDataSync] = useState(true);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [showSignInPrompt, setShowSignInPrompt] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [infoModal, setInfoModal] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "info";
+  }>({ visible: false, title: "", message: "", type: "info" });
+
+  const showInfoModal = (
+    title: string,
+    message: string,
+    type: "success" | "error" | "info" = "info",
+  ) => {
+    setInfoModal({ visible: true, title, message, type });
+  };
 
   const handleAuthRequired = (action: () => void) => {
     if (!isAuthenticated) {
@@ -101,24 +115,7 @@ export default function Settings() {
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      "Delete Account",
-      "This action cannot be undone. All your data will be permanently deleted. Are you sure?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            // TODO: Implement account deletion
-            Alert.alert(
-              "Coming Soon",
-              "Account deletion will be available soon.",
-            );
-          },
-        },
-      ],
-    );
+    setShowDeleteConfirm(true);
   };
 
   const settingsSections: { title: string; items: SettingItem[] }[] = [
@@ -256,9 +253,10 @@ export default function Settings() {
           description: "Free up storage space",
           type: "action",
           onPress: () =>
-            Alert.alert(
+            showInfoModal(
               "Cache Cleared",
               "Your cache has been cleared successfully.",
+              "success",
             ),
         },
         {
@@ -269,7 +267,7 @@ export default function Settings() {
           description: "Manage offline content",
           type: "navigation",
           onPress: () =>
-            Alert.alert(
+            showInfoModal(
               "Coming Soon",
               "Download management will be available soon.",
             ),
@@ -303,7 +301,7 @@ export default function Settings() {
           description: "How we use your data",
           type: "navigation",
           onPress: () =>
-            Alert.alert(
+            showInfoModal(
               "Coming Soon",
               "Data usage info will be available soon.",
             ),
@@ -321,7 +319,7 @@ export default function Settings() {
           description: "Get help and FAQs",
           type: "navigation",
           onPress: () =>
-            Alert.alert("Coming Soon", "Help center will be available soon."),
+            showInfoModal("Coming Soon", "Help center will be available soon."),
         },
         {
           id: "contact",
@@ -340,7 +338,7 @@ export default function Settings() {
           description: "Help us improve",
           type: "navigation",
           onPress: () =>
-            Alert.alert("Coming Soon", "Feedback form will be available soon."),
+            showInfoModal("Coming Soon", "Feedback form will be available soon."),
         },
         {
           id: "rateApp",
@@ -350,7 +348,7 @@ export default function Settings() {
           description: "Leave a review",
           type: "navigation",
           onPress: () =>
-            Alert.alert("Thank You!", "Rate us on the App Store/Play Store."),
+            showInfoModal("Thank You!", "Rate us on the App Store/Play Store."),
         },
       ],
     },
@@ -374,7 +372,7 @@ export default function Settings() {
           description: "See latest updates",
           type: "navigation",
           onPress: () =>
-            Alert.alert(
+            showInfoModal(
               "What's New",
               "• Improved user profile menu\n• Theme toggle\n• Settings screen\n• And more!",
             ),
@@ -386,7 +384,7 @@ export default function Settings() {
           label: "Open Source Licenses",
           type: "navigation",
           onPress: () =>
-            Alert.alert("Coming Soon", "Licenses info will be available soon."),
+            showInfoModal("Coming Soon", "Licenses info will be available soon."),
         },
       ],
     },
@@ -738,6 +736,43 @@ export default function Settings() {
           },
         ]}
         cancelButton={{ label: "Cancel" }}
+      />
+
+      <ConfirmModal
+        visible={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        isDark={isDark}
+        icon="trash-outline"
+        iconColor="#ef4444"
+        title="Delete Account"
+        description="This action cannot be undone. All your data will be permanently deleted. Are you sure?"
+        buttons={[
+          {
+            label: "Delete",
+            onPress: () => {
+              setShowDeleteConfirm(false);
+              // TODO: Implement account deletion
+              showInfoModal(
+                "Coming Soon",
+                "Account deletion will be available soon.",
+              );
+            },
+            variant: "primary",
+          },
+        ]}
+        cancelButton={{
+          label: "Cancel",
+          onPress: () => setShowDeleteConfirm(false),
+        }}
+      />
+
+      <InfoModal
+        visible={infoModal.visible}
+        onClose={() => setInfoModal((prev) => ({ ...prev, visible: false }))}
+        title={infoModal.title}
+        message={infoModal.message}
+        type={infoModal.type}
+        isDark={isDark}
       />
     </View>
   );

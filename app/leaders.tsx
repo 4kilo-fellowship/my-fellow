@@ -1,4 +1,4 @@
-import { LeaderCard, Placeholder } from "@/components";
+import { InfoModal, LeaderCard, Placeholder } from "@/components";
 import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { useLeadersStore } from "@/stores/leaders.store";
@@ -7,7 +7,6 @@ import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Alert,
   Animated,
   Linking,
   RefreshControl,
@@ -53,6 +52,21 @@ export default function LeadersScreen() {
   const [selectedFilter, setSelectedFilter] = useState("All");
   const filters = ["All", "Main", "Team"];
 
+  const [infoModal, setInfoModal] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "info";
+  }>({ visible: false, title: "", message: "", type: "info" });
+
+  const showInfoModal = (
+    title: string,
+    message: string,
+    type: "success" | "error" | "info" = "error",
+  ) => {
+    setInfoModal({ visible: true, title, message, type });
+  };
+
   const { leaders, loading, refreshing, loadLeaders } = useLeadersStore();
 
   useEffect(() => {
@@ -65,7 +79,7 @@ export default function LeadersScreen() {
 
   const handleCall = (phone: string) => {
     Linking.openURL(`tel:${phone}`).catch(() => {
-      Alert.alert(
+      showInfoModal(
         "Error",
         "Could not open dialer. Please make sure your device supports calls.",
       );
@@ -75,7 +89,7 @@ export default function LeadersScreen() {
   const handleOpenTelegram = (username: string) => {
     const cleanUsername = username.replace("@", "");
     Linking.openURL(`https://t.me/${cleanUsername}`).catch(() => {
-      Alert.alert(
+      showInfoModal(
         "Error",
         "Could not open Telegram. Please ensure you have the app installed.",
       );
@@ -302,6 +316,15 @@ export default function LeadersScreen() {
           </ScrollView>
         </Animated.View>
       </View>
+
+      <InfoModal
+        visible={infoModal.visible}
+        onClose={() => setInfoModal((prev) => ({ ...prev, visible: false }))}
+        title={infoModal.title}
+        message={infoModal.message}
+        type={infoModal.type}
+        isDark={isDark}
+      />
     </>
   );
 }

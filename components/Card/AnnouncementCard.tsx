@@ -4,7 +4,7 @@ import { BlurView } from "expo-blur";
 import * as FileSystem from "expo-file-system/legacy";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Sharing from "expo-sharing";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 
 import { useAuth } from "@/context/AuthContext";
 import { useAlerts } from "@/hooks/useAlerts";
@@ -13,7 +13,7 @@ import { useEventsStore } from "@/stores/events.store";
 import { Image as ExpoImage } from "expo-image";
 import { useRouter } from "expo-router";
 import {
-  Alert,
+  ActivityIndicator,
   Share,
   StyleSheet,
   Text,
@@ -51,21 +51,62 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
   const cardHeight = Math.min(windowWidth * 1.1, 460);
   const titleFontSize = Math.min(cardWidth * 0.08, 30);
   const subtitleFontSize = Math.min(cardWidth * 0.04, 16);
-  const { registerForEvent, registering } = useEventsStore((s: any) => ({
+  const eventId = (item as any)._id || (item as any).id;
+  const imageUri = (item as any).imageUrl;
+  const subtitleText = (item as any).shortDescription;
+  const ctaText = (item as any).buttonText;
+
+  const {
+    registerForEvent,
+    registering,
+    registeredEvents,
+    checkingRegistrationMap,
+    checkRegistrationStatus,
+  } = useEventsStore((s: any) => ({
     registerForEvent: s.registerForEvent,
     registering: s.registering,
+    registeredEvents: s.registeredEvents,
+    checkingRegistrationMap: s.checkingRegistration,
+    checkRegistrationStatus: s.checkRegistrationStatus,
   }));
+
+  const isRegisteredForThisEvent = eventId ? !!registeredEvents[eventId] : false;
+  const isCheckingThisEvent = eventId ? !!checkingRegistrationMap[eventId] : false;
 
   const { addAlert } = useAlerts();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [signInModalVisible, setSignInModalVisible] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [infoModal, setInfoModal] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "info";
+  }>({ visible: false, title: "", message: "", type: "info" });
+
+  const showInfoModal = useCallback(
+    (title: string, message: string, type: "success" | "error" | "info" = "info") => {
+      setInfoModal({ visible: true, title, message, type });
+    },
+    [],
+  );
+
+  const isRegisterCta =
+    ctaText?.toLowerCase()?.includes("register") ||
+    ctaText?.toLowerCase()?.includes("join");
+
+  React.useEffect(() => {
+    if (eventId && authState.authenticated && isRegisterCta) {
+      checkRegistrationStatus(eventId);
+    }
+  }, [eventId, authState.authenticated, isRegisterCta]);
 
   const handlePrimary = async () => {
     const text = ctaText.toLowerCase().trim();
 
     if (text.includes("register") || text.includes("join")) {
+      if (isRegisteredForThisEvent) return;
       if (!authState.authenticated) {
         setSignInModalVisible(true);
         return;
@@ -77,7 +118,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     if (text.includes("notify")) {
       const startTime = (item as any).startDate;
       if (!startTime) {
-        Alert.alert("Warning", "Program time not available for notification.");
+        showInfoModal("Warning", "Program time not available for notification.", "info");
         return;
       }
 
@@ -106,18 +147,13 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         eventId: (item as any)._id || (item as any).id,
       });
       setModalVisible(false);
-      Alert.alert("Success", "You have successfully registered for the event");
+      showInfoModal("Success", "You have successfully registered for the event", "success");
     } catch (err: any) {
       const message =
         err?.response?.data?.message || err?.message || "Registration failed";
-      Alert.alert("Error", message);
+      showInfoModal("Error", message, "error");
     }
   };
-
-  const imageUri = (item as any).imageUrl;
-  const subtitleText = (item as any).shortDescription;
-
-  const ctaText = (item as any).buttonText;
 
   const handleShare = async () => {
     try {
@@ -139,7 +175,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
 
       const isAvailable = await Sharing.isAvailableAsync();
       if (!isAvailable) {
-        Alert.alert("Error", "Sharing is not available on this device");
+        showInfoModal("Error", "Sharing is not available on this device", "error");
         return;
       }
 
@@ -150,9 +186,10 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
       });
     } catch (error: any) {
       console.error("Error sharing image:", error);
-      Alert.alert(
+      showInfoModal(
         "Sharing Failed",
         "Could not share the image. Please try again.",
+        "error",
       );
     }
   };
@@ -250,17 +287,30 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={handlePrimary}
+            disabled={registering || (isRegisterCta && isRegisteredForThisEvent)}
             accessibilityLabel={`Primary action for ${item.title}`}
-            style={{ backgroundColor: PRIMARY }}
+            style={{ 
+              backgroundColor: (isRegisterCta && isRegisteredForThisEvent) ? (isDark ? "#27272a" : "#d1d5db") : PRIMARY,
+            }}
             className="w-full py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/40"
           >
-            <Text className="text-white text-base font-bold mr-2">
-              {ctaText}
-            </Text>
-            {ctaText.toLowerCase().includes("notify") ? (
-              <Ionicons name="notifications" size={18} color="white" />
+            {registering || (isRegisterCta && isCheckingThisEvent) ? (
+              <ActivityIndicator color="white" size="small" />
             ) : (
-              <Ionicons name="arrow-forward" size={18} color="white" />
+              <>
+                <Text className={`${(isRegisterCta && isRegisteredForThisEvent) ? (isDark ? "text-gray-400" : "text-gray-500") : "text-white"} text-base font-bold mr-2`}>
+                  {(isRegisterCta && isRegisteredForThisEvent) ? "Already Registered" : ctaText}
+                </Text>
+                {(isRegisterCta && isRegisteredForThisEvent) ? (
+                  <Ionicons name="checkmark-circle" size={18} color={isDark ? "#4ade80" : "#16a34a"} />
+                ) : (
+                  ctaText?.toLowerCase()?.includes("notify") ? (
+                    <Ionicons name="notifications" size={18} color="white" />
+                  ) : (
+                    <Ionicons name="arrow-forward" size={18} color="white" />
+                  )
+                )}
+              </>
             )}
           </TouchableOpacity>
         </View>
@@ -304,6 +354,15 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         title="Alert Set"
         message="We'll notify you 15 minutes before the program starts."
         type="success"
+        isDark={!!isDark}
+      />
+
+      <InfoModal
+        visible={infoModal.visible}
+        onClose={() => setInfoModal((prev) => ({ ...prev, visible: false }))}
+        title={infoModal.title}
+        message={infoModal.message}
+        type={infoModal.type}
         isDark={!!isDark}
       />
     </TouchableOpacity>

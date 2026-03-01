@@ -14,8 +14,8 @@ type EventsState = {
   currentEvent: AppEvent | null;
   loading: boolean;
   registering: boolean;
-  isRegistered: boolean;
-  checkingRegistration: boolean;
+  registeredEvents: Record<string, boolean>;
+  checkingRegistration: Record<string, boolean>;
   error?: string | null;
 
   fetchEvents: (sort?: "asc" | "desc") => Promise<void>;
@@ -33,8 +33,8 @@ export const useEventsStore = create<EventsState>()(
       currentEvent: null,
       loading: false,
       registering: false,
-      isRegistered: false,
-      checkingRegistration: false,
+      registeredEvents: {},
+      checkingRegistration: {},
       error: null,
 
       fetchEvents: async (sort = "asc") => {
@@ -85,7 +85,13 @@ export const useEventsStore = create<EventsState>()(
         try {
           const response = await registerForEventApi(data);
           if (response.success) {
-            set({ registering: false, isRegistered: true });
+            set((state) => ({
+              registering: false,
+              registeredEvents: {
+                ...state.registeredEvents,
+                [data.eventId]: true,
+              },
+            }));
           } else {
             set({
               error: response.message || "Registration failed",
@@ -104,19 +110,40 @@ export const useEventsStore = create<EventsState>()(
       },
 
       checkRegistrationStatus: async (eventId: string) => {
-        set({ checkingRegistration: true });
+        set((state) => ({
+          checkingRegistration: {
+            ...state.checkingRegistration,
+            [eventId]: true,
+          },
+        }));
         try {
           const response = await checkRegistrationStatusApi(eventId);
           if (response.success) {
-            set({
-              isRegistered: response.isRegistered,
-              checkingRegistration: false,
-            });
+            set((state) => ({
+              registeredEvents: {
+                ...state.registeredEvents,
+                [eventId]: response.isRegistered,
+              },
+              checkingRegistration: {
+                ...state.checkingRegistration,
+                [eventId]: false,
+              },
+            }));
           } else {
-            set({ checkingRegistration: false });
+            set((state) => ({
+              checkingRegistration: {
+                ...state.checkingRegistration,
+                [eventId]: false,
+              },
+            }));
           }
         } catch {
-          set({ checkingRegistration: false });
+          set((state) => ({
+            checkingRegistration: {
+              ...state.checkingRegistration,
+              [eventId]: false,
+            },
+          }));
         }
       },
 
@@ -127,6 +154,7 @@ export const useEventsStore = create<EventsState>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         eventsList: state.eventsList,
+        registeredEvents: state.registeredEvents,
       }),
     },
   ),
