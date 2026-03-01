@@ -23,15 +23,6 @@ export interface EventRegistration {
   eventId: string;
 }
 
-export interface PopulatedRegistration {
-  _id: string;
-  userId: {
-    _id: string;
-    [key: string]: any;
-  };
-  eventId: AppEvent;
-}
-
 export interface EventRegistrationData {
   eventId: string;
 }

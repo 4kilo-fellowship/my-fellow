@@ -3,7 +3,6 @@ import {
   AppEvent,
   EventRegistration,
   EventRegistrationData,
-  PopulatedRegistration,
 } from "@/types/events.types";
 import api from "./api";
 
@@ -29,24 +28,6 @@ export const registerForEventApi = async (
   const res = await api.post<ApiResponse<EventRegistration>>(
     "/events/register",
     data,
-  );
-  return res.data;
-};
-
-export const fetchAllRegistrationsApi = async (): Promise<
-  ApiResponse<PopulatedRegistration[]>
-> => {
-  const res = await api.get<ApiResponse<PopulatedRegistration[]>>(
-    "/events/registrations",
-  );
-  return res.data;
-};
-
-export const fetchRegistrationsByEventApi = async (
-  eventId: string,
-): Promise<ApiResponse<PopulatedRegistration[]>> => {
-  const res = await api.get<ApiResponse<PopulatedRegistration[]>>(
-    `/events/registrations/${eventId}`,
   );
   return res.data;
 };

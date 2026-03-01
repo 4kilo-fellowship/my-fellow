@@ -3,11 +3,7 @@ import {
   fetchEventsApi,
   registerForEventApi,
 } from "@/services/events.api";
-import {
-  AppEvent,
-  EventRegistrationData,
-  PopulatedRegistration,
-} from "@/types/events.types";
+import { AppEvent, EventRegistrationData } from "@/types/events.types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
@@ -15,7 +11,6 @@ import { createJSONStorage, persist } from "zustand/middleware";
 type EventsState = {
   eventsList: AppEvent[];
   currentEvent: AppEvent | null;
-  registrations: PopulatedRegistration[];
   loading: boolean;
   registering: boolean;
   error?: string | null;
@@ -32,7 +27,6 @@ export const useEventsStore = create<EventsState>()(
     (set, get) => ({
       eventsList: [],
       currentEvent: null,
-      registrations: [],
       loading: false,
       registering: false,
       error: null,
