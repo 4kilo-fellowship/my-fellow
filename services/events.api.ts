@@ -31,3 +31,10 @@ export const registerForEventApi = async (
   );
   return res.data;
 };
+
+export const checkRegistrationStatusApi = async (
+  eventId: string,
+): Promise<{ success: boolean; isRegistered: boolean; data: any }> => {
+  const res = await api.get(`/events/registration-status/${eventId}`);
+  return res.data;
+};

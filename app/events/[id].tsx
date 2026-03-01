@@ -60,9 +60,18 @@ export default function EventDetails() {
   const pulse = useSharedValue(0);
   const fadeIn = useSharedValue(0);
 
-  const { registerForEvent, registering } = useEventsStore((s: any) => ({
+  const {
+    registerForEvent,
+    registering,
+    isRegistered,
+    checkingRegistration,
+    checkRegistrationStatus,
+  } = useEventsStore((s: any) => ({
     registerForEvent: s.registerForEvent,
     registering: s.registering,
+    isRegistered: s.isRegistered,
+    checkingRegistration: s.checkingRegistration,
+    checkRegistrationStatus: s.checkRegistrationStatus,
   }));
 
   const { addAlert } = useAlerts();
@@ -127,6 +136,15 @@ export default function EventDetails() {
     if (id) fetchEventById(String(id));
   }, [id, fetchEventById]);
 
+  useEffect(() => {
+    if (selectedEvent && authState?.authenticated) {
+      const eventId = (selectedEvent as any)._id || (selectedEvent as any).id;
+      if (eventId) {
+        checkRegistrationStatus(eventId);
+      }
+    }
+  }, [selectedEvent, authState?.authenticated]);
+
   const ev: any = selectedEvent;
 
   const getFormattedDate = () => {
@@ -186,6 +204,13 @@ export default function EventDetails() {
     ev?.metadata?.cta_text ||
     ev?.button_text ||
     "Register Now";
+
+  const isRegisterCta =
+    ctaLabel.toLowerCase().trim().includes("register") ||
+    ctaLabel.toLowerCase().trim().includes("join");
+  const buttonDisabled = registering || (isRegisterCta && isRegistered);
+  const displayLabel =
+    isRegisterCta && isRegistered ? "Already Registered" : ctaLabel;
 
   const handleCta = async () => {
     const text = ctaLabel.toLowerCase().trim();
@@ -519,17 +544,33 @@ export default function EventDetails() {
         <TouchableOpacity
           activeOpacity={0.9}
           onPress={handleCta}
-          disabled={registering}
-          className={`w-full bg-[#ff6619] py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30 ${registering ? "opacity-70" : ""}`}
+          disabled={buttonDisabled}
+          className={`w-full py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30 ${buttonDisabled ? "opacity-60" : ""}`}
+          style={{
+            backgroundColor:
+              isRegisterCta && isRegistered
+                ? isDark
+                  ? "#27272a"
+                  : "#d1d5db"
+                : "#ff6619",
+          }}
         >
-          {registering ? (
+          {registering || (isRegisterCta && checkingRegistration) ? (
             <ActivityIndicator color="white" />
           ) : (
             <>
-              <Text className="text-white text-lg font-bold mr-2">
-                {ctaLabel}
+              <Text
+                className={`text-lg font-bold mr-2 ${isRegisterCta && isRegistered ? (isDark ? "text-gray-400" : "text-gray-500") : "text-white"}`}
+              >
+                {displayLabel}
               </Text>
-              {ctaLabel.toLowerCase().includes("notify") ? (
+              {isRegisterCta && isRegistered ? (
+                <Ionicons
+                  name="checkmark-circle"
+                  size={20}
+                  color={isDark ? "#4ade80" : "#16a34a"}
+                />
+              ) : displayLabel.toLowerCase().includes("notify") ? (
                 <Ionicons name="notifications" size={20} color="white" />
               ) : (
                 <Ionicons name="arrow-forward" size={20} color="white" />

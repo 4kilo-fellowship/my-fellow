@@ -1,4 +1,5 @@
 import {
+  checkRegistrationStatusApi,
   fetchEventByIdApi,
   fetchEventsApi,
   registerForEventApi,
@@ -13,11 +14,14 @@ type EventsState = {
   currentEvent: AppEvent | null;
   loading: boolean;
   registering: boolean;
+  isRegistered: boolean;
+  checkingRegistration: boolean;
   error?: string | null;
 
   fetchEvents: (sort?: "asc" | "desc") => Promise<void>;
   fetchEventById: (id: string) => Promise<void>;
   registerForEvent: (data: EventRegistrationData) => Promise<void>;
+  checkRegistrationStatus: (eventId: string) => Promise<void>;
   setEventsList: (events: AppEvent[]) => void;
   setError: (error: string | null) => void;
 };
@@ -29,6 +33,8 @@ export const useEventsStore = create<EventsState>()(
       currentEvent: null,
       loading: false,
       registering: false,
+      isRegistered: false,
+      checkingRegistration: false,
       error: null,
 
       fetchEvents: async (sort = "asc") => {
@@ -79,7 +85,7 @@ export const useEventsStore = create<EventsState>()(
         try {
           const response = await registerForEventApi(data);
           if (response.success) {
-            set({ registering: false });
+            set({ registering: false, isRegistered: true });
           } else {
             set({
               error: response.message || "Registration failed",
@@ -94,6 +100,23 @@ export const useEventsStore = create<EventsState>()(
             "Something went wrong during registration.";
           set({ error: message, registering: false });
           throw err;
+        }
+      },
+
+      checkRegistrationStatus: async (eventId: string) => {
+        set({ checkingRegistration: true });
+        try {
+          const response = await checkRegistrationStatusApi(eventId);
+          if (response.success) {
+            set({
+              isRegistered: response.isRegistered,
+              checkingRegistration: false,
+            });
+          } else {
+            set({ checkingRegistration: false });
+          }
+        } catch {
+          set({ checkingRegistration: false });
         }
       },
 
