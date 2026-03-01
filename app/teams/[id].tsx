@@ -563,15 +563,21 @@ const TeamDetails = () => {
 
               <View className="flex-row gap-3">
                 <TouchableOpacity
+                  activeOpacity={1}
                   onPress={handleCall}
-                  style={{ backgroundColor: PRIMARY }}
-                  className="flex-1 py-3.5 active:scale-95 transition-all duration-75 rounded-xl flex-row items-center justify-center shadow-md"
-                  activeOpacity={0.8}
+                  className={`flex-1 h-14 active:scale-95 transition-all duration-75 rounded-2xl flex-row items-center justify-center border ${
+                    isDark
+                      ? "bg-[#2A2A2C] border-gray-700"
+                      : "bg-gray-50 border-gray-200"
+                  }`}
                 >
-                  <Ionicons name="call" size={18} color="white" />
-                  <Text className="font-bold ml-2 text-white">Call</Text>
+                  <Ionicons name="call" size={18} color={PRIMARY} />
+                  <Text
+                    className={`font-bold ml-2 ${isDark ? "text-white" : "text-gray-700"}`}
+                  >
+                    Call
+                  </Text>
                 </TouchableOpacity>
-
                 <TouchableOpacity
                   activeOpacity={1}
                   onPress={handleTelegram}
