@@ -11,10 +11,10 @@ export interface AlertItem {
   id: string;
   title: string;
   description: string;
-  time: string; // ISO String
+  time: string;
   enabled: boolean;
   repeats: "daily" | "weekly" | "none";
-  remindBefore: number; // minutes
+  remindBefore: number;
 }
 
 type AlertsState = {
@@ -101,7 +101,7 @@ const syncNotification = async (alert: AlertItem) => {
       scheduledDate.getTime() - alert.remindBefore * 60000,
     );
 
-    if (dateToNotify > new Date() || alert.repeats !== "none") {
+    if (alert.repeats !== "none" || dateToNotify.getTime() > Date.now()) {
       await scheduleNotification(
         alert.title,
         alert.description,

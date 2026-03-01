@@ -100,13 +100,9 @@ export const scheduleNotification = async (
       repeats: true,
     };
   } else {
-    // For one-time notifications, a Date object is standard,
-    // but some versions prefer the timeInterval format with a type.
-    const seconds = Math.floor((scheduledDate.getTime() - Date.now()) / 1000);
     trigger = {
-      type: "timeInterval",
-      seconds: seconds > 0 ? seconds : 1,
-      repeats: false,
+      type: "date",
+      timestamp: scheduledDate.getTime(),
     };
   }
 
@@ -116,7 +112,7 @@ export const scheduleNotification = async (
       content: {
         title,
         body,
-        sound: "default", // Use default system notification sound
+        sound: "default",
         data: { id },
         priority: notifications.AndroidNotificationPriority.MAX,
         vibrate: [0, 250, 250, 250],
@@ -142,7 +138,5 @@ export const cancelNotification = async (id: string) => {
   if (!notifications) return;
   try {
     await notifications.cancelScheduledNotificationAsync(id);
-  } catch (e) {
-    // Ignore error
-  }
+  } catch (e) {}
 };
