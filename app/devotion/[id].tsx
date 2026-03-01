@@ -681,7 +681,7 @@ const DevotionDetail = () => {
                     : "bg-[#fafafa] border-gray-100"
                 }`}
               >
-                <Ionicons name="book" size={44} color="#3b82f6" />
+                <Ionicons name="book" size={44} color={PRIMARY} />
                 <Text
                   className={`text-[16px] font-bold mt-3 ${
                     isDark ? "text-white" : "text-gray-900"
@@ -697,6 +697,7 @@ const DevotionDetail = () => {
                   Format: {devotion.bookFormat?.toUpperCase() || "EPUB"}
                 </Text>
                 <TouchableOpacity
+                  activeOpacity={0.8}
                   className={`px-6 py-2.5 rounded-lg flex-row items-center border ${
                     isDark
                       ? "bg-[#1a1a1a] border-[#333]"
