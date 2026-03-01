@@ -1,8 +1,9 @@
 import {
-  checkRegistrationStatusApi,
-  fetchEventByIdApi,
   fetchEventsApi,
+  fetchEventByIdApi,
   registerForEventApi,
+  unregisterFromEventApi,
+  checkRegistrationStatusApi,
 } from "@/services/events.api";
 import { AppEvent, EventRegistrationData } from "@/types/events.types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -14,6 +15,7 @@ type EventsState = {
   currentEvent: AppEvent | null;
   loading: boolean;
   registering: boolean;
+  unregistering: boolean;
   registeredEvents: Record<string, boolean>;
   checkingRegistration: Record<string, boolean>;
   error?: string | null;
@@ -21,6 +23,7 @@ type EventsState = {
   fetchEvents: (sort?: "asc" | "desc") => Promise<void>;
   fetchEventById: (id: string) => Promise<void>;
   registerForEvent: (data: EventRegistrationData) => Promise<void>;
+  unregisterFromEvent: (data: { eventId: string }) => Promise<void>;
   checkRegistrationStatus: (eventId: string) => Promise<void>;
   setEventsList: (events: AppEvent[]) => void;
   setError: (error: string | null) => void;
@@ -33,6 +36,7 @@ export const useEventsStore = create<EventsState>()(
       currentEvent: null,
       loading: false,
       registering: false,
+      unregistering: false,
       registeredEvents: {},
       checkingRegistration: {},
       error: null,
@@ -105,6 +109,35 @@ export const useEventsStore = create<EventsState>()(
             err?.message ||
             "Something went wrong during registration.";
           set({ error: message, registering: false });
+          throw err;
+        }
+      },
+
+      unregisterFromEvent: async (data: { eventId: string }) => {
+        set({ unregistering: true, error: null });
+        try {
+          const response = await unregisterFromEventApi(data);
+          if (response.success) {
+            set((state) => ({
+              unregistering: false,
+              registeredEvents: {
+                ...state.registeredEvents,
+                [data.eventId]: false,
+              },
+            }));
+          } else {
+            set({
+              error: response.message || "Unregistration failed",
+              unregistering: false,
+            });
+            throw new Error(response.message || "Unregistration failed");
+          }
+        } catch (err: any) {
+          const message =
+            err?.response?.data?.message ||
+            err?.message ||
+            "Something went wrong during unregistration.";
+          set({ error: message, unregistering: false });
           throw err;
         }
       },

@@ -38,3 +38,13 @@ export const checkRegistrationStatusApi = async (
   const res = await api.get(`/events/registration-status/${eventId}`);
   return res.data;
 };
+
+export const unregisterFromEventApi = async (data: {
+  eventId: string;
+}): Promise<{ success: boolean; message: string }> => {
+  const res = await api.post<{ success: boolean; message: string }>(
+    "/events/unregister",
+    data,
+  );
+  return res.data;
+};

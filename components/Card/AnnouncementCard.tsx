@@ -58,13 +58,17 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
 
   const {
     registerForEvent,
+    unregisterFromEvent,
     registering,
+    unregistering,
     registeredEvents,
     checkingRegistrationMap,
     checkRegistrationStatus,
   } = useEventsStore((s: any) => ({
     registerForEvent: s.registerForEvent,
+    unregisterFromEvent: s.unregisterFromEvent,
     registering: s.registering,
+    unregistering: s.unregistering,
     registeredEvents: s.registeredEvents,
     checkingRegistrationMap: s.checkingRegistration,
     checkRegistrationStatus: s.checkRegistrationStatus,
@@ -81,6 +85,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [signInModalVisible, setSignInModalVisible] = useState(false);
+  const [unregisterModalVisible, setUnregisterModalVisible] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [infoModal, setInfoModal] = useState<{
     visible: boolean;
@@ -114,12 +119,15 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     const text = ctaText.toLowerCase().trim();
 
     if (text.includes("register") || text.includes("join")) {
-      if (isRegisteredForThisEvent) return;
       if (!authState.authenticated) {
         setSignInModalVisible(true);
         return;
       }
-      setModalVisible(true);
+      if (isRegisteredForThisEvent) {
+        setUnregisterModalVisible(true);
+      } else {
+        setModalVisible(true);
+      }
       return;
     }
 
@@ -167,6 +175,24 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     } catch (err: any) {
       const message =
         err?.response?.data?.message || err?.message || "Registration failed";
+      showInfoModal("Error", message, "error");
+    }
+  };
+
+  const onConfirmUnregistration = async () => {
+    try {
+      await unregisterFromEvent({
+        eventId: (item as any)._id || (item as any).id,
+      });
+      setUnregisterModalVisible(false);
+      showInfoModal(
+        "Success",
+        "You have successfully unregistered from the event",
+        "success",
+      );
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message || err?.message || "Unregistration failed";
       showInfoModal("Error", message, "error");
     }
   };
@@ -308,7 +334,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
             activeOpacity={0.9}
             onPress={handlePrimary}
             disabled={
-              registering || (isRegisterCta && isRegisteredForThisEvent)
+              registering || unregistering || (isRegisterCta && isCheckingThisEvent)
             }
             accessibilityLabel={`Primary action for ${item.title}`}
             style={{
@@ -321,7 +347,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
             }}
             className="w-full py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/40"
           >
-            {registering || (isRegisterCta && isCheckingThisEvent) ? (
+            {registering || unregistering || (isRegisterCta && isCheckingThisEvent) ? (
               <ActivityIndicator color="white" size="small" />
             ) : (
               <>
@@ -378,6 +404,27 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         cancelButton={{
           label: "Cancel",
           onPress: () => setSignInModalVisible(false),
+        }}
+      />
+
+      <ConfirmModal
+        visible={unregisterModalVisible}
+        onClose={() => setUnregisterModalVisible(false)}
+        isDark={!!isDark}
+        title="Unregister"
+        description="Are you sure you want to unregister from this event?"
+        icon="close-circle-outline"
+        iconColor="#ef4444"
+        buttons={[
+          {
+            label: "Unregister",
+            onPress: onConfirmUnregistration,
+            variant: "primary",
+          },
+        ]}
+        cancelButton={{
+          label: "No, Keep it",
+          onPress: () => setUnregisterModalVisible(false),
         }}
       />
 

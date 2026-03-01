@@ -63,13 +63,17 @@ export default function EventDetails() {
 
   const {
     registerForEvent,
+    unregisterFromEvent,
     registering,
+    unregistering,
     registeredEvents,
     checkingRegistrationMap,
     checkRegistrationStatus,
   } = useEventsStore((s: any) => ({
     registerForEvent: s.registerForEvent,
+    unregisterFromEvent: s.unregisterFromEvent,
     registering: s.registering,
+    unregistering: s.unregistering,
     registeredEvents: s.registeredEvents,
     checkingRegistrationMap: s.checkingRegistration,
     checkRegistrationStatus: s.checkRegistrationStatus,
@@ -85,6 +89,7 @@ export default function EventDetails() {
   const [signInModalVisible, setSignInModalVisible] = React.useState(false);
   const [showSuccessModal, setShowSuccessModal] = React.useState(false);
   const [isGoingBack, setIsGoingBack] = React.useState(false);
+  const [unregisterModalVisible, setUnregisterModalVisible] = React.useState(false);
   const [showOfflineToaster, setShowOfflineToaster] = React.useState(false);
   const [infoModal, setInfoModal] = React.useState<{
     visible: boolean;
@@ -223,7 +228,7 @@ export default function EventDetails() {
   const isRegisterCta =
     ctaLabel.toLowerCase().trim().includes("register") ||
     ctaLabel.toLowerCase().trim().includes("join");
-  const buttonDisabled = registering || (isRegisterCta && isRegisteredForThisEvent);
+  const buttonDisabled = registering || unregistering;
   const displayLabel =
     isRegisterCta && isRegisteredForThisEvent ? "Already Registered" : ctaLabel;
 
@@ -235,7 +240,11 @@ export default function EventDetails() {
         setSignInModalVisible(true);
         return;
       }
-      setModalVisible(true);
+      if (isRegisteredForThisEvent) {
+        setUnregisterModalVisible(true);
+      } else {
+        setModalVisible(true);
+      }
       return;
     }
 
@@ -288,6 +297,18 @@ export default function EventDetails() {
       } else {
         showInfoModalFn("Error", message, "error");
       }
+    }
+  };
+
+  const onConfirmUnregistration = async () => {
+    try {
+      await unregisterFromEvent({ eventId: ev._id || ev.id });
+      setUnregisterModalVisible(false);
+      showInfoModalFn("Success", "You have successfully unregistered from the event", "success");
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message || err?.message || "Unregistration failed";
+      showInfoModalFn("Error", message, "error");
     }
   };
 
@@ -570,7 +591,7 @@ export default function EventDetails() {
                 : "#ff6619",
           }}
         >
-          {registering || (isRegisterCta && isCheckingThisEvent) ? (
+          {registering || unregistering || (isRegisterCta && isCheckingThisEvent) ? (
             <ActivityIndicator color="white" />
           ) : (
             <>
@@ -637,6 +658,26 @@ export default function EventDetails() {
       <ConnectionToaster
         visible={showOfflineToaster}
         onHide={() => setShowOfflineToaster(false)}
+      />
+
+      <ConfirmModal
+        visible={unregisterModalVisible}
+        onClose={() => setUnregisterModalVisible(false)}
+        isDark={isDark}
+        title="Unregister"
+        description="Are you sure you want to unregister from this event?"
+        icon="close-circle-outline"
+        iconColor="#ef4444"
+        buttons={[
+          {
+            label: "Unregister",
+            onPress: onConfirmUnregistration,
+            variant: "primary",
+          },
+        ]}
+        cancelButton={{
+          label: "No, Keep it",
+        }}
       />
 
       <InfoModal
