@@ -70,8 +70,12 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     checkRegistrationStatus: s.checkRegistrationStatus,
   }));
 
-  const isRegisteredForThisEvent = eventId ? !!registeredEvents[eventId] : false;
-  const isCheckingThisEvent = eventId ? !!checkingRegistrationMap[eventId] : false;
+  const isRegisteredForThisEvent = eventId
+    ? !!registeredEvents[eventId]
+    : false;
+  const isCheckingThisEvent = eventId
+    ? !!checkingRegistrationMap[eventId]
+    : false;
 
   const { addAlert } = useAlerts();
 
@@ -86,7 +90,11 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
   }>({ visible: false, title: "", message: "", type: "info" });
 
   const showInfoModal = useCallback(
-    (title: string, message: string, type: "success" | "error" | "info" = "info") => {
+    (
+      title: string,
+      message: string,
+      type: "success" | "error" | "info" = "info",
+    ) => {
       setInfoModal({ visible: true, title, message, type });
     },
     [],
@@ -118,7 +126,11 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     if (text.includes("notify")) {
       const startTime = (item as any).startDate;
       if (!startTime) {
-        showInfoModal("Warning", "Program time not available for notification.", "info");
+        showInfoModal(
+          "Warning",
+          "Program time not available for notification.",
+          "info",
+        );
         return;
       }
 
@@ -147,7 +159,11 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         eventId: (item as any)._id || (item as any).id,
       });
       setModalVisible(false);
-      showInfoModal("Success", "You have successfully registered for the event", "success");
+      showInfoModal(
+        "Success",
+        "You have successfully registered for the event",
+        "success",
+      );
     } catch (err: any) {
       const message =
         err?.response?.data?.message || err?.message || "Registration failed";
@@ -175,7 +191,11 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
 
       const isAvailable = await Sharing.isAvailableAsync();
       if (!isAvailable) {
-        showInfoModal("Error", "Sharing is not available on this device", "error");
+        showInfoModal(
+          "Error",
+          "Sharing is not available on this device",
+          "error",
+        );
         return;
       }
 
@@ -287,10 +307,17 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={handlePrimary}
-            disabled={registering || (isRegisterCta && isRegisteredForThisEvent)}
+            disabled={
+              registering || (isRegisterCta && isRegisteredForThisEvent)
+            }
             accessibilityLabel={`Primary action for ${item.title}`}
-            style={{ 
-              backgroundColor: (isRegisterCta && isRegisteredForThisEvent) ? (isDark ? "#27272a" : "#d1d5db") : PRIMARY,
+            style={{
+              backgroundColor:
+                isRegisterCta && isRegisteredForThisEvent
+                  ? isDark
+                    ? "#27272a"
+                    : "#d1d5db"
+                  : PRIMARY,
             }}
             className="w-full py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/40"
           >
@@ -298,17 +325,23 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
               <ActivityIndicator color="white" size="small" />
             ) : (
               <>
-                <Text className={`${(isRegisterCta && isRegisteredForThisEvent) ? (isDark ? "text-gray-400" : "text-gray-500") : "text-white"} text-base font-bold mr-2`}>
-                  {(isRegisterCta && isRegisteredForThisEvent) ? "Already Registered" : ctaText}
+                <Text
+                  className={`${isRegisterCta && isRegisteredForThisEvent ? (isDark ? "text-gray-400" : "text-gray-500") : "text-white"} text-base font-bold mr-2`}
+                >
+                  {isRegisterCta && isRegisteredForThisEvent
+                    ? "Registered"
+                    : ctaText}
                 </Text>
-                {(isRegisterCta && isRegisteredForThisEvent) ? (
-                  <Ionicons name="checkmark-circle" size={18} color={isDark ? "#4ade80" : "#16a34a"} />
+                {isRegisterCta && isRegisteredForThisEvent ? (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={18}
+                    color={isDark ? "#4ade80" : "#16a34a"}
+                  />
+                ) : ctaText?.toLowerCase()?.includes("notify") ? (
+                  <Ionicons name="notifications" size={18} color="white" />
                 ) : (
-                  ctaText?.toLowerCase()?.includes("notify") ? (
-                    <Ionicons name="notifications" size={18} color="white" />
-                  ) : (
-                    <Ionicons name="arrow-forward" size={18} color="white" />
-                  )
+                  <Ionicons name="arrow-forward" size={18} color="white" />
                 )}
               </>
             )}
