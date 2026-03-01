@@ -14,6 +14,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  ToastAndroid,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -49,6 +50,15 @@ export default function HelpScreen() {
 
   const handleSend = () => {
     if (!message.trim() && !selectedImage) return;
+
+    if (Platform.OS === "android") {
+      ToastAndroid.show("Coming Soon...", ToastAndroid.SHORT);
+    } else {
+      // For iOS/Web, we can just use a simple alert or ignore if only toast is requested
+      // but usually users want some feedback.
+      alert("Coming Soon...");
+    }
+
     setMessage("");
     setSelectedImage(null);
   };
