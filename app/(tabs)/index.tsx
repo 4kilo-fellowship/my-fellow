@@ -375,9 +375,9 @@ const Home = () => {
                       } else if (action.id === "4") {
                         router.push("/teams");
                       } else if (action.id === "5") {
-                        Linking.openURL("https://t.me/4kilo_fellow");
+                        Linking.openURL("https://t.me/AAU_4Killo_Fellowship");
                       } else if (action.id === "6") {
-                        Linking.openURL("https:://tiktok.com/4kilo_fellowship");
+                        Linking.openURL("https://tiktok.com/@4kilofellowship");
                       } else if (action.id === "7") {
                         router.push("/gifts");
                       } else if (action.id === "8") {
