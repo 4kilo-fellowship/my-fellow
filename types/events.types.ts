@@ -17,6 +17,12 @@ export interface AppEvent {
   updatedAt?: string;
 }
 
+export interface EventSummary extends AppEvent {
+  id: string;
+}
+
+export type EventDetail = AppEvent;
+
 export interface EventRegistration {
   _id: string;
   userId: string;

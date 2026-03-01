@@ -10,7 +10,14 @@ const CACHE_KEYS = {
 export const eventsService = {
   fetchEvents: async (): Promise<EventSummary[]> => {
     try {
-      const events = await fetchEventsApi();
+      const response = await fetchEventsApi();
+      const events = response.data || [];
+
+      if (!Array.isArray(events)) {
+        console.error("fetchEvents expected an array but got:", typeof events);
+        return [];
+      }
+
       const mappedEvents = events.map((event: any) => ({
         ...event,
         id: event.id || event._id || "unknown",
@@ -34,7 +41,12 @@ export const eventsService = {
 
   fetchEventById: async (id: string): Promise<EventDetail> => {
     try {
-      const event = await fetchEventByIdApi(id);
+      const response = await fetchEventByIdApi(id);
+      const event = response.data;
+
+      if (!event) {
+        throw new Error("Event not found");
+      }
 
       await cache.set(CACHE_KEYS.EVENT_DETAIL(id), event);
       return event;

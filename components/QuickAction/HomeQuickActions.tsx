@@ -37,7 +37,7 @@ const QuickAction = ({ item, isDark = false, onPress }: QuickActionProps) => {
         ) : (
           <Ionicons
             name={item.icon}
-            size={36}
+            size={40}
             color={isDark ? "#e2e8f0" : "#121212"}
           />
         )}

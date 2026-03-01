@@ -252,7 +252,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
             onPress={handlePrimary}
             accessibilityLabel={`Primary action for ${item.title}`}
             style={{ backgroundColor: PRIMARY }}
-            className="w-full py-3.5 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/40"
+            className="w-full py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/40"
           >
             <Text className="text-white text-base font-bold mr-2">
               {ctaText}
