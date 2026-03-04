@@ -34,7 +34,7 @@ type DonationForm = z.infer<typeof donationSchema>;
 const CATEGORIES = [
   { label: "All", value: "All" },
   { label: "T-shirt", value: "t-shirt" },
-  { label: "Hoody", value: "hoody" },
+  { label: "Hoddy", value: "hoddy" },
   { label: "Stickers", value: "stickers" },
   { label: "Mugs", value: "mugs" },
   { label: "Accessories", value: "accessories" },
