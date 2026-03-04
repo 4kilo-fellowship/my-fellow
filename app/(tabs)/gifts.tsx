@@ -407,6 +407,8 @@ const Gifts = () => {
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
+                  overScrollMode="never"
+                  bounces={false}
                   contentContainerStyle={{ gap: 10, paddingRight: 20 }}
                 >
                   {CATEGORIES.map((cat) => (
