@@ -99,23 +99,19 @@ const ProductCard = ({
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    margin: 6,
-    borderRadius: 20,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    borderWidth: 1,
+    marginVertical: 8,
+    marginHorizontal: 4,
+    borderRadius: 24,
+    borderWidth: 1.5,
     overflow: "hidden",
   },
   cardLight: {
     backgroundColor: "#fff",
-    borderColor: "#f4f4f5",
+    borderColor: "#f1f1f1",
   },
   cardDark: {
-    backgroundColor: "#262626",
-    borderColor: "#3f3f46",
+    backgroundColor: "#1c1c1e",
+    borderColor: "#2c2c2e",
   },
   badge: {
     position: "absolute",
@@ -129,14 +125,14 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     color: "#fff",
-    fontSize: 8,
+    fontSize: 9,
     fontWeight: "900",
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   imageContainer: {
     width: "100%",
-    height: 140,
-    backgroundColor: "#f4f4f5",
+    height: 150,
+    backgroundColor: "#f9f9f9",
   },
   image: {
     width: "100%",
@@ -146,10 +142,10 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   name: {
-    fontSize: 14,
-    fontWeight: "800",
+    fontSize: 15,
+    fontWeight: "700",
     marginBottom: 4,
-    letterSpacing: -0.3,
+    letterSpacing: -0.5,
   },
   textLight: { color: "#18181b" },
   textDark: { color: "#fafafa" },
@@ -180,13 +176,12 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   addButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     backgroundColor: "#ff6719",
     alignItems: "center",
     justifyContent: "center",
-    elevation: 2,
   },
 });
 

@@ -4,7 +4,7 @@ import {
   fetchProductsApi,
   placeOrderApi,
 } from "@/services/marketplace.api";
-import { CartItem, Order, Product } from "@/types/marketplace.types";
+import { CartItem, getProductPrice, Order, Product } from "@/types/marketplace.types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
@@ -182,7 +182,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
 
       getCartTotal: () => {
         return get().cartItems.reduce(
-          (sum, item) => sum + item.product.price * item.quantity,
+          (sum, item) => sum + getProductPrice(item.product) * item.quantity,
           0,
         );
       },

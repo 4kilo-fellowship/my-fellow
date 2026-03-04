@@ -284,10 +284,10 @@ const Gifts = () => {
                       render={({ field: { onChange, onBlur, value } }) => (
                         <View className="relative">
                           <TextInput
-                            className={`px-6 py-5 rounded-[24px] border-2 text-2xl font-black ${
+                            className={`px-6 py-5 rounded-[24px] border-[1.5px] text-2xl font-black ${
                               isDark
-                                ? "bg-zinc-800 border-zinc-700 text-white"
-                                : "bg-zinc-50 border-zinc-100 text-black"
+                                ? "bg-zinc-900 border-zinc-800 text-white"
+                                : "bg-zinc-50 border-zinc-200 text-black"
                             } ${errors.amount ? "border-red-500" : ""}`}
                             placeholder="0.00 Birr"
                             placeholderTextColor={
@@ -331,10 +331,10 @@ const Gifts = () => {
                       name="email"
                       render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput
-                          className={`px-6 py-5 rounded-[24px] border-2 font-bold ${
+                          className={`px-6 py-5 rounded-[24px] border-[1.5px] font-bold ${
                             isDark
-                              ? "bg-zinc-800 border-zinc-700 text-white"
-                              : "bg-zinc-50 border-zinc-100 text-black"
+                              ? "bg-zinc-900 border-zinc-800 text-white"
+                              : "bg-zinc-50 border-zinc-200 text-black"
                           } ${errors.email ? "border-red-500" : ""}`}
                           placeholder="natnaletamiru98@gmail.com"
                           placeholderTextColor={isDark ? "#52525b" : "#a1a1aa"}
@@ -361,8 +361,8 @@ const Gifts = () => {
                   )}
                   disabled={loading}
                   activeOpacity={0.9}
-                  className={`mt-12 py-5 rounded-[24px] flex-row items-center justify-center shadow-xl ${
-                    loading ? "bg-zinc-400" : "bg-primary shadow-primary/40"
+                  className={`mt-12 py-5 rounded-3xl flex-row items-center justify-center ${
+                    loading ? "bg-zinc-400" : "bg-primary"
                   }`}
                 >
                   {loading ? (
@@ -396,10 +396,10 @@ const Gifts = () => {
                   activeOpacity={0.7}
                   className="flex-row items-center gap-1"
                 >
-                  <Text className="text-sm font-bold text-[#ff6719]">
+                  <Text className="text-xs font-bold text-[#ff6719] uppercase tracking-wider">
                     View All
                   </Text>
-                  <Ionicons name="arrow-forward" size={14} color="#ff6719" />
+                  <Ionicons name="chevron-forward" size={12} color="#ff6719" />
                 </TouchableOpacity>
               </View>
 
@@ -414,12 +414,12 @@ const Gifts = () => {
                       key={cat}
                       onPress={() => setSelectedCategory(cat)}
                       activeOpacity={0.8}
-                      className={`px-5 py-2.5 rounded-full border-2 ${
+                      className={`px-5 py-2.5 rounded-full border ${
                         selectedCategory === cat
-                          ? "bg-[#10b981] border-[#10b981]" // Green like the screenshot
+                          ? "bg-[#10b981] border-[#10b981]"
                           : isDark
-                            ? "bg-zinc-800 border-zinc-700"
-                            : "bg-white border-zinc-200"
+                            ? "bg-zinc-900 border-zinc-800"
+                            : "bg-white border-zinc-100"
                       }`}
                     >
                       <Text
