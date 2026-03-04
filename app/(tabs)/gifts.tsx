@@ -33,12 +33,12 @@ import * as z from "zod";
 type DonationForm = z.infer<typeof donationSchema>;
 
 const CATEGORIES = [
-  "All",
-  "T-shirt",
-  "Hoody",
-  "Stickers",
-  "Mugs",
-  "Accessories",
+  { label: "All", value: "All" },
+  { label: "T-shirt", value: "t-shirt" },
+  { label: "Hoody", value: "hoody" },
+  { label: "Stickers", value: "stickers" },
+  { label: "Mugs", value: "mugs" },
+  { label: "Accessories", value: "accessories" },
 ];
 
 const Gifts = () => {
@@ -385,21 +385,21 @@ const Gifts = () => {
 
             {/* FELLOWSHIP STORE SECTION */}
             <View className="mb-12">
-              <View className="px-5 mb-6 flex-row items-center justify-between">
+              <View className="px-5 mb-5 flex-row items-end justify-between">
                 <Text
-                  className={`text-2xl font-black ${isDark ? "text-white" : "text-zinc-900"}`}
+                  className={`text-[22px] font-black tracking-tight ${isDark ? "text-white" : "text-zinc-900"}`}
                 >
                   Fellowship Store
                 </Text>
                 <TouchableOpacity
                   onPress={() => router.push("/marketplace" as any)}
                   activeOpacity={0.7}
-                  className="flex-row items-center gap-1"
+                  className="flex-row items-center gap-0.5 pb-1"
                 >
-                  <Text className="text-xs font-bold text-[#ff6719] uppercase tracking-wider">
+                  <Text className="text-sm font-bold text-[#ff6719]">
                     View All
                   </Text>
-                  <Ionicons name="chevron-forward" size={12} color="#ff6719" />
+                  <Ionicons name="chevron-forward" size={16} color="#ff6719" />
                 </TouchableOpacity>
               </View>
 
@@ -413,11 +413,11 @@ const Gifts = () => {
                 >
                   {CATEGORIES.map((cat) => (
                     <TouchableOpacity
-                      key={cat}
-                      onPress={() => setSelectedCategory(cat)}
+                      key={cat.value}
+                      onPress={() => setSelectedCategory(cat.value)}
                       activeOpacity={0.8}
                       className={`px-5 py-2.5 rounded-full border ${
-                        selectedCategory === cat
+                        selectedCategory === cat.value
                           ? "bg-[#ff6719] border-[#ff6719]"
                           : isDark
                             ? "bg-zinc-900 border-zinc-800"
@@ -426,14 +426,14 @@ const Gifts = () => {
                     >
                       <Text
                         className={`text-sm font-bold ${
-                          selectedCategory === cat
+                          selectedCategory === cat.value
                             ? "text-white"
                             : isDark
                               ? "text-zinc-400"
                               : "text-zinc-600"
                         }`}
                       >
-                        {cat}
+                        {cat.label}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -446,7 +446,14 @@ const Gifts = () => {
                 </View>
               ) : (
                 <FlatList
-                  data={products.slice(0, 6)}
+                  data={products
+                    .filter((p) =>
+                      selectedCategory === "All"
+                        ? true
+                        : p.category?.toLowerCase() ===
+                          selectedCategory.toLowerCase(),
+                    )
+                    .slice(0, 6)}
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   keyExtractor={(item) => item.id}

@@ -17,7 +17,7 @@ import { Image as ExpoImage } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -49,12 +49,10 @@ export default function EventDetails() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const [selectedEvent, setSelectedEvent] = React.useState<EventDetail | null>(
-    null,
-  );
-  const [loadingDetail, setLoadingDetail] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [isNetworkError, setIsNetworkError] = React.useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isNetworkError, setIsNetworkError] = useState<boolean>(false);
 
   const pulse = useSharedValue(0);
   const fadeIn = useSharedValue(0);
@@ -85,27 +83,31 @@ export default function EventDetails() {
   const { addAlert } = useAlerts();
 
   const { authState, getCurrentUser } = useAuth();
-  const [modalVisible, setModalVisible] = React.useState(false);
-  const [signInModalVisible, setSignInModalVisible] = React.useState(false);
-  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
-  const [isGoingBack, setIsGoingBack] = React.useState(false);
-  const [unregisterModalVisible, setUnregisterModalVisible] = React.useState(false);
-  const [showOfflineToaster, setShowOfflineToaster] = React.useState(false);
-  const [infoModal, setInfoModal] = React.useState<{
+  const [modalVisible, setModalVisible] = useState(false);
+  const [signInModalVisible, setSignInModalVisible] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isGoingBack, setIsGoingBack] = useState(false);
+  const [unregisterModalVisible, setUnregisterModalVisible] = useState(false);
+  const [showOfflineToaster, setShowOfflineToaster] = useState(false);
+  const [infoModal, setInfoModal] = useState<{
     visible: boolean;
     title: string;
     message: string;
     type: "success" | "error" | "info";
   }>({ visible: false, title: "", message: "", type: "info" });
 
-  const showInfoModalFn = React.useCallback(
-    (title: string, message: string, type: "success" | "error" | "info" = "info") => {
+  const showInfoModalFn = useCallback(
+    (
+      title: string,
+      message: string,
+      type: "success" | "error" | "info" = "info",
+    ) => {
       setInfoModal({ visible: true, title, message, type });
     },
     [],
   );
 
-  const startAnimations = React.useCallback(() => {
+  const startAnimations = useCallback(() => {
     fadeIn.value = withTiming(1, {
       duration: 800,
       easing: Easing.out(Easing.ease),
@@ -129,7 +131,7 @@ export default function EventDetails() {
     opacity: fadeIn.value,
   }));
 
-  const fetchEventById = React.useCallback(
+  const fetchEventById = useCallback(
     async (eventId: string) => {
       setLoadingDetail(true);
       setError(null);
@@ -158,7 +160,7 @@ export default function EventDetails() {
 
   useEffect(() => {
     if (selectedEvent && authState?.authenticated) {
-      const eventId = (selectedEvent as any)._id || (selectedEvent as any).id;
+      const eventId = (selectedEvent as any)._id;
       if (eventId) {
         checkRegistrationStatus(eventId);
       }
@@ -217,13 +219,7 @@ export default function EventDetails() {
     router.back();
   };
 
-  const ctaLabel =
-    ev?.buttonText ||
-    ev?.cta ||
-    ev?.cta_text ||
-    ev?.metadata?.cta_text ||
-    ev?.button_text ||
-    "Register Now";
+  const ctaLabel = ev?.buttonText || "Register Now";
 
   const isRegisterCta =
     ctaLabel.toLowerCase().trim().includes("register") ||
@@ -250,7 +246,11 @@ export default function EventDetails() {
 
     if (text.includes("notify")) {
       if (!ev?.startDate) {
-        showInfoModalFn("Warning", "Program time not available for notification.", "info");
+        showInfoModalFn(
+          "Warning",
+          "Program time not available for notification.",
+          "info",
+        );
         return;
       }
 
@@ -283,7 +283,11 @@ export default function EventDetails() {
     try {
       await registerForEvent({ eventId: ev._id || ev.id });
       setModalVisible(false);
-      showInfoModalFn("Success", "You have successfully registered for the event", "success");
+      showInfoModalFn(
+        "Success",
+        "You have successfully registered for the event",
+        "success",
+      );
     } catch (err: any) {
       const message =
         err?.response?.data?.message || err?.message || "Registration failed";
@@ -304,7 +308,11 @@ export default function EventDetails() {
     try {
       await unregisterFromEvent({ eventId: ev._id || ev.id });
       setUnregisterModalVisible(false);
-      showInfoModalFn("Success", "You have successfully unregistered from the event", "success");
+      showInfoModalFn(
+        "Success",
+        "You have successfully unregistered from the event",
+        "success",
+      );
     } catch (err: any) {
       const message =
         err?.response?.data?.message || err?.message || "Unregistration failed";
@@ -591,7 +599,9 @@ export default function EventDetails() {
                 : "#ff6619",
           }}
         >
-          {registering || unregistering || (isRegisterCta && isCheckingThisEvent) ? (
+          {registering ||
+          unregistering ||
+          (isRegisterCta && isCheckingThisEvent) ? (
             <ActivityIndicator color="white" />
           ) : (
             <>
