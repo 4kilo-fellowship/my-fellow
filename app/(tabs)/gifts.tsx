@@ -363,12 +363,22 @@ const Gifts = () => {
 
             {/* FELLOWSHIP STORE SECTION */}
             <View className="mb-12">
-              <View className="px-5 mb-6">
+              <View className="px-5 mb-6 flex-row items-center justify-between">
                 <Text
                   className={`text-2xl font-black ${isDark ? "text-white" : "text-zinc-900"}`}
                 >
                   Fellowship Store
                 </Text>
+                <TouchableOpacity
+                  onPress={() => router.push("/marketplace" as any)}
+                  activeOpacity={0.7}
+                  className="flex-row items-center gap-1"
+                >
+                  <Text className="text-sm font-bold text-[#ff6719]">
+                    View All
+                  </Text>
+                  <Ionicons name="arrow-forward" size={14} color="#ff6719" />
+                </TouchableOpacity>
               </View>
 
               <FlatList

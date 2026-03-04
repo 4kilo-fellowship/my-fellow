@@ -53,6 +53,18 @@ export default function RootLayout() {
             name="notifications"
             options={{ title: "Notifications" }}
           />
+          <Stack.Screen
+            name="marketplace/index"
+            options={{ title: "Fellowship Store" }}
+          />
+          <Stack.Screen
+            name="marketplace/[id]"
+            options={{ title: "Product Details" }}
+          />
+          <Stack.Screen
+            name="marketplace/orders"
+            options={{ title: "My Orders" }}
+          />
         </Stack>
         <Toast />
       </ThemeProvider>
