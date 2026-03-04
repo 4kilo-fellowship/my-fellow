@@ -148,81 +148,55 @@ export default function MarketplaceScreen() {
     >
       <StatusBar
         style={isDark ? "light" : "dark"}
-        backgroundColor={isDark ? "#1A1A1B" : "#f8f8f8"}
+        backgroundColor="transparent"
+        translucent={true}
       />
 
       {/* Header */}
       <View
+        className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-white border-gray-200"}`}
         style={{
-          paddingTop: top + 10,
+          paddingTop: top,
+          minHeight: top + 60,
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+          className="w-11 h-11 rounded-full items-center justify-center mr-4"
+        >
+          <Ionicons
+            name="arrow-back"
+            size={24}
+            color={isDark ? "white" : "#0f172a"}
+          />
+        </TouchableOpacity>
+        <Text
+          className={`flex-1 text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+        >
+          Fellowship Store
+        </Text>
+        <TouchableOpacity
+          onPress={() => router.push("/marketplace/orders" as any)}
+          activeOpacity={0.7}
+          className="w-11 h-11 rounded-full items-center justify-center"
+        >
+          <Ionicons
+            name="receipt-outline"
+            size={24}
+            color={isDark ? "white" : "#0f172a"}
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* Search Bar Container */}
+      <View
+        style={{
           paddingHorizontal: 20,
-          paddingBottom: 12,
+          paddingVertical: 12,
           backgroundColor: isDark ? "#1A1A1B" : "#f8f8f8",
         }}
       >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 16,
-          }}
-        >
-          <TouchableOpacity
-            onPress={() => router.back()}
-            activeOpacity={0.8}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 14,
-              backgroundColor: isDark ? "#27272a" : "#fff",
-              alignItems: "center",
-              justifyContent: "center",
-              borderWidth: 1,
-              borderColor: isDark ? "#3f3f46" : "#e4e4e7",
-            }}
-          >
-            <Ionicons
-              name="arrow-back"
-              size={22}
-              color={isDark ? "#fff" : "#18181b"}
-            />
-          </TouchableOpacity>
-
-          <Text
-            style={{
-              fontSize: 20,
-              fontWeight: "900",
-              color: isDark ? "#fff" : "#18181b",
-              letterSpacing: -0.3,
-            }}
-          >
-            Fellowship Store
-          </Text>
-
-          <TouchableOpacity
-            onPress={() => router.push("/marketplace/orders" as any)}
-            activeOpacity={0.8}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 14,
-              backgroundColor: isDark ? "#27272a" : "#fff",
-              alignItems: "center",
-              justifyContent: "center",
-              borderWidth: 1,
-              borderColor: isDark ? "#3f3f46" : "#e4e4e7",
-            }}
-          >
-            <Ionicons
-              name="receipt-outline"
-              size={20}
-              color={isDark ? "#fff" : "#18181b"}
-            />
-          </TouchableOpacity>
-        </View>
-
-        {/* Search Bar */}
         <View
           style={{
             flexDirection: "row",
