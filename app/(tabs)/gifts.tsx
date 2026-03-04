@@ -17,7 +17,6 @@ import React, { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
-  FlatList,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -403,41 +402,33 @@ const Gifts = () => {
                 </TouchableOpacity>
               </View>
 
-              <View className="px-5 mb-4">
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  overScrollMode="never"
-                  bounces={false}
-                  contentContainerStyle={{ gap: 10, paddingRight: 20 }}
-                >
-                  {CATEGORIES.map((cat) => (
-                    <TouchableOpacity
-                      key={cat.value}
-                      onPress={() => setSelectedCategory(cat.value)}
-                      activeOpacity={0.8}
-                      className={`px-5 py-2.5 rounded-full border ${
+              <View className="px-5 mb-6 flex-row flex-wrap gap-2">
+                {CATEGORIES.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.value}
+                    onPress={() => setSelectedCategory(cat.value)}
+                    activeOpacity={0.8}
+                    className={`px-5 py-2.5 rounded-full border ${
+                      selectedCategory === cat.value
+                        ? "bg-[#ff6719] border-[#ff6719]"
+                        : isDark
+                          ? "bg-zinc-900 border-zinc-800"
+                          : "bg-white border-zinc-100"
+                    }`}
+                  >
+                    <Text
+                      className={`text-sm font-bold ${
                         selectedCategory === cat.value
-                          ? "bg-[#ff6719] border-[#ff6719]"
+                          ? "text-white"
                           : isDark
-                            ? "bg-zinc-900 border-zinc-800"
-                            : "bg-white border-zinc-100"
+                            ? "text-zinc-400"
+                            : "text-zinc-600"
                       }`}
                     >
-                      <Text
-                        className={`text-sm font-bold ${
-                          selectedCategory === cat.value
-                            ? "text-white"
-                            : isDark
-                              ? "text-zinc-400"
-                              : "text-zinc-600"
-                        }`}
-                      >
-                        {cat.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                      {cat.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
 
               {productsLoading && products.length === 0 ? (
@@ -445,52 +436,50 @@ const Gifts = () => {
                   <ActivityIndicator color="#ff6719" />
                 </View>
               ) : (
-                <FlatList
-                  data={products
+                <View className="px-4 flex-row flex-wrap">
+                  {products
                     .filter((p) =>
                       selectedCategory === "All"
                         ? true
                         : p.category?.toLowerCase() ===
                           selectedCategory.toLowerCase(),
                     )
-                    .slice(0, 6)}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  keyExtractor={(item) => item.id}
-                  contentContainerStyle={{
-                    paddingHorizontal: 20,
-                    paddingVertical: 10,
-                  }}
-                  renderItem={({ item }) => (
-                    <View style={{ width: 200, marginRight: 16 }}>
-                      <ProductCard
-                        product={item}
-                        isDark={isDark}
-                        onPress={() =>
-                          router.push(`/marketplace/${item.id}` as any)
-                        }
-                        onAddToCart={() => {
-                          addToCart(item, 1);
-                          Toast.show({
-                            type: "success",
-                            text1: "Added to Cart",
-                            text2: `${item.name || item.title} added.`,
-                            visibilityTime: 1500,
-                          });
-                        }}
-                      />
-                    </View>
-                  )}
-                  ListEmptyComponent={
-                    <View className="px-5 py-6">
+                    .slice(0, 6)
+                    .map((item) => (
+                      <View key={item.id} style={{ width: "50%" }}>
+                        <ProductCard
+                          product={item}
+                          isDark={isDark}
+                          onPress={() =>
+                            router.push(`/marketplace/${item.id}` as any)
+                          }
+                          onAddToCart={() => {
+                            addToCart(item, 1);
+                            Toast.show({
+                              type: "success",
+                              text1: "Added to Cart",
+                              text2: `${item.name || item.title} added.`,
+                              visibilityTime: 1500,
+                            });
+                          }}
+                        />
+                      </View>
+                    ))}
+                  {products.filter((p) =>
+                    selectedCategory === "All"
+                      ? true
+                      : p.category?.toLowerCase() ===
+                        selectedCategory.toLowerCase(),
+                  ).length === 0 && (
+                    <View className="px-5 py-6 w-full">
                       <Text
                         className={`text-sm italic ${isDark ? "text-zinc-500" : "text-zinc-400"}`}
                       >
                         No items found in this category.
                       </Text>
                     </View>
-                  }
-                />
+                  )}
+                </View>
               )}
             </View>
           </ScrollView>
