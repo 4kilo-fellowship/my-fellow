@@ -416,7 +416,7 @@ const Gifts = () => {
                       activeOpacity={0.8}
                       className={`px-5 py-2.5 rounded-full border ${
                         selectedCategory === cat
-                          ? "bg-[#10b981] border-[#10b981]"
+                          ? "bg-[#ff6719] border-[#ff6719]"
                           : isDark
                             ? "bg-zinc-900 border-zinc-800"
                             : "bg-white border-zinc-100"
