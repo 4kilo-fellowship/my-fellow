@@ -402,7 +402,17 @@ const Gifts = () => {
                 </TouchableOpacity>
               </View>
 
-              <View className="px-5 mb-6 flex-row flex-wrap gap-2">
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                overScrollMode="never"
+                bounces={true}
+                className="mb-2"
+                contentContainerStyle={{
+                  paddingHorizontal: 20,
+                  gap: 8,
+                }}
+              >
                 {CATEGORIES.map((cat) => (
                   <TouchableOpacity
                     key={cat.value}
@@ -429,14 +439,14 @@ const Gifts = () => {
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </View>
+              </ScrollView>
 
               {productsLoading && products.length === 0 ? (
-                <View className="py-10 items-center">
+                <View className="py-6 items-center">
                   <ActivityIndicator color="#ff6719" />
                 </View>
               ) : (
-                <View className="px-4 flex-row flex-wrap">
+                <View className="px-3 flex-row flex-wrap">
                   {products
                     .filter((p) =>
                       selectedCategory === "All"
