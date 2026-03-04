@@ -8,18 +8,29 @@ import { Product } from "@/types/marketplace.types";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
+  Animated,
+  LayoutAnimation,
   RefreshControl,
+  ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+
+const CATEGORIES = [
+  { label: "All", value: "All" },
+  { label: "New", value: "new" },
+  { label: "T-shirt", value: "t-shirt" },
+  { label: "Hoddy", value: "hoddy" },
+  { label: "Stickers", value: "stickers" },
+  { label: "Accessories", value: "accessories" },
+  { label: "Others", value: "others" },
+];
 
 export default function MarketplaceScreen() {
   const { theme } = useTheme();
@@ -27,7 +38,6 @@ export default function MarketplaceScreen() {
   const { top } = useSafeAreaInsets();
   const router = useRouter();
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [cartVisible, setCartVisible] = useState(false);
 
   const {
@@ -39,24 +49,38 @@ export default function MarketplaceScreen() {
     loadMore,
     addToCart,
     error,
+    selectedCategory,
+    setSelectedCategory,
   } = useMarketplaceStore();
+
+  // Header Heights
+  const STATIC_HEADER_HEIGHT = top + 64;
+  const COLLAPSIBLE_SECTION_HEIGHT = 120; // Description + Categories
+  const TOTAL_HEADER_HEIGHT = STATIC_HEADER_HEIGHT + COLLAPSIBLE_SECTION_HEIGHT;
+
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  const clampedScrollY = scrollY.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+    extrapolateLeft: "clamp",
+  });
+
+  const diffClamp = Animated.diffClamp(
+    clampedScrollY,
+    0,
+    COLLAPSIBLE_SECTION_HEIGHT,
+  );
+
+  const translateY = diffClamp.interpolate({
+    inputRange: [0, COLLAPSIBLE_SECTION_HEIGHT],
+    outputRange: [0, -COLLAPSIBLE_SECTION_HEIGHT],
+    extrapolate: "clamp",
+  });
 
   useEffect(() => {
     fetchProducts(true);
   }, []);
-
-  const filteredProducts = useMemo(() => {
-    if (!searchQuery.trim()) return products;
-    const q = searchQuery.toLowerCase();
-    return products.filter((p) => {
-      const nameMatch = (p.name || p.title || "").toLowerCase().includes(q);
-      const descMatch = (p.description || p.shortDescription || "")
-        .toLowerCase()
-        .includes(q);
-      const catMatch = (p.category || "").toLowerCase().includes(q);
-      return nameMatch || descMatch || catMatch;
-    });
-  }, [products, searchQuery]);
 
   const handleRefresh = useCallback(() => {
     fetchProducts(true);
@@ -108,7 +132,7 @@ export default function MarketplaceScreen() {
             color: isDark ? "#71717a" : "#a1a1aa",
           }}
         >
-          {searchQuery ? "No products found" : "No products available"}
+          No products available
         </Text>
         <Text
           style={{
@@ -119,9 +143,7 @@ export default function MarketplaceScreen() {
             paddingHorizontal: 40,
           }}
         >
-          {searchQuery
-            ? "Try a different search term"
-            : "Check back later for new items"}
+          Check back later for new items
         </Text>
       </View>
     );
@@ -152,149 +174,22 @@ export default function MarketplaceScreen() {
         translucent={true}
       />
 
-      {/* Header */}
-      <View
-        className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-white border-gray-200"}`}
-        style={{
-          paddingTop: top,
-          minHeight: top + 60,
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          activeOpacity={0.7}
-          className="w-11 h-11 rounded-full items-center justify-center mr-4"
-        >
-          <Ionicons
-            name="arrow-back"
-            size={24}
-            color={isDark ? "white" : "#0f172a"}
-          />
-        </TouchableOpacity>
-        <Text
-          className={`flex-1 text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
-        >
-          Fellowship Store
-        </Text>
-        <TouchableOpacity
-          onPress={() => router.push("/marketplace/orders" as any)}
-          activeOpacity={0.7}
-          className="w-11 h-11 rounded-full items-center justify-center"
-        >
-          <Ionicons
-            name="receipt-outline"
-            size={24}
-            color={isDark ? "white" : "#0f172a"}
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* Search Bar Container */}
-      <View
-        style={{
-          paddingHorizontal: 20,
-          paddingVertical: 12,
-          backgroundColor: isDark ? "#1A1A1B" : "#f8f8f8",
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: isDark ? "#27272a" : "#fff",
-            borderRadius: 16,
-            paddingHorizontal: 14,
-            borderWidth: 1,
-            borderColor: isDark ? "#3f3f46" : "#e4e4e7",
-          }}
-        >
-          <Ionicons
-            name="search"
-            size={20}
-            color={isDark ? "#71717a" : "#a1a1aa"}
-          />
-          <TextInput
-            placeholder="Search products..."
-            placeholderTextColor={isDark ? "#52525b" : "#a1a1aa"}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            style={{
-              flex: 1,
-              paddingVertical: 14,
-              paddingHorizontal: 10,
-              fontSize: 15,
-              fontWeight: "600",
-              color: isDark ? "#fff" : "#18181b",
-            }}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery("")} hitSlop={8}>
-              <Ionicons
-                name="close-circle"
-                size={20}
-                color={isDark ? "#71717a" : "#a1a1aa"}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
-      {/* Error State */}
-      {error && !loading && products.length === 0 && (
-        <View
-          style={{
-            alignItems: "center",
-            justifyContent: "center",
-            paddingTop: 80,
-            paddingHorizontal: 40,
-          }}
-        >
-          <Ionicons name="cloud-offline-outline" size={64} color="#ef4444" />
-          <Text
-            style={{
-              marginTop: 16,
-              fontSize: 17,
-              fontWeight: "700",
-              color: isDark ? "#fff" : "#18181b",
-              textAlign: "center",
-            }}
-          >
-            Something went wrong
-          </Text>
-          <Text
-            style={{
-              marginTop: 6,
-              fontSize: 13,
-              color: isDark ? "#71717a" : "#a1a1aa",
-              textAlign: "center",
-            }}
-          >
-            {error}
-          </Text>
-          <TouchableOpacity
-            onPress={() => fetchProducts(true)}
-            activeOpacity={0.85}
-            style={{
-              marginTop: 20,
-              backgroundColor: "#ff6719",
-              paddingHorizontal: 28,
-              paddingVertical: 12,
-              borderRadius: 14,
-            }}
-          >
-            <Text style={{ color: "#fff", fontWeight: "800" }}>Try Again</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
       {/* Product Grid */}
       {loading && products.length === 0 ? (
-        renderSkeletons()
+        <View style={{ paddingTop: TOTAL_HEADER_HEIGHT }}>
+          {renderSkeletons()}
+        </View>
       ) : (
-        <FlatList
-          data={filteredProducts}
+        <Animated.FlatList
+          data={products}
           keyExtractor={(item) => item.id}
           numColumns={2}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true },
+          )}
+          scrollEventThrottle={16}
+          ListHeaderComponent={<View style={{ height: TOTAL_HEADER_HEIGHT }} />}
           contentContainerStyle={{
             paddingHorizontal: 14,
             paddingBottom: 100,
@@ -319,10 +214,132 @@ export default function MarketplaceScreen() {
               onRefresh={handleRefresh}
               colors={["#ff6719"]}
               tintColor="#ff6719"
+              progressViewOffset={TOTAL_HEADER_HEIGHT}
             />
           }
         />
       )}
+
+      {/* Static Header */}
+      <View
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10,
+          paddingTop: top + 10,
+          paddingHorizontal: 20,
+          height: STATIC_HEADER_HEIGHT,
+          backgroundColor: isDark ? "#0A0A0A" : "#f8fafc",
+        }}
+      >
+        <View className="flex-row items-center">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            activeOpacity={0.8}
+            className="w-11 h-11 rounded-full items-center justify-center mr-4"
+          >
+            <Ionicons
+              name="arrow-back"
+              size={24}
+              color={isDark ? "white" : "#0f172a"}
+            />
+          </TouchableOpacity>
+          <Text
+            className={`flex-1 text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+          >
+            Fellowship Store
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.push("/marketplace/orders" as any)}
+            activeOpacity={0.8}
+            className="w-11 h-11 rounded-full items-center justify-center ml-auto"
+          >
+            <Ionicons
+              name="receipt-outline"
+              size={22}
+              color={isDark ? "white" : "#0f172a"}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Collapsible Section: Description and Filters */}
+      <Animated.View
+        style={{
+          position: "absolute",
+          top: STATIC_HEADER_HEIGHT,
+          left: 0,
+          right: 0,
+          zIndex: 5,
+          height: COLLAPSIBLE_SECTION_HEIGHT,
+          backgroundColor: isDark ? "#0A0A0A" : "#f8fafc",
+          transform: [{ translateY }],
+        }}
+      >
+        <Text
+          numberOfLines={2}
+          className={`text-base leading-6 pr-4 ${isDark ? "text-gray-400" : "text-gray-500"}`}
+          style={{ paddingHorizontal: 20 }}
+        >
+          Explore our exclusive collection of fellowship merchandise. Every
+          purchase supports our community initiatives.
+        </Text>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          overScrollMode="never"
+          bounces={true}
+          className="mt-4"
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: 10,
+          }}
+        >
+          {CATEGORIES.map((cat) => (
+            <TouchableOpacity
+              key={cat.value}
+              onPress={() => {
+                LayoutAnimation.configureNext(
+                  LayoutAnimation.Presets.easeInEaseOut,
+                );
+                setSelectedCategory(cat.value);
+              }}
+              activeOpacity={0.7}
+              className={`px-5 py-2 mr-3 rounded-xl border flex-row items-center h-[42px] ${
+                selectedCategory === cat.value
+                  ? "bg-orange-500 border-orange-500"
+                  : isDark
+                    ? "bg-[#1C1C1E] border-gray-800"
+                    : "bg-white border-gray-200"
+              }`}
+            >
+              <View className="flex-row items-center gap-1.5">
+                <Text
+                  className={`font-semibold ${
+                    selectedCategory === cat.value
+                      ? "text-white"
+                      : isDark
+                        ? "text-gray-400"
+                        : "text-gray-600"
+                  }`}
+                >
+                  {cat.label}
+                </Text>
+                {cat.value === "new" && (
+                  <View
+                    className={`ml-1 w-1.5 h-1.5 rounded-full ${
+                      selectedCategory === "new" ? "bg-white" : "bg-[#ff6719]"
+                    }`}
+                  />
+                )}
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </Animated.View>
 
       {/* Cart FAB */}
       <CartBadge isDark={isDark} onPress={() => setCartVisible(true)} />
