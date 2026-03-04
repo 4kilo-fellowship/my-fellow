@@ -36,8 +36,8 @@ const CATEGORIES = [
   { label: "T-shirt", value: "t-shirt" },
   { label: "Hoddy", value: "hoddy" },
   { label: "Stickers", value: "stickers" },
-  { label: "Mugs", value: "mugs" },
   { label: "Accessories", value: "accessories" },
+  { label: "Others", value: "others" },
 ];
 
 const Gifts = () => {
@@ -448,12 +448,20 @@ const Gifts = () => {
               ) : (
                 <View className="px-3 flex-row flex-wrap">
                   {products
-                    .filter((p) =>
-                      selectedCategory === "All"
-                        ? true
-                        : p.category?.toLowerCase() ===
-                          selectedCategory.toLowerCase(),
-                    )
+                    .filter((p) => {
+                      if (selectedCategory === "All") return true;
+                      const cat = p.category?.toLowerCase() || "";
+                      const mainCategories = [
+                        "t-shirt",
+                        "hoddy",
+                        "stickers",
+                        "accessories",
+                      ];
+                      if (selectedCategory === "others") {
+                        return !mainCategories.includes(cat);
+                      }
+                      return cat === selectedCategory.toLowerCase();
+                    })
                     .slice(0, 6)
                     .map((item) => (
                       <View key={item.id} style={{ width: "50%" }}>
@@ -475,12 +483,20 @@ const Gifts = () => {
                         />
                       </View>
                     ))}
-                  {products.filter((p) =>
-                    selectedCategory === "All"
-                      ? true
-                      : p.category?.toLowerCase() ===
-                        selectedCategory.toLowerCase(),
-                  ).length === 0 && (
+                  {products.filter((p) => {
+                    if (selectedCategory === "All") return true;
+                    const cat = p.category?.toLowerCase() || "";
+                    const mainCategories = [
+                      "t-shirt",
+                      "hoddy",
+                      "stickers",
+                      "accessories",
+                    ];
+                    if (selectedCategory === "others") {
+                      return !mainCategories.includes(cat);
+                    }
+                    return cat === selectedCategory.toLowerCase();
+                  }).length === 0 && (
                     <View className="px-5 py-6 w-full">
                       <Text
                         className={`text-sm italic ${isDark ? "text-zinc-500" : "text-zinc-400"}`}

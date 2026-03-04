@@ -24,13 +24,24 @@ const ProductCard = ({
   const imageUri = getProductImage(product);
   const price = getProductPrice(product);
 
+  const isRecentlyCreated = () => {
+    if (!product.createdAt) return false;
+    const createdDate = new Date(product.createdAt);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - createdDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 7;
+  };
+
+  const showNewBadge = product.isNew || isRecentlyCreated();
+
   return (
     <TouchableOpacity
       activeOpacity={0.9}
       onPress={onPress}
       style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}
     >
-      {product.isNew && (
+      {showNewBadge && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>NEW</Text>
         </View>
@@ -117,17 +128,20 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 10,
     left: 10,
-    backgroundColor: "#ff6719",
+    backgroundColor: "#000",
     paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingVertical: 4,
+    borderRadius: 8,
     zIndex: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
   },
   badgeText: {
     color: "#fff",
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: "900",
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
   },
   imageContainer: {
     width: "100%",
