@@ -10,9 +10,13 @@ import api from "./api";
 export const fetchProductsApi = async (
   page: number = 1,
   limit: number = 20,
+  category?: string,
 ): Promise<ProductsApiResponse> => {
+  const params: any = { page, limit };
+  if (category && category !== "All") params.category = category;
+
   const res = await api.get<ProductsApiResponse>("/marketplace/products", {
-    params: { page, limit },
+    params,
   });
   return res.data;
 };

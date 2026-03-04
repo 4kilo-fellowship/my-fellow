@@ -17,6 +17,7 @@ type MarketplaceState = {
   page: number;
   hasMore: boolean;
   refreshing: boolean;
+  selectedCategory: string;
 
   // Cart
   cartItems: CartItem[];
@@ -30,9 +31,10 @@ type MarketplaceState = {
   error: string | null;
 
   // Product actions
-  fetchProducts: (reset?: boolean) => Promise<void>;
+  fetchProducts: (reset?: boolean, limit?: number) => Promise<void>;
   fetchProductById: (id: string) => Promise<void>;
   loadMore: () => Promise<void>;
+  setSelectedCategory: (category: string) => void;
 
   // Cart actions
   addToCart: (product: Product, quantity?: number) => void;
@@ -59,6 +61,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       page: 1,
       hasMore: true,
       refreshing: false,
+      selectedCategory: "All",
 
       cartItems: [],
       cartVisible: false,
@@ -69,7 +72,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
 
       error: null,
 
-      fetchProducts: async (reset = false) => {
+      fetchProducts: async (reset = false, limit = 20) => {
         const currentPage = reset ? 1 : get().page;
         set({
           loading: reset ? true : get().loading,
@@ -78,7 +81,11 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         });
 
         try {
-          const response = await fetchProductsApi(currentPage, 20);
+          const response = await fetchProductsApi(
+            currentPage,
+            limit,
+            get().selectedCategory,
+          );
           const newProducts = response.data?.products || [];
           const pagination = response.data?.pagination;
           const totalPages = pagination?.totalPages || 1;
@@ -124,6 +131,10 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         if (!hasMore || loading) return;
         set({ loading: true });
         await get().fetchProducts(false);
+      },
+      setSelectedCategory: (category: string) => {
+        set({ selectedCategory: category, page: 1, products: [] });
+        get().fetchProducts(true);
       },
 
       addToCart: (product: Product, quantity: number = 1) => {

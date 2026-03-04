@@ -1,8 +1,8 @@
-import GiftCard from "@/components/GiftCard";
+import ProductCard from "@/components/Marketplace/ProductCard";
 import { InfoModal } from "@/components/Modals/InfoModal";
-import { GIFT_ITEMS } from "@/constants/gifts";
 import { useTheme } from "@/context/ThemeContext";
 import api from "@/services/api";
+import { useMarketplaceStore } from "@/stores/marketplace.store";
 import { usePaymentStore } from "@/stores/payment.store";
 import { useUserStore } from "@/stores/user.store";
 import { donationSchema } from "@/utils";
@@ -32,6 +32,15 @@ import * as z from "zod";
 
 type DonationForm = z.infer<typeof donationSchema>;
 
+const CATEGORIES = [
+  "All",
+  "T-shirt",
+  "Hoody",
+  "Stickers",
+  "Mugs",
+  "Accessories",
+];
+
 const Gifts = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -45,6 +54,19 @@ const Gifts = () => {
     message: string;
     type: "success" | "error" | "info";
   }>({ visible: false, title: "", message: "", type: "info" });
+
+  const {
+    products,
+    loading: productsLoading,
+    fetchProducts,
+    selectedCategory,
+    setSelectedCategory,
+    addToCart,
+  } = useMarketplaceStore();
+
+  useEffect(() => {
+    fetchProducts(true, 6); // Fetch only 6 for the preview
+  }, []);
 
   const showInfoModal = (
     title: string,
@@ -381,29 +403,86 @@ const Gifts = () => {
                 </TouchableOpacity>
               </View>
 
-              <FlatList
-                data={GIFT_ITEMS}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={{
-                  paddingHorizontal: 20,
-                  paddingVertical: 16,
-                }}
-                renderItem={({ item }) => (
-                  <GiftCard
-                    item={item}
-                    isDark={isDark}
-                    onPress={() => {
-                      if (!user) {
-                        router.push("/(auth)/sign-in" as any);
-                      } else {
-                        // Original onPress logic if any
-                      }
-                    }}
-                  />
-                )}
-              />
+              <View className="px-5 mb-4">
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: 10, paddingRight: 20 }}
+                >
+                  {CATEGORIES.map((cat) => (
+                    <TouchableOpacity
+                      key={cat}
+                      onPress={() => setSelectedCategory(cat)}
+                      activeOpacity={0.8}
+                      className={`px-5 py-2.5 rounded-full border-2 ${
+                        selectedCategory === cat
+                          ? "bg-[#10b981] border-[#10b981]" // Green like the screenshot
+                          : isDark
+                            ? "bg-zinc-800 border-zinc-700"
+                            : "bg-white border-zinc-200"
+                      }`}
+                    >
+                      <Text
+                        className={`text-sm font-bold ${
+                          selectedCategory === cat
+                            ? "text-white"
+                            : isDark
+                              ? "text-zinc-400"
+                              : "text-zinc-600"
+                        }`}
+                      >
+                        {cat}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              {productsLoading && products.length === 0 ? (
+                <View className="py-10 items-center">
+                  <ActivityIndicator color="#ff6719" />
+                </View>
+              ) : (
+                <FlatList
+                  data={products.slice(0, 6)}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyExtractor={(item) => item.id}
+                  contentContainerStyle={{
+                    paddingHorizontal: 20,
+                    paddingVertical: 10,
+                  }}
+                  renderItem={({ item }) => (
+                    <View style={{ width: 200, marginRight: 16 }}>
+                      <ProductCard
+                        product={item}
+                        isDark={isDark}
+                        onPress={() =>
+                          router.push(`/marketplace/${item.id}` as any)
+                        }
+                        onAddToCart={() => {
+                          addToCart(item, 1);
+                          Toast.show({
+                            type: "success",
+                            text1: "Added to Cart",
+                            text2: `${item.name || item.title} added.`,
+                            visibilityTime: 1500,
+                          });
+                        }}
+                      />
+                    </View>
+                  )}
+                  ListEmptyComponent={
+                    <View className="px-5 py-6">
+                      <Text
+                        className={`text-sm italic ${isDark ? "text-zinc-500" : "text-zinc-400"}`}
+                      >
+                        No items found in this category.
+                      </Text>
+                    </View>
+                  }
+                />
+              )}
             </View>
           </ScrollView>
         </View>
