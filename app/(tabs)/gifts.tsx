@@ -33,6 +33,7 @@ type DonationForm = z.infer<typeof donationSchema>;
 
 const CATEGORIES = [
   { label: "All", value: "All" },
+  { label: "New", value: "new" },
   { label: "T-shirt", value: "t-shirt" },
   { label: "Hoddy", value: "hoddy" },
   { label: "Stickers", value: "stickers" },
@@ -426,17 +427,28 @@ const Gifts = () => {
                           : "bg-white border-zinc-100"
                     }`}
                   >
-                    <Text
-                      className={`text-sm font-bold ${
-                        selectedCategory === cat.value
-                          ? "text-white"
-                          : isDark
-                            ? "text-zinc-400"
-                            : "text-zinc-600"
-                      }`}
-                    >
-                      {cat.label}
-                    </Text>
+                    <View className="flex-row items-center gap-1.5">
+                      <Text
+                        className={`text-sm font-bold ${
+                          selectedCategory === cat.value
+                            ? "text-white"
+                            : isDark
+                              ? "text-zinc-400"
+                              : "text-zinc-600"
+                        }`}
+                      >
+                        {cat.label}
+                      </Text>
+                      {cat.value === "new" && (
+                        <View
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            selectedCategory === "new"
+                              ? "bg-white"
+                              : "bg-primary"
+                          }`}
+                        />
+                      )}
+                    </View>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -450,6 +462,24 @@ const Gifts = () => {
                   {products
                     .filter((p) => {
                       if (selectedCategory === "All") return true;
+
+                      const isRecentlyCreated = () => {
+                        if (!p.createdAt) return false;
+                        const createdDate = new Date(p.createdAt);
+                        const now = new Date();
+                        const diffTime = Math.abs(
+                          now.getTime() - createdDate.getTime(),
+                        );
+                        const diffDays = Math.ceil(
+                          diffTime / (1000 * 60 * 60 * 24),
+                        );
+                        return diffDays <= 7;
+                      };
+
+                      if (selectedCategory === "new") {
+                        return p.isNew || isRecentlyCreated();
+                      }
+
                       const cat = p.category?.toLowerCase() || "";
                       const mainCategories = [
                         "t-shirt",
@@ -485,6 +515,24 @@ const Gifts = () => {
                     ))}
                   {products.filter((p) => {
                     if (selectedCategory === "All") return true;
+
+                    const isRecentlyCreated = () => {
+                      if (!p.createdAt) return false;
+                      const createdDate = new Date(p.createdAt);
+                      const now = new Date();
+                      const diffTime = Math.abs(
+                        now.getTime() - createdDate.getTime(),
+                      );
+                      const diffDays = Math.ceil(
+                        diffTime / (1000 * 60 * 60 * 24),
+                      );
+                      return diffDays <= 7;
+                    };
+
+                    if (selectedCategory === "new") {
+                      return p.isNew || isRecentlyCreated();
+                    }
+
                     const cat = p.category?.toLowerCase() || "";
                     const mainCategories = [
                       "t-shirt",
