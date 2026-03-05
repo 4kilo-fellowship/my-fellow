@@ -29,6 +29,8 @@ export default function OrdersScreen() {
     if (user) fetchMyOrders();
   }, [user]);
 
+  const STATIC_HEADER_HEIGHT = top + 64;
+
   if (!user) {
     return (
       <View
@@ -87,49 +89,42 @@ export default function OrdersScreen() {
     >
       <StatusBar
         style={isDark ? "light" : "dark"}
-        backgroundColor={isDark ? "#1A1A1B" : "#f8f8f8"}
+        backgroundColor="transparent"
+        translucent={true}
       />
 
       {/* Header */}
       <View
         style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10,
           paddingTop: top + 10,
           paddingHorizontal: 20,
-          paddingBottom: 16,
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 14,
+          height: STATIC_HEADER_HEIGHT,
+          backgroundColor: isDark ? "#0A0A0A" : "#f8fafc",
         }}
       >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          activeOpacity={0.8}
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 14,
-            backgroundColor: isDark ? "#27272a" : "#fff",
-            alignItems: "center",
-            justifyContent: "center",
-            borderWidth: 1,
-            borderColor: isDark ? "#3f3f46" : "#e4e4e7",
-          }}
-        >
-          <Ionicons
-            name="arrow-back"
-            size={22}
-            color={isDark ? "#fff" : "#18181b"}
-          />
-        </TouchableOpacity>
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: "900",
-            color: isDark ? "#fff" : "#18181b",
-          }}
-        >
-          My Orders
-        </Text>
+        <View className="flex-row items-center">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            activeOpacity={0.8}
+            className="w-11 h-11 rounded-full items-center justify-center mr-4"
+          >
+            <Ionicons
+              name="arrow-back"
+              size={24}
+              color={isDark ? "white" : "#0f172a"}
+            />
+          </TouchableOpacity>
+          <Text
+            className={`flex-1 text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+          >
+            My Orders
+          </Text>
+        </View>
       </View>
 
       {/* Loading */}
@@ -147,9 +142,13 @@ export default function OrdersScreen() {
         <FlatList
           data={orders}
           keyExtractor={(item) => item.id}
+          ListHeaderComponent={
+            <View style={{ height: STATIC_HEADER_HEIGHT }} />
+          }
           contentContainerStyle={{
             paddingHorizontal: 20,
             paddingBottom: 40,
+            paddingTop: 4,
           }}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => <OrderCard order={item} isDark={isDark} />}
@@ -195,6 +194,7 @@ export default function OrdersScreen() {
               onRefresh={fetchMyOrders}
               colors={["#ff6719"]}
               tintColor="#ff6719"
+              progressViewOffset={STATIC_HEADER_HEIGHT}
             />
           }
         />

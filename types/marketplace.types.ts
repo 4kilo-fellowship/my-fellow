@@ -59,7 +59,21 @@ export interface SingleResponse<T> {
 
 export interface PaginatedResponse<T> {
   success: boolean;
-  data: T[];
+  data: T;
+  message?: string;
+}
+
+export interface OrdersApiResponse {
+  success: boolean;
+  data: {
+    orders: Order[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  };
   message?: string;
 }
 

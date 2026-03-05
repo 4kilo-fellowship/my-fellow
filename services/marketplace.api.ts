@@ -1,6 +1,6 @@
 import {
   Order,
-  PaginatedResponse,
+  OrdersApiResponse,
   Product,
   ProductsApiResponse,
   SingleResponse,
@@ -39,8 +39,8 @@ export const placeOrderApi = async (
   return res.data;
 };
 
-export const fetchMyOrdersApi = async (): Promise<PaginatedResponse<Order>> => {
-  const res = await api.get<PaginatedResponse<Order>>("/marketplace/orders/my");
+export const fetchMyOrdersApi = async (): Promise<OrdersApiResponse> => {
+  const res = await api.get<OrdersApiResponse>("/marketplace/orders/my");
   return res.data;
 };
 

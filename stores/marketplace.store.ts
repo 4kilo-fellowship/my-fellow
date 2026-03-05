@@ -239,7 +239,8 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         set({ ordersLoading: true, error: null });
         try {
           const response = await fetchMyOrdersApi();
-          set({ orders: response.data || [], ordersLoading: false });
+          const orders = response.data?.orders || [];
+          set({ orders, ordersLoading: false });
         } catch (err: any) {
           set({
             error: err?.message || "Failed to fetch orders",
