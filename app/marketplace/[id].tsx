@@ -1,15 +1,14 @@
+import ImageGallery from "@/components/Marketplace/ImageGallery";
 import { useTheme } from "@/context/ThemeContext";
 import { useMarketplaceStore } from "@/stores/marketplace.store";
-import { getProductImage, getProductPrice } from "@/types/marketplace.types";
+import { useUserStore } from "@/stores/user.store";
+import { getProductImages, getProductPrice } from "@/types/marketplace.types";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Dimensions,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,8 +18,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+// ─── Constants ────────────────────────────────────────────────────────────────
+const PLACEHOLDER_IMAGE = "https://via.placeholder.com/500";
 
+// ─── Screen ───────────────────────────────────────────────────────────────────
 export default function ProductDetailScreen() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -29,34 +30,79 @@ export default function ProductDetailScreen() {
   const params = useLocalSearchParams();
   const id = params.id as string;
 
-  const [quantity, setQuantity] = useState(1);
+  const { user } = useUserStore();
+  const {
+    currentProduct: product,
+    loading,
+    error,
+    fetchProductById,
+    addToCart,
+    placeOrder,
+    placingOrder,
+  } = useMarketplaceStore();
 
-  const { currentProduct, loading, error, fetchProductById, addToCart } =
-    useMarketplaceStore();
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     if (id) fetchProductById(id);
   }, [id]);
 
-  const product = currentProduct;
-  const imageUri = product
-    ? getProductImage(product)
-    : "https://via.placeholder.com/500";
+  // Derived values
+  const images = product ? getProductImages(product) : [PLACEHOLDER_IMAGE];
   const price = product ? getProductPrice(product) : 0;
   const displayName = product?.name || product?.title || "Product";
+  const isOutOfStock = product?.stock === 0;
 
+  // ── Handlers ────────────────────────────────────────────────────────────────
   const handleAddToCart = () => {
     if (!product) return;
     addToCart(product, quantity);
     Toast.show({
       type: "success",
       text1: "Added to Cart",
-      text2: `${quantity}x ${displayName} added to your cart.`,
+      text2: `${quantity}× ${displayName} added to your cart.`,
       visibilityTime: 2000,
       position: "bottom",
     });
   };
 
+  const handleBuyNow = async () => {
+    if (!product) return;
+
+    if (!user) {
+      router.push("/(auth)/sign-in" as any);
+      return;
+    }
+
+    // Add the product to cart, then immediately place the order
+    addToCart(product, quantity);
+
+    try {
+      const order = await placeOrder();
+      if (order) {
+        Toast.show({
+          type: "success",
+          text1: "Order Placed! 🎉",
+          text2: "Your order has been placed successfully.",
+          visibilityTime: 2500,
+          position: "bottom",
+        });
+      }
+    } catch (err: any) {
+      Toast.show({
+        type: "error",
+        text1: "Order Failed",
+        text2: err?.response?.data?.message || "Please try again.",
+        visibilityTime: 2500,
+        position: "bottom",
+      });
+    }
+  };
+
+  const incrementQuantity = () => setQuantity((q) => q + 1);
+  const decrementQuantity = () => setQuantity((q) => Math.max(1, q - 1));
+
+  // ── Loading state ───────────────────────────────────────────────────────────
   if (loading) {
     return (
       <View
@@ -65,11 +111,13 @@ export default function ProductDetailScreen() {
           { backgroundColor: isDark ? "#1A1A1B" : "#fff" },
         ]}
       >
+        <StatusBar style={isDark ? "light" : "dark"} />
         <ActivityIndicator size="large" color="#ff6719" />
       </View>
     );
   }
 
+  // ── Error state ─────────────────────────────────────────────────────────────
   if (error || !product) {
     return (
       <View
@@ -78,6 +126,7 @@ export default function ProductDetailScreen() {
           { backgroundColor: isDark ? "#1A1A1B" : "#fff" },
         ]}
       >
+        <StatusBar style={isDark ? "light" : "dark"} />
         <Ionicons name="alert-circle-outline" size={64} color="#ff6719" />
         <Text
           style={[styles.errorTitle, { color: isDark ? "#fff" : "#18181b" }]}
@@ -87,6 +136,7 @@ export default function ProductDetailScreen() {
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.errorButton}
+          activeOpacity={0.9}
         >
           <Text style={styles.errorButtonText}>Go Back</Text>
         </TouchableOpacity>
@@ -94,116 +144,176 @@ export default function ProductDetailScreen() {
     );
   }
 
+  // ── Main render ─────────────────────────────────────────────────────────────
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? "#1A1A1B" : "#fff" }}>
       <StatusBar style="light" />
 
-      {/* Hero Image */}
-      <View style={styles.heroContainer}>
-        <Image
-          source={{ uri: imageUri }}
-          style={styles.heroImage}
-          contentFit="cover"
-          transition={400}
-        />
-        <LinearGradient
-          colors={["rgba(0,0,0,0.4)", "transparent", "rgba(0,0,0,0.7)"]}
-          style={StyleSheet.absoluteFill}
-        />
-
-        {/* Back Button */}
-        <TouchableOpacity
-          onPress={() => router.back()}
-          activeOpacity={0.8}
-          style={[styles.backButton, { top: top + 10 }]}
-        >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-
-        {/* Badge */}
-        {product.isNew && (
-          <View style={[styles.heroBadge, { top: top + 10 }]}>
-            <Text style={styles.heroBadgeText}>NEW</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Content */}
-      <View
-        style={[
-          styles.contentContainer,
-          { backgroundColor: isDark ? "#1A1A1B" : "#fff" },
-        ]}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 180 }}
+        bounces={true}
       >
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 120 }}
+        {/* ── Image Gallery ─────────────────────────────────────────────── */}
+        <ImageGallery images={images} isDark={isDark} />
+
+        {/* ── Header (consistent with other screens) ────────────────────── */}
+        <HeaderBar
+          isDark={isDark}
+          top={top}
+          onBack={() => router.back()}
+          onShare={() => {
+            Toast.show({
+              type: "info",
+              text1: "Share",
+              text2: "Share feature coming soon!",
+              visibilityTime: 1500,
+              position: "bottom",
+            });
+          }}
+        />
+
+        {/* ── Product Info ──────────────────────────────────────────────── */}
+        <View
+          style={[
+            styles.contentContainer,
+            { backgroundColor: isDark ? "#1A1A1B" : "#fff" },
+          ]}
         >
-          <View style={styles.contentInner}>
-            {product.category && (
-              <View style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>
-                  {product.category.toUpperCase()}
-                </Text>
-              </View>
-            )}
+          {/* Category badge */}
+          {product.category && (
+            <View style={styles.categoryBadge}>
+              <Text style={styles.categoryText}>
+                {product.category.toUpperCase()}
+              </Text>
+            </View>
+          )}
 
-            <Text
-              style={[
-                styles.productName,
-                { color: isDark ? "#fff" : "#18181b" },
-              ]}
-            >
-              {displayName}
-            </Text>
+          {/* Name */}
+          <Text
+            style={[styles.productName, { color: isDark ? "#fff" : "#18181b" }]}
+          >
+            {displayName}
+          </Text>
 
+          {/* Price & Stock Row */}
+          <View style={styles.priceRow}>
             <Text style={styles.productPrice}>{price.toFixed(2)} ETB</Text>
-
             {product.stock != null && (
-              <View style={styles.stockRow}>
-                <Ionicons
-                  name={product.stock > 0 ? "checkmark-circle" : "close-circle"}
-                  size={16}
-                  color={product.stock > 0 ? "#22c55e" : "#ef4444"}
+              <View style={styles.stockBadge}>
+                <View
+                  style={[
+                    styles.stockDot,
+                    {
+                      backgroundColor: isOutOfStock ? "#ef4444" : "#22c55e",
+                    },
+                  ]}
                 />
                 <Text
                   style={[
                     styles.stockText,
-                    { color: product.stock > 0 ? "#22c55e" : "#ef4444" },
+                    { color: isOutOfStock ? "#ef4444" : "#22c55e" },
                   ]}
                 >
-                  {product.stock > 0
-                    ? `${product.stock} in stock`
-                    : "Out of stock"}
-                </Text>
-              </View>
-            )}
-
-            {(product.description || product.shortDescription) && (
-              <View style={{ marginTop: 24 }}>
-                <Text
-                  style={[
-                    styles.sectionTitle,
-                    { color: isDark ? "#fff" : "#18181b" },
-                  ]}
-                >
-                  Description
-                </Text>
-                <Text
-                  style={[
-                    styles.descriptionText,
-                    { color: isDark ? "#a1a1aa" : "#71717a" },
-                  ]}
-                >
-                  {product.description || product.shortDescription}
+                  {isOutOfStock ? "Out of stock" : `${product.stock} in stock`}
                 </Text>
               </View>
             )}
           </View>
-        </ScrollView>
-      </View>
 
-      {/* Bottom Bar */}
+          {/* New Badge */}
+          {product.isNew && (
+            <View style={styles.newBadge}>
+              <Ionicons name="sparkles" size={12} color="#ff6719" />
+              <Text style={styles.newBadgeText}>New Arrival</Text>
+            </View>
+          )}
+
+          {/* Divider */}
+          <View
+            style={[
+              styles.divider,
+              { backgroundColor: isDark ? "#27272a" : "#f4f4f5" },
+            ]}
+          />
+
+          {/* Description */}
+          {(product.description || product.shortDescription) && (
+            <View style={styles.descriptionSection}>
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  { color: isDark ? "#fff" : "#18181b" },
+                ]}
+              >
+                About this product
+              </Text>
+              <Text
+                style={[
+                  styles.descriptionText,
+                  { color: isDark ? "#a1a1aa" : "#71717a" },
+                ]}
+              >
+                {product.description || product.shortDescription}
+              </Text>
+            </View>
+          )}
+
+          {/* Quantity Selector — inline */}
+          <View style={styles.quantitySection}>
+            <Text
+              style={[
+                styles.sectionTitle,
+                { color: isDark ? "#fff" : "#18181b" },
+              ]}
+            >
+              Quantity
+            </Text>
+            <View
+              style={[
+                styles.quantityWrapper,
+                {
+                  backgroundColor: isDark ? "#27272a" : "#f4f4f5",
+                  borderColor: isDark ? "#3f3f46" : "#e4e4e7",
+                },
+              ]}
+            >
+              <TouchableOpacity
+                onPress={decrementQuantity}
+                style={styles.qtyBtn}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name="remove"
+                  size={20}
+                  color={isDark ? "#fff" : "#18181b"}
+                />
+              </TouchableOpacity>
+              <Text
+                style={[
+                  styles.qtyValue,
+                  { color: isDark ? "#fff" : "#18181b" },
+                ]}
+              >
+                {quantity}
+              </Text>
+              <TouchableOpacity
+                onPress={incrementQuantity}
+                style={styles.qtyBtn}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name="add"
+                  size={20}
+                  color={isDark ? "#fff" : "#18181b"}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* ── Bottom Action Bar ─────────────────────────────────────────────── */}
       <View
         style={[
           styles.bottomBar,
@@ -214,207 +324,93 @@ export default function ProductDetailScreen() {
           },
         ]}
       >
-        {/* Quantity Selector */}
-        <View
-          style={[
-            styles.quantityWrapper,
-            {
-              backgroundColor: isDark ? "#27272a" : "#f4f4f5",
-              borderColor: isDark ? "#3f3f46" : "#e4e4e7",
-            },
-          ]}
-        >
-          <TouchableOpacity
-            onPress={() => setQuantity(Math.max(1, quantity - 1))}
-            style={styles.qtyBtnDetail}
-          >
-            <Ionicons
-              name="remove"
-              size={20}
-              color={isDark ? "#fff" : "#18181b"}
-            />
-          </TouchableOpacity>
-          <Text
-            style={[styles.qtyValue, { color: isDark ? "#fff" : "#18181b" }]}
-          >
-            {quantity}
-          </Text>
-          <TouchableOpacity
-            onPress={() => setQuantity(quantity + 1)}
-            style={styles.qtyBtnDetail}
-          >
-            <Ionicons
-              name="add"
-              size={20}
-              color={isDark ? "#fff" : "#18181b"}
-            />
-          </TouchableOpacity>
-        </View>
-
         {/* Add to Cart */}
         <TouchableOpacity
           style={[
             styles.addToCartBtn,
-            product.stock === 0 && { backgroundColor: "#71717a" },
+            isOutOfStock && { opacity: 0.5 },
+            { borderColor: isDark ? "#3f3f46" : "#e4e4e7" },
           ]}
           onPress={handleAddToCart}
-          disabled={product.stock === 0}
+          disabled={isOutOfStock}
           activeOpacity={0.9}
         >
-          <Ionicons name="cart" size={20} color="#fff" />
-          <Text style={styles.addToCartText}>
-            Add · {(price * quantity).toFixed(2)} ETB
-          </Text>
+          <Ionicons
+            name="cart-outline"
+            size={22}
+            color={isDark ? "#fff" : "#18181b"}
+          />
+        </TouchableOpacity>
+
+        {/* Buy Now / Place Order */}
+        <TouchableOpacity
+          style={[
+            styles.buyNowBtn,
+            isOutOfStock && { backgroundColor: "#71717a" },
+            placingOrder && { opacity: 0.7 },
+          ]}
+          onPress={handleBuyNow}
+          disabled={isOutOfStock || placingOrder}
+          activeOpacity={0.9}
+        >
+          {placingOrder ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <>
+              <Text style={styles.buyNowText}>
+                {isOutOfStock
+                  ? "Out of Stock"
+                  : `Buy Now · ${(price * quantity).toFixed(2)} ETB`}
+              </Text>
+              {!isOutOfStock && (
+                <Ionicons name="arrow-forward-circle" size={22} color="#fff" />
+              )}
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
+// ─── Header Component ─────────────────────────────────────────────────────────
+/** Floating header bar consistent with other marketplace screens. */
+const HeaderBar = ({
+  isDark,
+  top,
+  onBack,
+  onShare,
+}: {
+  isDark: boolean;
+  top: number;
+  onBack: () => void;
+  onShare: () => void;
+}) => (
+  <View style={[styles.headerContainer, { top: top + 10 }]}>
+    <TouchableOpacity
+      onPress={onBack}
+      activeOpacity={0.8}
+      style={styles.headerButton}
+    >
+      <Ionicons name="arrow-back" size={22} color="#fff" />
+    </TouchableOpacity>
+    <TouchableOpacity
+      onPress={onShare}
+      activeOpacity={0.8}
+      style={styles.headerButton}
+    >
+      <Ionicons name="share-outline" size={20} color="#fff" />
+    </TouchableOpacity>
+  </View>
+);
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
+  // States
   centered: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
-  heroContainer: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_WIDTH * 0.85,
-    position: "relative",
-  },
-  heroImage: {
-    width: "100%",
-    height: "100%",
-  },
-  backButton: {
-    position: "absolute",
-    left: 16,
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: "rgba(0,0,0,0.35)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heroBadge: {
-    position: "absolute",
-    right: 16,
-    backgroundColor: "#ff6719",
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  heroBadgeText: {
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 1,
-  },
-  contentContainer: {
-    flex: 1,
-    marginTop: -28,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-  },
-  contentInner: {
-    padding: 24,
-  },
-  categoryBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,103,25,0.12)",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginBottom: 12,
-  },
-  categoryText: {
-    color: "#ff6719",
-    fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 1,
-  },
-  productName: {
-    fontSize: 26,
-    fontWeight: "900",
-    letterSpacing: -0.5,
-    marginBottom: 8,
-  },
-  productPrice: {
-    fontSize: 24,
-    fontWeight: "900",
-    color: "#ff6719",
-    marginBottom: 4,
-  },
-  stockRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 8,
-  },
-  stockText: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    marginBottom: 10,
-  },
-  descriptionText: {
-    fontSize: 15,
-    lineHeight: 24,
-  },
-  bottomBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    gap: 12,
-  },
-  quantityWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingHorizontal: 4,
-    paddingVertical: 4,
-  },
-  qtyBtnDetail: {
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  qtyValue: {
-    fontSize: 17,
-    fontWeight: "900",
-    minWidth: 28,
-    textAlign: "center",
-  },
-  addToCartBtn: {
-    flex: 1,
-    backgroundColor: "#ff6719",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    borderRadius: 16,
-    gap: 8,
-    elevation: 4,
-    shadowColor: "#ff6719",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  addToCartText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "800",
   },
   errorTitle: {
     fontSize: 17,
@@ -431,6 +427,181 @@ const styles = StyleSheet.create({
   },
   errorButtonText: {
     color: "#fff",
+    fontWeight: "800",
+  },
+
+  // Header
+  headerContainer: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    zIndex: 20,
+  },
+  headerButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  // Content
+  contentContainer: {
+    marginTop: -24,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 28,
+  },
+  categoryBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,103,25,0.1)",
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 8,
+    marginBottom: 14,
+  },
+  categoryText: {
+    color: "#ff6719",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1.2,
+  },
+  productName: {
+    fontSize: 26,
+    fontWeight: "900",
+    letterSpacing: -0.5,
+    marginBottom: 10,
+  },
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    marginBottom: 6,
+  },
+  productPrice: {
+    fontSize: 24,
+    fontWeight: "900",
+    color: "#ff6719",
+  },
+  stockBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(34,197,94,0.08)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  stockDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  stockText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  newBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 8,
+  },
+  newBadgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#ff6719",
+  },
+  divider: {
+    height: 1,
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  descriptionSection: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    marginBottom: 10,
+  },
+  descriptionText: {
+    fontSize: 15,
+    lineHeight: 24,
+  },
+
+  // Quantity
+  quantitySection: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  quantityWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+  },
+  qtyBtn: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  qtyValue: {
+    fontSize: 17,
+    fontWeight: "900",
+    minWidth: 30,
+    textAlign: "center",
+  },
+
+  // Bottom bar
+  bottomBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    gap: 12,
+  },
+  addToCartBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  buyNowBtn: {
+    flex: 1,
+    backgroundColor: "#ff6719",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    borderRadius: 16,
+    gap: 8,
+    elevation: 4,
+    shadowColor: "#ff6719",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  buyNowText: {
+    color: "#fff",
+    fontSize: 16,
     fontWeight: "800",
   },
 });

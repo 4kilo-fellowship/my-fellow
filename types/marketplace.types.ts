@@ -75,3 +75,13 @@ export const getProductPrice = (product: Product): number => {
 export const getProductImage = (product: Product): string => {
   return product.imageUrls?.[0] || "https://via.placeholder.com/300";
 };
+
+/** Helper to get all available image URLs */
+export const getProductImages = (product: Product): string[] => {
+  if (product.imageUrls && product.imageUrls.length > 0) {
+    return product.imageUrls;
+  }
+  return [
+    product.image || product.imageUrl || "https://via.placeholder.com/300",
+  ];
+};
