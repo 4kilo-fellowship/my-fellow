@@ -50,9 +50,10 @@ export default function ProductDetailScreen() {
     addToCart(product, quantity);
     Toast.show({
       type: "success",
-      text1: "Added to Cart 🛒",
+      text1: "Added to Cart",
       text2: `${quantity}x ${displayName} added to your cart.`,
       visibilityTime: 2000,
+      position: "bottom",
     });
   };
 

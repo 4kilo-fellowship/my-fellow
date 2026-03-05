@@ -12,6 +12,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
+  FlatList,
   LayoutAnimation,
   RefreshControl,
   ScrollView,
@@ -52,6 +53,8 @@ export default function MarketplaceScreen() {
     selectedCategory,
     setSelectedCategory,
   } = useMarketplaceStore();
+
+  const flatListRef = useRef<FlatList<Product>>(null);
 
   // Header Heights
   const STATIC_HEADER_HEIGHT = top + 64;
@@ -95,6 +98,7 @@ export default function MarketplaceScreen() {
         text1: "Added to Cart",
         text2: `${displayName} has been added.`,
         visibilityTime: 1500,
+        position: "bottom",
       });
     },
     [addToCart],
@@ -176,11 +180,18 @@ export default function MarketplaceScreen() {
 
       {/* Product Grid */}
       {loading && products.length === 0 ? (
-        <View style={{ paddingTop: TOTAL_HEADER_HEIGHT }}>
-          {renderSkeletons()}
+        <View
+          style={{
+            flex: 1,
+            paddingTop: TOTAL_HEADER_HEIGHT + 40,
+            alignItems: "center",
+          }}
+        >
+          <ActivityIndicator size="large" color="#ff6719" />
         </View>
       ) : (
         <Animated.FlatList
+          ref={flatListRef}
           data={products}
           keyExtractor={(item) => item.id}
           numColumns={2}
@@ -306,6 +317,11 @@ export default function MarketplaceScreen() {
                   LayoutAnimation.Presets.easeInEaseOut,
                 );
                 setSelectedCategory(cat.value);
+                // Scroll to top when category changes
+                flatListRef.current?.scrollToOffset({
+                  offset: 0,
+                  animated: true,
+                });
               }}
               activeOpacity={0.7}
               className={`px-5 py-2 mr-3 rounded-xl border flex-row items-center h-[42px] ${

@@ -4,7 +4,12 @@ import {
   fetchProductsApi,
   placeOrderApi,
 } from "@/services/marketplace.api";
-import { CartItem, getProductPrice, Order, Product } from "@/types/marketplace.types";
+import {
+  CartItem,
+  getProductPrice,
+  Order,
+  Product,
+} from "@/types/marketplace.types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
@@ -133,8 +138,15 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         await get().fetchProducts(false);
       },
       setSelectedCategory: (category: string) => {
-        set({ selectedCategory: category, page: 1, products: [] });
-        get().fetchProducts(true);
+        set({
+          selectedCategory: category,
+          page: 1,
+          products: [],
+          loading: true,
+        });
+        get()
+          .fetchProducts(true)
+          .catch(() => set({ loading: false }));
       },
 
       addToCart: (product: Product, quantity: number = 1) => {

@@ -5,6 +5,7 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
+import { Text, View } from "react-native";
 import Toast from "react-native-toast-message";
 import "./global.css";
 
@@ -66,7 +67,98 @@ export default function RootLayout() {
             options={{ title: "My Orders" }}
           />
         </Stack>
-        <Toast />
+        <Toast
+          position="bottom"
+          bottomOffset={40}
+          config={{
+            success: (props: any) => (
+              <View
+                style={{
+                  backgroundColor: "#ffffff",
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  marginHorizontal: 16,
+                  width: "92%",
+                  shadowOpacity: 0.1,
+                  elevation: 5,
+                  shadowRadius: 12,
+                  shadowOffset: { width: 0, height: 4 },
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      color: "#18181b",
+                      fontSize: 14,
+                      fontWeight: "600",
+                      marginBottom: 2,
+                    }}
+                  >
+                    {props.text1}
+                  </Text>
+                  {props.text2 && (
+                    <Text
+                      style={{
+                        color: "#71717a",
+                        fontSize: 13,
+                        fontWeight: "400",
+                      }}
+                    >
+                      {props.text2}
+                    </Text>
+                  )}
+                </View>
+              </View>
+            ),
+            error: (props: any) => (
+              <View
+                style={{
+                  backgroundColor: "#ffffff",
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  marginHorizontal: 16,
+                  width: "92%",
+                  shadowOpacity: 0.1,
+                  elevation: 5,
+                  shadowRadius: 12,
+                  shadowOffset: { width: 0, height: 4 },
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      color: "#18181b",
+                      fontSize: 14,
+                      fontWeight: "600",
+                      marginBottom: 2,
+                    }}
+                  >
+                    {props.text1}
+                  </Text>
+                  {props.text2 && (
+                    <Text
+                      style={{
+                        color: "#71717a",
+                        fontSize: 13,
+                        fontWeight: "400",
+                      }}
+                    >
+                      {props.text2}
+                    </Text>
+                  )}
+                </View>
+              </View>
+            ),
+          }}
+        />
       </ThemeProvider>
     </AuthProvider>
   );
