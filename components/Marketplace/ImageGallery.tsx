@@ -21,12 +21,15 @@ interface ImageGalleryProps {
 const ImageGallery = ({ images, isDark }: ImageGalleryProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+  const isProgrammaticScroll = useRef(false);
 
   const galleryImages =
     images.length > 0 ? images : ["https://via.placeholder.com/500"];
 
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      // Skip updates during programmatic scroll to prevent blinking
+      if (isProgrammaticScroll.current) return;
       if (viewableItems.length > 0 && viewableItems[0].index != null) {
         setActiveIndex(viewableItems[0].index);
       }
@@ -41,8 +44,13 @@ const ImageGallery = ({ images, isDark }: ImageGalleryProps) => {
   const scrollToIndex = useCallback(
     (index: number) => {
       if (index >= 0 && index < galleryImages.length) {
-        flatListRef.current?.scrollToIndex({ index, animated: true });
+        isProgrammaticScroll.current = true;
         setActiveIndex(index);
+        flatListRef.current?.scrollToIndex({ index, animated: true });
+        // Re-enable viewable tracking after scroll animation settles
+        setTimeout(() => {
+          isProgrammaticScroll.current = false;
+        }, 400);
       }
     },
     [galleryImages.length],
