@@ -182,8 +182,22 @@ export default function ProductDetailScreen() {
         >
           {/* Category badge */}
           {product.category && (
-            <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>
+            <View
+              style={[
+                styles.categoryBadge,
+                {
+                  backgroundColor: isDark
+                    ? "rgba(255,255,255,0.08)"
+                    : "rgba(0,0,0,0.05)",
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.categoryText,
+                  { color: isDark ? "#a1a1aa" : "#71717a" },
+                ]}
+              >
                 {product.category.toUpperCase()}
               </Text>
             </View>
@@ -191,16 +205,32 @@ export default function ProductDetailScreen() {
 
           {/* Name */}
           <Text
-            style={[styles.productName, { color: isDark ? "#fff" : "#18181b" }]}
+            style={[styles.productName, { color: isDark ? "#fff" : "#09090b" }]}
           >
             {displayName}
           </Text>
 
           {/* Price & Stock Row */}
           <View style={styles.priceRow}>
-            <Text style={styles.productPrice}>{price.toFixed(2)} ETB</Text>
+            <Text
+              style={[
+                styles.productPrice,
+                { color: isDark ? "#fff" : "#09090b" },
+              ]}
+            >
+              {price.toFixed(2)} ETB
+            </Text>
             {product.stock != null && (
-              <View style={styles.stockBadge}>
+              <View
+                style={[
+                  styles.stockBadge,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(255,255,255,0.06)"
+                      : "rgba(0,0,0,0.04)",
+                  },
+                ]}
+              >
                 <View
                   style={[
                     styles.stockDot,
@@ -212,7 +242,13 @@ export default function ProductDetailScreen() {
                 <Text
                   style={[
                     styles.stockText,
-                    { color: isOutOfStock ? "#ef4444" : "#22c55e" },
+                    {
+                      color: isOutOfStock
+                        ? "#ef4444"
+                        : isDark
+                          ? "#a1a1aa"
+                          : "#52525b",
+                    },
                   ]}
                 >
                   {isOutOfStock ? "Out of stock" : `${product.stock} in stock`}
@@ -224,8 +260,14 @@ export default function ProductDetailScreen() {
           {/* New Badge */}
           {product.isNew && (
             <View style={styles.newBadge}>
-              <Ionicons name="sparkles" size={12} color="#ff6719" />
-              <Text style={styles.newBadgeText}>New Arrival</Text>
+              <Text
+                style={[
+                  styles.newBadgeText,
+                  { color: isDark ? "#71717a" : "#a1a1aa" },
+                ]}
+              >
+                New Arrival
+              </Text>
             </View>
           )}
 
@@ -243,7 +285,7 @@ export default function ProductDetailScreen() {
               <Text
                 style={[
                   styles.sectionTitle,
-                  { color: isDark ? "#fff" : "#18181b" },
+                  { color: isDark ? "#e4e4e7" : "#27272a" },
                 ]}
               >
                 About this product
@@ -251,7 +293,7 @@ export default function ProductDetailScreen() {
               <Text
                 style={[
                   styles.descriptionText,
-                  { color: isDark ? "#a1a1aa" : "#71717a" },
+                  { color: isDark ? "#a1a1aa" : "#52525b" },
                 ]}
               >
                 {product.description || product.shortDescription}
@@ -264,7 +306,7 @@ export default function ProductDetailScreen() {
             <Text
               style={[
                 styles.sectionTitle,
-                { color: isDark ? "#fff" : "#18181b" },
+                { color: isDark ? "#e4e4e7" : "#27272a" },
               ]}
             >
               Quantity
@@ -374,7 +416,7 @@ export default function ProductDetailScreen() {
 }
 
 // ─── Header Component ─────────────────────────────────────────────────────────
-/** Floating header bar consistent with other marketplace screens. */
+/** Floating header bar matching event details screen style. */
 const HeaderBar = ({
   isDark,
   top,
@@ -392,14 +434,14 @@ const HeaderBar = ({
       activeOpacity={0.8}
       style={styles.headerButton}
     >
-      <Ionicons name="arrow-back" size={22} color="#fff" />
+      <Ionicons name="arrow-back" size={24} color="#fff" />
     </TouchableOpacity>
     <TouchableOpacity
       onPress={onShare}
       activeOpacity={0.8}
       style={styles.headerButton}
     >
-      <Ionicons name="share-outline" size={20} color="#fff" />
+      <Ionicons name="share-social-outline" size={22} color="#fff" />
     </TouchableOpacity>
   </View>
 );
@@ -441,10 +483,10 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   headerButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.3)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -455,27 +497,26 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 24,
-    paddingTop: 28,
+    paddingTop: 32,
   },
   categoryBadge: {
     alignSelf: "flex-start",
-    backgroundColor: "rgba(255,103,25,0.1)",
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
     marginBottom: 14,
   },
   categoryText: {
-    color: "#ff6719",
     fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 1.2,
+    fontWeight: "800",
+    letterSpacing: 1.4,
   },
   productName: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: "900",
-    letterSpacing: -0.5,
-    marginBottom: 10,
+    letterSpacing: -0.6,
+    lineHeight: 34,
+    marginBottom: 12,
   },
   priceRow: {
     flexDirection: "row",
@@ -484,27 +525,26 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   productPrice: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "900",
-    color: "#ff6719",
+    letterSpacing: -0.3,
   },
   stockBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    backgroundColor: "rgba(34,197,94,0.08)",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 20,
   },
   stockDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
   stockText: {
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   newBadge: {
     flexDirection: "row",
@@ -513,9 +553,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   newBadgeText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
-    color: "#ff6719",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
   },
   divider: {
     height: 1,
@@ -523,16 +564,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   descriptionSection: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "800",
-    marginBottom: 10,
+    marginBottom: 12,
+    letterSpacing: -0.2,
   },
   descriptionText: {
     fontSize: 15,
-    lineHeight: 24,
+    lineHeight: 26,
+    letterSpacing: 0.1,
   },
 
   // Quantity

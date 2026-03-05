@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useCallback, useRef, useState } from "react";
 import {
@@ -109,37 +108,35 @@ const ImageGallery = ({ images, isDark }: ImageGalleryProps) => {
             },
           ]}
         >
-          {galleryImages.map((uri, index) => (
-            <TouchableOpacity
-              key={`thumb-${index}`}
-              onPress={() => scrollToIndex(index)}
-              activeOpacity={0.8}
-              style={[
-                styles.thumbnailWrapper,
-                {
-                  borderColor:
-                    index === activeIndex
-                      ? "#ff6719"
+          {galleryImages.map((uri, index) => {
+            const isActive = index === activeIndex;
+            return (
+              <TouchableOpacity
+                key={`thumb-${index}`}
+                onPress={() => scrollToIndex(index)}
+                activeOpacity={0.85}
+                style={[
+                  styles.thumbnailWrapper,
+                  {
+                    borderColor: isActive
+                      ? "#fff"
                       : isDark
-                        ? "#3f3f46"
-                        : "#e4e4e7",
-                  borderWidth: index === activeIndex ? 2 : 1,
-                },
-              ]}
-            >
-              <Image
-                source={{ uri }}
-                style={styles.thumbnail}
-                contentFit="cover"
-                transition={200}
-              />
-              {index === activeIndex && (
-                <View style={styles.thumbnailOverlay}>
-                  <Ionicons name="checkmark" size={14} color="#fff" />
-                </View>
-              )}
-            </TouchableOpacity>
-          ))}
+                        ? "rgba(255,255,255,0.15)"
+                        : "rgba(0,0,0,0.08)",
+                    borderWidth: isActive ? 2 : 1,
+                    opacity: isActive ? 1 : 0.6,
+                  },
+                ]}
+              >
+                <Image
+                  source={{ uri }}
+                  style={styles.thumbnail}
+                  contentFit="cover"
+                  transition={200}
+                />
+              </TouchableOpacity>
+            );
+          })}
         </View>
       )}
     </View>
@@ -152,7 +149,7 @@ const styles = StyleSheet.create({
   },
   heroSlide: {
     width: SCREEN_WIDTH,
-    height: SCREEN_WIDTH * 0.95,
+    height: SCREEN_WIDTH * 1.15,
   },
   heroImage: {
     width: "100%",
@@ -187,18 +184,12 @@ const styles = StyleSheet.create({
   thumbnailWrapper: {
     width: THUMBNAIL_SIZE,
     height: THUMBNAIL_SIZE,
-    borderRadius: 12,
+    borderRadius: 10,
     overflow: "hidden",
   },
   thumbnail: {
     width: "100%",
     height: "100%",
-  },
-  thumbnailOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(255,103,25,0.3)",
-    alignItems: "center",
-    justifyContent: "center",
   },
 });
 
