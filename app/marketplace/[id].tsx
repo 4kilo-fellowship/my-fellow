@@ -149,6 +149,22 @@ export default function ProductDetailScreen() {
     <View style={{ flex: 1, backgroundColor: isDark ? "#1A1A1B" : "#fff" }}>
       <StatusBar style="light" />
 
+      {/* ── Floating Header ────────────────────────────────────────────── */}
+      <HeaderBar
+        isDark={isDark}
+        top={top}
+        onBack={() => router.back()}
+        onShare={() => {
+          Toast.show({
+            type: "info",
+            text1: "Share",
+            text2: "Share feature coming soon!",
+            visibilityTime: 1500,
+            position: "bottom",
+          });
+        }}
+      />
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 180 }}
@@ -156,22 +172,6 @@ export default function ProductDetailScreen() {
       >
         {/* ── Image Gallery ─────────────────────────────────────────────── */}
         <ImageGallery images={images} isDark={isDark} />
-
-        {/* ── Header (consistent with other screens) ────────────────────── */}
-        <HeaderBar
-          isDark={isDark}
-          top={top}
-          onBack={() => router.back()}
-          onShare={() => {
-            Toast.show({
-              type: "info",
-              text1: "Share",
-              text2: "Share feature coming soon!",
-              visibilityTime: 1500,
-              position: "bottom",
-            });
-          }}
-        />
 
         {/* ── Product Info ──────────────────────────────────────────────── */}
         <View
