@@ -212,7 +212,7 @@ export default function MarketplaceScreen() {
               product={item}
               isDark={isDark}
               onPress={() => router.push(`/marketplace/${item.id}` as any)}
-              onAddToCart={() => handleAddToCart(item)}
+              onBuy={() => handleAddToCart(item)}
             />
           )}
           onEndReached={loadMore}

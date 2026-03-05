@@ -501,7 +501,7 @@ const Gifts = () => {
                           onPress={() =>
                             router.push(`/marketplace/${item.id}` as any)
                           }
-                          onAddToCart={() => {
+                          onBuy={() => {
                             addToCart(item, 1);
                             Toast.show({
                               type: "success",

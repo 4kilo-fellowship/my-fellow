@@ -12,15 +12,10 @@ interface ProductCardProps {
   product: Product;
   isDark: boolean;
   onPress: () => void;
-  onAddToCart: () => void;
+  onBuy: () => void;
 }
 
-const ProductCard = ({
-  product,
-  isDark,
-  onPress,
-  onAddToCart,
-}: ProductCardProps) => {
+const ProductCard = ({ product, isDark, onPress, onBuy }: ProductCardProps) => {
   const imageUri = getProductImage(product);
   const price = getProductPrice(product);
 
@@ -91,15 +86,15 @@ const ProductCard = ({
         <View style={styles.footer}>
           <Text style={styles.price}>{price.toFixed(2)} ETB</Text>
           <TouchableOpacity
-            style={styles.addButton}
+            style={styles.buyButton}
             onPress={(e) => {
               e.stopPropagation?.();
-              onAddToCart();
+              onBuy();
             }}
             activeOpacity={0.8}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="add" size={20} color="#fff" />
+            <Ionicons name="cart" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
@@ -189,7 +184,7 @@ const styles = StyleSheet.create({
     color: "#ff6719",
     fontWeight: "900",
   },
-  addButton: {
+  buyButton: {
     width: 36,
     height: 36,
     borderRadius: 12,
