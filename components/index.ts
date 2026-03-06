@@ -12,6 +12,7 @@ export { default as ProductSkeleton } from "./Marketplace/ProductSkeleton";
 export { ConfirmModal } from "./Modals/ConfirmModal";
 export { DeleteConfirmModal } from "./Modals/DeleteConfirmModal";
 export { InfoModal } from "./Modals/InfoModal";
+export { ProductBottomSheet } from "./Modals/ProductBottomSheet";
 export { default as NoInternetScreen } from "./NoInternetScreen";
 export { Placeholder } from "./Placeholder";
 export { default as QuickAction } from "./QuickAction/HomeQuickActions";

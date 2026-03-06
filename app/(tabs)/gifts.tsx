@@ -1,10 +1,12 @@
 import ProductCard from "@/components/Marketplace/ProductCard";
 import { InfoModal } from "@/components/Modals/InfoModal";
+import { ProductBottomSheet } from "@/components/Modals/ProductBottomSheet";
 import { useTheme } from "@/context/ThemeContext";
 import api from "@/services/api";
 import { useMarketplaceStore } from "@/stores/marketplace.store";
 import { usePaymentStore } from "@/stores/payment.store";
 import { useUserStore } from "@/stores/user.store";
+import { Product } from "@/types/marketplace.types";
 import { donationSchema } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,6 +49,8 @@ const Gifts = () => {
   const { top } = useSafeAreaInsets();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
 
   const [infoModal, setInfoModal] = useState<{
     visible: boolean;
@@ -502,13 +506,8 @@ const Gifts = () => {
                             router.push(`/marketplace/${item.id}` as any)
                           }
                           onBuy={() => {
-                            addToCart(item, 1);
-                            Toast.show({
-                              type: "success",
-                              text1: "Added to Cart",
-                              text2: `${item.name || item.title} added.`,
-                              visibilityTime: 1500,
-                            });
+                            setSelectedProduct(item);
+                            setBottomSheetVisible(true);
                           }}
                         />
                       </View>
@@ -566,6 +565,28 @@ const Gifts = () => {
         message={infoModal.message}
         type={infoModal.type}
         isDark={isDark}
+      />
+      <ProductBottomSheet
+        visible={bottomSheetVisible}
+        onClose={() => {
+          setBottomSheetVisible(false);
+          setSelectedProduct(null);
+        }}
+        isDark={isDark}
+        product={selectedProduct}
+        onAddToCart={(product, quantity) => {
+          addToCart(product, quantity);
+          Toast.show({
+            type: "success",
+            text1: "Added to Cart",
+            text2: `${product.name || product.title} × ${quantity} added.`,
+            visibilityTime: 1500,
+          });
+        }}
+        onBuyNow={(product, quantity) => {
+          addToCart(product, quantity);
+          router.push("/marketplace" as any);
+        }}
       />
     </View>
   );
