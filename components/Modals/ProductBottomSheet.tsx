@@ -6,21 +6,9 @@ import {
 } from "@/types/marketplace.types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import {
-  Animated,
-  Dimensions,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-const SHEET_HEIGHT = SCREEN_HEIGHT * 0.55;
 
 interface ProductBottomSheetProps {
   visible: boolean;
@@ -41,10 +29,7 @@ export const ProductBottomSheet = ({
 }: ProductBottomSheetProps) => {
   const { bottom } = useSafeAreaInsets();
   const [quantity, setQuantity] = useState(1);
-  const slideAnim = useRef(new Animated.Value(SHEET_HEIGHT)).current;
-  const backdropAnim = useRef(new Animated.Value(0)).current;
 
-  const bgColor = isDark ? "#1A1A1B" : "#FFFFFF";
   const textColor = isDark ? "#FAFAFA" : "#18181B";
   const subTextColor = isDark ? "#A1A1AA" : "#71717A";
   const cardBg = isDark ? "#27272A" : "#F4F4F5";
@@ -54,39 +39,8 @@ export const ProductBottomSheet = ({
   useEffect(() => {
     if (visible) {
       setQuantity(1);
-      Animated.parallel([
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          useNativeDriver: true,
-          damping: 20,
-          stiffness: 200,
-          mass: 0.8,
-        }),
-        Animated.timing(backdropAnim, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-      ]).start();
     }
   }, [visible]);
-
-  const handleClose = useCallback(() => {
-    Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: SHEET_HEIGHT,
-        duration: 220,
-        useNativeDriver: true,
-      }),
-      Animated.timing(backdropAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onClose();
-    });
-  }, [onClose, slideAnim, backdropAnim]);
 
   const incrementQty = () => setQuantity((prev) => Math.min(prev + 1, 99));
   const decrementQty = () => setQuantity((prev) => Math.max(prev - 1, 1));
@@ -98,178 +52,191 @@ export const ProductBottomSheet = ({
   const totalPrice = unitPrice * quantity;
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="none"
-      statusBarTranslucent
-      onRequestClose={handleClose}
-    >
-      <View style={styles.overlay}>
-        {/* Backdrop */}
-        <Animated.View
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              backgroundColor: isDark ? "rgba(0,0,0,0.75)" : "rgba(0,0,0,0.45)",
-              opacity: backdropAnim,
-            },
-          ]}
-        >
-          <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
-        </Animated.View>
+    <>
+      {/* Backdrop — fades in independently */}
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={onClose}
+      >
+        <TouchableOpacity
+          style={styles.backdrop}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+      </Modal>
 
-        {/* Sheet */}
-        <Animated.View
-          style={[
-            styles.sheet,
-            {
-              backgroundColor: bgColor,
-              paddingBottom: bottom > 0 ? bottom + 8 : 24,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          {/* Handle Bar */}
-          <View style={styles.handleContainer}>
-            <View
-              style={[
-                styles.handle,
-                { backgroundColor: isDark ? "#52525B" : "#D4D4D8" },
-              ]}
-            />
-          </View>
-
-          {/* Product Info Row */}
-          <View style={[styles.productRow, { borderBottomColor: borderColor }]}>
-            <View style={[styles.imageWrapper, { backgroundColor: cardBg }]}>
-              <Image
-                source={{ uri: imageUri }}
-                style={styles.productImage}
-                contentFit="cover"
-                transition={300}
+      {/* Sheet — slides up from bottom */}
+      <Modal
+        visible={visible}
+        transparent
+        animationType="slide"
+        statusBarTranslucent
+        onRequestClose={onClose}
+      >
+        <View style={styles.overlay}>
+          <TouchableOpacity
+            style={{ flex: 1 }}
+            activeOpacity={1}
+            onPress={onClose}
+          />
+          <View
+            style={[
+              styles.sheet,
+              isDark ? styles.sheetDark : styles.sheetLight,
+              { paddingBottom: bottom > 0 ? bottom + 8 : 24 },
+            ]}
+          >
+            {/* Handle Bar */}
+            <View style={styles.handleContainer}>
+              <View
+                style={[
+                  styles.handle,
+                  { backgroundColor: isDark ? "#52525B" : "#D4D4D8" },
+                ]}
               />
             </View>
-            <View style={styles.productInfo}>
-              <Text
-                numberOfLines={2}
-                style={[styles.productName, { color: textColor }]}
-              >
-                {product.title || product.name || "Product"}
-              </Text>
-              {product.category && (
-                <Text style={[styles.categoryText, { color: subTextColor }]}>
-                  {product.category}
-                </Text>
-              )}
-              <Text style={styles.unitPrice}>{unitPrice.toFixed(2)} ETB</Text>
-            </View>
-            <TouchableOpacity
-              onPress={handleClose}
-              style={[styles.closeBtn, { backgroundColor: cardBg }]}
-              activeOpacity={0.7}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+
+            {/* Product Info Row */}
+            <View
+              style={[styles.productRow, { borderBottomColor: borderColor }]}
             >
-              <Ionicons name="close" size={18} color={subTextColor} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Quantity Controller */}
-          <View
-            style={[styles.quantitySection, { borderBottomColor: borderColor }]}
-          >
-            <Text style={[styles.sectionLabel, { color: subTextColor }]}>
-              QUANTITY
-            </Text>
-            <View style={styles.quantityRow}>
-              <View style={styles.quantityControls}>
-                <TouchableOpacity
-                  onPress={decrementQty}
-                  style={[
-                    styles.qtyBtn,
-                    {
-                      backgroundColor:
-                        quantity <= 1
-                          ? isDark
-                            ? "#27272A"
-                            : "#F4F4F5"
-                          : qtyBtnBg,
-                      opacity: quantity <= 1 ? 0.5 : 1,
-                    },
-                  ]}
-                  activeOpacity={0.7}
-                  disabled={quantity <= 1}
+              <View style={[styles.imageWrapper, { backgroundColor: cardBg }]}>
+                <Image
+                  source={{ uri: imageUri }}
+                  style={styles.productImage}
+                  contentFit="cover"
+                  transition={300}
+                />
+              </View>
+              <View style={styles.productInfo}>
+                <Text
+                  numberOfLines={2}
+                  style={[styles.productName, { color: textColor }]}
                 >
-                  <Ionicons
-                    name="remove"
-                    size={20}
-                    color={quantity <= 1 ? subTextColor : textColor}
-                  />
-                </TouchableOpacity>
-
-                <View style={[styles.qtyDisplay, { backgroundColor: cardBg }]}>
-                  <Text style={[styles.qtyText, { color: textColor }]}>
-                    {quantity}
+                  {product.title || product.name || "Product"}
+                </Text>
+                {product.category && (
+                  <Text style={[styles.categoryText, { color: subTextColor }]}>
+                    {product.category}
                   </Text>
+                )}
+                <Text style={styles.unitPrice}>{unitPrice.toFixed(2)} ETB</Text>
+              </View>
+              <TouchableOpacity
+                onPress={onClose}
+                style={[styles.closeBtn, { backgroundColor: cardBg }]}
+                activeOpacity={0.7}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="close" size={18} color={subTextColor} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Quantity Controller */}
+            <View
+              style={[
+                styles.quantitySection,
+                { borderBottomColor: borderColor },
+              ]}
+            >
+              <Text style={[styles.sectionLabel, { color: subTextColor }]}>
+                QUANTITY
+              </Text>
+              <View style={styles.quantityRow}>
+                <View style={styles.quantityControls}>
+                  <TouchableOpacity
+                    onPress={decrementQty}
+                    style={[
+                      styles.qtyBtn,
+                      {
+                        backgroundColor:
+                          quantity <= 1
+                            ? isDark
+                              ? "#27272A"
+                              : "#F4F4F5"
+                            : qtyBtnBg,
+                        opacity: quantity <= 1 ? 0.5 : 1,
+                      },
+                    ]}
+                    activeOpacity={0.7}
+                    disabled={quantity <= 1}
+                  >
+                    <Ionicons
+                      name="remove"
+                      size={20}
+                      color={quantity <= 1 ? subTextColor : textColor}
+                    />
+                  </TouchableOpacity>
+
+                  <View
+                    style={[styles.qtyDisplay, { backgroundColor: cardBg }]}
+                  >
+                    <Text style={[styles.qtyText, { color: textColor }]}>
+                      {quantity}
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={incrementQty}
+                    style={[styles.qtyBtn, { backgroundColor: PRIMARY }]}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="add" size={20} color="#FFFFFF" />
+                  </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity
-                  onPress={incrementQty}
-                  style={[styles.qtyBtn, { backgroundColor: PRIMARY }]}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="add" size={20} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.totalPriceContainer}>
-                <Text style={[styles.totalLabel, { color: subTextColor }]}>
-                  Total
-                </Text>
-                <Text style={[styles.totalPrice, { color: textColor }]}>
-                  {totalPrice.toFixed(2)} ETB
-                </Text>
+                <View style={styles.totalPriceContainer}>
+                  <Text style={[styles.totalLabel, { color: subTextColor }]}>
+                    Total
+                  </Text>
+                  <Text style={[styles.totalPrice, { color: textColor }]}>
+                    {totalPrice.toFixed(2)} ETB
+                  </Text>
+                </View>
               </View>
             </View>
-          </View>
 
-          {/* Action Buttons */}
-          <View style={styles.actionSection}>
-            <TouchableOpacity
-              onPress={() => {
-                onAddToCart(product, quantity);
-                handleClose();
-              }}
-              style={[
-                styles.addToCartBtn,
-                {
-                  backgroundColor: cardBg,
-                  borderColor: borderColor,
-                },
-              ]}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="cart-outline" size={22} color={PRIMARY} />
-              <Text style={[styles.addToCartText, { color: textColor }]}>
-                Add to Cart
-              </Text>
-            </TouchableOpacity>
+            {/* Action Buttons */}
+            <View style={styles.actionSection}>
+              <TouchableOpacity
+                onPress={() => {
+                  onAddToCart(product, quantity);
+                  onClose();
+                }}
+                style={[
+                  styles.addToCartBtn,
+                  {
+                    backgroundColor: cardBg,
+                    borderColor: borderColor,
+                  },
+                ]}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="cart-outline" size={22} color={PRIMARY} />
+                <Text style={[styles.addToCartText, { color: textColor }]}>
+                  Add to Cart
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => {
-                onBuyNow(product, quantity);
-                handleClose();
-              }}
-              style={styles.buyNowBtn}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="flash" size={20} color="#FFFFFF" />
-              <Text style={styles.buyNowText}>Buy Now</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  onBuyNow(product, quantity);
+                  onClose();
+                }}
+                style={styles.buyNowBtn}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="flash" size={20} color="#FFFFFF" />
+                <Text style={styles.buyNowText}>Buy Now</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </Animated.View>
-      </View>
-    </Modal>
+        </View>
+      </Modal>
+    </>
   );
 };
 
@@ -278,10 +245,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-end",
   },
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
   sheet: {
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 20,
+  },
+  sheetLight: {
+    backgroundColor: "#fff",
+  },
+  sheetDark: {
+    backgroundColor: "#1A1A1B",
   },
   handleContainer: {
     alignItems: "center",
