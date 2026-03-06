@@ -1,5 +1,6 @@
-import { Order } from "@/types/marketplace.types";
+import { getProductImage, Order } from "@/types/marketplace.types";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -9,17 +10,29 @@ interface OrderCardProps {
   onPress?: () => void;
 }
 
-const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  pending: { bg: "#fef3c7", text: "#92400e" },
-  confirmed: { bg: "#dbeafe", text: "#1e40af" },
-  completed: { bg: "#d1fae5", text: "#065f46" },
-  cancelled: { bg: "#fee2e2", text: "#991b1b" },
+const STATUS_CONFIG: Record<
+  string,
+  { bg: string; text: string; icon: keyof typeof Ionicons.glyphMap }
+> = {
+  pending: { bg: "#FFF7ED", text: "#C2410C", icon: "time-outline" },
+  confirmed: {
+    bg: "#EFF6FF",
+    text: "#1D4ED8",
+    icon: "checkmark-circle-outline",
+  },
+  completed: { bg: "#F0FDF4", text: "#15803D", icon: "bag-check-outline" },
+  cancelled: { bg: "#FEF2F2", text: "#B91C1C", icon: "close-circle-outline" },
 };
 
 const OrderCard = ({ order, isDark, onPress }: OrderCardProps) => {
-  const statusColor =
-    STATUS_COLORS[order.status || "pending"] || STATUS_COLORS.pending;
+  const status = (order.status || "pending").toLowerCase();
+  const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
   const itemCount = order.items?.length || 0;
+
+  // Get image from the first item if available
+  const firstItemProduct = order.items?.[0]?.product;
+  const imageUri = firstItemProduct ? getProductImage(firstItemProduct) : null;
+
   const date = order.createdAt
     ? new Date(order.createdAt).toLocaleDateString(undefined, {
         month: "short",
@@ -28,60 +41,88 @@ const OrderCard = ({ order, isDark, onPress }: OrderCardProps) => {
       })
     : "";
 
+  const totalAmount =
+    typeof order.totalAmount === "string"
+      ? parseFloat(order.totalAmount)
+      : order.totalAmount || 0;
+
   return (
     <TouchableOpacity
-      activeOpacity={0.9}
+      activeOpacity={0.8}
       onPress={onPress}
       style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}
     >
-      <View style={styles.topRow}>
-        <View style={styles.orderInfo}>
-          <Text
-            style={[styles.orderId, { color: isDark ? "#a1a1aa" : "#71717a" }]}
-          >
-            Order #{order.id.slice(-8).toUpperCase()}
-          </Text>
-          {date ? (
-            <Text
-              style={[styles.date, { color: isDark ? "#52525b" : "#a1a1aa" }]}
-            >
-              {date}
-            </Text>
-          ) : null}
+      <View style={styles.container}>
+        {/* Left: Image Preview */}
+        <View
+          style={[
+            styles.imageWrapper,
+            isDark ? styles.imageWrapperDark : styles.imageWrapperLight,
+          ]}
+        >
+          {imageUri ? (
+            <Image
+              source={{ uri: imageUri }}
+              style={styles.image}
+              contentFit="cover"
+              transition={300}
+            />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <Ionicons
+                name="cube-outline"
+                size={24}
+                color={isDark ? "#3f3f46" : "#d4d4d8"}
+              />
+            </View>
+          )}
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: statusColor.bg }]}>
-          <Text style={[styles.statusText, { color: statusColor.text }]}>
-            {(order.status || "pending").charAt(0).toUpperCase() +
-              (order.status || "pending").slice(1)}
-          </Text>
-        </View>
-      </View>
 
-      <View style={styles.bottomRow}>
-        <View style={styles.detail}>
-          <Ionicons
-            name="cube-outline"
-            size={16}
-            color={isDark ? "#71717a" : "#a1a1aa"}
-          />
+        {/* Right: Info */}
+        <View style={styles.info}>
+          <View style={styles.header}>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.productName,
+                { color: isDark ? "#FAFAFA" : "#18181B" },
+              ]}
+            >
+              {firstItemProduct?.title ||
+                firstItemProduct?.name ||
+                `Order #${order.id.slice(-6).toUpperCase()}`}
+            </Text>
+            <View style={[styles.statusBadge, { backgroundColor: config.bg }]}>
+              <Ionicons
+                name={config.icon}
+                size={12}
+                color={config.text}
+                style={{ marginRight: 4 }}
+              />
+              <Text style={[styles.statusText, { color: config.text }]}>
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </Text>
+            </View>
+          </View>
+
           <Text
-            style={[
-              styles.detailText,
-              { color: isDark ? "#a1a1aa" : "#71717a" },
-            ]}
+            style={[styles.date, { color: isDark ? "#A1A1AA" : "#71717A" }]}
           >
-            {itemCount} item{itemCount !== 1 ? "s" : ""}
+            Ordered on {date}
           </Text>
+
+          <View style={styles.footer}>
+            <Text
+              style={[
+                styles.itemCount,
+                { color: isDark ? "#71717A" : "#a1a1aa" },
+              ]}
+            >
+              {itemCount} item{itemCount !== 1 ? "s" : ""}
+            </Text>
+            <Text style={styles.price}>{totalAmount.toFixed(2)} ETB</Text>
+          </View>
         </View>
-        {order.totalAmount != null && (
-          <Text style={styles.total}>
-            {(typeof order.totalAmount === "string"
-              ? parseFloat(order.totalAmount)
-              : order.totalAmount
-            ).toFixed(2)}{" "}
-            ETB
-          </Text>
-        )}
       </View>
     </TouchableOpacity>
   );
@@ -89,65 +130,112 @@ const OrderCard = ({ order, isDark, onPress }: OrderCardProps) => {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
+    borderRadius: 24,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    overflow: "hidden",
   },
   cardLight: {
-    backgroundColor: "#fff",
-    borderColor: "#f4f4f5",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#F1F1F1",
   },
   cardDark: {
-    backgroundColor: "#262626",
-    borderColor: "#3f3f46",
+    backgroundColor: "#1C1C1E",
+    borderColor: "#2C2C2E",
   },
-  topRow: {
+  container: {
+    flexDirection: "row",
+    padding: 16,
+    alignItems: "center",
+  },
+  imageWrapper: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    overflow: "hidden",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  imageWrapperLight: {
+    backgroundColor: "#F8FAFC",
+  },
+  imageWrapperDark: {
+    backgroundColor: "#27272A",
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+  },
+  imagePlaceholder: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  info: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
+    alignItems: "center",
+    marginBottom: 4,
   },
-  orderInfo: {
-    flex: 1,
-  },
-  orderId: {
-    fontSize: 13,
+  productName: {
+    fontSize: 15,
     fontWeight: "800",
-    letterSpacing: 0.5,
-  },
-  date: {
-    fontSize: 11,
-    marginTop: 2,
-    fontWeight: "500",
+    letterSpacing: -0.3,
+    flex: 1,
+    marginRight: 8,
   },
   statusBadge: {
-    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
   statusText: {
     fontSize: 11,
     fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.2,
   },
-  bottomRow: {
+  date: {
+    fontSize: 12,
+    fontWeight: "500",
+    marginBottom: 8,
+  },
+  footer: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-  },
-  detail: {
-    flexDirection: "row",
     alignItems: "center",
-    gap: 4,
   },
-  detailText: {
+  itemCount: {
     fontSize: 13,
     fontWeight: "600",
   },
-  total: {
+  price: {
     fontSize: 16,
     fontWeight: "900",
-    color: "#ff6719",
+    color: "#FF6719",
+  },
+  divider: {
+    height: 1,
+    marginHorizontal: 16,
+  },
+  detailLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    gap: 4,
+  },
+  detailText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#FF6719",
   },
 });
 
