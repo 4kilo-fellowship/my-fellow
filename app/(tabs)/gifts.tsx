@@ -28,7 +28,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Toast from "react-native-toast-message";
 import * as z from "zod";
 
 type DonationForm = z.infer<typeof donationSchema>;
@@ -133,24 +132,20 @@ const Gifts = () => {
       const response = await api.get(`/payments/chapa/verify/${ref}`);
       const status = response.data.status || response.data.data?.status;
       if (status === "success" || status === "completed") {
-        Toast.show({
-          type: "success",
-          text1: "Payment Successful",
-          text2: "Thank you for your donation!",
-        });
+        showInfoModal(
+          "Payment Successful",
+          "Thank you for your donation!",
+          "success",
+        );
       } else {
-        Toast.show({
-          type: "error",
-          text1: "Payment Failed",
-          text2: "Please try again.",
-        });
+        showInfoModal("Payment Failed", "Please try again.", "error");
       }
     } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: "Verification Error",
-        text2: "Could not confirm payment status.",
-      });
+      showInfoModal(
+        "Verification Error",
+        "Could not confirm payment status.",
+        "error",
+      );
     } finally {
       setLoading(false);
       setTxRef(null);
@@ -576,12 +571,11 @@ const Gifts = () => {
         product={selectedProduct}
         onAddToCart={(product, quantity) => {
           addToCart(product, quantity);
-          Toast.show({
-            type: "success",
-            text1: "Added to Cart",
-            text2: `${product.name || product.title} × ${quantity} added.`,
-            visibilityTime: 1500,
-          });
+          showInfoModal(
+            "Added to Cart",
+            `${product.name || product.title} × ${quantity} added.`,
+            "success",
+          );
         }}
         onBuyNow={(product, quantity) => {
           addToCart(product, quantity);

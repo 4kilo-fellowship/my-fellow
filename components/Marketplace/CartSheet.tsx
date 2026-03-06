@@ -4,7 +4,7 @@ import { getProductImage, getProductPrice } from "@/types/marketplace.types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -15,7 +15,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Toast from "react-native-toast-message";
+import { InfoModal } from "../Modals/InfoModal";
 
 interface CartSheetProps {
   visible: boolean;
@@ -38,6 +38,13 @@ const CartSheet = ({ visible, onClose, isDark }: CartSheetProps) => {
     placingOrder,
   } = useMarketplaceStore();
 
+  const [infoModal, setInfoModal] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "info";
+  }>({ visible: false, title: "", message: "", type: "info" });
+
   const total = getCartTotal();
 
   const handlePlaceOrder = async () => {
@@ -50,18 +57,23 @@ const CartSheet = ({ visible, onClose, isDark }: CartSheetProps) => {
     try {
       const order = await placeOrder();
       if (order) {
-        Toast.show({
+        setInfoModal({
+          visible: true,
+          title: "Order Placed! 🎉",
+          message: "Your order has been placed successfully.",
           type: "success",
-          text1: "Order Placed! 🎉",
-          text2: "Your order has been placed successfully.",
         });
-        onClose();
+        // We delay the onClose() slightly so they see the success modal
+        // or we can close the sheet first but then the modal will disappear
+        // because it's inside the sheet modal.
+        // Actually, it's better to show it and let them close it, then we close sheet.
       }
     } catch (error: any) {
-      Toast.show({
+      setInfoModal({
+        visible: true,
+        title: "Order Failed",
+        message: error?.response?.data?.message || "Please try again.",
         type: "error",
-        text1: "Order Failed",
-        text2: error?.response?.data?.message || "Please try again.",
       });
     }
   };
@@ -291,6 +303,20 @@ const CartSheet = ({ visible, onClose, isDark }: CartSheetProps) => {
           )}
         </View>
       </View>
+
+      <InfoModal
+        visible={infoModal.visible}
+        onClose={() => {
+          setInfoModal((prev) => ({ ...prev, visible: false }));
+          if (infoModal.type === "success") {
+            onClose();
+          }
+        }}
+        title={infoModal.title}
+        message={infoModal.message}
+        type={infoModal.type}
+        isDark={isDark}
+      />
     </Modal>
   );
 };

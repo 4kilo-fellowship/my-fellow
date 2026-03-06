@@ -2,13 +2,21 @@ import CartBadge from "@/components/Marketplace/CartBadge";
 import CartSheet from "@/components/Marketplace/CartSheet";
 import ProductCard from "@/components/Marketplace/ProductCard";
 import ProductSkeleton from "@/components/Marketplace/ProductSkeleton";
+import { InfoModal } from "@/components/Modals/InfoModal";
+import { ProductBottomSheet } from "@/components/Modals/ProductBottomSheet";
 import { useTheme } from "@/context/ThemeContext";
 import { useMarketplaceStore } from "@/stores/marketplace.store";
 import { Product } from "@/types/marketplace.types";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -21,7 +29,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Toast from "react-native-toast-message";
 
 const CATEGORIES = [
   { label: "All", value: "All" },
@@ -33,6 +40,8 @@ const CATEGORIES = [
   { label: "Others", value: "others" },
 ];
 
+const MAIN_CATEGORIES = ["t-shirt", "hoddy", "stickers", "accessories"];
+
 export default function MarketplaceScreen() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -40,6 +49,15 @@ export default function MarketplaceScreen() {
   const router = useRouter();
 
   const [cartVisible, setCartVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
+
+  const [infoModal, setInfoModal] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "info";
+  }>({ visible: false, title: "", message: "", type: "info" });
 
   const {
     products,
@@ -55,6 +73,32 @@ export default function MarketplaceScreen() {
   } = useMarketplaceStore();
 
   const flatListRef = useRef<FlatList<Product>>(null);
+
+  // Client-side category filter (matches gifts tab logic)
+  const filteredProducts = useMemo(() => {
+    if (selectedCategory === "All") return products;
+
+    return products.filter((p) => {
+      if (selectedCategory === "new") {
+        if (p.isNew) return true;
+        if (!p.createdAt) return false;
+        const createdDate = new Date(p.createdAt);
+        const now = new Date();
+        const diffDays = Math.ceil(
+          Math.abs(now.getTime() - createdDate.getTime()) /
+            (1000 * 60 * 60 * 24),
+        );
+        return diffDays <= 7;
+      }
+
+      const cat = p.category?.toLowerCase() || "";
+      if (selectedCategory === "others") {
+        return !MAIN_CATEGORIES.includes(cat);
+      }
+
+      return cat === selectedCategory.toLowerCase();
+    });
+  }, [products, selectedCategory]);
 
   // Header Heights
   const STATIC_HEADER_HEIGHT = top + 64;
@@ -87,18 +131,22 @@ export default function MarketplaceScreen() {
 
   const handleRefresh = useCallback(() => {
     fetchProducts(true);
+  }, [fetchProducts]);
+
+  const handleOpenProductSheet = useCallback((product: Product) => {
+    setSelectedProduct(product);
+    setBottomSheetVisible(true);
   }, []);
 
   const handleAddToCart = useCallback(
-    (product: Product) => {
-      addToCart(product, 1);
+    (product: Product, quantity: number = 1) => {
+      addToCart(product, quantity);
       const displayName = product.name || product.title || "Product";
-      Toast.show({
+      setInfoModal({
+        visible: true,
+        title: "Added to Cart",
+        message: `${displayName} has been added to your cart.`,
         type: "success",
-        text1: "Added to Cart",
-        text2: `${displayName} has been added.`,
-        visibilityTime: 1500,
-        position: "bottom",
       });
     },
     [addToCart],
@@ -192,7 +240,7 @@ export default function MarketplaceScreen() {
       ) : (
         <Animated.FlatList
           ref={flatListRef}
-          data={products}
+          data={filteredProducts}
           keyExtractor={(item) => item.id}
           numColumns={2}
           onScroll={Animated.event(
@@ -202,18 +250,21 @@ export default function MarketplaceScreen() {
           scrollEventThrottle={16}
           ListHeaderComponent={<View style={{ height: TOTAL_HEADER_HEIGHT }} />}
           contentContainerStyle={{
-            paddingHorizontal: 14,
+            paddingHorizontal: 8, // Matching gifts tab padding feel
             paddingBottom: 100,
             paddingTop: 4,
           }}
+          columnWrapperStyle={{ paddingHorizontal: 4 }}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
-            <ProductCard
-              product={item}
-              isDark={isDark}
-              onPress={() => router.push(`/marketplace/${item.id}` as any)}
-              onBuy={() => handleAddToCart(item)}
-            />
+            <View style={{ width: "50%" }}>
+              <ProductCard
+                product={item}
+                isDark={isDark}
+                onPress={() => router.push(`/marketplace/${item.id}` as any)}
+                onBuy={() => handleOpenProductSheet(item)}
+              />
+            </View>
           )}
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
@@ -364,6 +415,30 @@ export default function MarketplaceScreen() {
       <CartSheet
         visible={cartVisible}
         onClose={() => setCartVisible(false)}
+        isDark={isDark}
+      />
+
+      <ProductBottomSheet
+        visible={bottomSheetVisible}
+        onClose={() => {
+          setBottomSheetVisible(false);
+          setSelectedProduct(null);
+        }}
+        isDark={isDark}
+        product={selectedProduct}
+        onAddToCart={handleAddToCart}
+        onBuyNow={(product, quantity) => {
+          handleAddToCart(product, quantity);
+          setCartVisible(true);
+        }}
+      />
+
+      <InfoModal
+        visible={infoModal.visible}
+        onClose={() => setInfoModal((prev) => ({ ...prev, visible: false }))}
+        title={infoModal.title}
+        message={infoModal.message}
+        type={infoModal.type}
         isDark={isDark}
       />
     </View>

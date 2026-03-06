@@ -1,4 +1,5 @@
 import ImageGallery from "@/components/Marketplace/ImageGallery";
+import { InfoModal } from "@/components/Modals/InfoModal";
 import { useTheme } from "@/context/ThemeContext";
 import { useMarketplaceStore } from "@/stores/marketplace.store";
 import { useUserStore } from "@/stores/user.store";
@@ -16,7 +17,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Toast from "react-native-toast-message";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const PLACEHOLDER_IMAGE = "https://via.placeholder.com/500";
@@ -42,6 +42,12 @@ export default function ProductDetailScreen() {
   } = useMarketplaceStore();
 
   const [quantity, setQuantity] = useState(1);
+  const [infoModal, setInfoModal] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "info";
+  }>({ visible: false, title: "", message: "", type: "info" });
 
   useEffect(() => {
     if (id) fetchProductById(id);
@@ -57,12 +63,11 @@ export default function ProductDetailScreen() {
   const handleAddToCart = () => {
     if (!product) return;
     addToCart(product, quantity);
-    Toast.show({
+    setInfoModal({
+      visible: true,
+      title: "Added to Cart",
+      message: `${quantity}× ${displayName} added to your cart.`,
       type: "success",
-      text1: "Added to Cart",
-      text2: `${quantity}× ${displayName} added to your cart.`,
-      visibilityTime: 2000,
-      position: "bottom",
     });
   };
 
@@ -80,21 +85,19 @@ export default function ProductDetailScreen() {
     try {
       const order = await placeOrder();
       if (order) {
-        Toast.show({
+        setInfoModal({
+          visible: true,
+          title: "Order Placed! 🎉",
+          message: "Your order has been placed successfully.",
           type: "success",
-          text1: "Order Placed! 🎉",
-          text2: "Your order has been placed successfully.",
-          visibilityTime: 2500,
-          position: "bottom",
         });
       }
     } catch (err: any) {
-      Toast.show({
+      setInfoModal({
+        visible: true,
+        title: "Order Failed",
+        message: err?.response?.data?.message || "Please try again.",
         type: "error",
-        text1: "Order Failed",
-        text2: err?.response?.data?.message || "Please try again.",
-        visibilityTime: 2500,
-        position: "bottom",
       });
     }
   };
@@ -155,12 +158,11 @@ export default function ProductDetailScreen() {
         top={top}
         onBack={() => router.back()}
         onShare={() => {
-          Toast.show({
+          setInfoModal({
+            visible: true,
+            title: "Share",
+            message: "Share feature coming soon!",
             type: "info",
-            text1: "Share",
-            text2: "Share feature coming soon!",
-            visibilityTime: 1500,
-            position: "bottom",
           });
         }}
       />
@@ -411,6 +413,15 @@ export default function ProductDetailScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      <InfoModal
+        visible={infoModal.visible}
+        onClose={() => setInfoModal((prev) => ({ ...prev, visible: false }))}
+        title={infoModal.title}
+        message={infoModal.message}
+        type={infoModal.type}
+        isDark={isDark}
+      />
     </View>
   );
 }
