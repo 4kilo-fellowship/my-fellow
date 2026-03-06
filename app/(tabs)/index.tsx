@@ -372,6 +372,8 @@ const Home = () => {
                         router.push("/locations");
                       } else if (action.id === "3") {
                         router.push("/leaders");
+                      } else if (action.id === "store") {
+                        router.push("/marketplace");
                       } else if (action.id === "4") {
                         router.push("/teams");
                       } else if (action.id === "5") {
