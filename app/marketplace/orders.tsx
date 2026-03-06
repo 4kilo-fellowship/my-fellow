@@ -23,13 +23,29 @@ export default function OrdersScreen() {
   const router = useRouter();
   const { user } = useUserStore();
 
-  const { orders, ordersLoading, fetchMyOrders, error } = useMarketplaceStore();
+  const {
+    orders,
+    ordersLoading,
+    ordersHasMore,
+    fetchMyOrders,
+    loadMoreOrders,
+    error,
+  } = useMarketplaceStore();
 
   useEffect(() => {
-    if (user) fetchMyOrders();
+    if (user) fetchMyOrders(true);
   }, [user]);
 
   const STATIC_HEADER_HEIGHT = top + 64;
+
+  const renderFooter = () => {
+    if (!ordersHasMore || !ordersLoading) return null;
+    return (
+      <View style={{ paddingVertical: 20, alignItems: "center" }}>
+        <ActivityIndicator size="small" color="#ff6719" />
+      </View>
+    );
+  };
 
   if (!user) {
     return (
@@ -152,6 +168,9 @@ export default function OrdersScreen() {
           }}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => <OrderCard order={item} isDark={isDark} />}
+          onEndReached={loadMoreOrders}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={renderFooter}
           ListEmptyComponent={
             <View
               style={{
@@ -191,7 +210,7 @@ export default function OrdersScreen() {
           refreshControl={
             <RefreshControl
               refreshing={ordersLoading}
-              onRefresh={fetchMyOrders}
+              onRefresh={() => fetchMyOrders(true)}
               colors={["#ff6719"]}
               tintColor="#ff6719"
               progressViewOffset={STATIC_HEADER_HEIGHT}

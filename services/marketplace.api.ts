@@ -39,8 +39,13 @@ export const placeOrderApi = async (
   return res.data;
 };
 
-export const fetchMyOrdersApi = async (): Promise<OrdersApiResponse> => {
-  const res = await api.get<OrdersApiResponse>("/marketplace/orders/my");
+export const fetchMyOrdersApi = async (
+  page: number = 1,
+  limit: number = 20,
+): Promise<OrdersApiResponse> => {
+  const res = await api.get<OrdersApiResponse>("/marketplace/orders/my", {
+    params: { page, limit },
+  });
   return res.data;
 };
 

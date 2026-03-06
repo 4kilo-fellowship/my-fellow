@@ -74,7 +74,13 @@ const OrderCard = ({ order, isDark, onPress }: OrderCardProps) => {
           </Text>
         </View>
         {order.totalAmount != null && (
-          <Text style={styles.total}>{order.totalAmount.toFixed(2)} ETB</Text>
+          <Text style={styles.total}>
+            {(typeof order.totalAmount === "string"
+              ? parseFloat(order.totalAmount)
+              : order.totalAmount
+            ).toFixed(2)}{" "}
+            ETB
+          </Text>
         )}
       </View>
     </TouchableOpacity>

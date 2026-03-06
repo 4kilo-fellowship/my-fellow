@@ -28,9 +28,10 @@ type MarketplaceState = {
   cartItems: CartItem[];
   cartVisible: boolean;
 
-  // Orders
   orders: Order[];
   ordersLoading: boolean;
+  ordersPage: number;
+  ordersHasMore: boolean;
   placingOrder: boolean;
 
   error: string | null;
@@ -52,7 +53,8 @@ type MarketplaceState = {
 
   // Order actions
   placeOrder: () => Promise<Order | null>;
-  fetchMyOrders: () => Promise<void>;
+  fetchMyOrders: (reset?: boolean, limit?: number) => Promise<void>;
+  loadMoreOrders: () => Promise<void>;
 
   setError: (error: string | null) => void;
 };
@@ -73,6 +75,8 @@ export const useMarketplaceStore = create<MarketplaceState>()(
 
       orders: [],
       ordersLoading: false,
+      ordersPage: 1,
+      ordersHasMore: true,
       placingOrder: false,
 
       error: null,
@@ -235,18 +239,33 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         }
       },
 
-      fetchMyOrders: async () => {
+      fetchMyOrders: async (reset = false, limit = 10) => {
+        const currentPage = reset ? 1 : get().ordersPage;
         set({ ordersLoading: true, error: null });
         try {
-          const response = await fetchMyOrdersApi();
-          const orders = response.data?.orders || [];
-          set({ orders, ordersLoading: false });
+          const response = await fetchMyOrdersApi(currentPage, limit);
+          const newOrders = response.data?.orders || [];
+          const pagination = response.data?.pagination;
+          const totalPages = pagination?.totalPages || 1;
+
+          set({
+            orders: reset ? newOrders : [...get().orders, ...newOrders],
+            ordersPage: currentPage + 1,
+            ordersHasMore: currentPage < totalPages,
+            ordersLoading: false,
+          });
         } catch (err: any) {
           set({
             error: err?.message || "Failed to fetch orders",
             ordersLoading: false,
           });
         }
+      },
+
+      loadMoreOrders: async () => {
+        const { ordersHasMore, ordersLoading } = get();
+        if (!ordersHasMore || ordersLoading) return;
+        await get().fetchMyOrders(false);
       },
 
       setError: (error) => set({ error }),

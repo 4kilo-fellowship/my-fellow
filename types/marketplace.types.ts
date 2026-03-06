@@ -24,6 +24,7 @@ export interface OrderItem {
   productId: string;
   quantity: number;
   price?: number;
+  unitPrice?: string | number;
   product?: Product;
 }
 
@@ -31,7 +32,7 @@ export interface Order {
   id: string;
   userId?: string;
   items: OrderItem[];
-  totalAmount?: number;
+  totalAmount?: string | number;
   status?: "pending" | "confirmed" | "completed" | "cancelled";
   createdAt?: string;
   updatedAt?: string;
