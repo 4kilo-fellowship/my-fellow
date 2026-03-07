@@ -12,9 +12,11 @@ import { useTheme } from "@/context/ThemeContext";
 import { useNetwork } from "@/hooks/useNetwork";
 import { devotionsService } from "@/services/devotionsService";
 import { eventsService } from "@/services/eventsService";
+import { checkForNewNotifications } from "@/services/notificationService";
 import { useAppStore } from "@/stores/app.store";
 import { useDevotionsStore } from "@/stores/devotions.store";
 import { useEventsStore } from "@/stores/events.store";
+import { useNotificationsStore } from "@/stores/notifications.store";
 import { Ionicons } from "@expo/vector-icons";
 import { Image as ExpoImage } from "expo-image";
 import { useRouter } from "expo-router";
@@ -24,6 +26,7 @@ import {
   Animated,
   Image,
   Linking,
+  Pressable,
   RefreshControl,
   ScrollView,
   Text,
@@ -49,6 +52,7 @@ const Home = () => {
   const { eventsList: events, setEventsList } = useEventsStore();
   const { devotionsList, setDevotionsList } = useDevotionsStore();
   const { isConnected } = useNetwork();
+  const unreadCount = useNotificationsStore((s) => s.getUnreadCount());
 
   const devotions = (devotionsList || []).map((d) => ({
     id: d._id,
@@ -123,11 +127,20 @@ const Home = () => {
     if (isConnected && wasOffline) {
       console.log("Returned online, refreshing data...");
       onRefresh();
+      // Check for new notifications when reconnecting
+      checkForNewNotifications().catch(console.warn);
       setWasOffline(false);
     } else if (!isConnected) {
       setWasOffline(true);
     }
   }, [isConnected]);
+
+  // Also check for notifications on initial mount
+  useEffect(() => {
+    if (isConnected) {
+      checkForNewNotifications().catch(console.warn);
+    }
+  }, []);
 
   // Show No Internet screen if offline and no cached data exists
   if (
@@ -159,7 +172,56 @@ const Home = () => {
             style={{ transform: [{ scale: 2.1 }, { translateX: -13 }] }}
           />
 
-          <UserProfileMenu />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Pressable
+              onPress={() => router.push("/notifications")}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: isDark
+                  ? "rgba(255,255,255,0.06)"
+                  : "rgba(0,0,0,0.04)",
+              }}
+            >
+              <Ionicons
+                name={
+                  unreadCount > 0 ? "notifications" : "notifications-outline"
+                }
+                size={22}
+                color={isDark ? "#fff" : "#1f2937"}
+              />
+              {unreadCount > 0 && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 4,
+                    right: 4,
+                    backgroundColor: "#ff6719",
+                    borderRadius: 8,
+                    minWidth: 16,
+                    height: 16,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    paddingHorizontal: 3,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#fff",
+                      fontSize: 9,
+                      fontWeight: "800",
+                    }}
+                  >
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+            <UserProfileMenu />
+          </View>
         </View>
 
         <ScrollView

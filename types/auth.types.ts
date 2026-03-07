@@ -20,13 +20,8 @@ export interface User {
   createdAt?: string;
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data?: T;
-  user?: T extends { user: infer U } ? U : User;
-  token?: string;
-}
+import { ApiResponse } from "./api.types";
+export { ApiResponse };
 
 export interface AuthResponse {
   user: User;

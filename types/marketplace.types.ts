@@ -78,7 +78,6 @@ export interface OrdersApiResponse {
   message?: string;
 }
 
-/** Helper to get the numeric price from a product */
 export const getProductPrice = (product: Product): number => {
   if (product.price === undefined || product.price === null) return 0;
   return typeof product.price === "string"
@@ -86,12 +85,10 @@ export const getProductPrice = (product: Product): number => {
     : product.price;
 };
 
-/** Helper to get the first image URL */
 export const getProductImage = (product: Product): string => {
   return product.imageUrls?.[0] || "https://via.placeholder.com/300";
 };
 
-/** Helper to get all available image URLs */
 export const getProductImages = (product: Product): string[] => {
   if (product.imageUrls && product.imageUrls.length > 0) {
     return product.imageUrls;

@@ -14,6 +14,7 @@ export { DeleteConfirmModal } from "./Modals/DeleteConfirmModal";
 export { InfoModal } from "./Modals/InfoModal";
 export { ProductBottomSheet } from "./Modals/ProductBottomSheet";
 export { default as NoInternetScreen } from "./NoInternetScreen";
+export { default as NotificationCard } from "./NotificationCard";
 export { Placeholder } from "./Placeholder";
 export { default as QuickAction } from "./QuickAction/HomeQuickActions";
 export { default as QuickActions } from "./QuickAction/TeamsQuickActions";

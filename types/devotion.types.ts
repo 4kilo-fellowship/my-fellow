@@ -11,7 +11,6 @@ export interface Devotion {
   likes: number;
   tags: string[];
   featured: boolean;
-  // specific fields
   content?: string;
   audioUrl?: string;
   duration?: string;
@@ -20,7 +19,6 @@ export interface Devotion {
   pageCount?: number;
   bookUrl?: string;
   bookFormat?: string;
-  // helper field
   isLiked?: boolean;
   isSaved?: boolean;
   likesFormatted?: string;

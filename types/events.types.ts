@@ -1,8 +1,5 @@
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-}
+import { ApiResponse } from "./api.types";
+export { ApiResponse };
 
 export interface AppEvent {
   _id: string;
