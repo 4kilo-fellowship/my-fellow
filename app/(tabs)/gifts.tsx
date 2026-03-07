@@ -1,6 +1,7 @@
 import ProductCard from "@/components/Marketplace/ProductCard";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { ProductBottomSheet } from "@/components/Modals/ProductBottomSheet";
+import { ReasonModal } from "@/components/Modals/ReasonModal";
 import { useTheme } from "@/context/ThemeContext";
 import api from "@/services/api";
 import { useMarketplaceStore } from "@/stores/marketplace.store";
@@ -50,6 +51,9 @@ const Gifts = () => {
   const [loading, setLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
+  const [reasonModalVisible, setReasonModalVisible] = useState(false);
+  const [pendingDonationData, setPendingDonationData] =
+    useState<DonationForm | null>(null);
 
   const [infoModal, setInfoModal] = useState<{
     visible: boolean;
@@ -152,13 +156,12 @@ const Gifts = () => {
     }
   };
 
-  const handleInitializePayment = async (data: DonationForm) => {
+  const onGivePress = (data: DonationForm) => {
     if (!user) {
       router.push("/(auth)/sign-in" as any);
       return;
     }
 
-    // Check for required Chapa fields if not provided
     if (!data.email) {
       showInfoModal(
         "Missing Information",
@@ -167,14 +170,22 @@ const Gifts = () => {
       return;
     }
 
+    setPendingDonationData(data);
+    setReasonModalVisible(true);
+  };
+
+  const handleInitializePayment = async (reason: string) => {
+    if (!pendingDonationData) return;
+    const data = pendingDonationData;
+
+    setReasonModalVisible(false);
     setLoading(true);
+
     try {
       const payload = {
-        ...data,
-        email: data.email.trim(), // Sanitize input
-        fullName: user.fullName || "Member",
-        phoneNumber: user.phoneNumber || "0900000000",
-        reason: "Donation",
+        amount: data.amount,
+        email: data.email.trim(),
+        reason: reason,
       };
 
       const response = await api.post("/payments/chapa/init", payload);
@@ -355,9 +366,7 @@ const Gifts = () => {
                 </View>
 
                 <TouchableOpacity
-                  onPress={handleSubmit((data) =>
-                    handleInitializePayment(data),
-                  )}
+                  onPress={handleSubmit(onGivePress)}
                   disabled={loading}
                   activeOpacity={0.9}
                   className={`mt-12 py-5 rounded-3xl flex-row items-center justify-center ${
@@ -581,6 +590,12 @@ const Gifts = () => {
           addToCart(product, quantity);
           router.push("/marketplace" as any);
         }}
+      />
+      <ReasonModal
+        visible={reasonModalVisible}
+        onClose={() => setReasonModalVisible(false)}
+        onSubmit={handleInitializePayment}
+        isDark={isDark}
       />
     </View>
   );
