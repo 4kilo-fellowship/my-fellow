@@ -40,15 +40,8 @@ const GivingItem = ({
   return (
     <View
       className={`mb-4 p-5 rounded-[24px] border ${
-        isDark ? "bg-[#111] border-[#222]" : "bg-white border-gray-100"
+        isDark ? "bg-[#111] border-[#222]" : "bg-white border-zinc-100"
       }`}
-      style={{
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: isDark ? 0.2 : 0.05,
-        shadowRadius: 10,
-        elevation: 2,
-      }}
     >
       <View className="flex-row items-center justify-between mb-3">
         <View className="flex-row items-center gap-3">
@@ -168,7 +161,7 @@ const GivingsScreen = () => {
               <View
                 className={`p-8 rounded-[32px] ${
                   isDark ? "bg-zinc-900" : "bg-white"
-                } border ${isDark ? "border-zinc-800" : "border-zinc-100 shadow-sm"}`}
+                } border ${isDark ? "border-zinc-800" : "border-zinc-100"}`}
               >
                 <Text className="text-zinc-500 text-[10px] font-black uppercase tracking-[2px] mb-2">
                   Total Contribution
