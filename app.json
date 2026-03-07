@@ -6,7 +6,9 @@
     "version": "1.2.3",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": ["assets/*"],
+    "assetBundlePatterns": [
+      "assets/*"
+    ],
     "icon": "./assets/images/4kk.png",
     "splash": {
       "image": "./assets/images/primary.png",
@@ -18,7 +20,9 @@
       "bundleIdentifier": "com.natitam1.myfellow",
       "icon": "./assets/images/4kk.png",
       "infoPlist": {
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -26,7 +30,9 @@
       "permissions": [
         "WAKE_LOCK",
         "FOREGROUND_SERVICE",
-        "FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+        "FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/4kk.png",
@@ -43,9 +49,15 @@
       },
       "router": {},
       "eas": {
-        "projectId": "18b30bd0-8687-42cc-b007-63b5c23ef01d"
+        "projectId": "0cd82926-55b4-4421-b89c-5da2ad3f85de"
       }
     },
-    "plugins": ["expo-font", "expo-router", "expo-splash-screen", "expo-audio"]
+    "plugins": [
+      "expo-font",
+      "expo-router",
+      "expo-splash-screen",
+      "expo-audio"
+    ],
+    "owner": "arat-kilo-fellowship"
   }
 }
