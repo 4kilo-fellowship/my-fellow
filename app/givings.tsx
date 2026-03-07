@@ -2,15 +2,17 @@ import { PRIMARY } from "@/constants/colors";
 import { useTheme } from "@/context/ThemeContext";
 import { GivingRecord, usePaymentStore } from "@/stores/payment.store";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   RefreshControl,
+  StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -110,53 +112,47 @@ const GivingsScreen = () => {
   }, []);
 
   return (
-    <View className={`flex-1 ${isDark ? "bg-[#0A0A0A]" : "bg-[#f8fafc]"}`}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: isDark ? "#000000" : "#f8fafc" },
+      ]}
+    >
+      <LinearGradient
+        colors={isDark ? ["#0a0a0a", "#000000"] : ["#ffffff", "#f1f5f9"]}
+        style={StyleSheet.absoluteFillObject}
+      />
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar style={isDark ? "light" : "dark"} />
 
       {/* Header */}
       <View
-        style={{
-          paddingTop: top + 10,
-          paddingHorizontal: 20,
-          paddingBottom: 20,
-          backgroundColor: isDark ? "#0A0A0A" : "#f8fafc",
-        }}
+        className={`px-5 pb-4 flex-row items-center border-b ${
+          isDark
+            ? "bg-[#0A0A0A] border-gray-800"
+            : "bg-[#f8fafc] border-gray-200"
+        }`}
+        style={{ paddingTop: top + 10 }}
       >
-        <View className="flex-row items-center mb-6">
-          <TouchableOpacity
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-            className={`w-10 h-10 rounded-full items-center justify-center ${isDark ? "bg-zinc-900" : "bg-white border border-gray-100"}`}
-          >
-            <Ionicons
-              name="arrow-back"
-              size={20}
-              color={isDark ? "white" : "black"}
-            />
-          </TouchableOpacity>
-          <Text
-            className={`ml-4 text-xl font-black ${isDark ? "text-white" : "text-black"}`}
-          >
-            My Giving History
-          </Text>
-        </View>
-
-        <View
-          className={`p-8 rounded-[32px] ${isDark ? "bg-zinc-900" : "bg-white"} border ${isDark ? "border-zinc-800" : "border-zinc-100 shadow-sm"}`}
+        <Pressable
+          onPress={() => router.back()}
+          android_ripple={{
+            color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+            borderless: true,
+          }}
+          className="w-11 h-11 rounded-full items-center justify-center mr-4"
         >
-          <Text className="text-zinc-500 text-[10px] font-black uppercase tracking-[2px] mb-2">
-            Total Contribution
-          </Text>
-          <View className="flex-row items-baseline">
-            <Text
-              className={`text-5xl font-black ${isDark ? "text-white" : "text-black"}`}
-            >
-              {totalGivingsAmount.toLocaleString()}
-            </Text>
-            <Text className="ml-3 text-orange-500 font-bold text-lg">ETB</Text>
-          </View>
-        </View>
+          <Ionicons
+            name="arrow-back"
+            size={24}
+            color={isDark ? "white" : "#0f172a"}
+          />
+        </Pressable>
+        <Text
+          className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+        >
+          My Giving History
+        </Text>
       </View>
 
       {isLoadingGivings && myGivings.length === 0 ? (
@@ -167,6 +163,31 @@ const GivingsScreen = () => {
         <FlatList
           data={myGivings}
           keyExtractor={(item) => item._id || item.tx_ref}
+          ListHeaderComponent={
+            <View className="px-5 pt-8 mb-6">
+              <View
+                className={`p-8 rounded-[32px] ${
+                  isDark ? "bg-zinc-900" : "bg-white"
+                } border ${isDark ? "border-zinc-800" : "border-zinc-100 shadow-sm"}`}
+              >
+                <Text className="text-zinc-500 text-[10px] font-black uppercase tracking-[2px] mb-2">
+                  Total Contribution
+                </Text>
+                <View className="flex-row items-baseline">
+                  <Text
+                    className={`text-5xl font-black ${
+                      isDark ? "text-white" : "text-black"
+                    }`}
+                  >
+                    {totalGivingsAmount.toLocaleString()}
+                  </Text>
+                  <Text className="ml-3 text-orange-500 font-bold text-lg">
+                    ETB
+                  </Text>
+                </View>
+              </View>
+            </View>
+          }
           renderItem={({ item }) => <GivingItem item={item} isDark={isDark} />}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
@@ -206,5 +227,9 @@ const GivingsScreen = () => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+});
 
 export default GivingsScreen;
