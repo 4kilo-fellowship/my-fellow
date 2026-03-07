@@ -1,8 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React from "react";
 import { Switch, Text, TouchableOpacity, View } from "react-native";
 import { AlertItem } from "../hooks/useAlerts";
-import { ConfirmModal } from "./Modals/ConfirmModal";
 
 interface AlertCardProps {
   alert: AlertItem;
@@ -19,8 +18,6 @@ export const AlertCard = ({
   onDelete,
   onEdit,
 }: AlertCardProps) => {
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-
   const date = new Date(alert.time);
   const hours = date.getHours();
   const minutes = date.getMinutes();
@@ -32,14 +29,6 @@ export const AlertCard = ({
     month: "short",
     day: "numeric",
   });
-
-  const handleDeletePress = () => {
-    setShowDeleteModal(true);
-  };
-
-  const handleConfirmDelete = () => {
-    onDelete();
-  };
 
   return (
     <>
@@ -100,7 +89,7 @@ export const AlertCard = ({
 
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={handleDeletePress}
+          onPress={onDelete}
           className="w-10 h-10 items-center justify-center mr-1"
         >
           <Ionicons
@@ -121,25 +110,6 @@ export const AlertCard = ({
           ios_backgroundColor={isDark ? "#3A3A3C" : "#E2E8F0"}
         />
       </TouchableOpacity>
-
-      <ConfirmModal
-        visible={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        isDark={isDark}
-        icon="trash-outline"
-        title="Delete Reminder"
-        description="This action will permanently remove this alert from your schedule."
-        buttons={[
-          {
-            label: "Delete",
-            onPress: handleConfirmDelete,
-            variant: "danger",
-          },
-        ]}
-        cancelButton={{
-          label: "Cancel",
-        }}
-      />
     </>
   );
 };
