@@ -84,7 +84,12 @@ const Gifts = () => {
   };
 
   const { user } = useUserStore();
-  const { txRef, setTxRef } = usePaymentStore();
+  const { txRef, setTxRef, totalGivingsAmount, fetchMyGivings } =
+    usePaymentStore();
+
+  useEffect(() => {
+    fetchMyGivings();
+  }, []);
 
   const {
     control,
@@ -141,6 +146,7 @@ const Gifts = () => {
           "Thank you for your donation!",
           "success",
         );
+        fetchMyGivings();
       } else {
         showInfoModal("Payment Failed", "Please try again.", "error");
       }
@@ -274,6 +280,48 @@ const Gifts = () => {
                 2ኛ ቆሮንቶስ 9፥7
               </Text>
             </View>
+
+            {/* Total Givings Card */}
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => router.push("/givings" as any)}
+              className="mx-5 mb-10 overflow-hidden rounded-[32px] shadow-xl shadow-orange-500/20"
+            >
+              <View
+                className={`p-6 flex-row items-center justify-between ${
+                  isDark ? "bg-zinc-900" : "bg-white"
+                } border ${isDark ? "border-zinc-800" : "border-zinc-100"}`}
+              >
+                <View className="flex-row items-center gap-4">
+                  <View className="w-14 h-14 rounded-2xl bg-orange-500/10 items-center justify-center">
+                    <Ionicons name="gift" size={28} color="#ff6719" />
+                  </View>
+                  <View>
+                    <Text
+                      className={`text-[10px] font-black uppercase tracking-[2px] mb-1 ${
+                        isDark ? "text-zinc-500" : "text-zinc-400"
+                      }`}
+                    >
+                      Your Total Givings
+                    </Text>
+                    <Text
+                      className={`text-2xl font-black ${
+                        isDark ? "text-white" : "text-black"
+                      }`}
+                    >
+                      {totalGivingsAmount.toLocaleString()} ETB
+                    </Text>
+                  </View>
+                </View>
+                <View className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 items-center justify-center">
+                  <Ionicons
+                    name="chevron-forward"
+                    size={20}
+                    color={isDark ? "#a1a1aa" : "#71717a"}
+                  />
+                </View>
+              </View>
+            </TouchableOpacity>
 
             {/* gifts section */}
             <View className="px-5 mb-12">
