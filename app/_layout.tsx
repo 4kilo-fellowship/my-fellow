@@ -66,6 +66,19 @@ export default function RootLayout() {
             name="marketplace/orders"
             options={{ title: "My Orders" }}
           />
+          <Stack.Screen name="givings" options={{ title: "My Givings" }} />
+          <Stack.Screen
+            name="change-password"
+            options={{ title: "Change Password" }}
+          />
+          <Stack.Screen
+            name="edit-profile"
+            options={{ title: "Edit Profile" }}
+          />
+          <Stack.Screen
+            name="update-phone"
+            options={{ title: "Update Phone" }}
+          />
         </Stack>
         <Toast
           position="bottom"
