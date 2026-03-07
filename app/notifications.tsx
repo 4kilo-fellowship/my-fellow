@@ -53,13 +53,23 @@ export default function NotificationsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [checking, setChecking] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const listLayoutAnim = useRef(new Animated.Value(20)).current;
 
+  // Added beautiful entrance animation
   useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 400,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.spring(listLayoutAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   useEffect(() => {
@@ -143,7 +153,12 @@ export default function NotificationsScreen() {
               color: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
               borderless: true,
             }}
-            className="w-11 h-11 rounded-full items-center justify-center mr-4"
+            className="w-10 h-10 rounded-full items-center justify-center mr-3"
+            style={{
+              backgroundColor: isDark
+                ? "rgba(255,255,255,0.05)"
+                : "rgba(0,0,0,0.03)",
+            }}
           >
             <Ionicons
               name="arrow-back"
@@ -233,35 +248,27 @@ export default function NotificationsScreen() {
               style={[
                 styles.filterTab,
                 isActive && {
-                  backgroundColor: isDark
-                    ? "rgba(255,103,25,0.12)"
-                    : "rgba(255,103,25,0.08)",
-                  borderColor: "#ff6719",
+                  backgroundColor: "#ff6619",
+                  borderColor: "#ff6619",
                 },
                 !isActive && {
-                  backgroundColor: isDark
-                    ? "rgba(255,255,255,0.04)"
-                    : "rgba(0,0,0,0.03)",
-                  borderColor: "transparent",
+                  backgroundColor: isDark ? "#1a1a1a" : "#f1f5f9",
+                  borderColor: isDark ? "#262626" : "#e2e8f0",
                 },
               ]}
             >
               <Ionicons
                 name={tab.icon}
-                size={14}
-                color={isActive ? "#ff6719" : isDark ? "#6b7280" : "#9ca3af"}
-                style={{ marginRight: 5 }}
+                size={16}
+                color={isActive ? "#fff" : isDark ? "#9ca3af" : "#64748b"}
+                style={{ marginRight: 6 }}
               />
               <Text
                 style={[
                   styles.filterLabel,
                   {
-                    color: isActive
-                      ? "#ff6719"
-                      : isDark
-                        ? "#9ca3af"
-                        : "#64748b",
-                    fontWeight: isActive ? "700" : "500",
+                    color: isActive ? "#fff" : isDark ? "#d1d5db" : "#475569",
+                    fontWeight: isActive ? "600" : "500",
                   },
                 ]}
               >
@@ -338,9 +345,10 @@ export default function NotificationsScreen() {
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{
-            paddingTop: 12,
-            paddingBottom: insets.bottom + 40,
+            paddingTop: 16,
+            paddingBottom: insets.bottom + 60,
           }}
+          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl

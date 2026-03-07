@@ -19,7 +19,7 @@ export async function checkForNewNotifications(): Promise<number> {
         newNotifications.push({
           id: `event-${event._id}`,
           type: "event",
-          title: "🗓  Upcoming Event",
+          title: "Upcoming Event",
           body: event.title,
           imageUrl: event.imageUrl || undefined,
           targetRoute: `/events/${event._id}`,
@@ -52,7 +52,7 @@ export async function checkForNewNotifications(): Promise<number> {
         newNotifications.push({
           id: `product-${product.id}`,
           type: "product",
-          title: "🛍  New in the Store",
+          title: "New in the Store",
           body: product.title || product.name || "A new product is available!",
           imageUrl: imgUrl,
           targetRoute: `/marketplace/${product.id}`,

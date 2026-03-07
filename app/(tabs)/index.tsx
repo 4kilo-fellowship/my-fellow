@@ -26,7 +26,6 @@ import {
   Animated,
   Image,
   Linking,
-  Pressable,
   RefreshControl,
   ScrollView,
   Text,
@@ -173,17 +172,18 @@ const Home = () => {
           />
 
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Pressable
+            <TouchableOpacity
               onPress={() => router.push("/notifications")}
+              activeOpacity={0.8}
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
+                width: 42,
+                height: 42,
+                borderRadius: 21,
+                borderWidth: 2,
+                borderColor: isDark ? "#3c3c3e" : "#e5e7eb",
+                backgroundColor: isDark ? "#2c2c2e" : "#ffffff",
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: isDark
-                  ? "rgba(255,255,255,0.06)"
-                  : "rgba(0,0,0,0.04)",
               }}
             >
               <Ionicons
@@ -191,27 +191,29 @@ const Home = () => {
                   unreadCount > 0 ? "notifications" : "notifications-outline"
                 }
                 size={22}
-                color={isDark ? "#fff" : "#1f2937"}
+                color={isDark ? "#fff" : "#374151"}
               />
               {unreadCount > 0 && (
                 <View
                   style={{
                     position: "absolute",
-                    top: 4,
-                    right: 4,
-                    backgroundColor: "#ff6719",
-                    borderRadius: 8,
-                    minWidth: 16,
-                    height: 16,
+                    top: -2,
+                    right: -2,
+                    backgroundColor: "#ff6619",
+                    borderRadius: 10,
+                    minWidth: 20,
+                    height: 20,
                     alignItems: "center",
                     justifyContent: "center",
-                    paddingHorizontal: 3,
+                    paddingHorizontal: 4,
+                    borderWidth: 2,
+                    borderColor: isDark ? "#2c2c2e" : "#ffffff",
                   }}
                 >
                   <Text
                     style={{
                       color: "#fff",
-                      fontSize: 9,
+                      fontSize: 10,
                       fontWeight: "800",
                     }}
                   >
@@ -219,7 +221,7 @@ const Home = () => {
                   </Text>
                 </View>
               )}
-            </Pressable>
+            </TouchableOpacity>
             <UserProfileMenu />
           </View>
         </View>

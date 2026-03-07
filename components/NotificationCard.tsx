@@ -56,18 +56,18 @@ export default function NotificationCard({
         {
           backgroundColor: isDark
             ? notification.read
-              ? "#0f0f0f"
-              : "#1a1a2e"
+              ? "#121212"
+              : "#1a1a24"
             : notification.read
               ? "#ffffff"
-              : "#fef9f0",
+              : "#fff7eb",
           borderColor: isDark
             ? notification.read
-              ? "#1f1f1f"
-              : "rgba(255,103,25,0.15)"
+              ? "#262626"
+              : "rgba(255,102,25,0.2)"
             : notification.read
-              ? "#f1f5f9"
-              : "rgba(255,103,25,0.12)",
+              ? "#e2e8f0"
+              : "rgba(255,102,25,0.15)",
           opacity: pressed ? 0.85 : 1,
         },
       ]}
@@ -84,14 +84,14 @@ export default function NotificationCard({
               transition={200}
             />
           ) : (
-            <Ionicons name={config.icon} size={22} color={config.color} />
+            <Ionicons name={config.icon} size={24} color={config.color} />
           )}
         </View>
 
         <View style={styles.content}>
           <View style={styles.headerRow}>
             <Text style={[styles.typeLabel, { color: config.color }]}>
-              {notification.title}
+              {notification.title.replace(/🗓\s*|🛍\s*/g, "")}
             </Text>
             <Text
               style={[styles.time, { color: isDark ? "#6b7280" : "#9ca3af" }]}
@@ -118,13 +118,13 @@ export default function NotificationCard({
             e.stopPropagation?.();
             onDismiss();
           }}
-          hitSlop={10}
+          hitSlop={15}
           style={styles.dismissBtn}
         >
           <Ionicons
             name="close"
-            size={16}
-            color={isDark ? "#4b5563" : "#d1d5db"}
+            size={20}
+            color={isDark ? "#6b7280" : "#9ca3af"}
           />
         </Pressable>
       </View>
@@ -134,66 +134,69 @@ export default function NotificationCard({
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 16,
-    marginBottom: 10,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 14,
+    marginHorizontal: 24,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
     position: "relative",
     overflow: "hidden",
   },
   unreadDot: {
     position: "absolute",
-    top: 14,
-    left: 6,
+    top: "30%",
+    left: 0,
     width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#ff6719",
+    height: 38,
+    borderTopRightRadius: 6,
+    borderBottomRightRadius: 6,
+    backgroundColor: "#ff6619",
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
   },
   iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    width: 52,
+    height: 52,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
   },
   image: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    width: 52,
+    height: 52,
+    borderRadius: 18,
   },
   content: {
     flex: 1,
-    marginLeft: 12,
-    marginRight: 8,
+    marginLeft: 16,
+    marginRight: 16,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 4,
+    marginBottom: 6,
   },
   typeLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.3,
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.5,
     textTransform: "uppercase",
   },
   time: {
-    fontSize: 11,
-    fontWeight: "500",
+    fontSize: 13,
+    fontWeight: "600",
   },
   body: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 16,
+    lineHeight: 24,
   },
   dismissBtn: {
-    padding: 4,
+    padding: 8,
+    backgroundColor: "transparent",
+    borderRadius: 20,
   },
 });
