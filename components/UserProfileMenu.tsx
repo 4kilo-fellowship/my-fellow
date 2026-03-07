@@ -709,7 +709,7 @@ const UserProfileMenu = () => {
                 { color: isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)" },
               ]}
             >
-              4 Kilo Fellowship • v1.1.0
+              4 Kilo Fellowship • v1.2.3
             </Text>
           </View>
         </Animated.View>

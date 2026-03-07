@@ -153,12 +153,8 @@ export default function NotificationsScreen() {
               color: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
               borderless: true,
             }}
-            className="w-10 h-10 rounded-full items-center justify-center mr-3"
-            style={{
-              backgroundColor: isDark
-                ? "rgba(255,255,255,0.05)"
-                : "rgba(0,0,0,0.03)",
-            }}
+            className="items-center justify-center mr-3"
+            style={{ padding: 8, marginLeft: -8 }}
           >
             <Ionicons
               name="arrow-back"

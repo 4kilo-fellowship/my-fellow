@@ -134,7 +134,8 @@ export default function NotificationCard({
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 24,
+    marginHorizontal: 20,
+    marginBottom: 14,
     borderRadius: 24,
     borderWidth: 1.5,
     paddingHorizontal: 20,
