@@ -59,7 +59,16 @@ const DevotionDetail = () => {
   const player = useAudioPlayer(devotion?.audioUrl || "");
   const status = useAudioPlayerStatus(player);
 
-  useEffect(() => {}, [devotion, player]);
+  useEffect(() => {
+    if (devotion && player) {
+      player.metadata = {
+        title: devotion.title,
+        artist: devotion.author,
+        artwork: devotion.image,
+      };
+      player.staysActiveInBackground = true;
+    }
+  }, [devotion, player]);
 
   useEffect(() => {
     const loadDevotion = async () => {
