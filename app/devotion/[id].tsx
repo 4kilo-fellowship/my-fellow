@@ -61,12 +61,11 @@ const DevotionDetail = () => {
 
   useEffect(() => {
     if (devotion && player) {
-      player.metadata = {
+      player.updateLockScreenMetadata({
         title: devotion.title,
         artist: devotion.author,
-        artwork: devotion.image,
-      };
-      player.staysActiveInBackground = true;
+        artworkUrl: devotion.image,
+      });
     }
   }, [devotion, player]);
 
