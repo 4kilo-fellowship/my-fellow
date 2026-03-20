@@ -11,14 +11,14 @@ import { useAlerts } from "@/hooks/useAlerts";
 import { eventsService } from "@/services/eventsService";
 import { useEventsStore } from "@/stores/events.store";
 
-import { EventDetail } from "@/types/events.types";
+import { EventDetail } from "@/types";
 import {
   buildEventImageSource,
   createEventActions,
   formatEventDate,
   formatEventTime,
   getEventDisplayLabel,
-} from "@/utils/eventHelpers";
+} from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { Image as ExpoImage } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
