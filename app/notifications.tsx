@@ -5,7 +5,6 @@ import { checkForNewNotifications } from "@/services/notificationService";
 import { useNotificationsStore } from "@/stores/notifications.store";
 import { AppNotification, NotificationType } from "@/types/notification.types";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -14,6 +13,7 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -134,150 +134,148 @@ export default function NotificationsScreen() {
     <View
       style={[
         styles.container,
-        { backgroundColor: isDark ? "#000000" : "#f9fafb" },
+        { backgroundColor: isDark ? "#000000" : "#ffffff" },
       ]}
     >
-      <LinearGradient
-        colors={isDark ? ["#1a1a1a", "#000000"] : ["#f8fafc", "#ffffff"]}
-        style={StyleSheet.absoluteFillObject}
-      />
-
       <View
-        className={`px-5 pb-4 flex-row items-center justify-between border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"}`}
-        style={{ paddingTop: insets.top + 10 }}
+        style={[
+          styles.headerContainer,
+          {
+            paddingTop: insets.top + 10,
+            backgroundColor: isDark
+              ? "rgba(0,0,0,0.8)"
+              : "rgba(255,255,255,0.9)",
+          },
+        ]}
       >
-        <View style={styles.headerLeft}>
-          <Pressable
-            onPress={() => router.back()}
-            android_ripple={{
-              color: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
-              borderless: true,
-            }}
-            className="items-center justify-center mr-3"
-            style={{ padding: 8, marginLeft: -8 }}
-          >
-            <Ionicons
-              name="arrow-back"
-              size={24}
-              color={isDark ? "white" : "#0f172a"}
-            />
-          </Pressable>
-          <View>
-            <Text
-              className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+        <View style={styles.headerRow}>
+          <View style={styles.headerLeft}>
+            <Pressable
+              onPress={() => router.back()}
+              android_ripple={{
+                color: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+                borderless: true,
+              }}
+              style={styles.backBtn}
             >
-              Notifications
-            </Text>
-            {unreadCount > 0 && (
+              <Ionicons
+                name="arrow-back"
+                size={26}
+                color={isDark ? "white" : "#111827"}
+              />
+            </Pressable>
+            <View>
               <Text
                 style={[
-                  styles.unreadLabel,
-                  { color: isDark ? "#9ca3af" : "#64748b" },
+                  styles.headerTitle,
+                  { color: isDark ? "#ffffff" : "#111827" },
                 ]}
               >
-                {unreadCount} unread
+                Notifications
               </Text>
-            )}
+              {unreadCount > 0 && (
+                <Text style={[styles.unreadLabel, { color: "#ff6619" }]}>
+                  {unreadCount} new notification{unreadCount !== 1 ? "s" : ""}
+                </Text>
+              )}
+            </View>
           </View>
-        </View>
 
-        {notifications.length > 0 && (
-          <View style={styles.headerActions}>
-            {unreadCount > 0 && (
+          {notifications.length > 0 && (
+            <View style={styles.headerActions}>
+              {unreadCount > 0 && (
+                <Pressable
+                  onPress={markAllAsRead}
+                  hitSlop={8}
+                  style={[
+                    styles.actionBtn,
+                    {
+                      backgroundColor: isDark
+                        ? "rgba(255,255,255,0.08)"
+                        : "rgba(0,0,0,0.04)",
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="checkmark-done"
+                    size={20}
+                    color={isDark ? "#d1d5db" : "#4b5563"}
+                  />
+                </Pressable>
+              )}
               <Pressable
-                onPress={markAllAsRead}
+                onPress={clearAll}
                 hitSlop={8}
                 style={[
-                  styles.headerBtn,
+                  styles.actionBtn,
                   {
                     backgroundColor: isDark
-                      ? "rgba(255,255,255,0.06)"
+                      ? "rgba(255,255,255,0.08)"
                       : "rgba(0,0,0,0.04)",
+                    marginLeft: 8,
                   },
                 ]}
               >
                 <Ionicons
-                  name="checkmark-done"
-                  size={18}
-                  color={isDark ? "#9ca3af" : "#64748b"}
+                  name="trash-outline"
+                  size={20}
+                  color={isDark ? "#d1d5db" : "#4b5563"}
                 />
               </Pressable>
-            )}
-            <Pressable
-              onPress={clearAll}
-              hitSlop={8}
-              style={[
-                styles.headerBtn,
-                {
-                  backgroundColor: isDark
-                    ? "rgba(255,255,255,0.06)"
-                    : "rgba(0,0,0,0.04)",
-                  marginLeft: 8,
-                },
-              ]}
-            >
-              <Ionicons
-                name="trash-outline"
-                size={18}
-                color={isDark ? "#9ca3af" : "#64748b"}
-              />
-            </Pressable>
-          </View>
-        )}
-      </View>
+            </View>
+          )}
+        </View>
 
-      <View
-        style={[
-          styles.filterRow,
-          {
-            backgroundColor: isDark ? "#0a0a0a" : "#ffffff",
-            borderBottomColor: isDark ? "#1f1f1f" : "#f1f5f9",
-          },
-        ]}
-      >
-        {FILTER_TABS.map((tab) => {
-          const isActive = activeFilter === tab.key;
-          return (
-            <Pressable
-              key={tab.key}
-              onPress={() => setActiveFilter(tab.key)}
-              style={[
-                styles.filterTab,
-                isActive && {
-                  backgroundColor: "#ff6619",
-                  borderColor: "#ff6619",
-                },
-                !isActive && {
-                  backgroundColor: isDark ? "#1a1a1a" : "#f1f5f9",
-                  borderColor: isDark ? "#262626" : "#e2e8f0",
-                },
-              ]}
-            >
-              <Ionicons
-                name={tab.icon}
-                size={16}
-                color={isActive ? "#fff" : isDark ? "#9ca3af" : "#64748b"}
-                style={{ marginRight: 6 }}
-              />
-              <Text
-                style={[
-                  styles.filterLabel,
-                  {
-                    color: isActive ? "#fff" : isDark ? "#d1d5db" : "#475569",
-                    fontWeight: isActive ? "600" : "500",
-                  },
-                ]}
-              >
-                {tab.label}
-              </Text>
-            </Pressable>
-          );
-        })}
+        <View style={styles.filterWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterScroll}
+          >
+            {FILTER_TABS.map((tab) => {
+              const isActive = activeFilter === tab.key;
+              return (
+                <Pressable
+                  key={tab.key}
+                  onPress={() => setActiveFilter(tab.key)}
+                  style={[
+                    styles.filterTab,
+                    isActive
+                      ? { backgroundColor: "#ff6619" }
+                      : { backgroundColor: isDark ? "#1a1a1a" : "#f1f5f9" },
+                  ]}
+                >
+                  <Ionicons
+                    name={tab.icon}
+                    size={16}
+                    color={isActive ? "#fff" : isDark ? "#9ca3af" : "#64748b"}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text
+                    style={[
+                      styles.filterLabel,
+                      {
+                        color: isActive
+                          ? "#fff"
+                          : isDark
+                            ? "#d1d5db"
+                            : "#4b5563",
+                        fontWeight: isActive ? "600" : "500",
+                      },
+                    ]}
+                  >
+                    {tab.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
       </View>
 
       {checking && notifications.length === 0 && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color="#ff6719" />
+          <ActivityIndicator size="small" color="#ff6619" />
           <Text
             style={[
               styles.loadingText,
@@ -296,32 +294,31 @@ export default function NotificationsScreen() {
               styles.emptyIconContainer,
               {
                 backgroundColor: isDark
-                  ? "rgba(255,255,255,0.05)"
-                  : "rgba(0,0,0,0.02)",
+                  ? "rgba(255,102,25,0.1)"
+                  : "rgba(255,102,25,0.05)",
               },
             ]}
           >
-            <Ionicons
-              name="notifications-off-outline"
-              size={48}
-              color={isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.2)"}
-            />
+            <Ionicons name="notifications-outline" size={48} color="#ff6619" />
           </View>
           <Text
-            style={[styles.emptyTitle, { color: isDark ? "#fff" : "#1f2937" }]}
+            style={[
+              styles.emptyTitle,
+              { color: isDark ? "#ffffff" : "#111827" },
+            ]}
           >
             {activeFilter === "all"
-              ? "No notifications yet"
-              : `No ${activeFilter} notifications`}
+              ? "All caught up!"
+              : `No ${activeFilter} updates`}
           </Text>
           <Text
             style={[
               styles.emptySubtitle,
-              { color: isDark ? "#6b7280" : "#9ca3af" },
+              { color: isDark ? "#9ca3af" : "#6b7280" },
             ]}
           >
             {isConnected
-              ? "You're all caught up! Pull down to check for updates."
+              ? "When you get notifications, they'll show up here."
               : "Connect to the internet to receive notifications."}
           </Text>
           {!isConnected && (
@@ -341,17 +338,22 @@ export default function NotificationsScreen() {
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{
-            paddingTop: 16,
             paddingBottom: insets.bottom + 60,
           }}
-          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+          ItemSeparatorComponent={() => (
+            <View
+              style={{
+                height: 12,
+              }}
+            />
+          )}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor="#ff6719"
-              colors={["#ff6719"]}
+              tintColor="#ff6619"
+              colors={["#ff6619"]}
             />
           }
         />
@@ -362,43 +364,66 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  headerContainer: {
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(150,150,150,0.2)",
+    zIndex: 10,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  backBtn: {
+    padding: 8,
+    marginLeft: -8,
+    marginRight: 8,
+    borderRadius: 20,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
+  unreadLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: 2,
   },
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
   },
-  headerBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+  actionBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
   },
-  unreadLabel: {
-    fontSize: 12,
-    fontWeight: "500",
-    marginTop: 1,
+  filterWrapper: {
+    // marginBottom: 0,
   },
-  filterRow: {
-    flexDirection: "row",
+  filterScroll: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    gap: 8,
+    gap: 10,
   },
   filterTab: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 10,
-    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   filterLabel: {
-    fontSize: 12,
+    fontSize: 14,
   },
   loadingContainer: {
     flex: 1,
@@ -419,17 +444,17 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
   },
   emptyIconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 24,
+    marginBottom: 20,
   },
   emptyTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "700",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 15,

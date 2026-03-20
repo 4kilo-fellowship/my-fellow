@@ -47,157 +47,174 @@ export default function NotificationCard({
 }: Props) {
   const config = TYPE_CONFIG[notification.type] || TYPE_CONFIG.general;
   const timeAgo = getRelativeTime(notification.createdAt);
+  const isUnread = !notification.read;
 
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.container,
-        {
-          backgroundColor: isDark
-            ? notification.read
-              ? "#121212"
-              : "#1a1a24"
-            : notification.read
-              ? "#ffffff"
-              : "#fff7eb",
-          borderColor: isDark
-            ? notification.read
-              ? "#262626"
-              : "rgba(255,102,25,0.2)"
-            : notification.read
-              ? "#e2e8f0"
-              : "rgba(255,102,25,0.15)",
-          opacity: pressed ? 0.85 : 1,
-        },
-      ]}
-    >
-      {!notification.read && <View style={styles.unreadDot} />}
+    <View style={styles.outerWrapper}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.container,
+          {
+            backgroundColor: isUnread
+              ? isDark
+                ? "rgba(255,102,25,0.06)"
+                : "rgba(255,102,25,0.04)"
+              : isDark
+                ? "#121212"
+                : "#ffffff",
+            borderColor: isUnread
+              ? isDark
+                ? "rgba(255,102,25,0.15)"
+                : "rgba(255,102,25,0.1)"
+              : isDark
+                ? "#1f1f1f"
+                : "#f1f5f9",
+            borderWidth: 1,
+            opacity: pressed ? 0.7 : 1,
+          },
+        ]}
+      >
+        <View style={styles.contentWrapper}>
+          <View style={styles.leftColumn}>
+            <View style={[styles.iconBox, { backgroundColor: config.bgColor }]}>
+              {notification.imageUrl ? (
+                <Image
+                  source={{ uri: notification.imageUrl }}
+                  style={styles.image}
+                  contentFit="cover"
+                  transition={200}
+                />
+              ) : (
+                <Ionicons name={config.icon} size={22} color={config.color} />
+              )}
+            </View>
+            {isUnread && (
+              <View
+                style={[
+                  styles.unreadDot,
+                  {
+                    borderColor: isDark ? "#121212" : "#ffffff",
+                  },
+                ]}
+              />
+            )}
+          </View>
 
-      <View style={styles.row}>
-        <View style={[styles.iconBox, { backgroundColor: config.bgColor }]}>
-          {notification.imageUrl ? (
-            <Image
-              source={{ uri: notification.imageUrl }}
-              style={styles.image}
-              contentFit="cover"
-              transition={200}
-            />
-          ) : (
-            <Ionicons name={config.icon} size={24} color={config.color} />
-          )}
-        </View>
-
-        <View style={styles.content}>
-          <View style={styles.headerRow}>
-            <Text style={[styles.typeLabel, { color: config.color }]}>
-              {notification.title.replace(/🗓\s*|🛍\s*/g, "")}
-            </Text>
+          <View style={styles.textContainer}>
+            <View style={styles.headerRow}>
+              <Text
+                style={[
+                  styles.title,
+                  {
+                    color: isDark
+                      ? isUnread
+                        ? "#ffffff"
+                        : "#f3f4f6"
+                      : isUnread
+                        ? "#111827"
+                        : "#374151",
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {notification.title.replace(/🗓\s*|🛍\s*/g, "")}
+              </Text>
+              <View style={styles.rightHeader}>
+                <Text
+                  style={[
+                    styles.time,
+                    { color: isDark ? "#6b7280" : "#9ca3af" },
+                  ]}
+                >
+                  {timeAgo}
+                </Text>
+              </View>
+            </View>
             <Text
-              style={[styles.time, { color: isDark ? "#6b7280" : "#9ca3af" }]}
+              style={[styles.body, { color: isDark ? "#9ca3af" : "#4b5563" }]}
+              numberOfLines={2}
             >
-              {timeAgo}
+              {notification.body}
             </Text>
           </View>
-          <Text
-            style={[
-              styles.body,
-              {
-                color: isDark ? "#e5e7eb" : "#1f2937",
-                fontWeight: notification.read ? "400" : "600",
-              },
-            ]}
-            numberOfLines={2}
-          >
-            {notification.body}
-          </Text>
         </View>
-
-        <Pressable
-          onPress={(e) => {
-            e.stopPropagation?.();
-            onDismiss();
-          }}
-          hitSlop={15}
-          style={styles.dismissBtn}
-        >
-          <Ionicons
-            name="close"
-            size={20}
-            color={isDark ? "#6b7280" : "#9ca3af"}
-          />
-        </Pressable>
-      </View>
-    </Pressable>
+      </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginHorizontal: 20,
-    marginBottom: 14,
-    borderRadius: 24,
-    borderWidth: 1.5,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
+  outerWrapper: {
+    marginHorizontal: 16,
     position: "relative",
-    overflow: "hidden",
   },
-  unreadDot: {
-    position: "absolute",
-    top: "30%",
-    left: 0,
-    width: 6,
-    height: 38,
-    borderTopRightRadius: 6,
-    borderBottomRightRadius: 6,
-    backgroundColor: "#ff6619",
+  container: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    width: "100%",
+    borderWidth: 1,
   },
-  row: {
+  contentWrapper: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
+  },
+  leftColumn: {
+    position: "relative",
+    marginRight: 14,
   },
   iconBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 18,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
   },
   image: {
-    width: 52,
-    height: 52,
-    borderRadius: 18,
+    width: "100%",
+    height: "100%",
+    borderRadius: 24,
   },
-  content: {
+  unreadDot: {
+    position: "absolute",
+    bottom: -2,
+    right: -2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#ff6619",
+    borderWidth: 2,
+  },
+  textContainer: {
     flex: 1,
-    marginLeft: 16,
-    marginRight: 16,
+    justifyContent: "center",
+    marginTop: 2,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  typeLabel: {
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
+  rightHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: "600",
+    flex: 1,
+    marginRight: 8,
   },
   time: {
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "400",
   },
   body: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  dismissBtn: {
-    padding: 8,
-    backgroundColor: "transparent",
-    borderRadius: 20,
+    fontSize: 14,
+    lineHeight: 20,
   },
 });
