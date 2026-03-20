@@ -1,15 +1,24 @@
 import { API_URL } from "@/constants";
 import { Linking } from "react-native";
 
-export const formatEventDate = (startDate?: string | null, endDate?: string | null) => {
+export const formatEventDate = (
+  startDate?: string | null,
+  endDate?: string | null,
+) => {
   if (!startDate) return "";
   const start = new Date(startDate);
   if (!endDate) {
-    return start.toLocaleDateString(undefined, { month: "long", day: "numeric" });
+    return start.toLocaleDateString(undefined, {
+      month: "long",
+      day: "numeric",
+    });
   }
   const end = new Date(endDate);
   if (start.toDateString() === end.toDateString()) {
-    return start.toLocaleDateString(undefined, { month: "long", day: "numeric" });
+    return start.toLocaleDateString(undefined, {
+      month: "long",
+      day: "numeric",
+    });
   }
   return `${start.toLocaleDateString(undefined, { month: "short", day: "numeric" })} - ${end.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
 };
@@ -17,7 +26,10 @@ export const formatEventDate = (startDate?: string | null, endDate?: string | nu
 export const formatEventTime = (startDate?: string | null) => {
   if (!startDate) return "";
   const start = new Date(startDate);
-  const options: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit" };
+  const options: Intl.DateTimeFormatOptions = {
+    hour: "2-digit",
+    minute: "2-digit",
+  };
   return start.toLocaleTimeString(undefined, options);
 };
 
@@ -64,12 +76,17 @@ export const createEventActions = (args: {
   registerForEvent: (arg: any) => Promise<any>;
   unregisterFromEvent: (arg: any) => Promise<any>;
   router: any;
-  showInfoModalFn: (title: string, message: string, type?: "success" | "error" | "info") => void;
+  showInfoModalFn: (
+    title: string,
+    message: string,
+    type?: "success" | "error" | "info",
+  ) => void;
   setModalVisible: (v: boolean) => void;
   setSignInModalVisible: (v: boolean) => void;
   setUnregisterModalVisible: (v: boolean) => void;
   setShowSuccessModal: (v: boolean) => void;
   setShowOfflineToaster: (v: boolean) => void;
+  isRegisteredForThisEvent?: boolean;
 }) => {
   const {
     ev,
@@ -94,7 +111,9 @@ export const createEventActions = (args: {
         setSignInModalVisible(true);
         return;
       }
-      if (ev && ev._id && ev._id in ({} as any)) {
+      if (args.isRegisteredForThisEvent) {
+        setUnregisterModalVisible(true);
+        return;
       }
       if (isEventFull(ev)) {
         showInfoModalFn(
@@ -110,10 +129,20 @@ export const createEventActions = (args: {
 
     if (text.includes("notify")) {
       if (!ev?.startDate) {
-        showInfoModalFn("Warning", "Program time not available for notification.", "info");
+        showInfoModalFn(
+          "Warning",
+          "Program time not available for notification.",
+          "info",
+        );
         return;
       }
-      await addAlert({ title: ev.title, description: ev.shortDescription || "Event notification", time: ev.startDate, repeats: "none", remindBefore: 15 });
+      await addAlert({
+        title: ev.title,
+        description: ev.shortDescription || "Event notification",
+        time: ev.startDate,
+        repeats: "none",
+        remindBefore: 15,
+      });
       setShowSuccessModal(true);
       return;
     }
@@ -136,10 +165,19 @@ export const createEventActions = (args: {
     try {
       await registerForEvent({ eventId: ev._id || ev.id });
       setModalVisible(false);
-      showInfoModalFn("Success", "You have successfully registered for the event", "success");
+      showInfoModalFn(
+        "Success",
+        "You have successfully registered for the event",
+        "success",
+      );
     } catch (err: any) {
-      const message = err?.response?.data?.message || err?.message || "Registration failed";
-      if (err.message === "Network Error" || err.code === "ERR_NETWORK" || !err.response) {
+      const message =
+        err?.response?.data?.message || err?.message || "Registration failed";
+      if (
+        err.message === "Network Error" ||
+        err.code === "ERR_NETWORK" ||
+        !err.response
+      ) {
         setShowOfflineToaster(true);
       } else {
         showInfoModalFn("Error", message, "error");
@@ -151,9 +189,14 @@ export const createEventActions = (args: {
     try {
       await unregisterFromEvent({ eventId: ev._id || ev.id });
       setUnregisterModalVisible(false);
-      showInfoModalFn("Success", "You have successfully unregistered from the event", "success");
+      showInfoModalFn(
+        "Success",
+        "You have successfully unregistered from the event",
+        "success",
+      );
     } catch (err: any) {
-      const message = err?.response?.data?.message || err?.message || "Unregistration failed";
+      const message =
+        err?.response?.data?.message || err?.message || "Unregistration failed";
       showInfoModalFn("Error", message, "error");
     }
   };

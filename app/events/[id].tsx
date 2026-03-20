@@ -4,7 +4,7 @@ import {
   InfoModal,
   RegistrationModal,
 } from "@/components";
-import { API_URL, PRIMARY } from "@/constants";
+import { PRIMARY } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useAlerts } from "@/hooks/useAlerts";
@@ -12,6 +12,13 @@ import { eventsService } from "@/services/eventsService";
 import { useEventsStore } from "@/stores/events.store";
 
 import { EventDetail } from "@/types/events.types";
+import {
+  buildEventImageSource,
+  createEventActions,
+  formatEventDate,
+  formatEventTime,
+  getEventDisplayLabel,
+} from "@/utils/eventHelpers";
 import { Ionicons } from "@expo/vector-icons";
 import { Image as ExpoImage } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -22,7 +29,6 @@ import {
   ActivityIndicator,
   Dimensions,
   Image,
-  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -39,14 +45,6 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  formatEventDate,
-  formatEventTime,
-  buildEventImageSource,
-  isEventFull,
-  getEventDisplayLabel,
-  createEventActions,
-} from "@/utils/eventHelpers";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -90,7 +88,7 @@ export default function EventDetails() {
 
   const { addAlert } = useAlerts();
 
-  const { authState, getCurrentUser } = useAuth();
+  const { authState } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
   const [signInModalVisible, setSignInModalVisible] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -176,51 +174,8 @@ export default function EventDetails() {
   }, [selectedEvent, authState?.authenticated]);
 
   const ev: any = selectedEvent;
-
-  const getFormattedDate = () => {
-    if (!ev?.startDate) return "";
-    const start = new Date(ev.startDate);
-    if (!ev.endDate) {
-      return start.toLocaleDateString(undefined, {
-        month: "long",
-        day: "numeric",
-      });
-    }
-    const end = new Date(ev.endDate);
-    if (start.toDateString() === end.toDateString()) {
-      return start.toLocaleDateString(undefined, {
-        month: "long",
-        day: "numeric",
-      });
-    }
-    return `${start.toLocaleDateString(undefined, { month: "short", day: "numeric" })} - ${end.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
-  };
-
-  const getFormattedTime = () => {
-    if (!ev?.startDate) return "";
-    const start = new Date(ev.startDate);
-    const options: Intl.DateTimeFormatOptions = {
-      hour: "2-digit",
-      minute: "2-digit",
-    };
-    return start.toLocaleTimeString(undefined, options);
-  };
-
-  let imageSource = require("@/assets/images/header.png");
-
   const imgPath = ev?.image || ev?.imageUrl;
-
-  if (imgPath) {
-    if (typeof imgPath === "string") {
-      if (imgPath.startsWith("http")) {
-        imageSource = { uri: imgPath };
-      } else {
-        const baseUrl = API_URL.replace(/\/api\/?$/, "");
-        const cleanPath = imgPath.startsWith("/") ? imgPath : `/${imgPath}`;
-        imageSource = { uri: `${baseUrl}${cleanPath}` };
-      }
-    }
-  }
+  const imageSource = buildEventImageSource(imgPath);
 
   const handleBack = () => {
     setIsGoingBack(true);
@@ -233,115 +188,31 @@ export default function EventDetails() {
     ctaLabel.toLowerCase().trim().includes("register") ||
     ctaLabel.toLowerCase().trim().includes("join");
   const buttonDisabled = registering || unregistering;
-  const isFull =
-    ev?.registrationLimit !== null &&
-    ev?.registrationLimit !== undefined &&
-    (ev?.registrationsCount || 0) >= ev?.registrationLimit;
 
-  const displayLabel =
-    isRegisterCta && isRegisteredForThisEvent
-      ? "Already Registered"
-      : isFull && isRegisterCta
-        ? "Event Full"
-        : ctaLabel;
+  const displayLabel = getEventDisplayLabel({
+    ev,
+    ctaLabel,
+    isRegisterCta,
+    isRegisteredForThisEvent,
+  });
 
-  const handleCta = async () => {
-    const text = ctaLabel.toLowerCase().trim();
-
-    if (text.includes("register") || text.includes("join")) {
-      if (!authState.authenticated) {
-        setSignInModalVisible(true);
-        return;
-      }
-      if (isRegisteredForThisEvent) {
-        setUnregisterModalVisible(true);
-      } else if (isFull) {
-        showInfoModalFn(
-          "Event Full",
-          "We're sorry, this event has reached its maximum capacity. Please check back later or join our future events.",
-          "info",
-        );
-      } else {
-        setModalVisible(true);
-      }
-      return;
-    }
-
-    if (text.includes("notify")) {
-      if (!ev?.startDate) {
-        showInfoModalFn(
-          "Warning",
-          "Program time not available for notification.",
-          "info",
-        );
-        return;
-      }
-
-      await addAlert({
-        title: ev.title,
-        description: ev.shortDescription || "Event notification",
-        time: ev.startDate,
-        repeats: "none",
-        remindBefore: 15,
-      });
-      setShowSuccessModal(true);
-      return;
-    }
-
-    if (text.includes("donate")) {
-      router.push("/gifts");
-      return;
-    }
-
-    const url = ev?.cta_url || ev?.metadata?.cta_url || ev?.metadata?.url;
-    if (url) {
-      try {
-        await Linking.openURL(url);
-        return;
-      } catch (e) {}
-    }
-  };
-
-  const onConfirmRegistration = async () => {
-    try {
-      await registerForEvent({ eventId: ev._id || ev.id });
-      setModalVisible(false);
-      showInfoModalFn(
-        "Success",
-        "You have successfully registered for the event",
-        "success",
-      );
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.message || err?.message || "Registration failed";
-
-      if (
-        err.message === "Network Error" ||
-        err.code === "ERR_NETWORK" ||
-        !err.response
-      ) {
-        setShowOfflineToaster(true);
-      } else {
-        showInfoModalFn("Error", message, "error");
-      }
-    }
-  };
-
-  const onConfirmUnregistration = async () => {
-    try {
-      await unregisterFromEvent({ eventId: ev._id || ev.id });
-      setUnregisterModalVisible(false);
-      showInfoModalFn(
-        "Success",
-        "You have successfully unregistered from the event",
-        "success",
-      );
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.message || err?.message || "Unregistration failed";
-      showInfoModalFn("Error", message, "error");
-    }
-  };
+  const { handleCta, onConfirmRegistration, onConfirmUnregistration } =
+    createEventActions({
+      ev,
+      ctaLabel,
+      authState,
+      addAlert,
+      registerForEvent,
+      unregisterFromEvent,
+      router,
+      showInfoModalFn,
+      setModalVisible,
+      setSignInModalVisible,
+      setUnregisterModalVisible,
+      setShowSuccessModal,
+      setShowOfflineToaster,
+      isRegisteredForThisEvent,
+    });
 
   if (loadingDetail) {
     return (
@@ -525,7 +396,7 @@ export default function EventDetails() {
             </View>
             {ev.startDate && (
               <Text className="text-gray-300 font-medium text-sm">
-                {getFormattedDate()}
+                {formatEventDate(ev?.startDate, ev?.endDate)}
               </Text>
             )}
           </View>
@@ -542,7 +413,7 @@ export default function EventDetails() {
                 color="rgba(255,255,255,0.8)"
               />
               <Text className="text-gray-200 ml-1.5 font-medium">
-                {getFormattedTime()}
+                {formatEventTime(ev?.startDate)}
               </Text>
             </View>
           )}
