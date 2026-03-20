@@ -157,7 +157,7 @@ export const createEventActions = (args: {
       try {
         await Linking.openURL(url);
         return;
-      } catch (e) {}
+      } catch {}
     }
   };
 

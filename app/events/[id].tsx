@@ -126,7 +126,7 @@ export default function EventDetails() {
       -1,
       false,
     );
-  }, []);
+  }, [fadeIn, pulse]);
 
   const pulseRingStyle = useAnimatedStyle(() => ({
     transform: [{ scale: interpolate(pulse.value, [0, 1], [0.9, 1.15]) }],
@@ -171,7 +171,7 @@ export default function EventDetails() {
         checkRegistrationStatus(eventId);
       }
     }
-  }, [selectedEvent, authState?.authenticated]);
+  }, [selectedEvent, authState?.authenticated, checkRegistrationStatus]);
 
   const ev: any = selectedEvent;
   const imgPath = ev?.image || ev?.imageUrl;
@@ -260,7 +260,7 @@ export default function EventDetails() {
               { color: isDark ? "#94a3b8" : "#94a3b8" },
             ]}
           >
-            Connect to the internet to view{"\n"}this event's details.
+            Connect to the internet to view{"\n"}details for this event.
           </Text>
 
           <TouchableOpacity
