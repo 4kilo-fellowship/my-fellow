@@ -39,6 +39,14 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  formatEventDate,
+  formatEventTime,
+  buildEventImageSource,
+  isEventFull,
+  getEventDisplayLabel,
+  createEventActions,
+} from "@/utils/eventHelpers";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
