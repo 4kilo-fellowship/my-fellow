@@ -225,8 +225,17 @@ export default function EventDetails() {
     ctaLabel.toLowerCase().trim().includes("register") ||
     ctaLabel.toLowerCase().trim().includes("join");
   const buttonDisabled = registering || unregistering;
+  const isFull =
+    ev?.registrationLimit !== null &&
+    ev?.registrationLimit !== undefined &&
+    (ev?.registrationsCount || 0) >= ev?.registrationLimit;
+
   const displayLabel =
-    isRegisterCta && isRegisteredForThisEvent ? "Already Registered" : ctaLabel;
+    isRegisterCta && isRegisteredForThisEvent
+      ? "Already Registered"
+      : isFull && isRegisterCta
+        ? "Event Full"
+        : ctaLabel;
 
   const handleCta = async () => {
     const text = ctaLabel.toLowerCase().trim();
@@ -238,6 +247,12 @@ export default function EventDetails() {
       }
       if (isRegisteredForThisEvent) {
         setUnregisterModalVisible(true);
+      } else if (isFull) {
+        showInfoModalFn(
+          "Event Full",
+          "We're sorry, this event has reached its maximum capacity. Please check back later or join our future events.",
+          "info",
+        );
       } else {
         setModalVisible(true);
       }

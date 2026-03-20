@@ -10,6 +10,8 @@ export interface AppEvent {
   endDate: string;
   imageUrl: string;
   buttonText: string;
+  registrationLimit?: number | null;
+  registrationsCount?: number;
   createdAt?: string;
   updatedAt?: string;
 }
