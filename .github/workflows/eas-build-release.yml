@@ -31,17 +31,21 @@ jobs:
         run: npm ci
 
       - name: Check Expo Identity
-        run: npx eas-cli whoami
+        run: eas whoami
 
       - name: Run EAS build and wait (JSON)
         id: eas_build
         run: |
           set -o pipefail
-          # Using npx to ensure we use the local version if available
-          npx eas-cli build --platform android --profile production --non-interactive --wait --json 2>&1 | tee build-output.json
+          eas build --platform android --profile production --non-interactive --wait --json > build-output.json
 
-          # Improved parsing: search for the last valid JSON block if there's noise
-          BUILD_ID=$(cat build-output.json | jq -r '.id // .buildId // .data.id // .[0].id // empty' | head -n1)
+          if ! jq empty build-output.json 2>/dev/null; then
+            echo "Error: build-output.json is not valid JSON"
+            cat build-output.json
+            exit 1
+          fi
+
+          BUILD_ID=$(jq -r '.id // .buildId // .data.id // .[0].id // empty' build-output.json | head -n1)
 
           if [ -z "$BUILD_ID" ]; then
             echo "Error: Could not find Build ID in EAS output"
@@ -54,7 +58,7 @@ jobs:
       - name: Get artifact URL
         id: get_url
         run: |
-          npx eas-cli build:view ${{ steps.eas_build.outputs.build_id }} --json > build-details.json
+          eas build:view ${{ steps.eas_build.outputs.build_id }} --json > build-details.json
           ARTIFACT_URL=$(jq -r '.artifacts?.url // .artifacts?.buildUrl // .artifacts?.apk?.url // .artifacts?.aab?.url // .artifacts?.ipa?.url // empty' build-details.json)
 
           if [ -z "$ARTIFACT_URL" ]; then
