@@ -59,7 +59,7 @@ export default function EventDetails() {
   const [loadingDetail, setLoadingDetail] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isNetworkError, setIsNetworkError] = useState<boolean>(false);
-
+  //
   const pulse = useSharedValue(0);
   const fadeIn = useSharedValue(0);
 

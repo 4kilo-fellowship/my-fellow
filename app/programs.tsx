@@ -400,13 +400,6 @@ export default function WeeklyPrograms() {
                     ? "bg-[#111] border-[#222]"
                     : "bg-[#f9fafb] border-gray-200"
                 }`}
-                style={{
-                  shadowColor: isDark ? "#000" : "#64748b",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: isDark ? 0.3 : 0.05,
-                  shadowRadius: 10,
-                  elevation: 2,
-                }}
               >
                 <Placeholder height={208} borderRadius={0} />
                 <View className="p-5">
