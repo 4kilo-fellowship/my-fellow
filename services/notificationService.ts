@@ -2,7 +2,7 @@ import { fetchEventsApi } from "@/services/events.api";
 import { fetchProductsApi } from "@/services/marketplace.api";
 import { useNotificationsStore } from "@/stores/notifications.store";
 import { AppNotification } from "@/types/notification.types";
-import { scheduleNotification } from "@/utils/notificationService";
+import { sendImmediateNotification } from "@/utils/notificationService";
 
 export async function checkForNewNotifications(): Promise<number> {
   const store = useNotificationsStore.getState();
@@ -39,12 +39,11 @@ export async function checkForNewNotifications(): Promise<number> {
 
         // Only trigger an actual system push alert if it's not the first app load
         if (!isFirstCheck) {
-          scheduleNotification(
+          sendImmediateNotification(
             "New Upcoming Event",
             event.title,
-            new Date(),
             notifId,
-          ).catch((e) => console.log("Failed to schedule event push", e));
+          ).catch(() => {});
         }
       }
 
@@ -89,9 +88,7 @@ export async function checkForNewNotifications(): Promise<number> {
         });
 
         if (!isFirstCheck) {
-          scheduleNotification(title, bodyText, new Date(), notifId).catch(
-            (e) => console.log("Failed to schedule product push", e),
-          );
+          sendImmediateNotification(title, bodyText, notifId).catch(() => {});
         }
       }
 

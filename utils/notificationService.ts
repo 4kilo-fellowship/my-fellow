@@ -80,29 +80,40 @@ export const scheduleNotification = async (
     });
   }
 
+  const SchedulableTriggerInputTypes =
+    notifications.SchedulableTriggerInputTypes;
+
   let trigger: any;
 
   const scheduledDate = new Date(date);
 
   if (repeats === "daily") {
     trigger = {
-      type: "calendar",
+      type: SchedulableTriggerInputTypes.DAILY,
       hour: scheduledDate.getHours(),
       minute: scheduledDate.getMinutes(),
-      repeats: true,
+      channelId: Platform.OS === "android" ? "default" : undefined,
     };
   } else if (repeats === "weekly") {
+    const jsDay = scheduledDate.getDay();
+    const expoWeekday = jsDay + 1;
+
     trigger = {
-      type: "calendar",
-      weekday: scheduledDate.getDay() + 1,
+      type: SchedulableTriggerInputTypes.WEEKLY,
+      weekday: expoWeekday,
       hour: scheduledDate.getHours(),
       minute: scheduledDate.getMinutes(),
-      repeats: true,
+      channelId: Platform.OS === "android" ? "default" : undefined,
     };
   } else {
+    if (scheduledDate.getTime() <= Date.now()) {
+      return;
+    }
+
     trigger = {
-      type: "date",
-      timestamp: scheduledDate.getTime(),
+      type: SchedulableTriggerInputTypes.DATE,
+      date: scheduledDate,
+      channelId: Platform.OS === "android" ? "default" : undefined,
     };
   }
 
@@ -114,22 +125,47 @@ export const scheduleNotification = async (
         body,
         sound: "default",
         data: { id },
-        priority: notifications.AndroidNotificationPriority.MAX,
-        vibrate: [0, 250, 250, 250],
-        android: {
-          channelId: "default",
-          sound: "default",
-          vibrate: true,
-          priority: "max",
-        },
-        ios: {
-          sound: "default",
-        },
+        priority: notifications.AndroidNotificationPriority?.MAX,
       },
       trigger,
     });
   } catch (e) {
     console.error("Failed to schedule notification:", e);
+  }
+};
+
+export const sendImmediateNotification = async (
+  title: string,
+  body: string,
+  id?: string,
+) => {
+  const notifications = getNotificationsLib();
+  if (!notifications) return;
+
+  if (Platform.OS === "android") {
+    await notifications.setNotificationChannelAsync("default", {
+      name: "default",
+      importance: notifications.AndroidImportance.MAX,
+      sound: "default",
+      enableVibrate: true,
+      vibrationPattern: [0, 250, 250, 250],
+    });
+  }
+
+  try {
+    await notifications.scheduleNotificationAsync({
+      identifier: id,
+      content: {
+        title,
+        body,
+        sound: "default",
+        data: { id },
+        priority: notifications.AndroidNotificationPriority?.MAX,
+      },
+      trigger: null,
+    });
+  } catch (e) {
+    console.error("Failed to send immediate notification:", e);
   }
 };
 

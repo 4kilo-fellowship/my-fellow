@@ -35,7 +35,13 @@ export const useAlertsStore = create<AlertsState>((set, get) => ({
     try {
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
       if (stored) {
-        set({ alerts: JSON.parse(stored), loading: false });
+        const alerts: AlertItem[] = JSON.parse(stored);
+        set({ alerts, loading: false });
+        for (const alert of alerts) {
+          if (alert.enabled) {
+            await syncNotification(alert);
+          }
+        }
       } else {
         set({ loading: false });
       }
@@ -95,20 +101,26 @@ export const useAlertsStore = create<AlertsState>((set, get) => ({
 
 const syncNotification = async (alert: AlertItem) => {
   await cancelNotification(alert.id);
-  if (alert.enabled) {
-    const scheduledDate = new Date(alert.time);
-    const dateToNotify = new Date(
-      scheduledDate.getTime() - alert.remindBefore * 60000,
-    );
 
-    if (alert.repeats !== "none" || dateToNotify.getTime() > Date.now()) {
-      await scheduleNotification(
-        alert.title,
-        alert.description,
-        dateToNotify,
-        alert.id,
-        alert.repeats,
-      );
-    }
+  if (!alert.enabled) return;
+
+  const eventDate = new Date(alert.time);
+  const notifyDate = new Date(eventDate.getTime() - alert.remindBefore * 60000);
+
+  if (alert.repeats === "none" && notifyDate.getTime() <= Date.now()) {
+    return;
   }
+
+  const minuteLabel =
+    alert.remindBefore >= 60
+      ? `${Math.floor(alert.remindBefore / 60)} hour(s)`
+      : `${alert.remindBefore} min`;
+
+  await scheduleNotification(
+    alert.title,
+    `Starting in ${minuteLabel}`,
+    notifyDate,
+    alert.id,
+    alert.repeats,
+  );
 };
