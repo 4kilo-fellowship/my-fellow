@@ -107,45 +107,6 @@ The application modernizes fellowship communication by replacing fragmented chan
 - `utils/`: Utility functions for formatting, validation, and common helpers.
 - `assets/`: Static assets including images, logos, and custom fonts.
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js (Latest LTS)
-- npm or yarn
-- Expo Go app on your mobile device (to test locally)
-
-### Installation
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/arat-kilo-fellowship/my-fellow.git
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Start the development server:
-
-   ```bash
-   npx expo start
-   ```
-
-4. Open the app on your device by scanning the QR code in the terminal.
-
-## Contributing
-
-This project is community-driven. To contribute:
-
-1. Fork the repository.
-2. Create a feature branch for your changes.
-3. Commit your work with clear descriptions.
-4. Submit a Pull Request for review by the maintainers.
-
 ## License
 
 Distributed under the MIT License.
