@@ -10,6 +10,7 @@ import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
   withTiming,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
@@ -33,18 +34,23 @@ export default function AppSplashScreen() {
     if (imagesLoaded) {
       SplashScreen.hideAsync().catch(() => {});
 
-      progress.value = withTiming(
-        1,
-        { duration: 800, easing: Easing.inOut(Easing.exp) },
-        (finished) => {
-          if (finished) {
-            if (hasCompletedOnboarding) {
-              scheduleOnRN(router.replace, "/(tabs)");
-            } else {
-              scheduleOnRN(router.replace, "/onboarding");
+      progress.value = withDelay(
+        1800,
+        withTiming(
+          1,
+          { duration: 800, easing: Easing.inOut(Easing.exp) },
+          (finished) => {
+            if (finished) {
+              setTimeout(() => {
+                if (hasCompletedOnboarding) {
+                  scheduleOnRN(router.replace, "/(tabs)");
+                } else {
+                  scheduleOnRN(router.replace, "/onboarding");
+                }
+              }, 300);
             }
-          }
-        },
+          },
+        ),
       );
     }
   }, [imagesLoaded]);
