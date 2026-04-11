@@ -141,28 +141,22 @@ const UserProfileMenu = () => {
   const confirmSignOut = async () => {
     setShowSignOutConfirm(false);
     closeMenu();
-    setTimeout(async () => {
-      try {
-        await logout();
-        router.replace("/(auth)/sign-in");
-      } catch (error) {
-        console.error("Sign out error:", error);
-      }
-    }, 300);
+    try {
+      await logout();
+      router.replace("/(auth)/sign-in");
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
   };
 
   const handleSignIn = () => {
     closeMenu();
-    setTimeout(() => {
-      router.push("/(auth)/sign-in");
-    }, 300);
+    router.push("/(auth)/sign-in");
   };
 
   const handleSettings = () => {
     closeMenu();
-    setTimeout(() => {
-      router.push("/settings" as any);
-    }, 300);
+    router.push("/settings" as any);
   };
 
   // Menu items configuration (constants)
@@ -195,9 +189,7 @@ const UserProfileMenu = () => {
       type: "navigation",
       onPress: () => {
         closeMenu();
-        setTimeout(() => {
-          router.push("/notifications" as any);
-        }, 250);
+        router.push("/notifications" as any);
       },
     },
     {
@@ -207,9 +199,7 @@ const UserProfileMenu = () => {
       type: "navigation",
       onPress: () => {
         closeMenu();
-        setTimeout(() => {
-          router.push("/help" as any);
-        }, 250);
+        router.push("/help" as any);
       },
     },
     {
@@ -219,9 +209,7 @@ const UserProfileMenu = () => {
       type: "navigation",
       onPress: () => {
         closeMenu();
-        setTimeout(() => {
-          router.push("/about" as any);
-        }, 250);
+        router.push("/about" as any);
       },
     },
     {
