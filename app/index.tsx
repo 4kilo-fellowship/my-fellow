@@ -15,11 +15,10 @@ import Animated, {
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 
-const LOGO_SIZE = 500;
-
 export default function AppSplashScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
+  const logoSize = Math.min(width * 1.2, 500);
   const hasCompletedOnboarding = useAppStore((s) => s.hasCompletedOnboarding);
 
   const progress = useSharedValue(0);
@@ -90,7 +89,7 @@ export default function AppSplashScreen() {
       <View style={[styles.primaryLayer, { width, height }]}>
         <Image
           source={require("../assets/images/logo-white.png")}
-          style={styles.logo}
+          style={[styles.logo, { width: logoSize, height: logoSize }]}
           contentFit="contain"
           cachePolicy="memory"
           transition={0}
@@ -102,7 +101,7 @@ export default function AppSplashScreen() {
         <Animated.View style={[styles.innerLogoContainer, innerLogoStyle]}>
           <Image
             source={require("../assets/images/logo-primary.png")}
-            style={styles.logo}
+            style={[styles.logo, { width: logoSize, height: logoSize }]}
             contentFit="contain"
             cachePolicy="memory"
             transition={0}
@@ -141,8 +140,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  logo: {
-    width: LOGO_SIZE,
-    height: LOGO_SIZE,
-  },
+  logo: {},
 });
