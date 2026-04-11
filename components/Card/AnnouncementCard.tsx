@@ -88,6 +88,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
   const [signInModalVisible, setSignInModalVisible] = useState(false);
   const [unregisterModalVisible, setUnregisterModalVisible] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   const [infoModal, setInfoModal] = useState<{
     visible: boolean;
     title: string;
@@ -199,6 +200,8 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
   };
 
   const handleShare = async () => {
+    if (isSharing) return;
+    setIsSharing(true);
     try {
       const eventId = (item as any)._id || (item as any).id;
       const eventLink = Linking.createURL(`events/${eventId}`);
@@ -238,6 +241,8 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         "Could not share the event. Please try again.",
         "error",
       );
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -285,6 +290,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         <TouchableOpacity
           onPress={handleShare}
           activeOpacity={0.7}
+          disabled={isSharing}
           className="w-10 h-10 rounded-full overflow-hidden items-center justify-center"
         >
           <BlurView
@@ -292,7 +298,11 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
             tint="dark"
             style={StyleSheet.absoluteFill}
           />
-          <Ionicons name="share-social-outline" size={18} color="white" />
+          {isSharing ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Ionicons name="share-social-outline" size={18} color="white" />
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity

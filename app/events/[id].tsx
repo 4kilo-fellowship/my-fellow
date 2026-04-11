@@ -99,6 +99,7 @@ export default function EventDetails() {
   const [isGoingBack, setIsGoingBack] = useState(false);
   const [unregisterModalVisible, setUnregisterModalVisible] = useState(false);
   const [showOfflineToaster, setShowOfflineToaster] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   const [infoModal, setInfoModal] = useState<{
     visible: boolean;
     title: string;
@@ -201,7 +202,8 @@ export default function EventDetails() {
   });
 
   const handleShare = async () => {
-    if (!ev) return;
+    if (!ev || isSharing) return;
+    setIsSharing(true);
     try {
       const eventId = ev._id || ev.id;
       const eventLink = Linking.createURL(`events/${eventId}`);
@@ -241,6 +243,8 @@ export default function EventDetails() {
         "Could not share the event. Please try again.",
         "error",
       );
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -438,10 +442,15 @@ export default function EventDetails() {
         <TouchableOpacity
           onPress={handleShare}
           activeOpacity={0.8}
+          disabled={isSharing}
           className="absolute right-4 w-10 h-10 rounded-full bg-black/30 items-center justify-center backdrop-blur-md"
           style={{ top: top + 10 }}
         >
-          <Ionicons name="share-social" size={22} color="#fff" />
+          {isSharing ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Ionicons name="share-social" size={22} color="#fff" />
+          )}
         </TouchableOpacity>
 
         <View className="absolute bottom-6 left-5 right-5">
