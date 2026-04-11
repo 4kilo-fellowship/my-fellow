@@ -1,12 +1,15 @@
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { useTheme } from "@/context/ThemeContext";
+import api from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Linking,
   Platform,
@@ -15,9 +18,9 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  ToastAndroid,
   View,
 } from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HelpScreen() {
@@ -27,6 +30,9 @@ export default function HelpScreen() {
   const isDark = theme === "dark";
   const [message, setMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+
   const [infoModal, setInfoModal] = useState<{
     visible: boolean;
     title: string;
@@ -47,7 +53,7 @@ export default function HelpScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 1,
+      quality: 0.8,
     });
 
     if (!result.canceled) {
@@ -55,24 +61,55 @@ export default function HelpScreen() {
     }
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!message.trim() && !selectedImage) return;
 
-    if (Platform.OS === "android") {
-      ToastAndroid.show("Coming Soon...", ToastAndroid.SHORT);
-    } else {
-      // For iOS/Web, show an InfoModal
+    setIsSending(true);
+    try {
+      const formData = new FormData();
+      formData.append("message", message);
+
+      if (selectedImage) {
+        const uriParts = selectedImage.split(".");
+        const fileType = uriParts[uriParts.length - 1];
+
+        formData.append("image", {
+          uri: selectedImage,
+          name: `support_${Date.now()}.${fileType}`,
+          type: `image/${fileType}`,
+        } as any);
+      }
+
+      await api.post("/api/support", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
       setInfoModal({
         visible: true,
-        title: "Coming Soon",
-        message: "This feature will be available soon.",
-        type: "info",
+        title: "Success",
+        message:
+          "Your enquiry has been sent successfully. We will get back to you soon.",
+        type: "success",
       });
-    }
 
-    setMessage("");
-    setSelectedImage(null);
+      setMessage("");
+      setSelectedImage(null);
+    } catch (error: any) {
+      setInfoModal({
+        visible: true,
+        title: "Error",
+        message:
+          error.response?.data?.message ||
+          "Failed to send enquiry. Please try again.",
+        type: "error",
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
+
   return (
     <View
       style={[
@@ -91,10 +128,6 @@ export default function HelpScreen() {
       >
         <Pressable
           onPress={() => router.back()}
-          android_ripple={{
-            color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
-            borderless: true,
-          }}
           className="w-11 h-11 rounded-full items-center justify-center mr-4"
         >
           <Ionicons
@@ -111,14 +144,14 @@ export default function HelpScreen() {
       </View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 60 : 0}
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={[styles.content, { paddingBottom: 32 }]}
+          contentContainerStyle={[styles.content, { paddingBottom: 100 }]}
           style={{ flex: 1 }}
         >
           <View style={styles.section}>
@@ -138,15 +171,6 @@ export default function HelpScreen() {
             >
               If you are experiencing any issues with the application or have
               questions regarding our community, you're in the right place.
-            </Text>
-            <Text
-              style={[
-                styles.paragraph,
-                { color: isDark ? "#94a3b8" : "#475569" },
-              ]}
-            >
-              For technical support, feature requests, or reporting bugs, please
-              reach out to our administration team.
             </Text>
           </View>
 
@@ -235,22 +259,31 @@ export default function HelpScreen() {
             styles.inputBar,
             {
               backgroundColor: isDark ? "#0A0A0A" : "#fff",
-              paddingBottom:
-                Platform.OS === "ios" ? Math.max(insets.bottom, 12) : 12,
+              paddingBottom: Math.max(insets.bottom, 12),
               borderTopColor: isDark ? "#1e293b" : "#e2e8f0",
             },
           ]}
         >
-          <View
-            style={{
-              position: "absolute",
-              bottom: -200,
-              left: 0,
-              right: 0,
-              height: 200,
-              backgroundColor: isDark ? "#0A0A0A" : "#fff",
-            }}
-          />
+          {selectedImage && (
+            <Animated.View
+              entering={FadeIn.duration(300)}
+              exiting={FadeOut.duration(300)}
+              style={styles.previewWrapper}
+            >
+              <Image
+                source={{ uri: selectedImage }}
+                style={styles.imagePreview}
+                contentFit="cover"
+              />
+              <Pressable
+                onPress={() => setSelectedImage(null)}
+                style={styles.removeImageBtn}
+              >
+                <Ionicons name="close-circle" size={24} color="#ef4444" />
+              </Pressable>
+            </Animated.View>
+          )}
+
           <View
             style={[
               styles.inputContainer,
@@ -271,8 +304,9 @@ export default function HelpScreen() {
               />
             </Pressable>
             <TextInput
+              ref={inputRef}
               style={[styles.textInput, { color: isDark ? "#fff" : "#1e293b" }]}
-              placeholder="Type your enquire..."
+              placeholder="Type your enquiry..."
               placeholderTextColor={isDark ? "#475569" : "#94a3b8"}
               value={message}
               onChangeText={setMessage}
@@ -280,25 +314,31 @@ export default function HelpScreen() {
             />
             <Pressable
               onPress={handleSend}
+              disabled={isSending || (!message.trim() && !selectedImage)}
               style={[
                 styles.sendBtn,
                 {
                   backgroundColor:
                     message.trim() || selectedImage ? "#ff6619" : "transparent",
+                  opacity: isSending ? 0.6 : 1,
                 },
               ]}
             >
-              <Ionicons
-                name="send"
-                size={18}
-                color={
-                  message.trim() || selectedImage
-                    ? "#fff"
-                    : isDark
-                      ? "#94a3b8"
-                      : "#64748b"
-                }
-              />
+              {isSending ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Ionicons
+                  name="send"
+                  size={18}
+                  color={
+                    message.trim() || selectedImage
+                      ? "#fff"
+                      : isDark
+                        ? "#94a3b8"
+                        : "#64748b"
+                  }
+                />
+              )}
             </Pressable>
           </View>
         </View>
@@ -323,7 +363,7 @@ const styles = StyleSheet.create({
     paddingTop: 32,
   },
   section: {
-    marginBottom: 40,
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 22,
@@ -368,6 +408,26 @@ const styles = StyleSheet.create({
   inputBar: {
     paddingHorizontal: 16,
     paddingTop: 10,
+    borderTopWidth: 1,
+  },
+  previewWrapper: {
+    marginBottom: 12,
+    position: "relative",
+    alignSelf: "flex-start",
+  },
+  imagePreview: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#ff6619",
+  },
+  removeImageBtn: {
+    position: "absolute",
+    top: -10,
+    right: -10,
+    backgroundColor: "white",
+    borderRadius: 12,
   },
   inputContainer: {
     flexDirection: "row",
