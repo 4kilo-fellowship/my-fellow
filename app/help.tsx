@@ -6,6 +6,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
 import React, { useRef, useState } from "react";
 import {
@@ -117,11 +118,29 @@ export default function HelpScreen() {
         } as any);
       }
 
-      await api.post("/api/support", formData, {
+      const base = (api.defaults.baseURL ?? "").replace(/\/$/, "");
+      const url = `${base}/support`;
+
+      const token = await SecureStore.getItemAsync("userToken");
+
+      const res = await fetch(url, {
+        method: "POST",
         headers: {
-          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
         },
+        body: formData as any,
       });
+
+      if (!res.ok) {
+        let errorMsg = `Failed to send enquiry: ${res.status}`;
+        try {
+          const json = await res.json();
+          errorMsg = json.message || json.error || errorMsg;
+        } catch (e) {
+          // If not JSON, use status
+        }
+        throw new Error(errorMsg);
+      }
 
       setInfoModal({
         visible: true,
@@ -137,9 +156,7 @@ export default function HelpScreen() {
       setInfoModal({
         visible: true,
         title: "Error",
-        message:
-          error.response?.data?.message ||
-          "Failed to send enquiry. Please try again.",
+        message: error.message || "Failed to send enquiry. Please try again.",
         type: "error",
       });
     } finally {
