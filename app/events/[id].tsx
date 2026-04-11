@@ -20,10 +20,12 @@ import {
   getEventDisplayLabel,
 } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
+import * as FileSystem from "expo-file-system/legacy";
 import { Image as ExpoImage } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Linking from "expo-linking";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import * as Sharing from "expo-sharing";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -205,8 +207,32 @@ export default function EventDetails() {
       const eventLink = Linking.createURL(`events/${eventId}`);
       const shareMessage = `${ev.title}\n\n${ev.shortDescription || ""}\n\nView more: ${eventLink}\n\nShared via My Fellow`;
 
-      await Share.share({
-        message: shareMessage,
+      if (!imgPath) {
+        await Share.share({
+          message: shareMessage,
+        });
+        return;
+      }
+
+      const filename = imgPath.split("/").pop() || "event-image.jpg";
+      const localUri = `${FileSystem.cacheDirectory}${filename}`;
+      await FileSystem.createDownloadResumable(
+        imgPath,
+        localUri,
+      ).downloadAsync();
+
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        await Share.share({
+          message: shareMessage,
+        });
+        return;
+      }
+
+      await Sharing.shareAsync(localUri, {
+        mimeType: "image/jpeg",
+        dialogTitle: `Share ${ev.title}`,
+        UTI: "public.image",
       });
     } catch (error: any) {
       console.error("Error sharing event:", error);

@@ -1,8 +1,10 @@
 import { PRIMARY } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
+import * as FileSystem from "expo-file-system/legacy";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Linking from "expo-linking";
+import * as Sharing from "expo-sharing";
 import React, { useCallback, useState } from "react";
 
 import { useAuth } from "@/context/AuthContext";
@@ -198,11 +200,36 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
 
   const handleShare = async () => {
     try {
+      const eventId = (item as any)._id || (item as any).id;
       const eventLink = Linking.createURL(`events/${eventId}`);
       const shareMessage = `${item.title}\n\n${subtitleText}\n\nView more: ${eventLink}\n\nShared via My Fellow`;
 
-      await Share.share({
-        message: shareMessage,
+      if (!imageUri) {
+        await Share.share({
+          message: shareMessage,
+        });
+        return;
+      }
+
+      const filename = imageUri.split("/").pop() || "event-image.jpg";
+      const localUri = `${FileSystem.cacheDirectory}${filename}`;
+      await FileSystem.createDownloadResumable(
+        imageUri,
+        localUri,
+      ).downloadAsync();
+
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        await Share.share({
+          message: shareMessage,
+        });
+        return;
+      }
+
+      await Sharing.shareAsync(localUri, {
+        mimeType: "image/jpeg",
+        dialogTitle: `Share ${item.title}`,
+        UTI: "public.image",
       });
     } catch (error: any) {
       console.error("Error sharing image:", error);
