@@ -59,6 +59,12 @@
         }
       ]
     ],
-    "owner": "arat-kilo-fellowship"
+    "owner": "arat-kilo-fellowship",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/0cd82926-55b4-4421-b89c-5da2ad3f85de"
+    }
   }
 }
