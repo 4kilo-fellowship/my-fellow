@@ -106,7 +106,7 @@ export default function EventDetails() {
     message: string;
     type: "success" | "error" | "info";
   }>({ visible: false, title: "", message: "", type: "info" });
-
+  //
   const showInfoModalFn = useCallback(
     (
       title: string,
