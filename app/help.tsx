@@ -1,4 +1,5 @@
 import { InfoModal } from "@/components/Modals/InfoModal";
+import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import api from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
@@ -36,6 +37,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function HelpScreen() {
   const { theme } = useTheme();
+  const { authState } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const isDark = theme === "dark";
@@ -100,6 +102,16 @@ export default function HelpScreen() {
   };
 
   const handleSend = async () => {
+    if (!authState.authenticated) {
+      setInfoModal({
+        visible: true,
+        title: "Login Required",
+        message: "You must be logged in to send a support enquiry.",
+        type: "error",
+      });
+      return;
+    }
+
     if (!message.trim() && !selectedImage) return;
 
     setIsSending(true);
