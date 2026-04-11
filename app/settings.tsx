@@ -1,4 +1,4 @@
-import { ConfirmModal, ConfirmationModal, InfoModal } from "@/components";
+import { ConfirmModal, InfoModal } from "@/components";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { JoinRequest, joinRequestService } from "@/services/joinRequestService";
@@ -338,7 +338,10 @@ export default function Settings() {
           description: "Help us improve",
           type: "navigation",
           onPress: () =>
-            showInfoModal("Coming Soon", "Feedback form will be available soon."),
+            showInfoModal(
+              "Coming Soon",
+              "Feedback form will be available soon.",
+            ),
         },
         {
           id: "rateApp",
@@ -384,7 +387,10 @@ export default function Settings() {
           label: "Open Source Licenses",
           type: "navigation",
           onPress: () =>
-            showInfoModal("Coming Soon", "Licenses info will be available soon."),
+            showInfoModal(
+              "Coming Soon",
+              "Licenses info will be available soon.",
+            ),
         },
       ],
     },
@@ -711,14 +717,22 @@ export default function Settings() {
           </Text>
         </View>
       </ScrollView>
-      <ConfirmationModal
+      <ConfirmModal
         visible={showSignOutConfirm}
         onClose={() => setShowSignOutConfirm(false)}
-        onConfirm={confirmSignOut}
+        isDark={isDark}
+        icon="log-out-outline"
+        iconColor="#ef4444"
         title="Sign Out"
-        message="Are you sure you want to sign out of your account?"
-        confirmLabel="Sign Out"
-        danger
+        description="Are you sure you want to sign out of your account?"
+        buttons={[
+          {
+            label: "Sign Out",
+            onPress: confirmSignOut,
+            variant: "danger",
+          },
+        ]}
+        cancelButton={{ label: "Cancel" }}
       />
       <ConfirmModal
         visible={showSignInPrompt}

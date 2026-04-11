@@ -2,7 +2,6 @@ export { AlertCard } from "./AlertCard";
 export { default as AnnouncementCard } from "./Card/AnnouncementCard";
 export { default as DevotionCard } from "./Card/DevotionCard";
 export { default as LeaderCard } from "./Card/LeaderCard";
-export { default as ConfirmationModal } from "./ConfirmationModal";
 export { default as ConnectionToaster } from "./ConnectionToaster";
 export { default as CartBadge } from "./Marketplace/CartBadge";
 export { default as CartSheet } from "./Marketplace/CartSheet";

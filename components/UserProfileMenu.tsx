@@ -21,7 +21,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import ConfirmationModal from "./ConfirmationModal";
+import { ConfirmModal } from "./Modals/ConfirmModal";
 
 interface MenuItem {
   id: string;
@@ -702,14 +702,22 @@ const UserProfileMenu = () => {
           </View>
         </Animated.View>
       </Modal>
-      <ConfirmationModal
+      <ConfirmModal
         visible={showSignOutConfirm}
         onClose={() => setShowSignOutConfirm(false)}
-        onConfirm={confirmSignOut}
+        isDark={isDark}
+        icon="log-out-outline"
+        iconColor="#ef4444"
         title="Sign Out"
-        message="Are you sure you want to sign out of your account?"
-        confirmLabel="Sign Out"
-        danger
+        description="Are you sure you want to sign out of your account?"
+        buttons={[
+          {
+            label: "Sign Out",
+            onPress: confirmSignOut,
+            variant: "danger",
+          },
+        ]}
+        cancelButton={{ label: "Cancel" }}
       />
     </>
   );
