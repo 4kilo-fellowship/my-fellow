@@ -20,8 +20,18 @@ import {
   TextInput,
   View,
 } from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import Animated, {
+  FadeIn,
+  FadeOut,
+  interpolateColor,
+  useAnimatedStyle,
+  useDerivedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function HelpScreen() {
   const { theme } = useTheme();
@@ -31,6 +41,7 @@ export default function HelpScreen() {
   const [message, setMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   const [infoModal, setInfoModal] = useState<{
@@ -39,6 +50,32 @@ export default function HelpScreen() {
     message: string;
     type: "success" | "error" | "info";
   }>({ visible: false, title: "", message: "", type: "info" });
+
+  const focusValue = useDerivedValue(() => {
+    return withTiming(isFocused ? 1 : 0, { duration: 250 });
+  });
+
+  const animatedContainerStyle = useAnimatedStyle(() => {
+    const borderColor = interpolateColor(
+      focusValue.value,
+      [0, 1],
+      [isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)", "#ff6619"],
+    );
+
+    return {
+      borderColor,
+      borderWidth: 1.5,
+      transform: [{ scale: withSpring(isFocused ? 1.01 : 1) }],
+    };
+  });
+
+  const sendButtonStyle = useAnimatedStyle(() => {
+    const hasContent = message.trim().length > 0 || selectedImage !== null;
+    return {
+      transform: [{ scale: withSpring(hasContent ? 1 : 0.8) }],
+      opacity: withTiming(hasContent ? 1 : 0.5),
+    };
+  });
 
   const handlePhoneCall = () => {
     Linking.openURL("tel:0994627985");
@@ -124,7 +161,7 @@ export default function HelpScreen() {
 
       <View
         className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"}`}
-        style={{ paddingTop: insets.top + 10 }}
+        style={{ paddingTop: insets.top + 10, zIndex: 10 }}
       >
         <Pressable
           onPress={() => router.back()}
@@ -144,34 +181,37 @@ export default function HelpScreen() {
       </View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 60 : 0}
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={[styles.content, { paddingBottom: 100 }]}
+          contentContainerStyle={[styles.content, { paddingBottom: 150 }]}
           style={{ flex: 1 }}
         >
           <View style={styles.section}>
-            <Text
+            <Animated.Text
+              entering={FadeIn.delay(200)}
               style={[
                 styles.sectionTitle,
                 { color: isDark ? "#fff" : "#1e293b" },
               ]}
             >
               How can we help?
-            </Text>
-            <Text
+            </Animated.Text>
+            <Animated.Text
+              entering={FadeIn.delay(300)}
               style={[
                 styles.paragraph,
                 { color: isDark ? "#94a3b8" : "#475569" },
               ]}
             >
+              {" "}
               If you are experiencing any issues with the application or have
               questions regarding our community, you're in the right place.
-            </Text>
+            </Animated.Text>
           </View>
 
           <View style={styles.minimalList}>
@@ -180,11 +220,14 @@ export default function HelpScreen() {
               style={styles.minimalItem}
               android_ripple={{ color: "rgba(0,0,0,0.05)" }}
             >
-              <Ionicons
-                name="call-outline"
-                size={22}
-                color={isDark ? "#fff" : "#1e293b"}
-              />
+              <View
+                style={[
+                  styles.iconBox,
+                  { backgroundColor: isDark ? "#1a1a1a" : "#f1f5f9" },
+                ]}
+              >
+                <Ionicons name="call-outline" size={20} color="#ff6619" />
+              </View>
               <View style={styles.itemContent}>
                 <Text
                   style={[
@@ -206,7 +249,7 @@ export default function HelpScreen() {
               <Ionicons
                 name="chevron-forward"
                 size={18}
-                color={isDark ? "#fff" : "#000"}
+                color={isDark ? "#334155" : "#cbd5e1"}
               />
             </Pressable>
 
@@ -222,11 +265,18 @@ export default function HelpScreen() {
               style={styles.minimalItem}
               android_ripple={{ color: "rgba(0,0,0,0.05)" }}
             >
-              <Ionicons
-                name="paper-plane-outline"
-                size={22}
-                color={isDark ? "#fff" : "#1e293b"}
-              />
+              <View
+                style={[
+                  styles.iconBox,
+                  { backgroundColor: isDark ? "#1a1a1a" : "#f1f5f9" },
+                ]}
+              >
+                <Ionicons
+                  name="paper-plane-outline"
+                  size={20}
+                  color="#ff6619"
+                />
+              </View>
               <View style={styles.itemContent}>
                 <Text
                   style={[
@@ -248,7 +298,7 @@ export default function HelpScreen() {
               <Ionicons
                 name="chevron-forward"
                 size={18}
-                color={isDark ? "#fff" : "#000"}
+                color={isDark ? "#334155" : "#cbd5e1"}
               />
             </Pressable>
           </View>
@@ -259,7 +309,8 @@ export default function HelpScreen() {
             styles.inputBar,
             {
               backgroundColor: isDark ? "#0A0A0A" : "#fff",
-              paddingBottom: Math.max(insets.bottom, 12),
+              paddingBottom:
+                Platform.OS === "ios" ? Math.max(insets.bottom, 12) : 12,
               borderTopColor: isDark ? "#1e293b" : "#e2e8f0",
             },
           ]}
@@ -270,31 +321,38 @@ export default function HelpScreen() {
               exiting={FadeOut.duration(300)}
               style={styles.previewWrapper}
             >
-              <Image
-                source={{ uri: selectedImage }}
-                style={styles.imagePreview}
-                contentFit="cover"
-              />
-              <Pressable
-                onPress={() => setSelectedImage(null)}
-                style={styles.removeImageBtn}
-              >
-                <Ionicons name="close-circle" size={24} color="#ef4444" />
-              </Pressable>
+              <View style={styles.imagePreviewContainer}>
+                <Image
+                  source={{ uri: selectedImage }}
+                  style={styles.imagePreview}
+                  contentFit="cover"
+                />
+                <Pressable
+                  onPress={() => setSelectedImage(null)}
+                  style={styles.removeImageBtn}
+                >
+                  <Ionicons name="close-circle" size={22} color="#ef4444" />
+                </Pressable>
+              </View>
             </Animated.View>
           )}
 
-          <View
+          <Animated.View
             style={[
               styles.inputContainer,
               {
                 backgroundColor: isDark
-                  ? "rgba(255,255,255,0.08)"
-                  : "rgba(0,0,0,0.05)",
+                  ? "rgba(255,255,255,0.05)"
+                  : "rgba(255,255,255,0.8)",
               },
+              animatedContainerStyle,
             ]}
           >
-            <Pressable onPress={pickImage} style={styles.attachBtn}>
+            <Pressable
+              onPress={pickImage}
+              style={styles.attachBtn}
+              className="active:opacity-60"
+            >
               <Ionicons
                 name="image-outline"
                 size={22}
@@ -310,36 +368,34 @@ export default function HelpScreen() {
               placeholderTextColor={isDark ? "#475569" : "#94a3b8"}
               value={message}
               onChangeText={setMessage}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
               multiline
             />
-            <Pressable
+            <AnimatedPressable
               onPress={handleSend}
               disabled={isSending || (!message.trim() && !selectedImage)}
               style={[
                 styles.sendBtn,
                 {
-                  backgroundColor:
-                    message.trim() || selectedImage ? "#ff6619" : "transparent",
-                  opacity: isSending ? 0.6 : 1,
+                  backgroundColor: "#ff6619",
                 },
+                sendButtonStyle,
               ]}
             >
               {isSending ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Ionicons
-                  name="send"
-                  size={18}
-                  color={
-                    message.trim() || selectedImage
-                      ? "#fff"
-                      : isDark
-                        ? "#94a3b8"
-                        : "#64748b"
-                  }
-                />
+                <Ionicons name="send" size={18} color="#fff" />
               )}
-            </Pressable>
+            </AnimatedPressable>
+          </Animated.View>
+          <View style={styles.charCount}>
+            <Text
+              style={{ fontSize: 10, color: isDark ? "#475569" : "#94a3b8" }}
+            >
+              {message.length} characters
+            </Text>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -383,14 +439,21 @@ const styles = StyleSheet.create({
   minimalItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 14,
+  },
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
   },
   itemContent: {
     flex: 1,
     marginLeft: 16,
   },
   itemLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 1,
@@ -403,60 +466,67 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     width: "100%",
-    marginVertical: 4,
   },
   inputBar: {
     paddingHorizontal: 16,
-    paddingTop: 10,
+    paddingTop: 12,
     borderTopWidth: 1,
   },
   previewWrapper: {
     marginBottom: 12,
-    position: "relative",
     alignSelf: "flex-start",
   },
+  imagePreviewContainer: {
+    position: "relative",
+  },
   imagePreview: {
-    width: 100,
-    height: 100,
-    borderRadius: 12,
+    width: 110,
+    height: 110,
+    borderRadius: 16,
     borderWidth: 2,
     borderColor: "#ff6619",
   },
   removeImageBtn: {
     position: "absolute",
-    top: -10,
-    right: -10,
+    top: -8,
+    right: -8,
     backgroundColor: "white",
-    borderRadius: 12,
+    borderRadius: 11,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
     gap: 4,
-    borderRadius: 28,
-    paddingHorizontal: 4,
-    paddingVertical: 4,
+    borderRadius: 24,
+    paddingHorizontal: 6,
+    paddingVertical: 6,
   },
   attachBtn: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
   },
   textInput: {
     flex: 1,
     minHeight: 40,
-    maxHeight: 120,
+    maxHeight: 150,
     paddingHorizontal: 8,
-    paddingTop: 8,
-    paddingBottom: 8,
+    paddingTop: 10,
+    paddingBottom: 10,
     fontSize: 15,
+    lineHeight: 20,
   },
   sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+  },
+  charCount: {
+    alignItems: "flex-end",
+    paddingRight: 12,
+    paddingTop: 4,
   },
 });
