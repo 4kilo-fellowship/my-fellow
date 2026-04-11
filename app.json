@@ -9,8 +9,6 @@
     "assetBundlePatterns": ["assets/*"],
     "icon": "./assets/images/4kk.png",
     "splash": {
-      "image": "./assets/images/primary.png",
-      "resizeMode": "contain",
       "backgroundColor": "#ff6719"
     },
     "ios": {

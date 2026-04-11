@@ -10,7 +10,6 @@ import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
-  withDelay,
   withTiming,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
@@ -31,33 +30,23 @@ export default function AppSplashScreen() {
   const [imagesLoaded, setImagesLoaded] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!imagesLoaded) setImagesLoaded(true);
-    }, 2000);
-
     if (imagesLoaded) {
       SplashScreen.hideAsync().catch(() => {});
 
-      progress.value = withDelay(
-        2000,
-        withTiming(
-          1,
-          { duration: 800, easing: Easing.inOut(Easing.exp) },
-          (finished) => {
-            if (finished) {
-              setTimeout(() => {
-                if (hasCompletedOnboarding) {
-                  scheduleOnRN(router.replace, "/(tabs)");
-                } else {
-                  scheduleOnRN(router.replace, "/onboarding");
-                }
-              }, 400);
+      progress.value = withTiming(
+        1,
+        { duration: 800, easing: Easing.inOut(Easing.exp) },
+        (finished) => {
+          if (finished) {
+            if (hasCompletedOnboarding) {
+              scheduleOnRN(router.replace, "/(tabs)");
+            } else {
+              scheduleOnRN(router.replace, "/onboarding");
             }
-          },
-        ),
+          }
+        },
       );
     }
-    return () => clearTimeout(timer);
   }, [imagesLoaded]);
 
   const bubbleStyle = useAnimatedStyle(() => {
