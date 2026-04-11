@@ -15,14 +15,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.natitam1.myfellow",
+      "bundleIdentifier": "com.aau.ecsf.myfellow",
       "icon": "./assets/images/4kk.png",
       "infoPlist": {
         "UIBackgroundModes": ["audio"]
       }
     },
     "android": {
-      "package": "com.natitam1.myfellow",
+      "package": "com.aau.ecsf.myfellow",
       "permissions": [
         "WAKE_LOCK",
         "FOREGROUND_SERVICE",
