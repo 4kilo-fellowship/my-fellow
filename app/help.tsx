@@ -338,8 +338,7 @@ export default function HelpScreen() {
             styles.inputBar,
             {
               backgroundColor: isDark ? "#0A0A0A" : "#fff",
-              paddingBottom:
-                Platform.OS === "ios" ? Math.max(insets.bottom, 12) : 12,
+              paddingBottom: Math.max(insets.bottom, 16),
               borderTopColor: isDark ? "#1e293b" : "#e2e8f0",
             },
           ]}
@@ -419,13 +418,6 @@ export default function HelpScreen() {
               )}
             </AnimatedPressable>
           </Animated.View>
-          <View style={styles.charCount}>
-            <Text
-              style={{ fontSize: 10, color: isDark ? "#475569" : "#94a3b8" }}
-            >
-              {message.length} characters
-            </Text>
-          </View>
         </View>
       </KeyboardAvoidingView>
 
