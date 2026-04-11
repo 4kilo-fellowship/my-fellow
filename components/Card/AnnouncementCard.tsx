@@ -1,9 +1,8 @@
 import { PRIMARY } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import * as FileSystem from "expo-file-system/legacy";
 import { LinearGradient } from "expo-linear-gradient";
-import * as Sharing from "expo-sharing";
+import * as Linking from "expo-linking";
 import React, { useCallback, useState } from "react";
 
 import { useAuth } from "@/context/AuthContext";
@@ -199,42 +198,17 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
 
   const handleShare = async () => {
     try {
-      if (!imageUri) {
-        await Share.share({
-          message: `${item.title}\n\n${subtitleText}\n\nShared via My Fellow`,
-        });
-        return;
-      }
+      const eventLink = Linking.createURL(`events/${eventId}`);
+      const shareMessage = `${item.title}\n\n${subtitleText}\n\nView more: ${eventLink}\n\nShared via My Fellow`;
 
-      const filename = imageUri.split("/").pop() || "event-image.jpg";
-      const localUri = `${FileSystem.cacheDirectory}${filename}`;
-
-      const downloadResult = await FileSystem.downloadAsync(imageUri, localUri);
-
-      if (downloadResult.status !== 200) {
-        throw new Error("Failed to download image");
-      }
-
-      const isAvailable = await Sharing.isAvailableAsync();
-      if (!isAvailable) {
-        showInfoModal(
-          "Error",
-          "Sharing is not available on this device",
-          "error",
-        );
-        return;
-      }
-
-      await Sharing.shareAsync(downloadResult.uri, {
-        mimeType: "image/jpeg",
-        dialogTitle: `Share ${item.title}`,
-        UTI: "public.image",
+      await Share.share({
+        message: shareMessage,
       });
     } catch (error: any) {
       console.error("Error sharing image:", error);
       showInfoModal(
         "Sharing Failed",
-        "Could not share the image. Please try again.",
+        "Could not share the event. Please try again.",
         "error",
       );
     }
@@ -334,7 +308,9 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
             activeOpacity={0.9}
             onPress={handlePrimary}
             disabled={
-              registering || unregistering || (isRegisterCta && isCheckingThisEvent)
+              registering ||
+              unregistering ||
+              (isRegisterCta && isCheckingThisEvent)
             }
             accessibilityLabel={`Primary action for ${item.title}`}
             style={{
@@ -347,7 +323,9 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
             }}
             className="w-full py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/40"
           >
-            {registering || unregistering || (isRegisterCta && isCheckingThisEvent) ? (
+            {registering ||
+            unregistering ||
+            (isRegisterCta && isCheckingThisEvent) ? (
               <ActivityIndicator color="white" size="small" />
             ) : (
               <>

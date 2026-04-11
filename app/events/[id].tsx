@@ -22,6 +22,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Image as ExpoImage } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Linking from "expo-linking";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
@@ -30,6 +31,7 @@ import {
   Dimensions,
   Image,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -195,6 +197,26 @@ export default function EventDetails() {
     isRegisterCta,
     isRegisteredForThisEvent,
   });
+
+  const handleShare = async () => {
+    if (!ev) return;
+    try {
+      const eventId = ev._id || ev.id;
+      const eventLink = Linking.createURL(`events/${eventId}`);
+      const shareMessage = `${ev.title}\n\n${ev.shortDescription || ""}\n\nView more: ${eventLink}\n\nShared via My Fellow`;
+
+      await Share.share({
+        message: shareMessage,
+      });
+    } catch (error: any) {
+      console.error("Error sharing event:", error);
+      showInfoModalFn(
+        "Sharing Failed",
+        "Could not share the event. Please try again.",
+        "error",
+      );
+    }
+  };
 
   const { handleCta, onConfirmRegistration, onConfirmUnregistration } =
     createEventActions({
@@ -385,6 +407,15 @@ export default function EventDetails() {
           ) : (
             <Ionicons name="arrow-back" size={24} color="#fff" />
           )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={handleShare}
+          activeOpacity={0.8}
+          className="absolute right-4 w-10 h-10 rounded-full bg-black/30 items-center justify-center backdrop-blur-md"
+          style={{ top: top + 10 }}
+        >
+          <Ionicons name="share-social" size={22} color="#fff" />
         </TouchableOpacity>
 
         <View className="absolute bottom-6 left-5 right-5">
