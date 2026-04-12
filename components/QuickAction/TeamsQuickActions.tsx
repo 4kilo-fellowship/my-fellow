@@ -112,7 +112,7 @@ const QuickActions = () => {
               <View className="space-y-4">
                 <TouchableOpacity
                   onPress={() => {
-                    openLink("tel:+251911234567");
+                    openLink("tel:+251994627985");
                     setModalVisible(false);
                   }}
                   activeOpacity={0.7}
@@ -137,7 +137,7 @@ const QuickActions = () => {
                           isDark ? "text-white" : "text-zinc-900"
                         }`}
                       >
-                        +251 911 234 567
+                        +251 99 462 7985
                       </Text>
                     </View>
                   </View>
@@ -150,7 +150,7 @@ const QuickActions = () => {
 
                 <TouchableOpacity
                   onPress={() => {
-                    openLink("https://t.me/myfellow_bot");
+                    openLink("https://t.me/natitam1");
                     setModalVisible(false);
                   }}
                   activeOpacity={0.7}
@@ -175,7 +175,7 @@ const QuickActions = () => {
                           isDark ? "text-white" : "text-zinc-900"
                         }`}
                       >
-                        @myfellow_bot
+                        @natitam1
                       </Text>
                     </View>
                   </View>
