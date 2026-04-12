@@ -6,7 +6,9 @@
     "version": "1.2.3",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": ["assets/*"],
+    "assetBundlePatterns": [
+      "assets/*"
+    ],
     "icon": "./assets/images/4kk.png",
     "splash": {
       "backgroundColor": "#ff6719"
@@ -16,7 +18,9 @@
       "bundleIdentifier": "com.aau.ecsf.myfellow",
       "icon": "./assets/images/4kk.png",
       "infoPlist": {
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -55,7 +59,8 @@
         {
           "enableBackgroundPlayback": true
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "owner": "arat-kilo-fellowship",
     "runtimeVersion": {
