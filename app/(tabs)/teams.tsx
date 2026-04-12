@@ -315,7 +315,7 @@ const Teams = () => {
           )
         }
         ListFooterComponent={
-          !loading && filteredTeams.length > 0 ? (
+          !loading ? (
             <View className="mt-4 px-5 mb-10">
               <View
                 className={`p-6 rounded-2xl items-center ${isDark ? "bg-zinc-900" : "bg-zinc-50 border border-zinc-100"}`}
