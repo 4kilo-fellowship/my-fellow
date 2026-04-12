@@ -56,9 +56,6 @@ export const authService = {
     if (data.telegramUserName) {
       formData.append("telegramUserName", data.telegramUserName);
     }
-    if (data.pastTeam) {
-      formData.append("pastTeam", data.pastTeam);
-    }
 
     if (data.profileImage) {
       const imageUri = data.profileImage;

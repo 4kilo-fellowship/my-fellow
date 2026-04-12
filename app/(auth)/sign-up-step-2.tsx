@@ -183,7 +183,6 @@ export default function SignUpStep2() {
         password: params.password as string,
         confirmPassword: params.password as string,
         team: data.team,
-        pastTeam: "",
         department: data.department,
         yearOfStudy: data.year,
         telegramUserName: data.telegram || "",

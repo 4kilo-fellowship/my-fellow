@@ -137,7 +137,6 @@ const TeamDetails = () => {
     };
 
     add(user.team);
-    add(user.pastTeam);
     return teamsList;
   };
 
@@ -249,7 +248,6 @@ const TeamDetails = () => {
         year: user.yearOfStudy || undefined,
         telegramHandle: user.telegramUserName || undefined,
         profileImage: user.profileImage || undefined,
-        pastTeam: user.team || user.pastTeam || undefined,
       };
 
       if (!payload.fullName || payload.fullName.trim() === "") {

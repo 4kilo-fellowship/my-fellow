@@ -210,7 +210,6 @@ const Teams = () => {
             };
 
             add(user.team);
-            add(user.pastTeam);
             return teams;
           };
 

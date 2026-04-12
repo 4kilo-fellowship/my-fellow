@@ -16,7 +16,6 @@ export interface User {
   department?: string;
   yearOfStudy?: string;
   telegramUserName?: string;
-  pastTeam?: string;
   createdAt?: string;
 }
 
@@ -39,7 +38,6 @@ export interface SignUpData {
   department?: string;
   yearOfStudy?: string;
   telegramUserName?: string;
-  pastTeam?: string;
   profileImage?: string | null;
 }
 

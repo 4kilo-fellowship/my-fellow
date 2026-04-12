@@ -7,7 +7,6 @@ export interface JoinRequest {
   fullName?: string;
   phoneNumber?: string;
   profileImage?: string;
-  pastTeam?: string;
   department?: string;
   year?: string;
   telegramHandle?: string;
@@ -34,7 +33,6 @@ export interface CreateJoinRequestData {
   year?: string;
   telegramHandle?: string;
   profileImage?: string | null;
-  pastTeam?: string | null;
   message?: string;
 }
 
