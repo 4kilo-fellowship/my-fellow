@@ -24,8 +24,6 @@ const getNotificationsLib = () => {
 };
 
 export const registerForPushNotificationsAsync = async () => {
-  if (isExpoGo) return;
-
   const notifications = getNotificationsLib();
   if (!notifications) return;
 
@@ -50,13 +48,17 @@ export const registerForPushNotificationsAsync = async () => {
     });
   }
 
+  // Push token retrieval is only possible in built apps or specific Expo Go scenarios
+  if (isExpoGo) return;
+
   try {
     const projectId =
       Constants?.expoConfig?.extra?.eas?.projectId ??
       Constants?.easConfig?.projectId;
+    if (!projectId) return;
     return (await notifications.getExpoPushTokenAsync({ projectId })).data;
   } catch (e) {
-    console.error("Error retrieving push token:", e);
+    console.warn("Error retrieving push token:", e);
   }
 };
 
@@ -67,6 +69,7 @@ export const scheduleNotification = async (
   id?: string,
   repeats?: "daily" | "weekly" | "none",
 ) => {
+  await registerForPushNotificationsAsync();
   const notifications = getNotificationsLib();
   if (!notifications) return;
 
@@ -110,11 +113,7 @@ export const scheduleNotification = async (
       return;
     }
 
-    trigger = {
-      type: SchedulableTriggerInputTypes.DATE,
-      date: scheduledDate,
-      channelId: Platform.OS === "android" ? "default" : undefined,
-    };
+    trigger = scheduledDate;
   }
 
   try {
@@ -125,6 +124,7 @@ export const scheduleNotification = async (
         body,
         sound: "default",
         data: { id },
+        channelId: Platform.OS === "android" ? "default" : undefined,
         priority: notifications.AndroidNotificationPriority?.MAX,
       },
       trigger,
@@ -139,6 +139,7 @@ export const sendImmediateNotification = async (
   body: string,
   id?: string,
 ) => {
+  await registerForPushNotificationsAsync();
   const notifications = getNotificationsLib();
   if (!notifications) return;
 
@@ -160,6 +161,7 @@ export const sendImmediateNotification = async (
         body,
         sound: "default",
         data: { id },
+        channelId: Platform.OS === "android" ? "default" : undefined,
         priority: notifications.AndroidNotificationPriority?.MAX,
       },
       trigger: null,
