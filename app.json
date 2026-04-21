@@ -3,7 +3,7 @@
     "name": "My Fellow",
     "slug": "my-fellow",
     "scheme": "my-fellow",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "assetBundlePatterns": ["assets/*"],
