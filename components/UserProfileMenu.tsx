@@ -741,7 +741,7 @@ const styles = StyleSheet.create({
 
   // Backdrop
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(0, 0, 0, 0.6)",
   },
   backdropPressable: {
@@ -759,7 +759,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   gradientBg: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
 
   // Header

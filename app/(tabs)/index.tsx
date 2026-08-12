@@ -158,10 +158,7 @@ const Home = () => {
       />
 
       <View className="flex-1" style={{ paddingTop: top * 0.95 }}>
-        <StatusBar
-          style={isDark ? "light" : "dark"}
-          backgroundColor="transparent"
-        />
+        <StatusBar style={isDark ? "light" : "dark"} />
 
         <View className="px-4 flex-row justify-between items-center">
           <Image

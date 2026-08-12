@@ -376,10 +376,7 @@ export default function WeeklyPrograms() {
           headerShown: false,
         }}
       />
-      <StatusBar
-        style={isDark ? "light" : "dark"}
-        backgroundColor="transparent"
-      />
+      <StatusBar style={isDark ? "light" : "dark"} />
 
       <View className={`flex-1 ${isDark ? "bg-[#0A0A0A]" : "bg-[#f8fafc]"}`}>
         {loading && programs.length === 0 ? (

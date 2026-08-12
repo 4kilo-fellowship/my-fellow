@@ -63,7 +63,10 @@ const RegistrationModal = ({
               }`}
             >
               Do you want to register for{" "}
-              <Text className="text-primary font-bold">"{eventTitle}"</Text>?
+              <Text className="text-primary font-bold">
+                &quot;{eventTitle}&quot;
+              </Text>
+              ?
             </Text>
           </View>
 

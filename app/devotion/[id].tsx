@@ -61,12 +61,14 @@ const DevotionDetail = () => {
 
   useEffect(() => {
     if (devotion && player) {
-      player.metadata = {
+      player.setActiveForLockScreen(true, {
         title: devotion.title,
         artist: devotion.author,
         artworkUrl: devotion.image,
-      };
+      });
     }
+
+    return () => player.clearLockScreenControls();
   }, [devotion, player]);
 
   useEffect(() => {

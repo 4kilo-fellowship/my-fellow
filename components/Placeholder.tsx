@@ -31,6 +31,8 @@ export const Placeholder = memo(
   },
 );
 
+Placeholder.displayName = "Placeholder";
+
 const styles = StyleSheet.create({
   placeholder: {},
 });

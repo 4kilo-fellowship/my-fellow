@@ -136,6 +136,15 @@ const Teams = () => {
   const { teams, loading, refreshing, loadTeams } = useTeamsStore();
   const [requests, setRequests] = useState<JoinRequest[]>([]);
 
+  const fetchUserRequests = useCallback(async () => {
+    try {
+      const myRequests = await joinRequestService.getMyRequests();
+      setRequests(myRequests);
+    } catch (error) {
+      console.error("Error fetching requests", error);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       if (authState.authenticated) {
@@ -143,21 +152,12 @@ const Teams = () => {
         getCurrentUser().catch(console.error);
         loadTeams(); // Check for updates in background on focus
       }
-    }, [authState.authenticated]),
+    }, [authState.authenticated, fetchUserRequests, getCurrentUser, loadTeams]),
   );
 
   useEffect(() => {
     loadTeams();
-  }, []);
-
-  const fetchUserRequests = async () => {
-    try {
-      const myRequests = await joinRequestService.getMyRequests();
-      setRequests(myRequests);
-    } catch (error) {
-      console.error("Error fetching requests", error);
-    }
-  };
+  }, [loadTeams]);
 
   const onRefresh = () => {
     loadTeams(true);

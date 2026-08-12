@@ -21,7 +21,7 @@ export default function AboutScreen() {
     >
       <LinearGradient
         colors={isDark ? ["#0a0a0a", "#000000"] : ["#ffffff", "#f1f5f9"]}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
 
       <View

@@ -185,7 +185,7 @@ export default function HelpScreen() {
     >
       <LinearGradient
         colors={isDark ? ["#0a0a0a", "#000000"] : ["#ffffff", "#f1f5f9"]}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
 
       <View
@@ -239,7 +239,7 @@ export default function HelpScreen() {
             >
               {" "}
               If you are experiencing any issues with the application or have
-              questions regarding our community, you're in the right place.
+              questions regarding our community, you&apos;re in the right place.
             </Animated.Text>
           </View>
 

@@ -172,10 +172,7 @@ export default function LocationsScreen() {
           headerShown: false,
         }}
       />
-      <StatusBar
-        style={isDark ? "light" : "dark"}
-        backgroundColor="transparent"
-      />
+      <StatusBar style={isDark ? "light" : "dark"} />
 
       <View className={`flex-1 ${isDark ? "bg-dark" : "bg-white"}`}>
         {/* Header */}
@@ -315,7 +312,7 @@ export default function LocationsScreen() {
                   isDark ? "text-gray-400" : "text-gray-600"
                 }`}
               >
-                Find us at these locations for worship and fellowship. We can't
+                Find us at these locations for worship and fellowship. We can&apos;t
                 wait to see you!
               </Text>
             }

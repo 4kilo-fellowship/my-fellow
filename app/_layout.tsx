@@ -1,10 +1,11 @@
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { useAppStore } from "@/stores/app.store";
 import { FontAwesome5, Ionicons, Octicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 import Toast from "react-native-toast-message";
 import "./global.css";
@@ -17,12 +18,33 @@ export default function RootLayout() {
     ...Octicons.font,
     ...FontAwesome5.font,
   });
+  const [hasHydrated, setHasHydrated] = useState(
+    useAppStore.persist.hasHydrated(),
+  );
 
   useEffect(() => {
     if (error) throw error;
   }, [error]);
 
-  if (!loaded) {
+  useEffect(() => {
+    const unsubscribe = useAppStore.persist.onFinishHydration(() => {
+      setHasHydrated(true);
+    });
+
+    if (useAppStore.persist.hasHydrated()) {
+      setHasHydrated(true);
+    }
+
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    if (loaded && hasHydrated) {
+      SplashScreen.hideAsync();
+    }
+  }, [hasHydrated, loaded]);
+
+  if (!loaded || !hasHydrated) {
     return null;
   }
 

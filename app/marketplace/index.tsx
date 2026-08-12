@@ -220,11 +220,7 @@ export default function MarketplaceScreen() {
         backgroundColor: isDark ? "#1A1A1B" : "#f8f8f8",
       }}
     >
-      <StatusBar
-        style={isDark ? "light" : "dark"}
-        backgroundColor="transparent"
-        translucent={true}
-      />
+      <StatusBar style={isDark ? "light" : "dark"} />
 
       {/* Product Grid */}
       {loading && products.length === 0 ? (

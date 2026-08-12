@@ -1,13 +1,12 @@
+import AuthButton from "@/components/AuthButton";
 import ForgotPasswordModal from "@/components/Modals/ForgotPasswordModal";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
-  ActivityIndicator,
   Dimensions,
   Image,
   Keyboard,
@@ -20,10 +19,12 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-const HEADER_HEIGHT = SCREEN_HEIGHT * 0.4;
+const HEADER_HEIGHT = SCREEN_HEIGHT * 0.36;
 
 const signInSchema = z.object({
   phoneNumber: z
@@ -77,8 +78,16 @@ export default function SignIn() {
     }
   };
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(auth)/sign-up-step-1");
+    }
+  };
+
   return (
-    <View className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} `}>
+    <View className={`flex-1 ${isDark ? "bg-dark" : "bg-white"}`}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -86,17 +95,28 @@ export default function SignIn() {
           keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
           <View
-            className="bg-primary"
+            className="bg-primary relative overflow-hidden items-center justify-center"
             style={{
               height: HEADER_HEIGHT,
               borderBottomLeftRadius: 40,
               borderBottomRightRadius: 40,
             }}
           >
-            <View className="flex-1 justify-center items-center px-6 pt-10">
+            <SafeAreaView edges={["top"]} className="absolute top-4 left-4 z-50">
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={handleBack}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                className="w-11 h-11 bg-white/25 rounded-full items-center justify-center border border-white/30 shadow-md"
+              >
+                <Ionicons name="arrow-back" size={24} color="white" />
+              </TouchableOpacity>
+            </SafeAreaView>
+
+            <View className="flex-1 w-full justify-center items-center pt-10">
               <Image
                 source={require("@/assets/images/logo-white.png")}
-                style={{ width: 450, height: 450 }}
+                style={{ width: "135%", height: "135%" }}
                 resizeMode="contain"
               />
             </View>
@@ -112,7 +132,7 @@ export default function SignIn() {
             keyboardDismissMode="on-drag"
           >
             <View
-              className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} pt-8 px-6`}
+              className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} pt-14 px-6`}
             >
               <View className="space-y-5">
                 <View>
@@ -132,7 +152,7 @@ export default function SignIn() {
                               ? "border-red-500"
                               : "focus:border-primary"
                           }`}
-                          placeholder="e.g. 0923627985"
+                          placeholder="0911234567"
                           placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           value={value}
                           onChangeText={onChange}
@@ -229,20 +249,14 @@ export default function SignIn() {
               </View>
 
               <View className="mt-8 mb-6">
-                <TouchableOpacity
-                  activeOpacity={0.8}
+                <AuthButton
+                  title="Sign In"
                   onPress={handleSubmit(onSubmit)}
-                  disabled={loading}
-                  className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 items-center justify-center active:scale-[0.98] flex-row"
-                >
-                  {loading ? (
-                    <ActivityIndicator color="white" />
-                  ) : (
-                    <Text className="text-white text-center font-bold text-lg">
-                      Sign In
-                    </Text>
-                  )}
-                </TouchableOpacity>
+                  loading={loading}
+                  isDark={isDark}
+                  variant="primary"
+                  size="lg"
+                />
 
                 <View className="flex-row justify-center mt-6">
                   <Text

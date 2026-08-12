@@ -664,7 +664,7 @@ const TeamDetails = () => {
                     style={{ color: "#047857" }}
                     className="font-bold text-lg ml-2"
                   >
-                    You're in this Team
+                    You&apos;re in this Team
                   </Text>
                 </View>
               ) : isPending ? (

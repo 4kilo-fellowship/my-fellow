@@ -25,7 +25,7 @@ import Animated, {
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-const ILLUSTRATION_SIZE = SCREEN_WIDTH * 0.7;
+const ILLUSTRATION_SIZE = SCREEN_WIDTH * 0.78;
 
 interface Slide {
   id: number;
@@ -171,7 +171,10 @@ function OnboardingSlide({ slide, index, scrollX }: OnboardingSlideProps) {
         <View style={styles.illustrationCircle}>
           <Image
             source={slide.image}
-            style={styles.illustration}
+            style={[
+              styles.illustration,
+              index > 0 && styles.illustrationSecondary,
+            ]}
             contentFit="contain"
             cachePolicy="memory"
           />
@@ -208,7 +211,7 @@ export default function OnboardingScreen() {
     if (isCompleting.current) return;
     isCompleting.current = true;
     setHasCompletedOnboarding(true);
-    router.replace("/(tabs)");
+    router.replace("/(auth)/sign-up-step-1");
   }, [setHasCompletedOnboarding, router]);
 
   const handleNext = useCallback(() => {
@@ -220,7 +223,7 @@ export default function OnboardingScreen() {
     } else {
       handleComplete();
     }
-  }, [currentIndex]);
+  }, [currentIndex, handleComplete]);
 
   const handleMomentumScrollEnd = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -320,8 +323,11 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   illustration: {
-    width: ILLUSTRATION_SIZE * 1.15,
-    height: ILLUSTRATION_SIZE * 1.15,
+    width: ILLUSTRATION_SIZE * 1.2,
+    height: ILLUSTRATION_SIZE * 1.2,
+  },
+  illustrationSecondary: {
+    transform: [{ scale: 1.15 }],
   },
   textContainer: {
     alignItems: "center",

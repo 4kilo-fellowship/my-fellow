@@ -127,7 +127,7 @@ const Reminder = () => {
                     isDark ? "text-gray-500" : "text-gray-400"
                   }`}
                 >
-                  Create reminders for your events and we'll alert you exactly
+                  Create reminders for your events and we&apos;ll alert you exactly
                   when you need.
                 </Text>
 

@@ -58,10 +58,7 @@ export default function OrdersScreen() {
           paddingHorizontal: 40,
         }}
       >
-        <StatusBar
-          style={isDark ? "light" : "dark"}
-          backgroundColor={isDark ? "#1A1A1B" : "#fff"}
-        />
+        <StatusBar style={isDark ? "light" : "dark"} />
         <Ionicons
           name="lock-closed-outline"
           size={64}
@@ -103,11 +100,7 @@ export default function OrdersScreen() {
         backgroundColor: isDark ? "#1A1A1B" : "#f8f8f8",
       }}
     >
-      <StatusBar
-        style={isDark ? "light" : "dark"}
-        backgroundColor="transparent"
-        translucent={true}
-      />
+      <StatusBar style={isDark ? "light" : "dark"} />
 
       {/* Header */}
       <View

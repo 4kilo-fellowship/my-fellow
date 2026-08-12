@@ -227,10 +227,7 @@ const Gifts = () => {
 
   return (
     <View className={`flex-1 ${isDark ? "bg-dark" : "bg-background"}`}>
-      <StatusBar
-        style={isDark ? "light" : "dark"}
-        backgroundColor={isDark ? "#1A1A1B" : "#fff"}
-      />
+      <StatusBar style={isDark ? "light" : "dark"} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}

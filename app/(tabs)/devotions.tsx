@@ -7,7 +7,7 @@ import { Devotion, DevotionType } from "@/types/devotion.types";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Animated,
   FlatList,
@@ -46,10 +46,12 @@ const Devotions = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [devotions, setDevotions] = useState<Devotion[]>([]);
 
-  const blinkAnim = useRef(new Animated.Value(1)).current;
+  const [blinkAnim] = useState(() => new Animated.Value(1));
 
   useEffect(() => {
+    let mounted = true;
     const blink = () => {
+      if (!mounted) return;
       Animated.sequence([
         Animated.timing(blinkAnim, {
           toValue: 0.3,
@@ -61,12 +63,17 @@ const Devotions = () => {
           duration: 800,
           useNativeDriver: true,
         }),
-      ]).start(() => blink());
+      ]).start(() => {
+        if (mounted) blink();
+      });
     };
     blink();
+    return () => {
+      mounted = false;
+    };
   }, [blinkAnim]);
 
-  const fetchDevotions = async (isRefresh = false) => {
+  const fetchDevotions = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
 
@@ -81,11 +88,11 @@ const Devotions = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchDevotions();
-  }, []);
+  }, [fetchDevotions]);
 
   const onRefresh = () => {
     fetchDevotions(true);
