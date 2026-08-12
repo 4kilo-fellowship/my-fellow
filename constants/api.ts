@@ -1,1 +1,1 @@
-export const API_URL = "https://my-fellow-api-6v2i.onrender.com/api";
+export const API_URL = "https://fellow.primeuat.app/api";

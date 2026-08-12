@@ -6,17 +6,18 @@
     "version": "1.2.4",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": ["assets/*"],
-    "icon": "./assets/images/4kk.png",
-    "splash": {
-      "backgroundColor": "#ff6719"
-    },
+    "assetBundlePatterns": [
+      "assets/*"
+    ],
+    "icon": "./assets/images/app-icon.png",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aau.ecsf.myfellow",
-      "icon": "./assets/images/4kk.png",
+      "icon": "./assets/images/app-icon.png",
       "infoPlist": {
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -29,8 +30,9 @@
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/4kk.png",
-        "backgroundColor": "#ff6719"
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "monochromeImage": "./assets/images/adaptive-icon-monochrome.png",
+        "backgroundColor": "#FF6719"
       }
     },
     "web": {},
@@ -52,8 +54,14 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/primary.png",
-          "backgroundColor": "#ff6719"
+          "image": "./assets/images/splash-logo.png",
+          "imageWidth": 270,
+          "resizeMode": "contain",
+          "backgroundColor": "#FF6719",
+          "dark": {
+            "image": "./assets/images/splash-logo.png",
+            "backgroundColor": "#FF6719"
+          }
         }
       ],
       [
@@ -62,7 +70,13 @@
           "enableBackgroundPlayback": true
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "@react-native-community/datetimepicker",
+      "expo-image",
+      "expo-secure-store",
+      "expo-sharing",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "owner": "arat-kilo-fellowship",
     "runtimeVersion": {

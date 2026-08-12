@@ -2,11 +2,11 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
-    },
-    "types": ["jest"]
+    }
   },
   "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts"]
 }
