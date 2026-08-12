@@ -1,7 +1,9 @@
+import AuthButton from "@/components/AuthButton";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { DEPARTMENTS, TEAM_NAMES, YEARS } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useOtpStore } from "@/stores/otp.store";
 import { SignUpData } from "@/types";
 import { SignUpStep2FormValues, signUpStep2Schema } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,7 +13,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
-  ActivityIndicator,
   Animated,
   Dimensions,
   FlatList,
@@ -177,6 +178,27 @@ export default function SignUpStep2() {
     setLoading(true);
 
     try {
+      const otpToken = useOtpStore.getState().otpToken;
+      if (!otpToken) {
+        setErrorModal({
+          visible: true,
+          title: "Verification Required",
+          message:
+            "Please verify your phone number before completing registration.",
+          isRegisteredError: false,
+        });
+        router.push({
+          pathname: "/verify-otp",
+          params: {
+            purpose: "signup",
+            phoneNumber: params.phoneNumber as string,
+            fullName: params.fullName as string,
+            password: params.password as string,
+          },
+        });
+        return;
+      }
+
       const registrationData: SignUpData = {
         fullName: params.fullName as string,
         phoneNumber: params.phoneNumber as string,
@@ -187,10 +209,12 @@ export default function SignUpStep2() {
         yearOfStudy: data.year,
         telegramUserName: data.telegram || "",
         profileImage: image || undefined,
+        otpToken,
       };
 
       await signup(registrationData);
 
+      useOtpStore.getState().clear();
       router.replace("/(tabs)");
     } catch (error: any) {
       const errorMessage =
@@ -333,11 +357,11 @@ export default function SignUpStep2() {
               className="flex-1 justify-center items-center px-6"
               style={{ paddingTop: 60 }}
             >
-              <View className="absolute top-4 left-6">
+              <View className="absolute top-4 left-2">
                 <TouchableOpacity
                   activeOpacity={0.9}
                   onPress={() => router.back()}
-                  className={`w-12 h-12 ${isDark ? "bg-slate-800" : "bg-slate-50"} rounded-full items-center justify-center border ${isDark ? "border-slate-700" : "border-slate-200"} shadow-lg`}
+                  className={`w-11 h-11 ${isDark ? "bg-slate-800" : "bg-slate-50"} rounded-full items-center justify-center border ${isDark ? "border-slate-700" : "border-slate-200"} shadow-lg`}
                 >
                   <Ionicons
                     name="arrow-back"
@@ -487,20 +511,14 @@ export default function SignUpStep2() {
               </View>
 
               <View className="mt-8 mb-6">
-                <TouchableOpacity
-                  activeOpacity={0.8}
+                <AuthButton
+                  title="Finish Registration"
                   onPress={handleSubmit(handleComplete)}
-                  disabled={loading}
-                  className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 active:scale-[0.98] flex-row justify-center items-center"
-                >
-                  {loading ? (
-                    <ActivityIndicator color="white" />
-                  ) : (
-                    <Text className="text-white text-center font-bold text-lg">
-                      Finish Registration
-                    </Text>
-                  )}
-                </TouchableOpacity>
+                  loading={loading}
+                  isDark={isDark}
+                  variant="primary"
+                  size="lg"
+                />
               </View>
             </View>
           </ScrollView>
@@ -610,7 +628,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   sheet: {

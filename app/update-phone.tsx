@@ -1,7 +1,7 @@
 import { InfoModal } from "@/components";
-import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
-import { useUserStore } from "@/stores/user.store";
+import { otpService } from "@/services/otpService";
+import { useOtpStore } from "@/stores/otp.store";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
@@ -36,8 +36,6 @@ type UpdatePhoneFormValues = z.infer<typeof updatePhoneSchema>;
 export default function UpdatePhoneScreen() {
   const { top, bottom } = useSafeAreaInsets();
   const { theme } = useTheme();
-  const { updatePhone } = useAuth();
-  const { user } = useUserStore();
   const router = useRouter();
   const isDark = theme === "dark";
 
@@ -58,38 +56,29 @@ export default function UpdatePhoneScreen() {
   } = useForm<UpdatePhoneFormValues>({
     resolver: zodResolver(updatePhoneSchema),
     defaultValues: {
-      newPhoneNumber: user?.phoneNumber || "",
+      newPhoneNumber: "",
       password: "",
     },
   });
 
   const onSubmit = async (data: UpdatePhoneFormValues) => {
-    if (data.newPhoneNumber === user?.phoneNumber) {
-      setModalConfig({
-        title: "Info",
-        message: "This is already your current phone number",
-        type: "error",
-      });
-      setModalVisible(true);
-      return;
-    }
-
+    const phoneNumber = data.newPhoneNumber.trim();
     setIsUpdating(true);
     try {
-      await updatePhone({
-        phoneNumber: data.newPhoneNumber,
-        password: data.password,
+      await otpService.send({ phoneNumber, purpose: "update-phone" });
+      useOtpStore.getState().setSession(phoneNumber, "update-phone", data.password);
+      router.push({
+        pathname: "/verify-otp",
+        params: {
+          purpose: "update-phone",
+          phoneNumber,
+        },
       });
-      setModalConfig({
-        title: "Success",
-        message: "Phone number updated successfully",
-        type: "success",
-      });
-      setModalVisible(true);
     } catch (error: any) {
       setModalConfig({
         title: "Error",
-        message: error.message || "Failed to update phone number",
+        message:
+          error.message || "Failed to send verification code",
         type: "error",
       });
       setModalVisible(true);
@@ -147,8 +136,9 @@ export default function UpdatePhoneScreen() {
             <Text
               style={[styles.infoText, { color: isDark ? "#9ca3af" : "#666" }]}
             >
-              Enter your new phone number and verify with your current password.
-              You'll need to use your new number to sign in next time.
+              Enter your new phone number and your current password. A
+              verification code will be sent to the new number to confirm it.
+              You&apos;ll need to use your new number to sign in next time.
             </Text>
 
             <View style={styles.inputGroup}>

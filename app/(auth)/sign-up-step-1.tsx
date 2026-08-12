@@ -1,4 +1,7 @@
+import AuthButton from "@/components/AuthButton";
 import { useTheme } from "@/context/ThemeContext";
+import { otpService } from "@/services/otpService";
+import { useOtpStore } from "@/stores/otp.store";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -17,10 +20,11 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 import { z } from "zod";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-const HEADER_HEIGHT = SCREEN_HEIGHT * 0.4;
+const HEADER_HEIGHT = SCREEN_HEIGHT * 0.36;
 
 const signUpStep1Schema = z
   .object({
@@ -42,6 +46,7 @@ type SignUpStep1FormValues = z.infer<typeof signUpStep1Schema>;
 export default function SignUpStep1() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [sendingOtp, setSendingOtp] = useState<boolean>(false);
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -71,23 +76,35 @@ export default function SignUpStep1() {
     }
   }, [params.focus]);
 
-  const onNext = (data: SignUpStep1FormValues) => {
-    router.push({
-      pathname: "/sign-up-step-2",
-      params: {
-        fullName: data.fullName.trim(),
-        phoneNumber: data.phoneNumber.trim(),
-        password: data.password,
-      },
-    });
+  const onNext = async (data: SignUpStep1FormValues) => {
+    const phoneNumber = data.phoneNumber.trim();
+    setSendingOtp(true);
+
+    try {
+      await otpService.send({ phoneNumber, purpose: "signup" });
+      useOtpStore.getState().setSession(phoneNumber, "signup");
+      router.push({
+        pathname: "/verify-otp",
+        params: {
+          purpose: "signup",
+          phoneNumber,
+          fullName: data.fullName.trim(),
+          password: data.password,
+        },
+      });
+    } catch (error: any) {
+      Toast.show({
+        type: "error",
+        text1: "Failed to send code",
+        text2: error.message || "Please try again.",
+      });
+    } finally {
+      setSendingOtp(false);
+    }
   };
 
   const handleBackToLogin = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/sign-in");
-    }
+    router.push("/(auth)/sign-in");
   };
 
   return (
@@ -99,27 +116,17 @@ export default function SignUpStep1() {
           keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
           <View
-            className="bg-primary"
+            className="bg-primary overflow-hidden items-center justify-center"
             style={{
               height: HEADER_HEIGHT,
               borderBottomLeftRadius: 40,
               borderBottomRightRadius: 40,
             }}
           >
-            <View className="absolute top-12 left-6 z-50">
-              <TouchableOpacity
-                activeOpacity={0.9}
-                onPress={handleBackToLogin}
-                className="w-12 h-12 bg-white/20 rounded-full items-center justify-center border border-white/30 shadow-lg"
-              >
-                <Ionicons name="arrow-back" size={24} color="white" />
-              </TouchableOpacity>
-            </View>
-
-            <View className="flex-1 justify-center items-center px-6 pt-10">
+            <View className="flex-1 w-full justify-center items-center pt-10">
               <Image
                 source={require("@/assets/images/logo-white.png")}
-                style={{ width: 450, height: 450 }}
+                style={{ width: "135%", height: "135%" }}
                 resizeMode="contain"
               />
             </View>
@@ -133,7 +140,7 @@ export default function SignUpStep1() {
             keyboardDismissMode="on-drag"
           >
             <View
-              className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} pt-8 px-6`}
+              className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} pt-10 px-6`}
             >
               <View className="space-y-5">
                 <View>
@@ -153,7 +160,7 @@ export default function SignUpStep1() {
                               ? "border-red-500"
                               : "focus:border-primary"
                           }`}
-                          placeholder="e.g. Natnael Zerihun"
+                          placeholder="e.g. Samuel Kebede"
                           placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           value={value}
                           onChangeText={onChange}
@@ -198,7 +205,7 @@ export default function SignUpStep1() {
                               ? "border-red-500"
                               : "focus:border-primary"
                           }`}
-                          placeholder="e.g. 0994627985"
+                          placeholder="0911234567"
                           placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           keyboardType="phone-pad"
                           value={value}
@@ -340,16 +347,16 @@ export default function SignUpStep1() {
               </View>
 
               <View className="mt-8 mb-6">
-                <TouchableOpacity
-                  activeOpacity={0.9}
+                <AuthButton
+                  title="Continue"
+                  icon="arrow-forward"
+                  iconPosition="right"
                   onPress={handleSubmit(onNext)}
-                  className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 flex-row justify-center items-center space-x-2 active:scale-[0.98]"
-                >
-                  <Text className="text-white font-bold text-lg tracking-wide">
-                    Continue
-                  </Text>
-                  <Ionicons name="arrow-forward" size={22} color="white" />
-                </TouchableOpacity>
+                  isDark={isDark}
+                  variant="primary"
+                  size="lg"
+                  loading={sendingOtp}
+                />
 
                 <View className="flex-row justify-center mt-6">
                   <Text
