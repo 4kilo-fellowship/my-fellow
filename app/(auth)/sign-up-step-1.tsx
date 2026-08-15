@@ -8,6 +8,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
+  ActivityIndicator,
   Dimensions,
   Image,
   Keyboard,
@@ -34,11 +35,6 @@ const signUpStep1Schema = z
       .min(1, "Phone number is required")
       .regex(/^(09|07)\d{8}$/, "Enter a valid phone number"),
     password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string().min(1, "Please confirm your password"),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    path: ["confirmPassword"],
-    message: "Passwords do not match",
   });
 
 type SignUpStep1FormValues = z.infer<typeof signUpStep1Schema>;
@@ -62,7 +58,6 @@ export default function SignUpStep1() {
       fullName: "",
       phoneNumber: "",
       password: "",
-      confirmPassword: "",
     },
   });
 
@@ -288,75 +283,26 @@ export default function SignUpStep1() {
                     </Text>
                   ) : null}
                 </View>
-                <View>
-                  <Text
-                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
-                  >
-                    Confirm Password
-                  </Text>
-                  <Controller
-                    control={control}
-                    name="confirmPassword"
-                    render={({ field: { onChange, onBlur, value } }) => (
-                      <View className="relative">
-                        <TextInput
-                          className={`w-full ${isDark ? "bg-slate-900 text-white focus:border-primary border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 pr-12 text-base focus:bg-transparent ${
-                            errors.confirmPassword
-                              ? "border-red-500"
-                              : "focus:border-primary"
-                          }`}
-                          placeholder="Confirm your password"
-                          placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
-                          secureTextEntry={!showPassword}
-                          value={value}
-                          onChangeText={onChange}
-                          onBlur={onBlur}
-                          textContentType="newPassword"
-                          autoComplete="password-new"
-                          importantForAutofill="yes"
-                        />
-                        <View className="absolute left-4 top-4">
-                          <Ionicons
-                            name="lock-closed-outline"
-                            size={22}
-                            color={isDark ? "#94a3b8" : "#64748b"}
-                          />
-                        </View>
-                        <TouchableOpacity
-                          onPress={() => setShowPassword(!showPassword)}
-                          activeOpacity={0.7}
-                          className="absolute right-4 top-4"
-                        >
-                          <Ionicons
-                            name={
-                              showPassword ? "eye-off-outline" : "eye-outline"
-                            }
-                            size={22}
-                            color={isDark ? "#94a3b8" : "#64748b"}
-                          />
-                        </TouchableOpacity>
-                      </View>
-                    )}
-                  />
-                  {errors.confirmPassword?.message ? (
-                    <Text className="text-red-500 text-xs mt-1 ml-1">
-                      {errors.confirmPassword.message}
-                    </Text>
-                  ) : null}
-                </View>
               </View>
 
               <View className="mt-8 mb-6">
-                <AuthButton
-                  title="Continue"
-                  icon="arrow-forward"
-                  iconPosition="right"
+                <TouchableOpacity
+                  activeOpacity={0.9}
                   onPress={handleSubmit(onNext)}
-                  isDark={isDark}
-                  variant="primary"
-                  size="lg"
-                  loading={sendingOtp}
-                />
+                  disabled={sendingOtp}
+                  className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 flex-row justify-center items-center space-x-2 active:scale-[0.98]"
+                >
+                  {sendingOtp ? (
+                    <ActivityIndicator color="white" size="small" />
+                  ) : (
+                    <>
+                      <Text className="text-white font-bold text-lg tracking-wide">
+                        Continue
+                      </Text>
+                      <Ionicons name="arrow-forward" size={22} color="white" />
+                    </>
+                  )}
+                </TouchableOpacity>
 
                 <View className="flex-row justify-center mt-6">
                   <Text
