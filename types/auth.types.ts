@@ -33,7 +33,6 @@ export interface SignUpData {
   fullName: string;
   phoneNumber: string;
   password?: string;
-  confirmPassword?: string;
   team?: string;
   department?: string;
   yearOfStudy?: string;
@@ -45,7 +44,6 @@ export interface SignUpData {
 export interface ChangePasswordData {
   currentPassword: string;
   newPassword: string;
-  confirmNewPassword: string;
 }
 
 export interface UpdatePhoneData {
