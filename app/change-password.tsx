@@ -22,18 +22,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
 
-const changePasswordSchema = z
-  .object({
-    currentPassword: z.string().min(1, "Current password is required"),
-    newPassword: z
-      .string()
-      .min(6, "New password must be at least 6 characters"),
-    confirmNewPassword: z.string().min(1, "Please confirm your new password"),
-  })
-  .refine((data) => data.newPassword === data.confirmNewPassword, {
-    path: ["confirmNewPassword"],
-    message: "Passwords do not match",
-  });
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(6, "New password must be at least 6 characters"),
+});
 
 type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 
@@ -63,7 +55,6 @@ export default function ChangePasswordScreen() {
     defaultValues: {
       currentPassword: "",
       newPassword: "",
-      confirmNewPassword: "",
     },
   });
 
@@ -213,47 +204,6 @@ export default function ChangePasswordScreen() {
               {errors.newPassword && (
                 <Text style={styles.errorText}>
                   {errors.newPassword.message}
-                </Text>
-              )}
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text
-                style={[
-                  styles.inputLabel,
-                  { color: isDark ? "#9ca3af" : "#666" },
-                ]}
-              >
-                Confirm New Password
-              </Text>
-              <Controller
-                control={control}
-                name="confirmNewPassword"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <TextInput
-                    style={[
-                      styles.input,
-                      {
-                        color: isDark ? "#fff" : "#000",
-                        borderColor: errors.confirmNewPassword
-                          ? "#ef4444"
-                          : isDark
-                            ? "#333"
-                            : "#e5e7eb",
-                      },
-                    ]}
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
-                    secureTextEntry
-                    placeholder="Confirm your new password"
-                    placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
-                  />
-                )}
-              />
-              {errors.confirmNewPassword && (
-                <Text style={styles.errorText}>
-                  {errors.confirmNewPassword.message}
                 </Text>
               )}
             </View>
