@@ -203,7 +203,6 @@ export default function SignUpStep2() {
         fullName: params.fullName as string,
         phoneNumber: params.phoneNumber as string,
         password: params.password as string,
-        confirmPassword: params.password as string,
         team: data.team,
         department: data.department,
         yearOfStudy: data.year,
