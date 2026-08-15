@@ -1,5 +1,5 @@
 export { AlertCard } from "./AlertCard";
-export { default as AuthButton } from "./AuthButton";
+export { default as AppButton, default as AuthButton } from "./AppButton";
 export { default as AnnouncementCard } from "./Card/AnnouncementCard";
 export { default as DevotionCard } from "./Card/DevotionCard";
 export { default as LeaderCard } from "./Card/LeaderCard";

@@ -1,4 +1,4 @@
-import AuthButton from "@/components/AuthButton";
+import AppButton from "@/components/AppButton";
 import ForgotPasswordModal from "@/components/Modals/ForgotPasswordModal";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -249,7 +249,7 @@ export default function SignIn() {
               </View>
 
               <View className="mt-8 mb-6">
-                <AuthButton
+                <AppButton
                   title="Sign In"
                   onPress={handleSubmit(onSubmit)}
                   loading={loading}

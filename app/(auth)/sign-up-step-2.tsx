@@ -1,4 +1,4 @@
-import AuthButton from "@/components/AuthButton";
+import AppButton from "@/components/AppButton";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { DEPARTMENTS, TEAM_NAMES, YEARS } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
@@ -510,7 +510,7 @@ export default function SignUpStep2() {
               </View>
 
               <View className="mt-8 mb-6">
-                <AuthButton
+                <AppButton
                   title="Finish Registration"
                   onPress={handleSubmit(handleComplete)}
                   loading={loading}

@@ -1,4 +1,4 @@
-import AuthButton from "@/components/AuthButton";
+import AppButton from "@/components/AppButton";
 import { useTheme } from "@/context/ThemeContext";
 import { otpService } from "@/services/otpService";
 import { useOtpStore } from "@/stores/otp.store";
@@ -286,23 +286,16 @@ export default function SignUpStep1() {
               </View>
 
               <View className="mt-8 mb-6">
-                <TouchableOpacity
-                  activeOpacity={0.9}
+                <AppButton
+                  title="Continue"
+                  icon="arrow-forward"
+                  iconPosition="right"
                   onPress={handleSubmit(onNext)}
-                  disabled={sendingOtp}
-                  className="w-full bg-primary py-5 rounded-2xl shadow-lg shadow-primary/40 flex-row justify-center items-center space-x-2 active:scale-[0.98]"
-                >
-                  {sendingOtp ? (
-                    <ActivityIndicator color="white" size="small" />
-                  ) : (
-                    <>
-                      <Text className="text-white font-bold text-lg tracking-wide">
-                        Continue
-                      </Text>
-                      <Ionicons name="arrow-forward" size={22} color="white" />
-                    </>
-                  )}
-                </TouchableOpacity>
+                  loading={sendingOtp}
+                  isDark={isDark}
+                  variant="primary"
+                  size="lg"
+                />
 
                 <View className="flex-row justify-center mt-6">
                   <Text
