@@ -6,7 +6,8 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Platform, Text, TouchableOpacity, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
 import "./global.css";
 
@@ -150,70 +151,79 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" options={{ title: "Splash" }} />
-          <Stack.Screen
-            name="onboarding"
-            options={{ title: "Onboarding", animation: "fade" }}
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <ThemeProvider>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              animation: Platform.OS === "ios" ? "default" : "fade_from_bottom",
+              fullScreenGestureEnabled: Platform.OS === "ios",
+              gestureEnabled: true,
+            }}
+          >
+            <Stack.Screen name="index" options={{ title: "Splash" }} />
+            <Stack.Screen
+              name="onboarding"
+              options={{ title: "Onboarding", animation: "fade" }}
+            />
+            <Stack.Screen name="(tabs)" options={{ title: "Home" }} />
+            <Stack.Screen name="(auth)" options={{ title: "Auth" }} />
+            <Stack.Screen name="events/[id]" options={{ title: "Events" }} />
+            <Stack.Screen name="teams/[id]" options={{ title: "Teams" }} />
+            <Stack.Screen name="devotion/[id]" options={{ title: "Devotions" }} />
+            <Stack.Screen name="leaders" options={{ title: "Leaders" }} />
+            <Stack.Screen name="locations" options={{ title: "Locations" }} />
+            <Stack.Screen name="programs" options={{ title: "Programs" }} />
+            <Stack.Screen name="settings" options={{ title: "Settings" }} />
+            <Stack.Screen
+              name="reminders/manage"
+              options={{ title: "Manage Alert" }}
+            />
+            <Stack.Screen name="about" options={{ title: "About" }} />
+            <Stack.Screen name="help" options={{ title: "Help & Support" }} />
+            <Stack.Screen
+              name="notifications"
+              options={{ title: "Notifications" }}
+            />
+            <Stack.Screen
+              name="marketplace/index"
+              options={{ title: "Fellowship Store" }}
+            />
+            <Stack.Screen
+              name="marketplace/[id]"
+              options={{ title: "Product Details" }}
+            />
+            <Stack.Screen
+              name="marketplace/orders"
+              options={{ title: "My Orders" }}
+            />
+            <Stack.Screen name="givings" options={{ title: "My Givings" }} />
+            <Stack.Screen
+              name="change-password"
+              options={{ title: "Change Password" }}
+            />
+            <Stack.Screen
+              name="edit-profile"
+              options={{ title: "Edit Profile" }}
+            />
+            <Stack.Screen
+              name="update-phone"
+              options={{ title: "Update Phone" }}
+            />
+          </Stack>
+          <Toast
+            position="bottom"
+            bottomOffset={40}
+            config={{
+              success: (props: any) => renderCustomToast(props, "success"),
+              error: (props: any) => renderCustomToast(props, "error"),
+              warning: (props: any) => renderCustomToast(props, "warning"),
+              info: (props: any) => renderCustomToast(props, "info"),
+            }}
           />
-          <Stack.Screen name="(tabs)" options={{ title: "Home" }} />
-          <Stack.Screen name="(auth)" options={{ title: "Auth" }} />
-          <Stack.Screen name="events/[id]" options={{ title: "Events" }} />
-          <Stack.Screen name="teams/[id]" options={{ title: "Teams" }} />
-          <Stack.Screen name="devotion/[id]" options={{ title: "Devotions" }} />
-          <Stack.Screen name="leaders" options={{ title: "Leaders" }} />
-          <Stack.Screen name="locations" options={{ title: "Locations" }} />
-          <Stack.Screen name="programs" options={{ title: "Programs" }} />
-          <Stack.Screen name="settings" options={{ title: "Settings" }} />
-          <Stack.Screen
-            name="reminders/manage"
-            options={{ title: "Manage Alert" }}
-          />
-          <Stack.Screen name="about" options={{ title: "About" }} />
-          <Stack.Screen name="help" options={{ title: "Help & Support" }} />
-          <Stack.Screen
-            name="notifications"
-            options={{ title: "Notifications" }}
-          />
-          <Stack.Screen
-            name="marketplace/index"
-            options={{ title: "Fellowship Store" }}
-          />
-          <Stack.Screen
-            name="marketplace/[id]"
-            options={{ title: "Product Details" }}
-          />
-          <Stack.Screen
-            name="marketplace/orders"
-            options={{ title: "My Orders" }}
-          />
-          <Stack.Screen name="givings" options={{ title: "My Givings" }} />
-          <Stack.Screen
-            name="change-password"
-            options={{ title: "Change Password" }}
-          />
-          <Stack.Screen
-            name="edit-profile"
-            options={{ title: "Edit Profile" }}
-          />
-          <Stack.Screen
-            name="update-phone"
-            options={{ title: "Update Phone" }}
-          />
-        </Stack>
-        <Toast
-          position="bottom"
-          bottomOffset={40}
-          config={{
-            success: (props: any) => renderCustomToast(props, "success"),
-            error: (props: any) => renderCustomToast(props, "error"),
-            warning: (props: any) => renderCustomToast(props, "warning"),
-            info: (props: any) => renderCustomToast(props, "info"),
-          }}
-        />
-      </ThemeProvider>
-    </AuthProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }

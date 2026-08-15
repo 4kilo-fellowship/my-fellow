@@ -1,7 +1,8 @@
+import { useTheme } from "@/context/ThemeContext";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { useTheme } from "@/context/ThemeContext";
+import { Platform } from "react-native";
 
 export default function AuthLayout() {
   const { theme } = useTheme();
@@ -9,12 +10,15 @@ export default function AuthLayout() {
 
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style={isDark ? "light" : "dark"} />
       <Stack
         initialRouteName="sign-up-step-1"
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: isDark ? "#0f172a" : "#ffffff" },
+          animation: Platform.OS === "ios" ? "default" : "fade_from_bottom",
+          fullScreenGestureEnabled: Platform.OS === "ios",
+          gestureEnabled: true,
+          contentStyle: { backgroundColor: isDark ? "#1A1A1B" : "#ffffff" },
         }}
       >
         <Stack.Screen name="sign-up-step-1" />
