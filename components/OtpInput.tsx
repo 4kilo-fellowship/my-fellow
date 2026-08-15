@@ -31,7 +31,18 @@ export default function OtpInput({
   };
 
   const handleChange = (text: string, index: number) => {
-    const digit = text.replace(/\D/g, "").slice(-1);
+    const digits = text.replace(/\D/g, "");
+    
+    // Handle multi-character input (Pasting full OTP code)
+    if (digits.length > 1) {
+      const pasted = digits.slice(0, length);
+      onChange(pasted);
+      const nextIndex = Math.min(pasted.length, length - 1);
+      inputs.current[nextIndex]?.current?.focus();
+      return;
+    }
+
+    const digit = digits.slice(-1);
     const chars = value.split("");
     chars[index] = digit;
     const next = chars.join("").slice(0, length);
@@ -62,7 +73,9 @@ export default function OtpInput({
             onChangeText={(text) => handleChange(text, index)}
             onKeyPress={(event) => handleKeyPress(event, index)}
             keyboardType="number-pad"
-            maxLength={2}
+            textContentType="oneTimeCode"
+            autoComplete="one-time-code"
+            maxLength={length}
             autoFocus={index === 0}
             selectionColor="#ff6719"
             caretHidden={false}
