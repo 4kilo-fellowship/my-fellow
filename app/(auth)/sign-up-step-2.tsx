@@ -1,27 +1,25 @@
 import AppButton from "@/components/AppButton";
+import BackButton from "@/components/BackButton";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { DEPARTMENTS, TEAM_NAMES, YEARS } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
-import { useOtpStore } from "@/stores/otp.store";
+import { useSignupStore } from "@/stores/signup.store";
 import { SignUpData } from "@/types";
 import { SignUpStep2FormValues, signUpStep2Schema } from "@/utils";
+import { BottomSheet } from "@expo/ui";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
-  Animated,
   Dimensions,
-  FlatList,
   Image,
   Keyboard,
   KeyboardAvoidingView,
-  Modal,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -44,12 +42,30 @@ interface DropdownModalConfig {
   placeholder: string;
 }
 
+const FIELD_META: Record<
+  DropdownNameProps,
+  { icon: keyof typeof Ionicons.glyphMap; color: string; bg: string }
+> = {
+  team: { icon: "people", color: "#ff6719", bg: "rgba(255,103,25,0.12)" },
+  department: {
+    icon: "business",
+    color: "#3b82f6",
+    bg: "rgba(59,130,246,0.12)",
+  },
+  year: { icon: "calendar", color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
+};
+
 export default function SignUpStep2() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { signup } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const signupStore = useSignupStore.getState();
+  const fullName = (params.fullName as string) || signupStore.fullName || "";
+  const phoneNumber =
+    (params.phoneNumber as string) || signupStore.phoneNumber || "";
+  const password = (params.password as string) || signupStore.password || "";
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [errorModal, setErrorModal] = useState<{
@@ -67,8 +83,6 @@ export default function SignUpStep2() {
   const [modalConfig, setModalConfig] = useState<DropdownModalConfig | null>(
     null,
   );
-  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-  const backdropAnim = useRef(new Animated.Value(0)).current;
 
   const {
     control,
@@ -86,49 +100,21 @@ export default function SignUpStep2() {
     },
   });
 
-  const openModal = useCallback(
-    (config: DropdownModalConfig) => {
-      Keyboard.dismiss();
-      setModalConfig(config);
-      Animated.parallel([
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          useNativeDriver: true,
-          damping: 40,
-          stiffness: 200,
-        }),
-        Animated.timing(backdropAnim, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    },
-    [slideAnim, backdropAnim],
-  );
+  const openModal = useCallback((config: DropdownModalConfig) => {
+    Keyboard.dismiss();
+    setModalConfig(config);
+  }, []);
 
   const closeModal = useCallback(() => {
-    Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: SCREEN_HEIGHT,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(backdropAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setModalConfig(null);
-    });
-  }, [slideAnim, backdropAnim]);
+    setModalConfig(null);
+  }, []);
 
   const handleErrorModalClose = () => {
     const wasRegisteredError = errorModal.isRegisteredError;
     setErrorModal((prev) => ({ ...prev, visible: false }));
 
     if (wasRegisteredError) {
+      useSignupStore.getState().clear();
       router.push({
         pathname: "/sign-up-step-1",
         params: { focus: "phoneNumber" },
@@ -164,7 +150,7 @@ export default function SignUpStep2() {
   const handleComplete: (data: SignUpStep2FormValues) => Promise<void> = async (
     data,
   ) => {
-    if (!params.fullName || !params.phoneNumber || !params.password) {
+    if (!fullName || !phoneNumber || !password) {
       setErrorModal({
         visible: true,
         title: "Missing Information",
@@ -178,42 +164,20 @@ export default function SignUpStep2() {
     setLoading(true);
 
     try {
-      const otpToken = useOtpStore.getState().otpToken;
-      if (!otpToken) {
-        setErrorModal({
-          visible: true,
-          title: "Verification Required",
-          message:
-            "Please verify your phone number before completing registration.",
-          isRegisteredError: false,
-        });
-        router.push({
-          pathname: "/verify-otp",
-          params: {
-            purpose: "signup",
-            phoneNumber: params.phoneNumber as string,
-            fullName: params.fullName as string,
-            password: params.password as string,
-          },
-        });
-        return;
-      }
-
       const registrationData: SignUpData = {
-        fullName: params.fullName as string,
-        phoneNumber: params.phoneNumber as string,
-        password: params.password as string,
+        fullName,
+        phoneNumber,
+        password,
         team: data.team,
         department: data.department,
         yearOfStudy: data.year,
         telegramUserName: data.telegram || "",
         profileImage: image || undefined,
-        otpToken,
       };
 
       await signup(registrationData);
 
-      useOtpStore.getState().clear();
+      useSignupStore.getState().clear();
       router.replace("/(tabs)");
     } catch (error: any) {
       const errorMessage =
@@ -244,6 +208,7 @@ export default function SignUpStep2() {
   ) => {
     const hasError = !!errors[name];
     const errorMessage = errors[name]?.message;
+    const meta = FIELD_META[name];
 
     return (
       <View>
@@ -264,15 +229,29 @@ export default function SignUpStep2() {
                   hasError ? "border-red-500" : ""
                 }`}
               >
-                <Text
-                  className={
-                    value
-                      ? `${isDark ? "text-white" : "text-slate-900"} text-base`
-                      : `${isDark ? "text-slate-600" : "text-slate-400"} text-base`
-                  }
-                >
-                  {value || placeholder}
-                </Text>
+                <View className="flex-row items-center flex-1 space-x-3">
+                  <View
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 14,
+                      backgroundColor: meta.bg,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Ionicons name={meta.icon} size={20} color={meta.color} />
+                  </View>
+                  <Text
+                    className={
+                      value
+                        ? `${isDark ? "text-white" : "text-slate-900"} text-base`
+                        : `${isDark ? "text-slate-600" : "text-slate-400"} text-base`
+                    }
+                  >
+                    {value || placeholder}
+                  </Text>
+                </View>
                 <Ionicons
                   name="chevron-down"
                   size={20}
@@ -291,13 +270,7 @@ export default function SignUpStep2() {
     );
   };
 
-  const renderModalOption = ({
-    item,
-    index,
-  }: {
-    item: string;
-    index: number;
-  }) => {
+  const renderOption = (item: string, index: number) => {
     if (!modalConfig) return null;
     const currentValue = watch(modalConfig.name);
     const isSelected = currentValue === item;
@@ -305,6 +278,7 @@ export default function SignUpStep2() {
 
     return (
       <TouchableOpacity
+        key={`${item}-${index}`}
         activeOpacity={0.6}
         onPress={() => selectOption(modalConfig.name, item)}
         style={[
@@ -357,17 +331,10 @@ export default function SignUpStep2() {
               style={{ paddingTop: 60 }}
             >
               <View className="absolute top-4 left-2">
-                <TouchableOpacity
-                  activeOpacity={0.9}
+                <BackButton
                   onPress={() => router.back()}
-                  className={`w-11 h-11 ${isDark ? "bg-slate-800" : "bg-slate-50"} rounded-full items-center justify-center border ${isDark ? "border-slate-700" : "border-slate-200"} shadow-lg`}
-                >
-                  <Ionicons
-                    name="arrow-back"
-                    size={24}
-                    color={isDark ? "white" : "black"}
-                  />
-                </TouchableOpacity>
+                  isDark={isDark}
+                />
               </View>
             </View>
           </View>
@@ -431,13 +398,13 @@ export default function SignUpStep2() {
                 }}
               >
                 <TextInput
-                  value={params.phoneNumber as string}
+                  value={phoneNumber}
                   textContentType="username"
                   autoComplete="username"
                   importantForAutofill="yes"
                 />
                 <TextInput
-                  value={params.password as string}
+                  value={password}
                   textContentType="newPassword"
                   autoComplete="password-new"
                   importantForAutofill="yes"
@@ -524,90 +491,53 @@ export default function SignUpStep2() {
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
 
-      <Modal
-        visible={modalConfig !== null}
-        transparent
-        animationType="none"
-        statusBarTranslucent
-        onRequestClose={closeModal}
+      <BottomSheet
+        isPresented={modalConfig !== null}
+        onDismiss={closeModal}
+        showDragIndicator
+        snapPoints={["half", "full"]}
       >
-        <View style={styles.modalContainer}>
-          <Animated.View
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 24 }}
+        >
+          <View
             style={[
-              styles.backdrop,
+              styles.sheetHeader,
               {
-                opacity: backdropAnim,
+                borderBottomColor: isDark ? "#1e293b" : "#f1f5f9",
               },
             ]}
           >
-            <Pressable style={StyleSheet.absoluteFill} onPress={closeModal} />
-          </Animated.View>
-
-          <Animated.View
-            style={[
-              styles.sheet,
-              {
-                backgroundColor: isDark ? "#0f172a" : "#ffffff",
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            <View style={styles.handleContainer}>
-              <View
-                style={[
-                  styles.handle,
-                  {
-                    backgroundColor: isDark ? "#334155" : "#cbd5e1",
-                  },
-                ]}
-              />
-            </View>
-
-            <View
+            <Text
               style={[
-                styles.sheetHeader,
+                styles.sheetTitle,
+                { color: isDark ? "#f1f5f9" : "#0f172a" },
+              ]}
+            >
+              {modalConfig?.label}
+            </Text>
+            <TouchableOpacity
+              onPress={closeModal}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={[
+                styles.closeButton,
                 {
-                  borderBottomColor: isDark ? "#1e293b" : "#f1f5f9",
+                  backgroundColor: isDark ? "#1e293b" : "#f1f5f9",
                 },
               ]}
             >
-              <Text
-                style={[
-                  styles.sheetTitle,
-                  { color: isDark ? "#f1f5f9" : "#0f172a" },
-                ]}
-              >
-                {modalConfig?.label}
-              </Text>
-              <TouchableOpacity
-                onPress={closeModal}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                style={[
-                  styles.closeButton,
-                  {
-                    backgroundColor: isDark ? "#1e293b" : "#f1f5f9",
-                  },
-                ]}
-              >
-                <Ionicons
-                  name="close"
-                  size={18}
-                  color={isDark ? "#94a3b8" : "#64748b"}
-                />
-              </TouchableOpacity>
-            </View>
+              <Ionicons
+                name="close"
+                size={18}
+                color={isDark ? "#94a3b8" : "#64748b"}
+              />
+            </TouchableOpacity>
+          </View>
 
-            <FlatList
-              data={modalConfig?.options ? [...modalConfig.options] : []}
-              keyExtractor={(item, index) => `${item}-${index}`}
-              renderItem={renderModalOption}
-              showsVerticalScrollIndicator={false}
-              style={styles.optionsList}
-              contentContainerStyle={{ paddingBottom: 40 }}
-            />
-          </Animated.View>
-        </View>
-      </Modal>
+          {modalConfig?.options.map(renderOption)}
+        </ScrollView>
+      </BottomSheet>
 
       <InfoModal
         visible={errorModal.visible}
@@ -622,41 +552,14 @@ export default function SignUpStep2() {
 }
 
 const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  sheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: SCREEN_HEIGHT * 0.55,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 20,
-  },
-  handleContainer: {
-    alignItems: "center",
-    paddingTop: 12,
-    paddingBottom: 4,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-  },
   sheetHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: 8,
     paddingVertical: 16,
     borderBottomWidth: 1,
+    marginBottom: 8,
   },
   sheetTitle: {
     fontSize: 18,
@@ -668,9 +571,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-  },
-  optionsList: {
-    paddingHorizontal: 8,
   },
   optionItem: {
     flexDirection: "row",

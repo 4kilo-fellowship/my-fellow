@@ -1,7 +1,6 @@
 import AppButton from "@/components/AppButton";
 import { useTheme } from "@/context/ThemeContext";
-import { otpService } from "@/services/otpService";
-import { useOtpStore } from "@/stores/otp.store";
+import { useSignupStore } from "@/stores/signup.store";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -21,7 +20,6 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import Toast from "react-native-toast-message";
 import { z } from "zod";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -42,24 +40,10 @@ type SignUpStep1FormValues = z.infer<typeof signUpStep1Schema>;
 export default function SignUpStep1() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [sendingOtp, setSendingOtp] = useState<boolean>(false);
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
   const phoneInputRef = useRef<TextInput>(null);
-
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<SignUpStep1FormValues>({
-    resolver: zodResolver(signUpStep1Schema),
-    defaultValues: {
-      fullName: "",
-      phoneNumber: "",
-      password: "",
-    },
-  });
 
   const params = useLocalSearchParams();
 
@@ -71,31 +55,31 @@ export default function SignUpStep1() {
     }
   }, [params.focus]);
 
+  const signup = useSignupStore.getState();
+  const { control, handleSubmit, formState: { errors } } = useForm<SignUpStep1FormValues>({
+    resolver: zodResolver(signUpStep1Schema),
+    defaultValues: {
+      fullName: signup.fullName || "",
+      phoneNumber: signup.phoneNumber || "",
+      password: signup.password || "",
+    },
+  });
+
   const onNext = async (data: SignUpStep1FormValues) => {
     const phoneNumber = data.phoneNumber.trim();
-    setSendingOtp(true);
-
-    try {
-      await otpService.send({ phoneNumber, purpose: "signup" });
-      useOtpStore.getState().setSession(phoneNumber, "signup");
-      router.push({
-        pathname: "/verify-otp",
-        params: {
-          purpose: "signup",
-          phoneNumber,
-          fullName: data.fullName.trim(),
-          password: data.password,
-        },
-      });
-    } catch (error: any) {
-      Toast.show({
-        type: "error",
-        text1: "Failed to send code",
-        text2: error.message || "Please try again.",
-      });
-    } finally {
-      setSendingOtp(false);
-    }
+    useSignupStore.getState().start({
+      fullName: data.fullName.trim(),
+      phoneNumber,
+      password: data.password,
+    });
+    router.push({
+      pathname: "/sign-up-step-2",
+      params: {
+        fullName: data.fullName.trim(),
+        phoneNumber,
+        password: data.password,
+      },
+    });
   };
 
   const handleBackToLogin = () => {
@@ -291,7 +275,6 @@ export default function SignUpStep1() {
                   icon="arrow-forward"
                   iconPosition="right"
                   onPress={handleSubmit(onNext)}
-                  loading={sendingOtp}
                   isDark={isDark}
                   variant="primary"
                   size="lg"
