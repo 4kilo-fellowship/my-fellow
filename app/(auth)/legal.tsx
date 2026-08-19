@@ -1,4 +1,5 @@
 import { useTheme } from "@/context/ThemeContext";
+import BackButton from "@/components/BackButton";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef } from "react";
@@ -55,16 +56,7 @@ export default function LegalScreen() {
       <View
         className={`px-6 py-4 flex-row items-center border-b ${isDark ? "border-zinc-800" : "border-zinc-100"}`}
       >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className={`w-10 h-10 items-center justify-center rounded-full ${isDark ? "bg-zinc-900" : "bg-zinc-50"}`}
-        >
-          <Ionicons
-            name="arrow-back"
-            size={20}
-            color={isDark ? "white" : "black"}
-          />
-        </TouchableOpacity>
+        <BackButton onPress={() => router.back()} isDark={isDark} />
         <Text
           className={`ml-4 text-lg font-semibold ${isDark ? "text-white" : "text-black"}`}
         >

@@ -1,4 +1,5 @@
 import AppButton from "@/components/AppButton";
+import BackButton from "@/components/BackButton";
 import ForgotPasswordModal from "@/components/Modals/ForgotPasswordModal";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -103,14 +104,7 @@ export default function SignIn() {
             }}
           >
             <SafeAreaView edges={["top"]} className="absolute top-4 left-4 z-50">
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={handleBack}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                className="w-11 h-11 bg-white/25 rounded-full items-center justify-center border border-white/30 shadow-md"
-              >
-                <Ionicons name="arrow-back" size={24} color="white" />
-              </TouchableOpacity>
+              <BackButton onPress={handleBack} overlay />
             </SafeAreaView>
 
             <View className="flex-1 w-full justify-center items-center pt-10">
