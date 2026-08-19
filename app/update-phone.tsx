@@ -1,7 +1,6 @@
 import { InfoModal } from "@/components";
+import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
-import { otpService } from "@/services/otpService";
-import { useOtpStore } from "@/stores/otp.store";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
@@ -37,6 +36,7 @@ export default function UpdatePhoneScreen() {
   const { top, bottom } = useSafeAreaInsets();
   const { theme } = useTheme();
   const router = useRouter();
+  const { updatePhone } = useAuth();
   const isDark = theme === "dark";
 
   // Modal State
@@ -65,20 +65,21 @@ export default function UpdatePhoneScreen() {
     const phoneNumber = data.newPhoneNumber.trim();
     setIsUpdating(true);
     try {
-      await otpService.send({ phoneNumber, purpose: "update-phone" });
-      useOtpStore.getState().setSession(phoneNumber, "update-phone", data.password);
-      router.push({
-        pathname: "/verify-otp",
-        params: {
-          purpose: "update-phone",
-          phoneNumber,
-        },
+      await updatePhone({
+        phoneNumber,
+        password: data.password,
       });
+      setModalConfig({
+        title: "Success",
+        message: "Your phone number has been updated successfully.",
+        type: "success",
+      });
+      setModalVisible(true);
     } catch (error: any) {
       setModalConfig({
         title: "Error",
         message:
-          error.message || "Failed to send verification code",
+          error.message || "Failed to update phone number",
         type: "error",
       });
       setModalVisible(true);
@@ -136,9 +137,9 @@ export default function UpdatePhoneScreen() {
             <Text
               style={[styles.infoText, { color: isDark ? "#9ca3af" : "#666" }]}
             >
-              Enter your new phone number and your current password. A
-              verification code will be sent to the new number to confirm it.
-              You&apos;ll need to use your new number to sign in next time.
+              Enter your new phone number and your current password to
+              confirm the change. You&apos;ll need to use your new number to sign
+              in next time.
             </Text>
 
             <View style={styles.inputGroup}>
