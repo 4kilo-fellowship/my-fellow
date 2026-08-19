@@ -15,7 +15,8 @@ export default function AuthLayout() {
         initialRouteName="sign-up-step-1"
         screenOptions={{
           headerShown: false,
-          animation: Platform.OS === "ios" ? "default" : "fade_from_bottom",
+          animation: "default",
+          animationDuration: 350,
           fullScreenGestureEnabled: Platform.OS === "ios",
           gestureEnabled: true,
           contentStyle: { backgroundColor: isDark ? "#1A1A1B" : "#ffffff" },

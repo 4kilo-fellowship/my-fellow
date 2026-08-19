@@ -157,7 +157,8 @@ export default function RootLayout() {
           <Stack
             screenOptions={{
               headerShown: false,
-              animation: Platform.OS === "ios" ? "default" : "fade_from_bottom",
+              animation: "default",
+              animationDuration: 350,
               fullScreenGestureEnabled: Platform.OS === "ios",
               gestureEnabled: true,
             }}
@@ -201,15 +202,27 @@ export default function RootLayout() {
             <Stack.Screen name="givings" options={{ title: "My Givings" }} />
             <Stack.Screen
               name="change-password"
-              options={{ title: "Change Password" }}
+              options={{
+                title: "Change Password",
+                presentation: "modal",
+                animation: "slide_from_bottom",
+              }}
             />
             <Stack.Screen
               name="edit-profile"
-              options={{ title: "Edit Profile" }}
+              options={{
+                title: "Edit Profile",
+                presentation: "modal",
+                animation: "slide_from_bottom",
+              }}
             />
             <Stack.Screen
               name="update-phone"
-              options={{ title: "Update Phone" }}
+              options={{
+                title: "Update Phone",
+                presentation: "modal",
+                animation: "slide_from_bottom",
+              }}
             />
           </Stack>
           <Toast
