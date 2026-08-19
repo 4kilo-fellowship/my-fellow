@@ -38,7 +38,6 @@ export interface SignUpData {
   yearOfStudy?: string;
   telegramUserName?: string;
   profileImage?: string | null;
-  otpToken?: string;
 }
 
 export interface ChangePasswordData {
@@ -49,7 +48,6 @@ export interface ChangePasswordData {
 export interface UpdatePhoneData {
   phoneNumber: string;
   password: string;
-  otpToken?: string;
 }
 
 export interface UpdatePhoneResponse {

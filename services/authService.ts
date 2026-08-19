@@ -41,10 +41,6 @@ export const authService = {
       formData.append("password", data.password);
     }
 
-    if (data.otpToken) {
-      formData.append("otpToken", data.otpToken);
-    }
-
     if (data.team) {
       formData.append("team", data.team);
     }
