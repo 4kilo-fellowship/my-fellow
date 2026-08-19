@@ -1,5 +1,6 @@
 import api from "@/services/api";
 import { authService } from "@/services/authService";
+import { useSignupStore } from "@/stores/signup.store";
 import { useUserStore } from "@/stores/user.store";
 import {
   ApiResponse,
@@ -74,6 +75,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         useUserStore.getState().setUser(user);
       }
 
+      useSignupStore.getState().clear();
+
       return response;
     } catch (error) {
       setAuthState({ token: null, authenticated: false });
@@ -111,6 +114,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       setAuthState({ token: null, authenticated: false });
       useUserStore.getState().clearUser();
+      useSignupStore.getState().clear();
     } catch (error) {
       setAuthState({ token: null, authenticated: false });
     }
