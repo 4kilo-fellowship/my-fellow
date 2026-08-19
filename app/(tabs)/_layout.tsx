@@ -1,77 +1,54 @@
 import { useTheme } from "@/context/ThemeContext";
-import { Ionicons } from "@expo/vector-icons";
-import Octicons from "@expo/vector-icons/Octicons";
-import { Tabs } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { NativeTabs } from "expo-router/unstable-native-tabs";
 
 export default function TabLayout() {
   const { theme } = useTheme();
-  const insets = useSafeAreaInsets();
   const isDark = theme === "dark";
+  const barBg = isDark ? "#1A1A1B" : "#ffffff";
+  const active = isDark ? "#ffffff" : "#000000";
+  const inactive = isDark ? "#8E8E93" : "#8E8E93";
+
   return (
-    <Tabs
-      screenOptions={({ route }) => ({
-        headerShown: false,
-
-        tabBarActiveTintColor: isDark ? "#fff" : "#000",
-        tabBarInactiveTintColor: isDark ? "#fff" : "#000",
-
-        tabBarStyle: {
-          backgroundColor: isDark ? "#1A1A1B" : "#fff",
-          height: 65 + insets.bottom,
-          paddingBottom: insets.bottom + 12,
-          paddingTop: 10,
-          borderTopWidth: 0,
-          elevation: 0,
-        },
-
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: "600",
-          marginTop: 4,
-        },
-
-        tabBarIcon: ({ focused, color }) => {
-          if (route.name === "index") {
-            return (
-              <Octicons
-                name={focused ? "home-fill" : "home"}
-                size={focused ? 32 : 26}
-                color={color}
-              />
-            );
-          }
-
-          let iconName: keyof typeof Ionicons.glyphMap;
-
-          switch (route.name) {
-            case "devotions":
-              iconName = focused ? "book" : "book-outline";
-              break;
-            case "teams":
-              iconName = focused ? "people" : "people-outline";
-              break;
-            case "reminders":
-              iconName = focused ? "notifications" : "notifications-outline";
-              break;
-            case "gifts":
-              iconName = focused ? "gift" : "gift-outline";
-              break;
-            default:
-              iconName = "ellipse";
-          }
-
-          return (
-            <Ionicons name={iconName} size={focused ? 32 : 26} color={color} />
-          );
-        },
-      })}
+    <NativeTabs
+      backgroundColor={barBg}
+      iconColor={{ default: inactive, selected: active }}
+      labelStyle={{ default: { color: inactive }, selected: { color: active } }}
     >
-      <Tabs.Screen name="index" options={{ title: "Home" }} />
-      <Tabs.Screen name="devotions" options={{ title: "Devotions" }} />
-      <Tabs.Screen name="teams" options={{ title: "Teams" }} />
-      <Tabs.Screen name="reminders" options={{ title: "Alerts" }} />
-      <Tabs.Screen name="gifts" options={{ title: "Gifts" }} />
-    </Tabs>
+      <NativeTabs.Trigger name="index">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: "house", selected: "house.fill" }}
+          md={{ default: "home", selected: "home" }}
+        />
+        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="devotions">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: "book", selected: "book.fill" }}
+          md={{ default: "menu_book", selected: "menu_book" }}
+        />
+        <NativeTabs.Trigger.Label>Devotions</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="teams">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: "person.3", selected: "person.3.fill" }}
+          md={{ default: "groups", selected: "groups" }}
+        />
+        <NativeTabs.Trigger.Label>Teams</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="reminders">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: "bell", selected: "bell.fill" }}
+          md={{ default: "notifications", selected: "notifications" }}
+        />
+        <NativeTabs.Trigger.Label>Alerts</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="gifts">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: "gift", selected: "gift.fill" }}
+          md={{ default: "redeem", selected: "redeem" }}
+        />
+        <NativeTabs.Trigger.Label>Gifts</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }
