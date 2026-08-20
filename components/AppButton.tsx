@@ -73,14 +73,16 @@ export default function AppButton({
   const getSizeStyles = () => {
     switch (size) {
       case "sm":
-        return "min-h-11 px-4";
+        return "h-11 px-4";
       case "md":
-        return "min-h-12 px-5";
+        return "h-12 px-5";
       case "lg":
       default:
-        return "min-h-14 px-6";
+        return "h-[52px] px-6";
     }
   };
+
+  const buttonHeight = size === "sm" ? 44 : size === "md" ? 48 : 52;
 
   const finalIconColor =
     iconColor || (variant === "primary" ? "white" : "#ff6719");
@@ -89,6 +91,10 @@ export default function AppButton({
     <Pressable
       onPress={onPress}
       disabled={isDisabled}
+      style={[
+        { height: buttonHeight, borderRadius: 16 },
+        width ? { width } : undefined,
+      ]}
       className={`${fullWidth ? "w-full" : ""} ${getVariantStyles()} ${getSizeStyles()} rounded-2xl flex-row justify-center items-center gap-2 ${
         isDisabled ? "opacity-50" : ""
       } ${className}`}
@@ -114,6 +120,12 @@ export default function AppButton({
     </Pressable>
   );
 }
+
+
+
+
+
+
 
 
 
