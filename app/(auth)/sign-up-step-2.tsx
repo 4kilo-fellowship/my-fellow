@@ -225,23 +225,11 @@ export default function SignUpStep2() {
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => openModal({ name, label, options, placeholder })}
-                className={`w-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"} border-2 rounded-2xl p-4 flex-row justify-between items-center ${
+                className={`w-full h-14 ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"} border-2 rounded-2xl px-4 flex-row items-center gap-3 ${
                   hasError ? "border-red-500" : ""
                 }`}
               >
                 <View className="flex-row items-center flex-1 space-x-3">
-                  <View
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 14,
-                      backgroundColor: meta.bg,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons name={meta.icon} size={20} color={meta.color} />
-                  </View>
                   <Text
                     className={
                       value
@@ -252,11 +240,6 @@ export default function SignUpStep2() {
                     {value || placeholder}
                   </Text>
                 </View>
-                <Ionicons
-                  name="chevron-down"
-                  size={20}
-                  color={isDark ? "#4b5563" : "#94a3b8"}
-                />
               </TouchableOpacity>
               {errorMessage ? (
                 <Text className="text-red-500 text-xs mt-1 ml-1">
@@ -499,7 +482,7 @@ export default function SignUpStep2() {
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 24 }}
+          contentContainerStyle={{ paddingBottom: 32 }}
         >
           <View
             style={[
@@ -585,5 +568,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
+
+
+
+
+
+
 
 
