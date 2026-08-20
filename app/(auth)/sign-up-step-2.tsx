@@ -159,7 +159,6 @@ export default function SignUpStep2() {
   );
 
   const pickImage = async () => {
-    try {
     const permissionResult =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -181,11 +180,10 @@ export default function SignUpStep2() {
       quality: 0.8,
     });
 
-    if (!result.canceled && result.assets?.length) {
+    if (!result.canceled && result.assets?.[0]?.uri) {
       setImage(result.assets[0].uri);
     }
   };
-
   const handleComplete: (data: SignUpStep2FormValues) => Promise<void> = async (
     data,
   ) => {
@@ -654,6 +652,7 @@ const styles = StyleSheet.create({
     right: 8,
   },
 });
+
 
 
 
