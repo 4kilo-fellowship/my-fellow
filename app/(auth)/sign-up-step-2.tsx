@@ -7,7 +7,9 @@ import { useTheme } from "@/context/ThemeContext";
 import { useSignupStore } from "@/stores/signup.store";
 import { SignUpData } from "@/types";
 import { SignUpStep2FormValues, signUpStep2Schema } from "@/utils";
-import { BottomSheet } from "@expo/ui";
+import BottomSheet, {
+  BottomSheetScrollView,
+} from "@expo/ui/community/bottom-sheet";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
@@ -28,10 +30,14 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const HEADER_HEIGHT = SCREEN_HEIGHT * 0.08;
+const PRIMARY = "#ff6719";
 
 type DropdownNameProps = "team" | "department" | "year";
 
@@ -44,20 +50,42 @@ interface DropdownModalConfig {
 
 const FIELD_META: Record<
   DropdownNameProps,
-  { icon: keyof typeof Ionicons.glyphMap; color: string; bg: string }
+  { icon: keyof typeof Ionicons.glyphMap }
 > = {
-  team: { icon: "people", color: "#ff6719", bg: "rgba(255,103,25,0.12)" },
-  department: {
-    icon: "business",
-    color: "#3b82f6",
-    bg: "rgba(59,130,246,0.12)",
-  },
-  year: { icon: "calendar", color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
+  team: { icon: "people-outline" },
+  department: { icon: "business-outline" },
+  year: { icon: "calendar-outline" },
+};
+
+const OPTION_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  "Bible Study": "book-outline",
+  Evangelism: "megaphone-outline",
+  Freshman: "school-outline",
+  I4U: "heart-outline",
+  Media: "videocam-outline",
+  Prayer: "hand-left-outline",
+  Worship: "musical-notes-outline",
+  Other: "apps-outline",
+  "Applied Chemistry": "flask-outline",
+  "Applied Mathematics": "calculator-outline",
+  "Applied Biology": "leaf-outline",
+  "Applied Physics": "planet-outline",
+  "Information System": "server-outline",
+  "Computer Science": "laptop-outline",
+  Statistics: "stats-chart-outline",
+  "Engineering(5 Kilo)": "construct-outline",
+  "Social Science(6 Kilo)": "people-circle-outline",
+  "1st Year": "ribbon-outline",
+  "2nd Year": "ribbon-outline",
+  "3rd Year": "ribbon-outline",
+  "4th Year": "ribbon-outline",
+  "5th Year": "ribbon-outline",
 };
 
 export default function SignUpStep2() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
   const { signup } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -125,15 +153,25 @@ export default function SignUpStep2() {
   const selectOption = useCallback(
     (name: DropdownNameProps, option: string) => {
       setValue(name, option, { shouldValidate: true });
-      closeModal();
+      setModalConfig(null);
     },
-    [setValue, closeModal],
+    [setValue],
   );
 
   const pickImage = async () => {
     const permissionResult =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) return;
+
+    if (!permissionResult.granted) {
+      setErrorModal({
+        visible: true,
+        title: "Permission Needed",
+        message:
+          "Allow photo library access in Settings to upload a profile picture.",
+        isRegisteredError: false,
+      });
+      return;
+    }
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
@@ -142,7 +180,7 @@ export default function SignUpStep2() {
       quality: 0.8,
     });
 
-    if (!result.canceled) {
+    if (!result.canceled && result.assets?.length) {
       setImage(result.assets[0].uri);
     }
   };
@@ -223,28 +261,40 @@ export default function SignUpStep2() {
           render={({ field: { value } }) => (
             <View>
               <TouchableOpacity
-                activeOpacity={0.8}
+                activeOpacity={1}
                 onPress={() => openModal({ name, label, options, placeholder })}
-                className={`w-full h-14 ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"} border-2 rounded-2xl p-4 flex-row items-center gap-3 ${
-                  hasError ? "border-red-500" : ""
-                }`}
+                style={{ height: 56 }}
+                className={`w-full flex-row items-center gap-3 border-2 rounded-2xl px-4 ${
+                  isDark
+                    ? "bg-slate-900 border-slate-800"
+                    : "bg-slate-50 border-slate-200"
+                } ${hasError ? "border-red-500" : ""}`}
               >
-                <Ionicons name={meta.icon} size={21} color={isDark ? "#CBD5E1" : "#64748B"} />
-                <View className="flex-1 min-w-0">
-                  <Text
-                    className={
-                      value
-                        ? `${isDark ? "text-white" : "text-slate-900"} text-base`
-                        : `${isDark ? "text-slate-600" : "text-slate-400"} text-base`
-                    }
-                  >
-                    {value || placeholder}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-down" size={20} color={isDark ? "#CBD5E1" : "#64748B"} />
+                <Ionicons
+                  name={meta.icon}
+                  size={21}
+                  color={isDark ? "#CBD5E1" : "#64748B"}
+                />
+                <Text
+                  numberOfLines={1}
+                  className={`flex-1 text-base ${
+                    value
+                      ? `font-medium ${isDark ? "text-white" : "text-slate-900"}`
+                      : isDark
+                        ? "text-slate-500"
+                        : "text-slate-400"
+                  }`}
+                >
+                  {value || placeholder}
+                </Text>
+                <Ionicons
+                  name="chevron-down"
+                  size={20}
+                  color={isDark ? "#64748b" : "#94a3b8"}
+                />
               </TouchableOpacity>
               {errorMessage ? (
-                <Text className="text-red-500 text-xs mt-1 ml-1">
+                <Text className="text-red-500 text-xs mt-1.5 ml-1">
                   {errorMessage}
                 </Text>
               ) : null}
@@ -255,42 +305,70 @@ export default function SignUpStep2() {
     );
   };
 
-  const renderOption = (item: string, index: number) => {
+  const currentValue = modalConfig ? watch(modalConfig.name) : "";
+
+  const renderOptionCard = (item: string, index: number) => {
     if (!modalConfig) return null;
-    const currentValue = watch(modalConfig.name);
     const isSelected = currentValue === item;
-    const isLast = index === modalConfig.options.length - 1;
+    const icon = OPTION_ICONS[item] ?? FIELD_META[modalConfig.name].icon;
 
     return (
       <TouchableOpacity
         key={`${item}-${index}`}
-        activeOpacity={0.6}
+        activeOpacity={1}
         onPress={() => selectOption(modalConfig.name, item)}
         style={[
-          styles.optionItem,
+          styles.card,
           {
+            borderColor: isSelected
+              ? PRIMARY
+              : isDark
+                ? "#2a2a2e"
+                : "#e2e8f0",
             backgroundColor: isSelected
               ? isDark
-                ? "#1e293b"
-                : "#f1f5f9"
-              : "transparent",
-            borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth,
-            borderBottomColor: isDark ? "#1e293b" : "#e2e8f0",
+                ? "rgba(255,103,25,0.14)"
+                : "#fff3ec"
+              : isDark
+                ? "#242427"
+                : "#ffffff",
           },
         ]}
       >
-        <Text
+        <View
           style={[
-            styles.optionText,
+            styles.cardIcon,
             {
-              color: isSelected ? "#ff6719" : isDark ? "#cbd5e1" : "#334155",
-              fontWeight: isSelected ? "700" : "400",
+              backgroundColor: isSelected
+                ? PRIMARY
+                : isDark
+                  ? "#333338"
+                  : "#f1f5f9",
+            },
+          ]}
+        >
+          <Ionicons
+            name={icon}
+            size={22}
+            color={isSelected ? "#ffffff" : isDark ? "#cbd5e1" : "#64748b"}
+          />
+        </View>
+        <Text
+          numberOfLines={2}
+          style={[
+            styles.cardLabel,
+            {
+              color: isSelected ? PRIMARY : isDark ? "#e2e8f0" : "#334155",
             },
           ]}
         >
           {item}
         </Text>
-        {isSelected && <Ionicons name="checkmark" size={20} color="#ff6719" />}
+        {isSelected ? (
+          <View style={styles.cardCheck}>
+            <Ionicons name="checkmark-circle" size={20} color={PRIMARY} />
+          </View>
+        ) : null}
       </TouchableOpacity>
     );
   };
@@ -316,10 +394,7 @@ export default function SignUpStep2() {
               style={{ paddingTop: 60 }}
             >
               <View className="absolute top-4 left-2">
-                <BackButton
-                  onPress={() => router.back()}
-                  isDark={isDark}
-                />
+                <BackButton onPress={() => router.back()} isDark={isDark} />
               </View>
             </View>
           </View>
@@ -327,6 +402,7 @@ export default function SignUpStep2() {
           <ScrollView
             contentContainerStyle={{
               flexGrow: 1,
+              paddingBottom: 32,
             }}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
@@ -353,7 +429,7 @@ export default function SignUpStep2() {
                       <View className="items-center">
                         <Ionicons
                           name="camera"
-                          size={28}
+                          size={30}
                           color={isDark ? "#4b5563" : "#94a3b8"}
                         />
                         <Text
@@ -364,7 +440,7 @@ export default function SignUpStep2() {
                       </View>
                     )}
                   </View>
-                  <View className="absolute bottom-1 right-1 bg-primary p-2.5 rounded-full border-[3px] border-white shadow-md">
+                  <View className="absolute bottom-0 right-0 w-11 h-11 bg-primary rounded-full border-[3px] border-white items-center justify-center shadow-md">
                     <Ionicons
                       name={image ? "pencil" : "add"}
                       size={16}
@@ -397,7 +473,7 @@ export default function SignUpStep2() {
                 />
               </View>
 
-              <View className="space-y-5">
+              <View className="gap-5">
                 {renderDropdownField(
                   "team",
                   "Team",
@@ -431,7 +507,8 @@ export default function SignUpStep2() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View className="relative justify-center">
                         <TextInput
-                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 text-base focus:bg-transparent ${
+                          style={{ height: 56 }}
+                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl px-4 pl-12 text-base ${
                             errors.telegram
                               ? "border-red-500"
                               : "focus:border-primary"
@@ -454,7 +531,7 @@ export default function SignUpStep2() {
                     )}
                   />
                   {errors.telegram?.message ? (
-                    <Text className="text-red-500 text-xs mt-1 ml-1">
+                    <Text className="text-red-500 text-xs mt-1.5 ml-1">
                       {errors.telegram.message}
                     </Text>
                   ) : null}
@@ -476,53 +553,48 @@ export default function SignUpStep2() {
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
 
-      <BottomSheet
-        isPresented={modalConfig !== null}
-        onDismiss={closeModal}
-        showDragIndicator
-        snapPoints={["half", "full"]}
-      >
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 32 }}
+      {modalConfig ? (
+        <BottomSheet
+          snapPoints={["55%", "90%"]}
+          enablePanDownToClose
+          onClose={closeModal}
+          backgroundStyle={{
+            backgroundColor: isDark ? "#1A1A1B" : "#ffffff",
+          }}
+          handleIndicatorStyle={{
+            backgroundColor: isDark ? "#3f3f46" : "#cbd5e1",
+          }}
         >
-          <View
-            style={[
-              styles.sheetHeader,
-              {
-                borderBottomColor: isDark ? "#1e293b" : "#f1f5f9",
-              },
-            ]}
+          <BottomSheetScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingHorizontal: 20,
+              paddingBottom: insets.bottom + 24,
+            }}
           >
             <Text
               style={[
                 styles.sheetTitle,
-                { color: isDark ? "#f1f5f9" : "#0f172a" },
+                { color: isDark ? "#f8fafc" : "#0f172a" },
               ]}
             >
-              {modalConfig?.label}
+              Select {modalConfig.label}
             </Text>
-            <TouchableOpacity
-              onPress={closeModal}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            <Text
               style={[
-                styles.closeButton,
-                {
-                  backgroundColor: isDark ? "#1e293b" : "#f1f5f9",
-                },
+                styles.sheetSubtitle,
+                { color: isDark ? "#94a3b8" : "#64748b" },
               ]}
             >
-              <Ionicons
-                name="close"
-                size={18}
-                color={isDark ? "#94a3b8" : "#64748b"}
-              />
-            </TouchableOpacity>
-          </View>
+              Choose the option that fits you best
+            </Text>
 
-          {modalConfig?.options.map(renderOption)}
-        </ScrollView>
-      </BottomSheet>
+            <View style={styles.grid}>
+              {modalConfig.options.map(renderOptionCard)}
+            </View>
+          </BottomSheetScrollView>
+        </BottomSheet>
+      ) : null}
 
       <InfoModal
         visible={errorModal.visible}
@@ -537,53 +609,46 @@ export default function SignUpStep2() {
 }
 
 const styles = StyleSheet.create({
-  sheetHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    marginBottom: 12,
-  },
   sheetTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
+    marginTop: 4,
   },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  sheetSubtitle: {
+    fontSize: 14,
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    rowGap: 12,
+  },
+  card: {
+    width: "48%",
+    borderRadius: 18,
+    borderWidth: 2,
+    paddingVertical: 18,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    gap: 10,
+  },
+  cardIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: "center",
     justifyContent: "center",
   },
-  optionItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    marginHorizontal: 8,
-    borderRadius: 12,
+  cardLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
   },
-  optionText: {
-    fontSize: 16,
+  cardCheck: {
+    position: "absolute",
+    top: 8,
+    right: 8,
   },
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
