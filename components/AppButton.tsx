@@ -4,16 +4,17 @@ import {
   ActivityIndicator,
   DimensionValue,
   Text,
-  TouchableOpacity,
+  Pressable,
 } from "react-native";
 
-type ButtonVariant = "primary" | "secondary" | "outline" | "ghost";
+export type AppButtonVariant = "primary" | "secondary" | "tertiary" | "outline" | "ghost";
 type ButtonSize = "sm" | "md" | "lg";
 
 export interface AppButtonProps {
-  title: string;
+  title?: string;
+  label?: string;
   onPress: () => void;
-  variant?: ButtonVariant;
+  variant?: AppButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
   disabled?: boolean;
@@ -29,6 +30,7 @@ export interface AppButtonProps {
 
 export default function AppButton({
   title,
+  label,
   onPress,
   variant = "primary",
   size = "lg",
@@ -36,12 +38,14 @@ export default function AppButton({
   disabled = false,
   icon,
   iconPosition = "right",
-  iconSize = 22,
+  iconSize = 20,
   iconColor,
   isDark = false,
   fullWidth = true,
   className = "",
+  width,
 }: AppButtonProps) {
+  const text = label ?? title ?? "";
   const isDisabled = disabled || loading;
 
   const getVariantStyles = () => {
@@ -51,12 +55,12 @@ export default function AppButton({
           ? "bg-slate-800"
           : "bg-slate-100";
       case "outline":
-        return "bg-transparent border-2 border-primary";
+        return "bg-transparent border border-primary";
       case "ghost":
         return "bg-transparent";
       case "primary":
       default:
-        return "bg-primary shadow-lg shadow-primary/40";
+        return "bg-primary";
     }
   };
 
@@ -69,12 +73,12 @@ export default function AppButton({
   const getSizeStyles = () => {
     switch (size) {
       case "sm":
-        return "py-3 px-4";
+        return "min-h-11 px-4";
       case "md":
-        return "py-4 px-5";
+        return "min-h-12 px-5";
       case "lg":
       default:
-        return "py-5 px-6";
+        return "min-h-[52px] px-6";
     }
   };
 
@@ -82,12 +86,11 @@ export default function AppButton({
     iconColor || (variant === "primary" ? "white" : "#ff6719");
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.9}
+    <Pressable
       onPress={onPress}
       disabled={isDisabled}
-      className={`${fullWidth ? "w-full" : ""} ${getVariantStyles()} ${getSizeStyles()} rounded-2xl flex-row justify-center items-center space-x-2 active:scale-[0.98] ${
-        isDisabled ? "opacity-60" : ""
+      className={`${fullWidth ? "w-full" : ""} ${getVariantStyles()} ${getSizeStyles()} rounded-2xl flex-row justify-center items-center gap-2 ${
+        isDisabled ? "opacity-50" : ""
       } ${className}`}
     >
       {loading ? (
@@ -100,14 +103,18 @@ export default function AppButton({
           {icon && iconPosition === "left" && (
             <Ionicons name={icon} size={iconSize} color={finalIconColor} />
           )}
-          <Text className={`${getTextColor()} font-bold text-lg tracking-wide`}>
-            {title}
+          <Text className={`${getTextColor()} font-semibold text-base`}>
+            {text}
           </Text>
           {icon && iconPosition === "right" && (
             <Ionicons name={icon} size={iconSize} color={finalIconColor} />
           )}
         </>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
+
+
+
+

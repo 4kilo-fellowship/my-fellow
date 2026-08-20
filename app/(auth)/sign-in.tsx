@@ -249,7 +249,7 @@ export default function SignIn() {
                   loading={loading}
                   isDark={isDark}
                   variant="primary"
-                  size="lg"
+                  size="md"
                 />
 
                 <View className="flex-row justify-center mt-6">
@@ -298,3 +298,4 @@ export default function SignIn() {
     </View>
   );
 }
+
