@@ -229,7 +229,7 @@ export default function SignUpStep2() {
                   hasError ? "border-red-500" : ""
                 }`}
               >
-                <Ionicons name={meta.icon} size={21} color={isDark ? "#FFFFFF" : "#000000"} />
+                <Ionicons name={meta.icon} size={21} color={isDark ? "#CBD5E1" : "#64748B"} />
                 <View className="flex-1 min-w-0">
                   <Text
                     className={
@@ -241,6 +241,7 @@ export default function SignUpStep2() {
                     {value || placeholder}
                   </Text>
                 </View>
+                <Ionicons name="chevron-down" size={20} color={isDark ? "#CBD5E1" : "#64748B"} />
               </TouchableOpacity>
               {errorMessage ? (
                 <Text className="text-red-500 text-xs mt-1 ml-1">
@@ -341,7 +342,7 @@ export default function SignUpStep2() {
                   className={`relative shadow-xl ${isDark ? "shadow-gray-900" : "shadow-slate-200"}`}
                 >
                   <View
-                    className={`w-32 h-32 rounded-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-300"} items-center justify-center border-2 border-dashed overflow-hidden`}
+                    className={`w-28 h-28 rounded-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-300"} items-center justify-center border-2 border-dashed overflow-hidden`}
                   >
                     {image ? (
                       <Image
@@ -352,7 +353,7 @@ export default function SignUpStep2() {
                       <View className="items-center">
                         <Ionicons
                           name="camera"
-                          size={32}
+                          size={28}
                           color={isDark ? "#4b5563" : "#94a3b8"}
                         />
                         <Text
@@ -540,10 +541,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 8,
+    paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   sheetTitle: {
     fontSize: 18,
@@ -569,6 +570,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
+
 
 
 
