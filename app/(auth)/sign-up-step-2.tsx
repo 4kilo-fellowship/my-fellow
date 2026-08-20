@@ -225,11 +225,12 @@ export default function SignUpStep2() {
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => openModal({ name, label, options, placeholder })}
-                className={`w-full h-14 ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"} border-2 rounded-2xl px-4 flex-row items-center gap-3 ${
+                className={`w-full h-14 ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"} border-2 rounded-2xl p-4 flex-row items-center gap-3 ${
                   hasError ? "border-red-500" : ""
                 }`}
               >
-                <View className="flex-row items-center flex-1 space-x-3">
+                <Ionicons name={meta.icon} size={21} color={isDark ? "#FFFFFF" : "#000000"} />
+                <View className="flex-1 min-w-0">
                   <Text
                     className={
                       value
@@ -568,6 +569,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
+
+
+
 
 
 
