@@ -483,7 +483,7 @@ export default function SignUpStep2() {
                   loading={loading}
                   isDark={isDark}
                   variant="primary"
-                  size="md"
+                  size="lg"
                 />
               </View>
             </View>
@@ -585,4 +585,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
 

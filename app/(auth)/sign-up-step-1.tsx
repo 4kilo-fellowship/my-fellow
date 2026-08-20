@@ -277,7 +277,7 @@ export default function SignUpStep1() {
                   onPress={handleSubmit(onNext)}
                   isDark={isDark}
                   variant="primary"
-                  size="md"
+                  size="lg"
                 />
 
                 <View className="flex-row justify-center mt-6">
@@ -303,4 +303,5 @@ export default function SignUpStep1() {
     </View>
   );
 }
+
 

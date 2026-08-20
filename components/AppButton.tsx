@@ -78,7 +78,7 @@ export default function AppButton({
         return "min-h-12 px-5";
       case "lg":
       default:
-        return "min-h-[52px] px-6";
+        return "min-h-14 px-6";
     }
   };
 
@@ -114,6 +114,7 @@ export default function AppButton({
     </Pressable>
   );
 }
+
 
 
 
