@@ -159,6 +159,7 @@ export default function SignUpStep2() {
   );
 
   const pickImage = async () => {
+    try {
     const permissionResult =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -418,18 +419,19 @@ export default function SignUpStep2() {
                   className={`relative shadow-xl ${isDark ? "shadow-gray-900" : "shadow-slate-200"}`}
                 >
                   <View
-                    className={`w-28 h-28 rounded-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-300"} items-center justify-center border-2 border-dashed overflow-hidden`}
+                    className={`w-32 h-32 rounded-full ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-300"} items-center justify-center border-2 border-dashed overflow-hidden`}
                   >
                     {image ? (
                       <Image
                         source={{ uri: image }}
                         className="w-full h-full"
+                        resizeMode="cover"
                       />
                     ) : (
                       <View className="items-center">
                         <Ionicons
                           name="camera"
-                          size={30}
+                          size={32}
                           color={isDark ? "#4b5563" : "#94a3b8"}
                         />
                         <Text
@@ -652,3 +654,6 @@ const styles = StyleSheet.create({
     right: 8,
   },
 });
+
+
+
