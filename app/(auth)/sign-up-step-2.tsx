@@ -7,9 +7,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useSignupStore } from "@/stores/signup.store";
 import { SignUpData } from "@/types";
 import { SignUpStep2FormValues, signUpStep2Schema } from "@/utils";
-import BottomSheet, {
-  BottomSheetScrollView,
-} from "@expo/ui/community/bottom-sheet";
+import { BottomSheet, Host } from "@expo/ui";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
@@ -554,46 +552,42 @@ export default function SignUpStep2() {
       </TouchableWithoutFeedback>
 
       {modalConfig ? (
-        <BottomSheet
-          snapPoints={["55%", "90%"]}
-          enablePanDownToClose
-          onClose={closeModal}
-          backgroundStyle={{
-            backgroundColor: isDark ? "#1A1A1B" : "#ffffff",
-          }}
-          handleIndicatorStyle={{
-            backgroundColor: isDark ? "#3f3f46" : "#cbd5e1",
-          }}
-        >
-          <BottomSheetScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{
-              paddingHorizontal: 20,
-              paddingBottom: insets.bottom + 24,
-            }}
+        <Host style={{ position: "absolute", inset: 0 }} pointerEvents="box-none">
+          <BottomSheet
+            isPresented={modalConfig !== null}
+            onDismiss={closeModal}
+            showDragIndicator
+            snapPoints={["half", "full"]}
           >
-            <Text
-              style={[
-                styles.sheetTitle,
-                { color: isDark ? "#f8fafc" : "#0f172a" },
-              ]}
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{
+                paddingHorizontal: 20,
+                paddingBottom: insets.bottom + 24,
+              }}
             >
-              Select {modalConfig.label}
-            </Text>
-            <Text
-              style={[
-                styles.sheetSubtitle,
-                { color: isDark ? "#94a3b8" : "#64748b" },
-              ]}
-            >
-              Choose the option that fits you best
-            </Text>
-
-            <View style={styles.grid}>
-              {modalConfig.options.map(renderOptionCard)}
-            </View>
-          </BottomSheetScrollView>
-        </BottomSheet>
+              <Text
+                style={[
+                  styles.sheetTitle,
+                  { color: isDark ? "#f8fafc" : "#0f172a" },
+                ]}
+              >
+                Select {modalConfig.label}
+              </Text>
+              <Text
+                style={[
+                  styles.sheetSubtitle,
+                  { color: isDark ? "#94a3b8" : "#64748b" },
+                ]}
+              >
+                Choose the option that fits you best
+              </Text>
+              <View style={styles.grid}>
+                {modalConfig.options.map(renderOptionCard)}
+              </View>
+            </ScrollView>
+          </BottomSheet>
+        </Host>
       ) : null}
 
       <InfoModal
@@ -652,6 +646,8 @@ const styles = StyleSheet.create({
     right: 8,
   },
 });
+
+
 
 
 
