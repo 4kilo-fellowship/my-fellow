@@ -260,7 +260,7 @@ export default function SignUpStep2() {
     return (
       <View>
         <Text
-          className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
+          className={`${isDark ? "text-slate-200" : "text-slate-700"} font-semibold mb-2 ml-1 text-sm`}
         >
           {label}
         </Text>
@@ -325,7 +325,7 @@ export default function SignUpStep2() {
           )}
         />
         {errors[name]?.message ? (
-          <Text className="text-red-500 text-xs mt-1 ml-1">
+          <Text className="text-red-500 text-xs mt-1.5 ml-1">
             {errors[name]?.message}
           </Text>
         ) : null}
@@ -504,7 +504,7 @@ export default function SignUpStep2() {
                 />
               </View>
 
-              <View className="gap-5">
+              <View className="flex-col gap-6">
                 {renderDropdownField(
                   "team",
                   "Team",
@@ -528,7 +528,7 @@ export default function SignUpStep2() {
 
                 <View>
                   <Text
-                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
+                    className={`${isDark ? "text-slate-200" : "text-slate-700"} font-semibold mb-2 ml-1 text-sm`}
                   >
                     Telegram Handle
                   </Text>
@@ -577,7 +577,7 @@ export default function SignUpStep2() {
                     )}
                   />
                   {errors.telegram?.message ? (
-                    <Text className="text-red-500 text-xs mt-1 ml-1">
+                    <Text className="text-red-500 text-xs mt-1.5 ml-1">
                       {errors.telegram.message}
                     </Text>
                   ) : null}
