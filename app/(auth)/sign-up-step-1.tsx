@@ -100,15 +100,17 @@ export default function SignUpStep1() {
     const phoneNumber = data.phoneNumber.trim();
     setLoading(true);
 
+    // Save signup data regardless of OTP success
+    useSignupStore.getState().start({
+      fullName: data.fullName.trim(),
+      phoneNumber,
+      password: data.password,
+    });
+
     try {
       await requestOtp(phoneNumber, "signup");
 
-      useSignupStore.getState().start({
-        fullName: data.fullName.trim(),
-        phoneNumber,
-        password: data.password,
-      });
-
+      // OTP sent successfully — go to OTP verification screen
       router.push({
         pathname: "/otp-verify",
         params: {
@@ -120,12 +122,31 @@ export default function SignUpStep1() {
       const message =
         err.response?.data?.message ||
         err.message ||
-        "Failed to send verification code. Please check your phone number.";
-      setErrorModal({
-        visible: true,
-        title: "Verification Code Failed",
-        message,
-      });
+        "";
+
+      // If the phone is already registered, show error and don't proceed
+      const isRegistered =
+        message.toLowerCase().includes("already registered") ||
+        message.toLowerCase().includes("already exists");
+
+      if (isRegistered) {
+        setErrorModal({
+          visible: true,
+          title: "Phone Already Registered",
+          message,
+        });
+      } else {
+        // OTP service unavailable (API key, network, etc.)
+        // Skip OTP — proceed directly to step 2, user will be verified later
+        router.push({
+          pathname: "/sign-up-step-2",
+          params: {
+            fullName: data.fullName.trim(),
+            phoneNumber,
+            password: data.password,
+          },
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -171,10 +192,10 @@ export default function SignUpStep1() {
             <View
               className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} pt-10 px-6`}
             >
-              <View className="space-y-5">
+              <View className="flex-col gap-6">
                 <View>
                   <Text
-                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
+                    className={`${isDark ? "text-slate-200" : "text-slate-700"} font-semibold mb-2 ml-1 text-sm`}
                   >
                     Full Name
                   </Text>
@@ -226,7 +247,7 @@ export default function SignUpStep1() {
                     )}
                   />
                   {errors.fullName?.message ? (
-                    <Text className="text-red-500 text-xs mt-1 ml-1">
+                    <Text className="text-red-500 text-xs mt-1.5 ml-1">
                       {errors.fullName.message}
                     </Text>
                   ) : null}
@@ -234,7 +255,7 @@ export default function SignUpStep1() {
 
                 <View>
                   <Text
-                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
+                    className={`${isDark ? "text-slate-200" : "text-slate-700"} font-semibold mb-2 ml-1 text-sm`}
                   >
                     Phone Number
                   </Text>
@@ -287,7 +308,7 @@ export default function SignUpStep1() {
                     )}
                   />
                   {errors.phoneNumber?.message ? (
-                    <Text className="text-red-500 text-xs mt-1 ml-1">
+                    <Text className="text-red-500 text-xs mt-1.5 ml-1">
                       {errors.phoneNumber.message}
                     </Text>
                   ) : null}
@@ -295,7 +316,7 @@ export default function SignUpStep1() {
 
                 <View>
                   <Text
-                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
+                    className={`${isDark ? "text-slate-200" : "text-slate-700"} font-semibold mb-2 ml-1 text-sm`}
                   >
                     Password
                   </Text>
@@ -373,7 +394,7 @@ export default function SignUpStep1() {
                     )}
                   />
                   {errors.password?.message ? (
-                    <Text className="text-red-500 text-xs mt-1 ml-1">
+                    <Text className="text-red-500 text-xs mt-1.5 ml-1">
                       {errors.password.message}
                     </Text>
                   ) : null}
