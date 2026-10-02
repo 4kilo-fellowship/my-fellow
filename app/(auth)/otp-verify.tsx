@@ -72,7 +72,7 @@ export default function OtpVerify() {
     const interval = setInterval(() => {
       setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
-    return () => clearInterval(timer);
+    return () => clearInterval(interval);
   }, [resendCooldown]);
 
   const isFilled = otpCode.length === OTP_LENGTH && /^\d{6}$/.test(otpCode);
