@@ -126,10 +126,10 @@ export default function SignIn() {
             <View
               className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} pt-14 px-6`}
             >
-              <View className="space-y-5">
+              <View className="flex-col gap-6">
                 <View>
                   <Text
-                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
+                    className={`${isDark ? "text-slate-200" : "text-slate-700"} font-semibold mb-2 ml-1 text-sm`}
                   >
                     Phone Number
                   </Text>
@@ -182,14 +182,14 @@ export default function SignIn() {
                     )}
                   />
                   {errors.phoneNumber?.message ? (
-                    <Text className="text-red-500 text-xs mt-1 ml-1">
+                    <Text className="text-red-500 text-xs mt-1.5 ml-1">
                       {errors.phoneNumber.message}
                     </Text>
                   ) : null}
                 </View>
                 <View>
                   <Text
-                    className={`${isDark ? "text-slate-200" : "text-slate-800"} font-bold mb-3 ml-1 text-base`}
+                    className={`${isDark ? "text-slate-200" : "text-slate-700"} font-semibold mb-2 ml-1 text-sm`}
                   >
                     Password
                   </Text>
@@ -268,7 +268,7 @@ export default function SignIn() {
                     )}
                   />
                   {errors.password?.message ? (
-                    <Text className="text-red-500 text-xs mt-1 ml-1">
+                    <Text className="text-red-500 text-xs mt-1.5 ml-1">
                       {errors.password.message}
                     </Text>
                   ) : null}
