@@ -1,13 +1,10 @@
 import { useTheme } from "@/context/ThemeContext";
-import BackButton from "@/components/BackButton";
-import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useRef } from "react";
 import {
   ScrollView,
   StatusBar,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,7 +12,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function LegalScreen() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const router = useRouter();
   const { section } = useLocalSearchParams<{ section?: string }>();
   const scrollViewRef = useRef<ScrollView>(null);
   const privacyRef = useRef<View>(null);
@@ -51,18 +47,6 @@ export default function LegalScreen() {
   return (
     <SafeAreaView className={`flex-1 ${isDark ? "bg-black" : "bg-white"}`}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
-
-      {/* minimalist Header */}
-      <View
-        className={`px-6 py-4 flex-row items-center border-b ${isDark ? "border-zinc-800" : "border-zinc-100"}`}
-      >
-        <BackButton onPress={() => router.back()} isDark={isDark} />
-        <Text
-          className={`ml-4 text-lg font-semibold ${isDark ? "text-white" : "text-black"}`}
-        >
-          Legal Information
-        </Text>
-      </View>
 
       <ScrollView
         ref={scrollViewRef}

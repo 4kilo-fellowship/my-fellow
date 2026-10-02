@@ -1,39 +1,40 @@
 import AppButton from "@/components/AppButton";
+import AuthIcon from "@/components/AuthIcon";
+import { InfoModal } from "@/components/Modals/InfoModal";
+import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useSignupStore } from "@/stores/signup.store";
-import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useHeaderHeight } from "expo-router/react-navigation";
 import React, { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
-  ActivityIndicator,
   Dimensions,
   Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   Text,
   TextInput,
-  TouchableOpacity,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { z } from "zod";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-const HEADER_HEIGHT = SCREEN_HEIGHT * 0.36;
+const HEADER_HEIGHT = SCREEN_HEIGHT * 0.28;
 
-const signUpStep1Schema = z
-  .object({
-    fullName: z.string().min(3, "Full name must be at least 3 characters"),
-    phoneNumber: z
-      .string()
-      .min(1, "Phone number is required")
-      .regex(/^(09|07)\d{8}$/, "Enter a valid phone number"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-  });
+const signUpStep1Schema = z.object({
+  fullName: z.string().min(3, "Full name must be at least 3 characters"),
+  phoneNumber: z
+    .string()
+    .min(1, "Phone number is required")
+    .regex(/^(09|07)\d{8}$/, "Enter a valid phone number"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
 
 type SignUpStep1FormValues = z.infer<typeof signUpStep1Schema>;
 
@@ -44,6 +45,7 @@ export default function SignUpStep1() {
   const isDark = theme === "dark";
 
   const phoneInputRef = useRef<TextInput>(null);
+  const headerHeight = useHeaderHeight();
 
   const params = useLocalSearchParams();
 
@@ -56,7 +58,12 @@ export default function SignUpStep1() {
   }, [params.focus]);
 
   const signup = useSignupStore.getState();
-  const { control, handleSubmit, formState: { errors } } = useForm<SignUpStep1FormValues>({
+  const {
+    control,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<SignUpStep1FormValues>({
     resolver: zodResolver(signUpStep1Schema),
     defaultValues: {
       fullName: signup.fullName || "",
@@ -65,22 +72,65 @@ export default function SignUpStep1() {
     },
   });
 
+  const fullNameValue = watch("fullName");
+  const phoneNumberValue = watch("phoneNumber");
+  const passwordValue = watch("password");
+
+  const [loading, setLoading] = useState<boolean>(false);
+  const [errorModal, setErrorModal] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+  }>({
+    visible: false,
+    title: "",
+    message: "",
+  });
+  const { requestOtp } = useAuth();
+
+  const isFilled = Boolean(
+    fullNameValue && fullNameValue.trim().length >= 3 &&
+    phoneNumberValue && /^(09|07)\d{8}$/.test(phoneNumberValue.trim()) &&
+    passwordValue && passwordValue.trim().length >= 6
+  );
+
+  const isButtonDisabled = !isFilled || loading;
+
   const onNext = async (data: SignUpStep1FormValues) => {
     const phoneNumber = data.phoneNumber.trim();
-    useSignupStore.getState().start({
-      fullName: data.fullName.trim(),
-      phoneNumber,
-      password: data.password,
-    });
-    router.push({
-      pathname: "/sign-up-step-2",
-      params: {
+    setLoading(true);
+
+    try {
+      await requestOtp(phoneNumber, "signup");
+
+      useSignupStore.getState().start({
         fullName: data.fullName.trim(),
         phoneNumber,
         password: data.password,
-      },
-    });
+      });
+
+      router.push({
+        pathname: "/otp-verify",
+        params: {
+          phoneNumber,
+          purpose: "signup",
+        },
+      });
+    } catch (err: any) {
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to send verification code. Please check your phone number.";
+      setErrorModal({
+        visible: true,
+        title: "Verification Code Failed",
+        message,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   const handleBackToLogin = () => {
     router.push("/(auth)/sign-in");
@@ -90,9 +140,9 @@ export default function SignUpStep1() {
     <View className={`flex-1 ${isDark ? "bg-dark" : "bg-white"}`}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={{ flex: 1 }}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+          keyboardVerticalOffset={Platform.OS === "ios" ? headerHeight : 20}
         >
           <View
             className="bg-primary overflow-hidden items-center justify-center"
@@ -105,7 +155,7 @@ export default function SignUpStep1() {
             <View className="flex-1 w-full justify-center items-center pt-10">
               <Image
                 source={require("@/assets/images/logo-white.png")}
-                style={{ width: "135%", height: "135%" }}
+                style={{ width: "150%", height: "150%" }}
                 resizeMode="contain"
               />
             </View>
@@ -132,13 +182,20 @@ export default function SignUpStep1() {
                     control={control}
                     name="fullName"
                     render={({ field: { onChange, onBlur, value } }) => (
-                      <View className="relative">
+                      <View
+                        style={{ height: 58, justifyContent: "center" }}
+                        className="relative"
+                      >
                         <TextInput
-                          className={`w-full ${isDark ? "bg-slate-900 text-white focus:border-primary border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 text-base focus:bg-transparent ${
-                            errors.fullName
-                              ? "border-red-500"
-                              : "focus:border-primary"
-                          }`}
+                          style={{
+                            height: 58,
+                            borderRadius: 22,
+                            paddingLeft: 50,
+                            paddingRight: 16,
+                            textAlignVertical: "center",
+                            includeFontPadding: false,
+                          }}
+                          className={`w-full ${isDark ? "bg-slate-900 text-white focus:border-primary border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-[22px] text-base focus:bg-transparent focus:border-primary`}
                           placeholder="e.g. Samuel Kebede"
                           placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           value={value}
@@ -149,11 +206,20 @@ export default function SignUpStep1() {
                           autoComplete="name"
                           importantForAutofill="yes"
                         />
-                        <View className="absolute left-4 top-4">
-                          <Ionicons
-                            name="person-outline"
-                            size={22}
-                            color={isDark ? "#94a3b8" : "#64748b"}
+                        <View
+                          style={{
+                            position: "absolute",
+                            left: 16,
+                            height: 58,
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                          pointerEvents="none"
+                        >
+                          <AuthIcon
+                            name="person"
+                            size={23}
+                            color={isDark ? "#cbd5e1" : "#475569"}
                           />
                         </View>
                       </View>
@@ -176,14 +242,21 @@ export default function SignUpStep1() {
                     control={control}
                     name="phoneNumber"
                     render={({ field: { onChange, onBlur, value } }) => (
-                      <View className="relative">
+                      <View
+                        style={{ height: 58, justifyContent: "center" }}
+                        className="relative"
+                      >
                         <TextInput
                           ref={phoneInputRef}
-                          className={`w-full ${isDark ? "bg-slate-900 text-white focus:border-primary border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 text-base focus:bg-transparent ${
-                            errors.phoneNumber
-                              ? "border-red-500"
-                              : "focus:border-primary"
-                          }`}
+                          style={{
+                            height: 58,
+                            borderRadius: 22,
+                            paddingLeft: 50,
+                            paddingRight: 16,
+                            textAlignVertical: "center",
+                            includeFontPadding: false,
+                          }}
+                          className={`w-full ${isDark ? "bg-slate-900 text-white focus:border-primary border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-[22px] text-base focus:bg-transparent focus:border-primary`}
                           placeholder="0911234567"
                           placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           keyboardType="phone-pad"
@@ -194,11 +267,20 @@ export default function SignUpStep1() {
                           autoComplete="username"
                           importantForAutofill="yes"
                         />
-                        <View className="absolute left-4 top-4">
-                          <Ionicons
-                            name="call-outline"
-                            size={22}
-                            color={isDark ? "#94a3b8" : "#64748b"}
+                        <View
+                          style={{
+                            position: "absolute",
+                            left: 16,
+                            height: 58,
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                          pointerEvents="none"
+                        >
+                          <AuthIcon
+                            name="phone"
+                            size={23}
+                            color={isDark ? "#cbd5e1" : "#475569"}
                           />
                         </View>
                       </View>
@@ -221,13 +303,20 @@ export default function SignUpStep1() {
                     control={control}
                     name="password"
                     render={({ field: { onChange, onBlur, value } }) => (
-                      <View className="relative">
+                      <View
+                        style={{ height: 58, justifyContent: "center" }}
+                        className="relative"
+                      >
                         <TextInput
-                          className={`w-full ${isDark ? "bg-slate-900 text-white focus:border-primary border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 pr-12 text-base focus:bg-transparent ${
-                            errors.password
-                              ? "border-red-500"
-                              : "focus:border-primary"
-                          }`}
+                          style={{
+                            height: 58,
+                            borderRadius: 22,
+                            paddingLeft: 50,
+                            paddingRight: 50,
+                            textAlignVertical: "center",
+                            includeFontPadding: false,
+                          }}
+                          className={`w-full ${isDark ? "bg-slate-900 text-white focus:border-primary border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-[22px] text-base focus:bg-transparent focus:border-primary`}
                           placeholder="Create a strong password"
                           placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           secureTextEntry={!showPassword}
@@ -238,26 +327,48 @@ export default function SignUpStep1() {
                           autoComplete="password-new"
                           importantForAutofill="yes"
                         />
-                        <View className="absolute left-4 top-4">
-                          <Ionicons
-                            name="lock-closed-outline"
-                            size={22}
-                            color={isDark ? "#94a3b8" : "#64748b"}
+                        <View
+                          style={{
+                            position: "absolute",
+                            left: 16,
+                            height: 58,
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                          pointerEvents="none"
+                        >
+                          <AuthIcon
+                            name="lock"
+                            size={23}
+                            color={isDark ? "#cbd5e1" : "#475569"}
                           />
                         </View>
-                        <TouchableOpacity
+                        <Pressable
                           onPress={() => setShowPassword(!showPassword)}
-                          activeOpacity={0.7}
-                          className="absolute right-4 top-4"
+                          hitSlop={8}
+                          android_ripple={{
+                            color: isDark
+                              ? "rgba(255, 255, 255, 0.2)"
+                              : "rgba(0, 0, 0, 0.12)",
+                            borderless: true,
+                            radius: 20,
+                            foreground: true,
+                          }}
+                          style={{
+                            position: "absolute",
+                            right: 12,
+                            height: 58,
+                            width: 44,
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
                         >
-                          <Ionicons
-                            name={
-                              showPassword ? "eye-off-outline" : "eye-outline"
-                            }
-                            size={22}
-                            color={isDark ? "#94a3b8" : "#64748b"}
+                          <AuthIcon
+                            name={showPassword ? "eye-off" : "eye"}
+                            size={23}
+                            color={isDark ? "#cbd5e1" : "#475569"}
                           />
-                        </TouchableOpacity>
+                        </Pressable>
                       </View>
                     )}
                   />
@@ -275,33 +386,43 @@ export default function SignUpStep1() {
                   icon="arrow-forward"
                   iconPosition="right"
                   onPress={handleSubmit(onNext)}
+                  loading={loading}
+                  disabled={isButtonDisabled}
                   isDark={isDark}
                   variant="primary"
                   size="lg"
                 />
 
-                <View className="flex-row justify-center mt-6">
+                <View className="flex-row justify-center mt-6 items-center">
                   <Text
                     className={`${isDark ? "text-slate-400" : "text-slate-600"} font-medium text-base`}
                   >
                     Already have an account?{" "}
                   </Text>
-                  <TouchableOpacity
+                  <Pressable
                     onPress={handleBackToLogin}
-                    activeOpacity={0.9}
+                    className="px-1 py-0.5"
                   >
                     <Text className="text-primary font-bold text-base">
                       Log In
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               </View>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
+
+      <InfoModal
+        visible={errorModal.visible}
+        onClose={() => setErrorModal((prev) => ({ ...prev, visible: false }))}
+        title={errorModal.title}
+        message={errorModal.message}
+        type="error"
+        isDark={isDark}
+      />
     </View>
   );
 }
-
 

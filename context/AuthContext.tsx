@@ -1,3 +1,4 @@
+import { authClient } from "@/lib/auth-client";
 import api from "@/services/api";
 import { authService } from "@/services/authService";
 import { useSignupStore } from "@/stores/signup.store";
@@ -9,11 +10,14 @@ import {
   AuthState,
   ChangePasswordData,
   LoginResponse,
+  RequestOtpResponse,
+  ResetPasswordResponse,
   SignUpData,
   SignUpResponse,
   UpdatePhoneData,
   UpdatePhoneResponse,
   User,
+  VerifyOtpResponse,
 } from "@/types/auth.types";
 import * as SecureStore from "expo-secure-store";
 import { createContext, useContext, useEffect, useState } from "react";
@@ -108,6 +112,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const logout = async (): Promise<void> => {
     try {
+      await authClient.signOut().catch(() => {});
       await SecureStore.deleteItemAsync("userToken");
 
       api.defaults.headers.common.Authorization = "";
@@ -170,6 +175,50 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const requestOtp = async (
+    phoneNumber: string,
+    purpose: "signup" | "reset-password" = "signup",
+  ): Promise<RequestOtpResponse> => {
+    try {
+      return await authService.requestOtp(phoneNumber, purpose);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const verifyOtp = async (
+    phoneNumber: string,
+    code: string,
+    purpose: "signup" | "reset-password" = "signup",
+  ): Promise<VerifyOtpResponse> => {
+    try {
+      return await authService.verifyOtp(phoneNumber, code, purpose);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const resetPasswordWithOtp = async (
+    phoneNumber: string,
+    verificationToken: string,
+    newPassword: string,
+  ): Promise<ResetPasswordResponse> => {
+    try {
+      const response = await authService.resetPassword(
+        phoneNumber,
+        verificationToken,
+        newPassword,
+      );
+      if (response.token && response.user) {
+        setAuthState({ token: response.token, authenticated: true });
+        useUserStore.getState().setUser(response.user);
+      }
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -181,9 +230,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         updateProfile,
         changePassword,
         updatePhone,
+        requestOtp,
+        verifyOtp,
+        resetPasswordWithOtp,
       }}
     >
       {children}
     </AuthContext.Provider>
   );
 };
+

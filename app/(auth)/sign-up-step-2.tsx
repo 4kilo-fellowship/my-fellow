@@ -1,5 +1,5 @@
 import AppButton from "@/components/AppButton";
-import BackButton from "@/components/BackButton";
+import AuthIcon, { AuthIconName } from "@/components/AuthIcon";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { DEPARTMENTS, TEAM_NAMES, YEARS } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
@@ -8,23 +8,22 @@ import { useSignupStore } from "@/stores/signup.store";
 import { SignUpData } from "@/types";
 import { SignUpStep2FormValues, signUpStep2Schema } from "@/utils";
 import { BottomSheet } from "@expo/ui";
-import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useHeaderHeight } from "expo-router/react-navigation";
 import React, { useCallback, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
-  Dimensions,
   Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
@@ -33,8 +32,6 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-const HEADER_HEIGHT = SCREEN_HEIGHT * 0.08;
 const PRIMARY = "#ff6719";
 
 type DropdownNameProps = "team" | "department" | "year";
@@ -46,38 +43,35 @@ interface DropdownModalConfig {
   placeholder: string;
 }
 
-const FIELD_META: Record<
-  DropdownNameProps,
-  { icon: keyof typeof Ionicons.glyphMap }
-> = {
-  team: { icon: "people-outline" },
-  department: { icon: "business-outline" },
-  year: { icon: "calendar-outline" },
+const FIELD_META: Record<DropdownNameProps, { icon: AuthIconName }> = {
+  team: { icon: "team" },
+  department: { icon: "department" },
+  year: { icon: "year" },
 };
 
-const OPTION_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  "Bible Study": "book-outline",
-  Evangelism: "megaphone-outline",
-  Freshman: "school-outline",
-  I4U: "heart-outline",
-  Media: "videocam-outline",
-  Prayer: "hand-left-outline",
-  Worship: "musical-notes-outline",
-  Other: "apps-outline",
-  "Applied Chemistry": "flask-outline",
-  "Applied Mathematics": "calculator-outline",
-  "Applied Biology": "leaf-outline",
-  "Applied Physics": "planet-outline",
-  "Information System": "server-outline",
-  "Computer Science": "laptop-outline",
-  Statistics: "stats-chart-outline",
-  "Engineering(5 Kilo)": "construct-outline",
-  "Social Science(6 Kilo)": "people-circle-outline",
-  "1st Year": "ribbon-outline",
-  "2nd Year": "ribbon-outline",
-  "3rd Year": "ribbon-outline",
-  "4th Year": "ribbon-outline",
-  "5th Year": "ribbon-outline",
+const OPTION_ICONS: Record<string, AuthIconName> = {
+  "Bible Study": "book",
+  Evangelism: "megaphone",
+  Freshman: "school",
+  I4U: "heart",
+  Media: "video",
+  Prayer: "hand",
+  Worship: "music",
+  Other: "apps",
+  "Applied Chemistry": "flask",
+  "Applied Mathematics": "calculator",
+  "Applied Biology": "leaf",
+  "Applied Physics": "globe",
+  "Information System": "server",
+  "Computer Science": "laptop",
+  Statistics: "chart",
+  "Engineering(5 Kilo)": "wrench",
+  "Social Science(6 Kilo)": "groups",
+  "1st Year": "ribbon",
+  "2nd Year": "ribbon",
+  "3rd Year": "ribbon",
+  "4th Year": "ribbon",
+  "5th Year": "ribbon",
 };
 
 export default function SignUpStep2() {
@@ -87,6 +81,7 @@ export default function SignUpStep2() {
   const { signup } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const headerHeight = useHeaderHeight();
   const signupStore = useSignupStore.getState();
   const fullName = (params.fullName as string) || signupStore.fullName || "";
   const phoneNumber =
@@ -126,6 +121,20 @@ export default function SignUpStep2() {
     },
   });
 
+  const teamValue = watch("team");
+  const departmentValue = watch("department");
+  const yearValue = watch("year");
+  const telegramValue = watch("telegram");
+
+  const isFilled = Boolean(
+    teamValue && teamValue.trim().length > 0 &&
+    departmentValue && departmentValue.trim().length > 0 &&
+    yearValue && yearValue.trim().length > 0 &&
+    telegramValue && telegramValue.trim().length >= 3
+  );
+
+  const isButtonDisabled = !isFilled;
+
   const openModal = useCallback((config: DropdownModalConfig) => {
     Keyboard.dismiss();
     setModalConfig(config);
@@ -150,7 +159,11 @@ export default function SignUpStep2() {
 
   const selectOption = useCallback(
     (name: DropdownNameProps, option: string) => {
-      setValue(name, option, { shouldValidate: true });
+      setValue(name, option, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true,
+      });
       setModalConfig(null);
     },
     [setValue],
@@ -182,6 +195,7 @@ export default function SignUpStep2() {
       setImage(result.assets[0].uri);
     }
   };
+
   const handleComplete: (data: SignUpStep2FormValues) => Promise<void> = async (
     data,
   ) => {
@@ -241,8 +255,6 @@ export default function SignUpStep2() {
     options: readonly string[],
     placeholder: string,
   ) => {
-    const hasError = !!errors[name];
-    const errorMessage = errors[name]?.message;
     const meta = FIELD_META[name];
 
     return (
@@ -256,21 +268,40 @@ export default function SignUpStep2() {
           control={control}
           name={name}
           render={({ field: { value } }) => (
-            <View>
-              <TouchableOpacity
-                activeOpacity={1}
-                onPress={() => openModal({ name, label, options, placeholder })}
-                style={{ height: 56 }}
-                className={`w-full flex-row items-center gap-3 border-2 rounded-2xl px-4 ${
+            <View
+              style={{
+                height: 56,
+                minHeight: 56,
+                borderRadius: 22,
+                overflow: "hidden",
+              }}
+            >
+              <Pressable
+                onPress={() =>
+                  openModal({ name, label, options, placeholder })
+                }
+                android_ripple={{
+                  color: isDark
+                    ? "rgba(255, 255, 255, 0.1)"
+                    : "rgba(0, 0, 0, 0.06)",
+                  borderless: false,
+                }}
+                style={({ pressed }) => [
+                  { height: 56 },
+                  Platform.OS === "ios" && pressed
+                    ? { opacity: 0.8 }
+                    : undefined,
+                ]}
+                className={`w-full flex-row items-center gap-3 border-2 rounded-[22px] px-4 ${
                   isDark
                     ? "bg-slate-900 border-slate-800"
                     : "bg-slate-50 border-slate-200"
-                } ${hasError ? "border-red-500" : ""}`}
+                }`}
               >
-                <Ionicons
+                <AuthIcon
                   name={meta.icon}
-                  size={21}
-                  color={isDark ? "#CBD5E1" : "#64748B"}
+                  size={23}
+                  color={isDark ? "#CBD5E1" : "#475569"}
                 />
                 <Text
                   numberOfLines={1}
@@ -284,20 +315,20 @@ export default function SignUpStep2() {
                 >
                   {value || placeholder}
                 </Text>
-                <Ionicons
+                <AuthIcon
                   name="chevron-down"
                   size={20}
                   color={isDark ? "#64748b" : "#94a3b8"}
                 />
-              </TouchableOpacity>
-              {errorMessage ? (
-                <Text className="text-red-500 text-xs mt-1.5 ml-1">
-                  {errorMessage}
-                </Text>
-              ) : null}
+              </Pressable>
             </View>
           )}
         />
+        {errors[name]?.message ? (
+          <Text className="text-red-500 text-xs mt-1 ml-1">
+            {errors[name]?.message}
+          </Text>
+        ) : null}
       </View>
     );
   };
@@ -310,13 +341,21 @@ export default function SignUpStep2() {
     const icon = OPTION_ICONS[item] ?? FIELD_META[modalConfig.name].icon;
 
     return (
-      <TouchableOpacity
+      <Pressable
         key={`${item}-${index}`}
-        activeOpacity={1}
         onPress={() => selectOption(modalConfig.name, item)}
-        style={[
+        android_ripple={{
+          color: isSelected
+            ? "rgba(255, 103, 25, 0.2)"
+            : isDark
+              ? "rgba(255, 255, 255, 0.1)"
+              : "rgba(0, 0, 0, 0.06)",
+          borderless: false,
+        }}
+        style={({ pressed }) => [
           styles.card,
           {
+            overflow: "hidden",
             borderColor: isSelected
               ? PRIMARY
               : isDark
@@ -330,6 +369,7 @@ export default function SignUpStep2() {
                 ? "#242427"
                 : "#ffffff",
           },
+          Platform.OS === "ios" && pressed ? { opacity: 0.8 } : undefined,
         ]}
       >
         <View
@@ -344,7 +384,7 @@ export default function SignUpStep2() {
             },
           ]}
         >
-          <Ionicons
+          <AuthIcon
             name={icon}
             size={22}
             color={isSelected ? "#ffffff" : isDark ? "#cbd5e1" : "#64748b"}
@@ -363,10 +403,10 @@ export default function SignUpStep2() {
         </Text>
         {isSelected ? (
           <View style={styles.cardCheck}>
-            <Ionicons name="checkmark-circle" size={20} color={PRIMARY} />
+            <AuthIcon name="checkmark-circle" size={20} color={PRIMARY} />
           </View>
         ) : null}
-      </TouchableOpacity>
+      </Pressable>
     );
   };
 
@@ -374,28 +414,10 @@ export default function SignUpStep2() {
     <SafeAreaView className={`flex-1 ${isDark ? "bg-dark" : "bg-white"}`}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={{ flex: 1 }}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+          keyboardVerticalOffset={Platform.OS === "ios" ? headerHeight : 20}
         >
-          <View
-            className={`${isDark ? "bg-dark shadow-gray-900/10" : "bg-white shadow-slate-100"}`}
-            style={{
-              height: HEADER_HEIGHT,
-              borderBottomLeftRadius: 40,
-              borderBottomRightRadius: 40,
-            }}
-          >
-            <View
-              className="flex-1 justify-center items-center px-6"
-              style={{ paddingTop: 60 }}
-            >
-              <View className="absolute top-4 left-2">
-                <BackButton onPress={() => router.back()} isDark={isDark} />
-              </View>
-            </View>
-          </View>
-
           <ScrollView
             contentContainerStyle={{
               flexGrow: 1,
@@ -409,9 +431,20 @@ export default function SignUpStep2() {
               className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} pt-8 px-6`}
             >
               <View className="items-center mb-6">
-                <TouchableOpacity
+                <Pressable
                   onPress={pickImage}
-                  activeOpacity={1}
+                  android_ripple={{
+                    color: isDark
+                      ? "rgba(255, 255, 255, 0.15)"
+                      : "rgba(0, 0, 0, 0.1)",
+                    borderless: false,
+                  }}
+                  style={({ pressed }) => [
+                    { borderRadius: 9999, overflow: "hidden" },
+                    Platform.OS === "ios" && pressed
+                      ? { opacity: 0.85 }
+                      : undefined,
+                  ]}
                   className={`relative shadow-xl ${isDark ? "shadow-gray-900" : "shadow-slate-200"}`}
                 >
                   <View
@@ -425,7 +458,7 @@ export default function SignUpStep2() {
                       />
                     ) : (
                       <View className="items-center">
-                        <Ionicons
+                        <AuthIcon
                           name="camera"
                           size={32}
                           color={isDark ? "#4b5563" : "#94a3b8"}
@@ -439,13 +472,13 @@ export default function SignUpStep2() {
                     )}
                   </View>
                   <View className="absolute bottom-0 right-0 w-11 h-11 bg-primary rounded-full border-[3px] border-white items-center justify-center shadow-md">
-                    <Ionicons
-                      name={image ? "pencil" : "add"}
+                    <AuthIcon
+                      name={image ? "edit" : "add"}
                       size={16}
                       color="white"
                     />
                   </View>
-                </TouchableOpacity>
+                </Pressable>
               </View>
 
               <View
@@ -503,14 +536,20 @@ export default function SignUpStep2() {
                     control={control}
                     name="telegram"
                     render={({ field: { onChange, onBlur, value } }) => (
-                      <View className="relative justify-center">
+                      <View
+                        style={{ height: 58, justifyContent: "center" }}
+                        className="relative"
+                      >
                         <TextInput
-                          style={{ height: 56 }}
-                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl px-4 pl-12 text-base ${
-                            errors.telegram
-                              ? "border-red-500"
-                              : "focus:border-primary"
-                          }`}
+                          style={{
+                            height: 58,
+                            borderRadius: 22,
+                            paddingLeft: 50,
+                            paddingRight: 16,
+                            textAlignVertical: "center",
+                            includeFontPadding: false,
+                          }}
+                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-[22px] text-base focus:border-primary`}
                           placeholder="@username"
                           placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           value={value}
@@ -518,18 +557,27 @@ export default function SignUpStep2() {
                           onBlur={onBlur}
                           autoCapitalize="none"
                         />
-                        <View className="absolute left-4">
-                          <Ionicons
-                            name="paper-plane-outline"
-                            size={22}
-                            color={isDark ? "#94a3b8" : "#64748b"}
+                        <View
+                          style={{
+                            position: "absolute",
+                            left: 16,
+                            height: 58,
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                          pointerEvents="none"
+                        >
+                          <AuthIcon
+                            name="telegram"
+                            size={23}
+                            color={isDark ? "#cbd5e1" : "#475569"}
                           />
                         </View>
                       </View>
                     )}
                   />
                   {errors.telegram?.message ? (
-                    <Text className="text-red-500 text-xs mt-1.5 ml-1">
+                    <Text className="text-red-500 text-xs mt-1 ml-1">
                       {errors.telegram.message}
                     </Text>
                   ) : null}
@@ -541,6 +589,7 @@ export default function SignUpStep2() {
                   title="Finish Registration"
                   onPress={handleSubmit(handleComplete)}
                   loading={loading}
+                  disabled={isButtonDisabled}
                   isDark={isDark}
                   variant="primary"
                   size="lg"
@@ -644,10 +693,3 @@ const styles = StyleSheet.create({
     right: 8,
   },
 });
-
-
-
-
-
-
-

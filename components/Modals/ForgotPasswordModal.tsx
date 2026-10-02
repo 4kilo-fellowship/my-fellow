@@ -1,12 +1,14 @@
+import AuthIcon from "@/components/AuthIcon";
 import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
-import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as WebBrowser from "expo-web-browser";
 import React, { useState } from "react";
 import {
   Linking,
   Modal,
+  Platform,
+  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -30,15 +32,22 @@ const ForgotPasswordModal = () => {
 
   return (
     <>
-      <TouchableOpacity
-        activeOpacity={0.8}
-        className="mt-2"
+      <Pressable
         onPress={() => setModalVisible(true)}
+        android_ripple={{
+          color: "rgba(255, 103, 25, 0.2)",
+          borderless: true,
+          radius: 60,
+        }}
+        style={({ pressed }) => [
+          Platform.OS === "ios" && pressed ? { opacity: 0.7 } : undefined,
+        ]}
+        className="mt-2"
       >
         <Text className="text-primary font-bold text-base">
           Forgot Password?
         </Text>
-      </TouchableOpacity>
+      </Pressable>
 
       <Modal
         animationType="fade"
@@ -69,60 +78,106 @@ const ForgotPasswordModal = () => {
                   Contact Developers
                 </Text>
 
-                <TouchableOpacity onPress={() => setModalVisible(false)}>
-                  <Ionicons
+                <Pressable
+                  onPress={() => setModalVisible(false)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  android_ripple={{
+                    color: isDark
+                      ? "rgba(255, 255, 255, 0.2)"
+                      : "rgba(0, 0, 0, 0.15)",
+                    borderless: true,
+                    radius: 18,
+                  }}
+                  style={({ pressed }) => [
+                    {
+                      width: 36,
+                      height: 36,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: 18,
+                    },
+                    Platform.OS === "ios" && pressed
+                      ? { opacity: 0.6 }
+                      : undefined,
+                  ]}
+                >
+                  <AuthIcon
                     name="close"
                     size={22}
                     color={isDark ? "white" : "black"}
                   />
-                </TouchableOpacity>
+                </Pressable>
               </View>
 
-              <TouchableOpacity
-                activeOpacity={0.8}
+              <Pressable
                 onPress={() => {
                   setModalVisible(false);
                   openLink("tel:+251994627985");
                 }}
+                android_ripple={{
+                  color: isDark
+                    ? "rgba(255, 255, 255, 0.16)"
+                    : "rgba(0, 0, 0, 0.1)",
+                  borderless: false,
+                  foreground: true,
+                }}
+                style={({ pressed }) => [
+                  { borderRadius: 16, overflow: "hidden" },
+                  Platform.OS === "ios" && pressed
+                    ? { opacity: 0.7 }
+                    : undefined,
+                ]}
                 className={`flex-row items-center p-4 mb-4 rounded-2xl ${
                   isDark ? "bg-zinc-800" : "bg-zinc-100"
                 }`}
               >
-                <Ionicons name="call" size={24} color={PRIMARY} />
+                <AuthIcon name="phone" size={24} color={PRIMARY} />
                 <Text
                   className={`ml-4 text-lg flex-1 ${isDark ? "text-white" : "text-zinc-900"}`}
                 >
                   0994627985
                 </Text>
-                <Ionicons
-                  name="chevron-forward"
+                <AuthIcon
+                  name="chevron-right"
                   size={20}
                   color={isDark ? "#a1a1aa" : "#71717a"}
                 />
-              </TouchableOpacity>
+              </Pressable>
 
-              <TouchableOpacity
-                activeOpacity={0.8}
+              <Pressable
                 onPress={() => {
                   openLink("https://t.me/natitam1");
                   setModalVisible(false);
                 }}
+                android_ripple={{
+                  color: isDark
+                    ? "rgba(255, 255, 255, 0.16)"
+                    : "rgba(0, 0, 0, 0.1)",
+                  borderless: false,
+                  foreground: true,
+                }}
+                style={({ pressed }) => [
+                  { borderRadius: 16, overflow: "hidden" },
+                  Platform.OS === "ios" && pressed
+                    ? { opacity: 0.7 }
+                    : undefined,
+                ]}
                 className={`flex-row items-center p-4 rounded-2xl ${
                   isDark ? "bg-zinc-800" : "bg-zinc-100"
                 }`}
               >
-                <Ionicons name="paper-plane" size={24} color="#ff6619" />
+                <AuthIcon name="telegram" size={24} color="#ff6619" />
                 <Text
                   className={`ml-4 text-lg flex-1 ${isDark ? "text-white" : "text-zinc-900"}`}
                 >
                   @natitam1
                 </Text>
-                <Ionicons
-                  name="chevron-forward"
+                <AuthIcon
+                  name="chevron-right"
                   size={20}
                   color={isDark ? "#a1a1aa" : "#71717a"}
                 />
-              </TouchableOpacity>
+              </Pressable>
             </TouchableOpacity>
           </TouchableOpacity>
         </BlurView>

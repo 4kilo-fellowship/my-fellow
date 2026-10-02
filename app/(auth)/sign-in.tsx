@@ -1,10 +1,10 @@
 import AppButton from "@/components/AppButton";
-import BackButton from "@/components/BackButton";
+import AuthIcon from "@/components/AuthIcon";
 import ForgotPasswordModal from "@/components/Modals/ForgotPasswordModal";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
-import { Ionicons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
+import { useHeaderHeight } from "expo-router/react-navigation";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -13,19 +13,18 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   Text,
   TextInput,
-  TouchableOpacity,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-const HEADER_HEIGHT = SCREEN_HEIGHT * 0.36;
+const HEADER_HEIGHT = SCREEN_HEIGHT * 0.28;
 
 const signInSchema = z.object({
   phoneNumber: z
@@ -45,10 +44,11 @@ export default function SignIn() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const { theme } = useTheme();
   const isDark = theme === "dark";
-
+  const headerHeight = useHeaderHeight();
   const {
     control,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema),
@@ -57,6 +57,16 @@ export default function SignIn() {
       password: "",
     },
   });
+
+  const phoneNumberValue = watch("phoneNumber");
+  const passwordValue = watch("password");
+
+  const isFilled = Boolean(
+    phoneNumberValue && phoneNumberValue.trim().length >= 9 &&
+    passwordValue && passwordValue.trim().length >= 6
+  );
+
+  const isButtonDisabled = !isFilled;
 
   const onSubmit = async ({ phoneNumber, password }: SignInFormValues) => {
     const trimmedPhone = phoneNumber.trim();
@@ -71,7 +81,7 @@ export default function SignIn() {
       } else {
         router.replace("/(tabs)");
       }
-    } catch (error: any) {
+    } catch {
       const message = "Invalid phone number or password. Please try again.";
       setLoginError(message);
     } finally {
@@ -79,21 +89,13 @@ export default function SignIn() {
     }
   };
 
-  const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/(auth)/sign-up-step-1");
-    }
-  };
-
   return (
     <View className={`flex-1 ${isDark ? "bg-dark" : "bg-white"}`}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={{ flex: 1 }}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+          keyboardVerticalOffset={Platform.OS === "ios" ? headerHeight : 20}
         >
           <View
             className="bg-primary relative overflow-hidden items-center justify-center"
@@ -103,14 +105,10 @@ export default function SignIn() {
               borderBottomRightRadius: 40,
             }}
           >
-            <SafeAreaView edges={["top"]} className="absolute top-4 left-4 z-50">
-              <BackButton onPress={handleBack} overlay />
-            </SafeAreaView>
-
             <View className="flex-1 w-full justify-center items-center pt-10">
               <Image
                 source={require("@/assets/images/logo-white.png")}
-                style={{ width: "135%", height: "135%" }}
+                style={{ width: "150%", height: "150%" }}
                 resizeMode="contain"
               />
             </View>
@@ -139,13 +137,20 @@ export default function SignIn() {
                     control={control}
                     name="phoneNumber"
                     render={({ field: { onChange, onBlur, value } }) => (
-                      <View className="relative">
+                      <View
+                        style={{ height: 58, justifyContent: "center" }}
+                        className="relative"
+                      >
                         <TextInput
-                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 text-base focus:bg-transparent focus:border-primary ${
-                            errors.phoneNumber
-                              ? "border-red-500"
-                              : "focus:border-primary"
-                          }`}
+                          style={{
+                            height: 58,
+                            borderRadius: 22,
+                            paddingLeft: 50,
+                            paddingRight: 16,
+                            textAlignVertical: "center",
+                            includeFontPadding: false,
+                          }}
+                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-[22px] text-base focus:bg-transparent focus:border-primary`}
                           placeholder="0911234567"
                           placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           value={value}
@@ -157,11 +162,20 @@ export default function SignIn() {
                           autoComplete="username"
                           importantForAutofill="yes"
                         />
-                        <View className="absolute left-4 top-4">
-                          <Ionicons
-                            name="call-outline"
-                            size={22}
-                            color={isDark ? "#94a3b8" : "#64748b"}
+                        <View
+                          style={{
+                            position: "absolute",
+                            left: 16,
+                            height: 58,
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                          pointerEvents="none"
+                        >
+                          <AuthIcon
+                            name="phone"
+                            size={23}
+                            color={isDark ? "#cbd5e1" : "#475569"}
                           />
                         </View>
                       </View>
@@ -183,13 +197,20 @@ export default function SignIn() {
                     control={control}
                     name="password"
                     render={({ field: { onChange, onBlur, value } }) => (
-                      <View className="relative">
+                      <View
+                        style={{ height: 58, justifyContent: "center" }}
+                        className="relative"
+                      >
                         <TextInput
-                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-2xl p-4 pl-12 pr-12 text-base focus:bg-transparent ${
-                            errors.password
-                              ? "border-red-500"
-                              : "focus:border-primary"
-                          }`}
+                          style={{
+                            height: 58,
+                            borderRadius: 22,
+                            paddingLeft: 50,
+                            paddingRight: 50,
+                            textAlignVertical: "center",
+                            includeFontPadding: false,
+                          }}
+                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-[22px] text-base focus:bg-transparent focus:border-primary`}
                           placeholder="Enter your password"
                           placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           value={value}
@@ -201,26 +222,48 @@ export default function SignIn() {
                           autoComplete="password"
                           importantForAutofill="yes"
                         />
-                        <View className="absolute left-4 top-4">
-                          <Ionicons
-                            name="lock-closed-outline"
-                            size={22}
-                            color={isDark ? "#94a3b8" : "#64748b"}
+                        <View
+                          style={{
+                            position: "absolute",
+                            left: 16,
+                            height: 58,
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                          pointerEvents="none"
+                        >
+                          <AuthIcon
+                            name="lock"
+                            size={23}
+                            color={isDark ? "#cbd5e1" : "#475569"}
                           />
                         </View>
-                        <TouchableOpacity
+                        <Pressable
                           onPress={() => setShowPassword((prev) => !prev)}
-                          activeOpacity={0.7}
-                          className="absolute right-4 top-4"
+                          hitSlop={8}
+                          android_ripple={{
+                            color: isDark
+                              ? "rgba(255, 255, 255, 0.2)"
+                              : "rgba(0, 0, 0, 0.12)",
+                            borderless: true,
+                            radius: 20,
+                            foreground: true,
+                          }}
+                          style={{
+                            position: "absolute",
+                            right: 12,
+                            height: 58,
+                            width: 44,
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
                         >
-                          <Ionicons
-                            name={
-                              showPassword ? "eye-off-outline" : "eye-outline"
-                            }
-                            size={22}
-                            color={isDark ? "#94a3b8" : "#64748b"}
+                          <AuthIcon
+                            name={showPassword ? "eye-off" : "eye"}
+                            size={23}
+                            color={isDark ? "#cbd5e1" : "#475569"}
                           />
-                        </TouchableOpacity>
+                        </Pressable>
                       </View>
                     )}
                   />
@@ -247,23 +290,24 @@ export default function SignIn() {
                   title="Sign In"
                   onPress={handleSubmit(onSubmit)}
                   loading={loading}
+                  disabled={isButtonDisabled}
                   isDark={isDark}
                   variant="primary"
                   size="lg"
                 />
 
-                <View className="flex-row justify-center mt-6">
+                <View className="flex-row justify-center mt-6 items-center">
                   <Text
                     className={`${isDark ? "text-slate-400" : "text-slate-600"} font-medium text-base`}
                   >
                     Don&apos;t have an account?{" "}
                   </Text>
                   <Link href="/sign-up-step-1" asChild>
-                    <TouchableOpacity activeOpacity={0.8}>
+                    <Pressable className="px-1 py-0.5">
                       <Text className="text-primary font-bold text-base">
                         Register
                       </Text>
-                    </TouchableOpacity>
+                    </Pressable>
                   </Link>
                 </View>
 
@@ -298,5 +342,3 @@ export default function SignIn() {
     </View>
   );
 }
-
-

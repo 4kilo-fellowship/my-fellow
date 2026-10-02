@@ -2,18 +2,21 @@ import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-export type SignupStep = "signup-step-1" | "signup-step-2";
+export type SignupStep = "signup-step-1" | "otp-verify" | "signup-step-2";
 
 interface SignupState {
   step: SignupStep | null;
   fullName: string;
   phoneNumber: string;
   password: string;
+  verificationToken?: string | null;
   start: (data: {
     fullName: string;
     phoneNumber: string;
     password: string;
+    verificationToken?: string | null;
   }) => void;
+  setVerificationToken: (token: string) => void;
   setStep: (step: SignupStep) => void;
   clear: () => void;
 }
@@ -36,7 +39,13 @@ export const useSignupStore = create<SignupState>()(
       fullName: "",
       phoneNumber: "",
       password: "",
-      start: (data) => set({ ...data, step: "signup-step-2" }),
+      verificationToken: null,
+      start: (data) =>
+        set({
+          ...data,
+          step: "otp-verify",
+        }),
+      setVerificationToken: (verificationToken) => set({ verificationToken }),
       setStep: (step) => set({ step }),
       clear: () =>
         set({
@@ -44,8 +53,10 @@ export const useSignupStore = create<SignupState>()(
           fullName: "",
           phoneNumber: "",
           password: "",
+          verificationToken: null,
         }),
     }),
+
     {
       name: "signup-storage",
       storage: createJSONStorage(() => secureStorage),

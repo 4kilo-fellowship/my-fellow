@@ -59,6 +59,27 @@ export interface UpdatePhoneResponse {
 
 export type SignUpResponse = AuthResponse;
 
+export interface RequestOtpResponse {
+  success: boolean;
+  message: string;
+  phoneNumber: string;
+  expiresIn?: number;
+}
+
+export interface VerifyOtpResponse {
+  success: boolean;
+  message: string;
+  verificationToken: string;
+  phoneNumber: string;
+}
+
+export interface ResetPasswordResponse {
+  success: boolean;
+  message: string;
+  token?: string;
+  user?: User;
+}
+
 export interface AuthContextType {
   authState: AuthState;
   login: (phoneNumber: string, password: string) => Promise<LoginResponse>;
@@ -68,6 +89,20 @@ export interface AuthContextType {
   updateProfile: (data: Partial<SignUpData>) => Promise<User>;
   changePassword: (data: ChangePasswordData) => Promise<ApiResponse<void>>;
   updatePhone: (data: UpdatePhoneData) => Promise<UpdatePhoneResponse>;
+  requestOtp: (
+    phoneNumber: string,
+    purpose?: "signup" | "reset-password"
+  ) => Promise<RequestOtpResponse>;
+  verifyOtp: (
+    phoneNumber: string,
+    code: string,
+    purpose?: "signup" | "reset-password"
+  ) => Promise<VerifyOtpResponse>;
+  resetPasswordWithOtp: (
+    phoneNumber: string,
+    verificationToken: string,
+    newPassword: string
+  ) => Promise<ResetPasswordResponse>;
 }
 
 export type AuthProviderProps = {

@@ -3,11 +3,17 @@ import React from "react";
 import {
   ActivityIndicator,
   DimensionValue,
-  Text,
+  Platform,
   Pressable,
+  Text,
 } from "react-native";
 
-export type AppButtonVariant = "primary" | "secondary" | "tertiary" | "outline" | "ghost";
+export type AppButtonVariant =
+  | "primary"
+  | "secondary"
+  | "tertiary"
+  | "outline"
+  | "ghost";
 type ButtonSize = "sm" | "md" | "lg";
 
 export interface AppButtonProps {
@@ -38,7 +44,7 @@ export default function AppButton({
   disabled = false,
   icon,
   iconPosition = "right",
-  iconSize = 20,
+  iconSize,
   iconColor,
   isDark = false,
   fullWidth = true,
@@ -48,12 +54,15 @@ export default function AppButton({
   const text = label ?? title ?? "";
   const isDisabled = disabled || loading;
 
+  const handlePress = () => {
+    if (isDisabled) return;
+    onPress();
+  };
+
   const getVariantStyles = () => {
     switch (variant) {
       case "secondary":
-        return isDark
-          ? "bg-slate-800"
-          : "bg-slate-100";
+        return isDark ? "bg-slate-800" : "bg-slate-100";
       case "outline":
         return "bg-transparent border border-primary";
       case "ghost":
@@ -66,7 +75,8 @@ export default function AppButton({
 
   const getTextColor = () => {
     if (variant === "primary") return "text-white";
-    if (variant === "secondary") return isDark ? "text-slate-200" : "text-slate-800";
+    if (variant === "secondary")
+      return isDark ? "text-slate-200" : "text-slate-800";
     return "text-primary";
   };
 
@@ -78,26 +88,63 @@ export default function AppButton({
         return "h-12 px-5";
       case "lg":
       default:
-        return "h-[52px] px-6";
+        return "h-14 px-6";
     }
   };
 
-  const buttonHeight = size === "sm" ? 44 : size === "md" ? 48 : 52;
+  const buttonHeight = size === "sm" ? 38 : size === "md" ? 48 : 56;
 
   const finalIconColor =
     iconColor || (variant === "primary" ? "white" : "#ff6719");
 
+  const fontSize = size === "sm" ? 14 : 16;
+  const defaultIconSize = size === "sm" ? 16 : 18;
+
+  const onLightBackground =
+    variant === "outline" || variant === "ghost" || variant === "secondary";
+  const rippleColor = onLightBackground
+    ? "rgba(0, 0, 0, 0.12)"
+    : "rgba(255, 255, 255, 0.28)";
+
   return (
     <Pressable
-      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
-      style={[
-        { height: buttonHeight, borderRadius: 16 },
+      pointerEvents={isDisabled ? "none" : "auto"}
+      onPress={handlePress}
+      pressRetentionOffset={8}
+      android_ripple={
+        !isDisabled
+          ? {
+              color: rippleColor,
+              borderless: false,
+              foreground: true,
+            }
+          : undefined
+      }
+      style={({ pressed }) => [
+        {
+          height: buttonHeight,
+          minHeight: buttonHeight,
+          borderRadius: 9999,
+          overflow: "hidden",
+          opacity: isDisabled ? 0.5 : Platform.OS === "ios" && pressed ? 0.85 : 1,
+        },
         width ? { width } : undefined,
+        !isDisabled && variant === "primary"
+          ? {
+              shadowColor: "#ff6719",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.35,
+              shadowRadius: 8,
+              elevation: 4,
+            }
+          : undefined,
       ]}
-      className={`${fullWidth ? "w-full" : ""} ${getVariantStyles()} ${getSizeStyles()} rounded-2xl flex-row justify-center items-center gap-2 ${
-        isDisabled ? "opacity-50" : ""
-      } ${className}`}
+      className={`${fullWidth ? "w-full" : ""} ${getVariantStyles()} ${getSizeStyles()} ${
+        isDisabled ? "opacity-50" : "opacity-100"
+      } rounded-full flex-row justify-center items-center gap-2.5 ${className}`}
     >
       {loading ? (
         <ActivityIndicator
@@ -107,27 +154,31 @@ export default function AppButton({
       ) : (
         <>
           {icon && iconPosition === "left" && (
-            <Ionicons name={icon} size={iconSize} color={finalIconColor} />
+            <Ionicons
+              name={icon}
+              size={iconSize ?? defaultIconSize}
+              color={finalIconColor}
+            />
           )}
-          <Text className={`${getTextColor()} font-semibold text-base`}>
+          <Text
+            style={{
+              fontSize,
+              fontWeight: "700",
+              lineHeight: 22,
+            }}
+            className={`${getTextColor()} text-center`}
+          >
             {text}
           </Text>
           {icon && iconPosition === "right" && (
-            <Ionicons name={icon} size={iconSize} color={finalIconColor} />
+            <Ionicons
+              name={icon}
+              size={iconSize ?? defaultIconSize}
+              color={finalIconColor}
+            />
           )}
         </>
       )}
     </Pressable>
   );
 }
-
-
-
-
-
-
-
-
-
-
-

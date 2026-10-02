@@ -194,6 +194,8 @@ const Teams = () => {
       <FlatList
         data={filteredTeams}
         keyExtractor={(item) => item.id}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         renderItem={({ item }) => {
           const getUserTeams = () => {
             const teams: string[] = [];

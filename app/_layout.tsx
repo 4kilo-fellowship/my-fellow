@@ -1,12 +1,12 @@
 import { AuthProvider } from "@/context/AuthContext";
-import { ThemeProvider } from "@/context/ThemeContext";
+import { useTheme, ThemeProvider } from "@/context/ThemeContext";
 import { useAppStore } from "@/stores/app.store";
 import { FontAwesome5, Ionicons, Octicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
-import { Platform, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
 import "./global.css";
@@ -114,6 +114,84 @@ const renderCustomToast = (
   );
 };
 
+function RootNavigator() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        animation: "simple_push",
+        gestureEnabled: true,
+        contentStyle: { backgroundColor: isDark ? "#1A1A1B" : "#ffffff" },
+      }}
+    >
+      <Stack.Screen name="index" options={{ title: "Splash" }} />
+      <Stack.Screen
+        name="onboarding"
+        options={{ title: "Onboarding", animation: "fade" }}
+      />
+      <Stack.Screen name="(tabs)" options={{ title: "Home" }} />
+      <Stack.Screen name="(auth)" options={{ title: "Auth" }} />
+      <Stack.Screen name="events/[id]" options={{ title: "Events" }} />
+      <Stack.Screen name="teams/[id]" options={{ title: "Teams" }} />
+      <Stack.Screen name="devotion/[id]" options={{ title: "Devotions" }} />
+      <Stack.Screen name="leaders" options={{ title: "Leaders" }} />
+      <Stack.Screen name="locations" options={{ title: "Locations" }} />
+      <Stack.Screen name="programs" options={{ title: "Programs" }} />
+      <Stack.Screen name="settings" options={{ title: "Settings" }} />
+      <Stack.Screen
+        name="reminders/manage"
+        options={{ title: "Manage Alert" }}
+      />
+      <Stack.Screen name="about" options={{ title: "About" }} />
+      <Stack.Screen name="help" options={{ title: "Help & Support" }} />
+      <Stack.Screen
+        name="notifications"
+        options={{ title: "Notifications" }}
+      />
+      <Stack.Screen
+        name="marketplace/index"
+        options={{ title: "Fellowship Store" }}
+      />
+      <Stack.Screen
+        name="marketplace/[id]"
+        options={{ title: "Product Details" }}
+      />
+      <Stack.Screen
+        name="marketplace/orders"
+        options={{ title: "My Orders" }}
+      />
+      <Stack.Screen name="givings" options={{ title: "My Givings" }} />
+      <Stack.Screen
+        name="change-password"
+        options={{
+          title: "Change Password",
+          presentation: "modal",
+          animation: "slide_from_bottom",
+        }}
+      />
+      <Stack.Screen
+        name="edit-profile"
+        options={{
+          title: "Edit Profile",
+          presentation: "modal",
+          animation: "slide_from_bottom",
+        }}
+      />
+      <Stack.Screen
+        name="update-phone"
+        options={{
+          title: "Update Phone",
+          presentation: "modal",
+          animation: "slide_from_bottom",
+        }}
+      />
+    </Stack>
+  );
+}
+
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     ...Ionicons.font,
@@ -154,77 +232,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
         <ThemeProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              animation: "default",
-              animationDuration: 350,
-              fullScreenGestureEnabled: Platform.OS === "ios",
-              gestureEnabled: true,
-            }}
-          >
-            <Stack.Screen name="index" options={{ title: "Splash" }} />
-            <Stack.Screen
-              name="onboarding"
-              options={{ title: "Onboarding", animation: "fade" }}
-            />
-            <Stack.Screen name="(tabs)" options={{ title: "Home" }} />
-            <Stack.Screen name="(auth)" options={{ title: "Auth" }} />
-            <Stack.Screen name="events/[id]" options={{ title: "Events" }} />
-            <Stack.Screen name="teams/[id]" options={{ title: "Teams" }} />
-            <Stack.Screen name="devotion/[id]" options={{ title: "Devotions" }} />
-            <Stack.Screen name="leaders" options={{ title: "Leaders" }} />
-            <Stack.Screen name="locations" options={{ title: "Locations" }} />
-            <Stack.Screen name="programs" options={{ title: "Programs" }} />
-            <Stack.Screen name="settings" options={{ title: "Settings" }} />
-            <Stack.Screen
-              name="reminders/manage"
-              options={{ title: "Manage Alert" }}
-            />
-            <Stack.Screen name="about" options={{ title: "About" }} />
-            <Stack.Screen name="help" options={{ title: "Help & Support" }} />
-            <Stack.Screen
-              name="notifications"
-              options={{ title: "Notifications" }}
-            />
-            <Stack.Screen
-              name="marketplace/index"
-              options={{ title: "Fellowship Store" }}
-            />
-            <Stack.Screen
-              name="marketplace/[id]"
-              options={{ title: "Product Details" }}
-            />
-            <Stack.Screen
-              name="marketplace/orders"
-              options={{ title: "My Orders" }}
-            />
-            <Stack.Screen name="givings" options={{ title: "My Givings" }} />
-            <Stack.Screen
-              name="change-password"
-              options={{
-                title: "Change Password",
-                presentation: "modal",
-                animation: "slide_from_bottom",
-              }}
-            />
-            <Stack.Screen
-              name="edit-profile"
-              options={{
-                title: "Edit Profile",
-                presentation: "modal",
-                animation: "slide_from_bottom",
-              }}
-            />
-            <Stack.Screen
-              name="update-phone"
-              options={{
-                title: "Update Phone",
-                presentation: "modal",
-                animation: "slide_from_bottom",
-              }}
-            />
-          </Stack>
+          <RootNavigator />
           <Toast
             position="bottom"
             bottomOffset={40}

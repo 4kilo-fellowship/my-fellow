@@ -1,4 +1,12 @@
-import { LoginResponse, SignUpData, SignUpResponse, User } from "@/types";
+import {
+  LoginResponse,
+  RequestOtpResponse,
+  ResetPasswordResponse,
+  SignUpData,
+  SignUpResponse,
+  User,
+  VerifyOtpResponse,
+} from "@/types";
 import { isAxiosError } from "axios";
 import * as SecureStore from "expo-secure-store";
 import api from "./api";
@@ -221,7 +229,85 @@ export const authService = {
     }
   },
 
+  requestOtp: async (
+    phoneNumber: string,
+    purpose: "signup" | "reset-password" = "signup",
+  ): Promise<RequestOtpResponse> => {
+    try {
+      const response = await api.post("/auth/request-otp", {
+        phoneNumber,
+        purpose,
+      });
+      return response.data;
+    } catch (error) {
+      if (isAxiosError(error)) {
+        const message =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          "Failed to send verification code";
+        throw new Error(message);
+      }
+      throw error;
+    }
+  },
+
+  verifyOtp: async (
+    phoneNumber: string,
+    code: string,
+    purpose: "signup" | "reset-password" = "signup",
+  ): Promise<VerifyOtpResponse> => {
+    try {
+      const response = await api.post("/auth/verify-otp", {
+        phoneNumber,
+        code,
+        purpose,
+      });
+      return response.data;
+    } catch (error) {
+      if (isAxiosError(error)) {
+        const message =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          "Invalid verification code";
+        throw new Error(message);
+      }
+      throw error;
+    }
+  },
+
+  resetPassword: async (
+    phoneNumber: string,
+    verificationToken: string,
+    newPassword: string,
+  ): Promise<ResetPasswordResponse> => {
+    try {
+      const response = await api.post("/auth/reset-password", {
+        phoneNumber,
+        verificationToken,
+        newPassword,
+      });
+      const result = response.data;
+
+      if (result.token) {
+        api.defaults.headers.common.Authorization = `Bearer ${result.token}`;
+        await SecureStore.setItemAsync("userToken", result.token);
+      }
+
+      return result;
+    } catch (error) {
+      if (isAxiosError(error)) {
+        const message =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          "Password reset failed";
+        throw new Error(message);
+      }
+      throw error;
+    }
+  },
+
   logout: async (): Promise<void> => {
     delete api.defaults.headers.common.Authorization;
   },
 };
+

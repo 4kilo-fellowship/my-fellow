@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 const signupStepRoute = {
   "signup-step-1": "/(auth)/sign-up-step-1",
+  "otp-verify": "/(auth)/otp-verify",
   "signup-step-2": "/(auth)/sign-up-step-2",
 } as const;
 
