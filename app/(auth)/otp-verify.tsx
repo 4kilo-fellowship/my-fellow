@@ -1,5 +1,4 @@
 import AppButton from "@/components/AppButton";
-import AuthIcon from "@/components/AuthIcon";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -73,7 +72,7 @@ export default function OtpVerify() {
     const interval = setInterval(() => {
       setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
-    return () => clearInterval(interval);
+    return () => clearInterval(timer);
   }, [resendCooldown]);
 
   const isFilled = otpCode.length === OTP_LENGTH && /^\d{6}$/.test(otpCode);
@@ -83,7 +82,6 @@ export default function OtpVerify() {
     const cleaned = text.replace(/\D/g, "").slice(0, OTP_LENGTH);
     setOtpCode(cleaned);
 
-    // If all 6 digits entered, dismiss keyboard smoothly
     if (cleaned.length === OTP_LENGTH) {
       Keyboard.dismiss();
     }
@@ -202,26 +200,29 @@ export default function OtpVerify() {
               flexGrow: 1,
               justifyContent: "space-between",
               paddingHorizontal: 24,
-              paddingTop: 16,
+              paddingTop: 12,
               paddingBottom: 28,
             }}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
           >
-            {/* Top Info Section */}
+            {/* Top Section */}
             <View>
-              <View className="items-center mb-4 mt-2">
-                <View
-                  className={`w-16 h-16 rounded-2xl items-center justify-center mb-4 ${
-                    isDark ? "bg-zinc-800/80" : "bg-orange-50"
-                  }`}
-                >
-                  <AuthIcon name="lock" size={30} color="#ff6719" />
-                </View>
+              {/* Simple black & white dash indicator at the top */}
+              <View
+                style={[
+                  styles.topDash,
+                  {
+                    backgroundColor: isDark ? "#ffffff" : "#0f172a",
+                  },
+                ]}
+              />
 
+              {/* Title & Centered Symmetrical Text Positioning */}
+              <View className="items-center mb-6">
                 <Text
-                  className={`text-2xl sm:text-3xl font-bold tracking-tight text-center mb-2 ${
+                  className={`text-2xl sm:text-3xl font-bold tracking-tight text-center mb-2.5 ${
                     isDark ? "text-white" : "text-slate-900"
                   }`}
                 >
@@ -229,31 +230,46 @@ export default function OtpVerify() {
                 </Text>
 
                 <Text
-                  className={`text-sm text-center leading-5 px-3 ${
+                  className={`text-sm text-center leading-6 px-4 ${
                     isDark ? "text-slate-400" : "text-slate-600"
                   }`}
                 >
-                  Enter the 6-digit code sent via SMS to
-                </Text>
-
-                <View className="flex-row items-center justify-center mt-1.5 gap-2">
-                  <Text className="text-base font-bold text-primary">
+                  Enter the 6-digit code sent to{"\n"}
+                  <Text
+                    className={`text-base font-bold ${
+                      isDark ? "text-white" : "text-slate-900"
+                    }`}
+                  >
                     {phoneNumber || "your phone number"}
                   </Text>
-                  <Pressable
-                    onPress={() => router.back()}
-                    hitSlop={8}
-                    className="py-0.5 px-1.5 rounded-md bg-primary/10"
-                  >
-                    <Text className="text-primary text-xs font-semibold">
-                      Edit
-                    </Text>
-                  </Pressable>
-                </View>
+                </Text>
+
+                {/* Symmetrical Edit Phone Action */}
+                <Pressable
+                  onPress={() => router.back()}
+                  hitSlop={8}
+                  android_ripple={{
+                    color: isDark
+                      ? "rgba(255, 255, 255, 0.12)"
+                      : "rgba(0, 0, 0, 0.08)",
+                    borderless: true,
+                    radius: 20,
+                  }}
+                  style={({ pressed }) => [
+                    Platform.OS === "ios" && pressed
+                      ? { opacity: 0.6 }
+                      : undefined,
+                  ]}
+                  className="mt-2 py-1 px-3.5 rounded-full"
+                >
+                  <Text className="text-primary font-semibold text-xs tracking-wide">
+                    Wrong number? Edit
+                  </Text>
+                </Pressable>
               </View>
 
               {/* Center Dash OTP Slots */}
-              <View className="my-8 items-center justify-center">
+              <View className="my-6 items-center justify-center">
                 <Pressable
                   onPress={handleSlotPress}
                   className="flex-row items-center justify-center gap-3 relative py-2"
@@ -363,10 +379,45 @@ export default function OtpVerify() {
               </View>
             </View>
 
-            {/* Bottom Actions */}
+            {/* Bottom Actions: Verify Later placed ABOVE Verify button */}
             <View className="mt-6 mb-2">
+              {/* Native transparent ripple "Verify Later" button placed ABOVE */}
+              <View className="mb-3 rounded-2xl overflow-hidden">
+                <Pressable
+                  onPress={handleVerifyLater}
+                  android_ripple={{
+                    color: isDark
+                      ? "rgba(255, 255, 255, 0.15)"
+                      : "rgba(0, 0, 0, 0.08)",
+                    borderless: false,
+                    foreground: true,
+                  }}
+                  style={({ pressed }) => [
+                    Platform.OS === "ios" && pressed
+                      ? { opacity: 0.65 }
+                      : undefined,
+                    {
+                      height: 50,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    },
+                  ]}
+                >
+                  <Text
+                    className={`font-semibold text-base ${
+                      isDark ? "text-slate-300" : "text-slate-700"
+                    }`}
+                  >
+                    {purpose === "signup"
+                      ? "Verify Later"
+                      : "Skip to Sign In"}
+                  </Text>
+                </Pressable>
+              </View>
+
+              {/* Primary action button: "Verify" only */}
               <AppButton
-                title="Verify & Continue"
+                title="Verify"
                 icon="checkmark-circle"
                 iconPosition="right"
                 onPress={handleVerify}
@@ -376,21 +427,6 @@ export default function OtpVerify() {
                 variant="primary"
                 size="lg"
               />
-
-              {/* Graceful Skip / Verify Later option */}
-              <View className="flex-row justify-center mt-4 items-center">
-                <Pressable
-                  onPress={handleVerifyLater}
-                  hitSlop={8}
-                  className="px-3 py-2"
-                >
-                  <Text className="text-primary font-semibold text-sm">
-                    {purpose === "signup"
-                      ? "Verify Later (Continue to App) →"
-                      : "Skip to Sign In →"}
-                  </Text>
-                </Pressable>
-              </View>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -409,6 +445,14 @@ export default function OtpVerify() {
 }
 
 const styles = StyleSheet.create({
+  topDash: {
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+    alignSelf: "center",
+    marginBottom: 24,
+    marginTop: 6,
+  },
   slotContainer: {
     width: 44,
     height: 60,
