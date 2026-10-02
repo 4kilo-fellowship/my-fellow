@@ -295,11 +295,11 @@ export default function OtpVerify() {
           justifyContent: "space-between",
           alignItems: "center",
         },
-        // Circular input boxes
+        // Box input boxes matching primely-uat
         otpBox: {
           width: 48,
-          height: 48,
-          borderRadius: 24, // Perfect circle
+          height: 56,
+          borderRadius: 14,
           borderWidth: 1.5,
           borderColor: isDark ? "#334155" : "#e2e8f0",
           backgroundColor: isDark ? "#0f172a" : "#f8fafc",
@@ -319,6 +319,7 @@ export default function OtpVerify() {
         },
         otpBoxFilled: {
           borderColor: "#ff6719",
+          borderWidth: 2,
           backgroundColor: isDark ? "#1e293b" : "#ffffff",
         },
         timerSection: {
