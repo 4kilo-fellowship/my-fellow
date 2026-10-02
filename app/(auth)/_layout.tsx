@@ -63,8 +63,10 @@ export default function AuthLayout() {
             ...navBar,
             headerShown: true,
             gestureEnabled: true,
-            headerStyle: { backgroundColor: "#ff6719" },
-            headerTintColor: "#ffffff",
+            headerStyle: {
+              backgroundColor: isDark ? "#1A1A1B" : "#ffffff",
+            },
+            headerTintColor: isDark ? "#ffffff" : "#0f172a",
           }}
         />
 

@@ -8,8 +8,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Dimensions,
-  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -21,9 +19,9 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-const HEADER_HEIGHT = SCREEN_HEIGHT * 0.28;
+const OTP_LENGTH = 6;
 
 export default function OtpVerify() {
   const router = useRouter();
@@ -41,10 +39,12 @@ export default function OtpVerify() {
       | "signup"
       | "reset-password";
 
-  const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
+  const [otpCode, setOtpCode] = useState<string>("");
+  const [isFocused, setIsFocused] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [resendCooldown, setResendCooldown] = useState<number>(60);
   const [resending, setResending] = useState<boolean>(false);
+  const [cursorVisible, setCursorVisible] = useState<boolean>(true);
   const [errorModal, setErrorModal] = useState<{
     visible: boolean;
     title: string;
@@ -57,9 +57,17 @@ export default function OtpVerify() {
     type: "error",
   });
 
-  const inputRefs = useRef<Array<TextInput | null>>([]);
+  const textInputRef = useRef<TextInput | null>(null);
 
-  // Auto countdown for resend cooldown
+  // Blinking cursor effect for active dash slot
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCursorVisible((prev) => !prev);
+    }, 550);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Auto countdown for resend timer
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const interval = setInterval(() => {
@@ -68,37 +76,16 @@ export default function OtpVerify() {
     return () => clearInterval(interval);
   }, [resendCooldown]);
 
-  const otpCode = otpDigits.join("");
-  const isFilled = otpCode.length === 6 && /^\d{6}$/.test(otpCode);
+  const isFilled = otpCode.length === OTP_LENGTH && /^\d{6}$/.test(otpCode);
   const isButtonDisabled = !isFilled || loading;
 
-  const handleDigitChange = (index: number, value: string) => {
-    const cleaned = value.replace(/\D/g, "");
+  const handleOtpChange = (text: string) => {
+    const cleaned = text.replace(/\D/g, "").slice(0, OTP_LENGTH);
+    setOtpCode(cleaned);
 
-    // Handle full paste
-    if (cleaned.length === 6) {
-      const nextDigits = cleaned.split("");
-      setOtpDigits(nextDigits);
-      inputRefs.current[5]?.focus();
-      return;
-    }
-
-    const nextDigits = [...otpDigits];
-    nextDigits[index] = cleaned.slice(-1);
-    setOtpDigits(nextDigits);
-
-    // Auto-advance
-    if (cleaned && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyPress = (index: number, e: any) => {
-    if (e.nativeEvent.key === "Backspace" && !otpDigits[index] && index > 0) {
-      const nextDigits = [...otpDigits];
-      nextDigits[index - 1] = "";
-      setOtpDigits(nextDigits);
-      inputRefs.current[index - 1]?.focus();
+    // If all 6 digits entered, dismiss keyboard smoothly
+    if (cleaned.length === OTP_LENGTH) {
+      Keyboard.dismiss();
     }
   };
 
@@ -137,11 +124,30 @@ export default function OtpVerify() {
       setErrorModal({
         visible: true,
         title: "Verification Failed",
-        message,
+        message: `${message}\n\nYou can also choose to continue now and verify your phone number later.`,
         type: "error",
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerifyLater = () => {
+    if (purpose === "signup") {
+      signupStore.setStep("signup-step-2");
+      router.push({
+        pathname: "/sign-up-step-2",
+        params: {
+          fullName: signupStore.fullName,
+          phoneNumber,
+          password: signupStore.password,
+        },
+      });
+    } else {
+      router.push({
+        pathname: "/(auth)/sign-in",
+        params: { verifiedPhone: phoneNumber },
+      });
     }
   };
 
@@ -152,8 +158,8 @@ export default function OtpVerify() {
     try {
       await requestOtp(phoneNumber, purpose);
       setResendCooldown(60);
-      setOtpDigits(["", "", "", "", "", ""]);
-      inputRefs.current[0]?.focus();
+      setOtpCode("");
+      textInputRef.current?.focus();
       setErrorModal({
         visible: true,
         title: "Code Sent",
@@ -168,7 +174,7 @@ export default function OtpVerify() {
       setErrorModal({
         visible: true,
         title: "Resend Failed",
-        message,
+        message: `${message}\n\nYou can tap 'Verify Later' below if SMS delivery is delayed.`,
         type: "error",
       });
     } finally {
@@ -176,148 +182,214 @@ export default function OtpVerify() {
     }
   };
 
+  const handleSlotPress = () => {
+    textInputRef.current?.focus();
+  };
+
   return (
-    <View className={`flex-1 ${isDark ? "bg-dark" : "bg-white"}`}>
+    <SafeAreaView
+      edges={["bottom"]}
+      className={`flex-1 ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}
+    >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={{ flex: 1 }}
           keyboardVerticalOffset={Platform.OS === "ios" ? headerHeight : 20}
         >
-          <View
-            className="bg-primary overflow-hidden items-center justify-center"
-            style={{
-              height: HEADER_HEIGHT,
-              borderBottomLeftRadius: 40,
-              borderBottomRightRadius: 40,
-            }}
-          >
-            <View className="flex-1 w-full justify-center items-center pt-10">
-              <Image
-                source={require("@/assets/images/logo-white.png")}
-                style={{ width: "150%", height: "150%" }}
-                resizeMode="contain"
-              />
-            </View>
-          </View>
-
           <ScrollView
-            contentContainerStyle={{ flexGrow: 1 }}
+            contentContainerStyle={{
+              flexGrow: 1,
+              justifyContent: "space-between",
+              paddingHorizontal: 24,
+              paddingTop: 16,
+              paddingBottom: 28,
+            }}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
           >
-            <View
-              className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} pt-10 px-6`}
-            >
-              <View className="items-center mb-6">
+            {/* Top Info Section */}
+            <View>
+              <View className="items-center mb-4 mt-2">
                 <View
-                  className={`w-14 h-14 rounded-full items-center justify-center mb-3 ${
-                    isDark ? "bg-zinc-800" : "bg-orange-50"
+                  className={`w-16 h-16 rounded-2xl items-center justify-center mb-4 ${
+                    isDark ? "bg-zinc-800/80" : "bg-orange-50"
                   }`}
                 >
-                  <AuthIcon name="lock" size={28} color="#ff6719" />
+                  <AuthIcon name="lock" size={30} color="#ff6719" />
                 </View>
+
                 <Text
-                  className={`text-2xl font-bold mb-1 text-center ${
+                  className={`text-2xl sm:text-3xl font-bold tracking-tight text-center mb-2 ${
                     isDark ? "text-white" : "text-slate-900"
                   }`}
                 >
                   Verification Code
                 </Text>
+
                 <Text
-                  className={`text-sm text-center px-4 leading-5 ${
+                  className={`text-sm text-center leading-5 px-3 ${
                     isDark ? "text-slate-400" : "text-slate-600"
                   }`}
                 >
-                  We have sent a 6-digit secure code via SMS to{" "}
-                  <Text className="font-bold text-primary">{phoneNumber}</Text>
+                  Enter the 6-digit code sent via SMS to
                 </Text>
-              </View>
 
-              {/* 6 Digit OTP input */}
-              <View className="flex-row justify-between items-center my-4 px-1">
-                {otpDigits.map((digit, index) => (
-                  <TextInput
-                    key={index}
-                    ref={(ref) => {
-                      inputRefs.current[index] = ref;
-                    }}
-                    value={digit}
-                    onChangeText={(val) => handleDigitChange(index, val)}
-                    onKeyPress={(e) => handleKeyPress(index, e)}
-                    keyboardType="number-pad"
-                    maxLength={1}
-                    selectTextOnFocus
-                    style={[
-                      styles.otpBox,
-                      {
-                        borderColor: digit
-                          ? "#ff6719"
-                          : isDark
-                            ? "#334155"
-                            : "#e2e8f0",
-                        backgroundColor: isDark ? "#0f172a" : "#f8fafc",
-                        color: isDark ? "#ffffff" : "#0f172a",
-                      },
-                    ]}
-                  />
-                ))}
-              </View>
-
-              {/* Resend Cooldown */}
-              <View className="flex-row justify-center items-center mt-3">
-                <Text
-                  className={`text-sm ${
-                    isDark ? "text-slate-400" : "text-slate-600"
-                  }`}
-                >
-                  Didn&apos;t receive code?{" "}
-                </Text>
-                {resendCooldown > 0 ? (
-                  <Text className="text-primary font-bold text-sm">
-                    Resend in {resendCooldown}s
+                <View className="flex-row items-center justify-center mt-1.5 gap-2">
+                  <Text className="text-base font-bold text-primary">
+                    {phoneNumber || "your phone number"}
                   </Text>
-                ) : (
-                  <Pressable
-                    onPress={handleResend}
-                    disabled={resending}
-                    className="px-1 py-0.5"
-                  >
-                    <Text className="text-primary font-bold text-sm">
-                      {resending ? "Sending..." : "Resend Code"}
-                    </Text>
-                  </Pressable>
-                )}
-              </View>
-
-              <View className="mt-8 mb-6">
-                <AppButton
-                  title="Verify & Continue"
-                  icon="checkmark-circle"
-                  iconPosition="right"
-                  onPress={handleVerify}
-                  loading={loading}
-                  disabled={isButtonDisabled}
-                  isDark={isDark}
-                  variant="primary"
-                  size="lg"
-                />
-
-                <View className="flex-row justify-center mt-5 items-center">
                   <Pressable
                     onPress={() => router.back()}
-                    className="px-2 py-1"
+                    hitSlop={8}
+                    className="py-0.5 px-1.5 rounded-md bg-primary/10"
                   >
-                    <Text
-                      className={`${
-                        isDark ? "text-slate-400" : "text-slate-600"
-                      } font-medium text-sm`}
-                    >
-                      Change Phone Number
+                    <Text className="text-primary text-xs font-semibold">
+                      Edit
                     </Text>
                   </Pressable>
                 </View>
+              </View>
+
+              {/* Center Dash OTP Slots */}
+              <View className="my-8 items-center justify-center">
+                <Pressable
+                  onPress={handleSlotPress}
+                  className="flex-row items-center justify-center gap-3 relative py-2"
+                >
+                  {Array.from({ length: OTP_LENGTH }).map((_, index) => {
+                    const char = otpCode[index] || "";
+                    const isSlotActive =
+                      isFocused &&
+                      (index === otpCode.length ||
+                        (index === OTP_LENGTH - 1 &&
+                          otpCode.length === OTP_LENGTH));
+                    const isFilledSlot = Boolean(char);
+
+                    return (
+                      <View
+                        key={index}
+                        style={styles.slotContainer}
+                        className="items-center justify-end"
+                      >
+                        {/* Digit or Cursor */}
+                        <View className="h-12 justify-center items-center">
+                          {isFilledSlot ? (
+                            <Text
+                              className={`text-3xl font-bold ${
+                                isDark ? "text-white" : "text-slate-900"
+                              }`}
+                            >
+                              {char}
+                            </Text>
+                          ) : isSlotActive && cursorVisible ? (
+                            <View className="w-[2.5px] h-7 bg-primary rounded-full" />
+                          ) : (
+                            <View
+                              className={`w-2 h-0.5 rounded-full ${
+                                isDark ? "bg-zinc-700" : "bg-slate-300"
+                              }`}
+                            />
+                          )}
+                        </View>
+
+                        {/* Underline Dash Line */}
+                        <View
+                          style={[
+                            styles.dashLine,
+                            {
+                              backgroundColor: isSlotActive
+                                ? "#ff6719"
+                                : isFilledSlot
+                                  ? "#ff6719"
+                                  : isDark
+                                    ? "#3f3f46"
+                                    : "#cbd5e1",
+                              height: isSlotActive ? 3.5 : isFilledSlot ? 3 : 2.5,
+                              transform: [
+                                { scaleX: isSlotActive ? 1.08 : 1 },
+                              ],
+                            },
+                          ]}
+                        />
+                      </View>
+                    );
+                  })}
+
+                  {/* Hidden native input for seamless accessibility and keyboard handling */}
+                  <TextInput
+                    ref={textInputRef}
+                    value={otpCode}
+                    onChangeText={handleOtpChange}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    keyboardType="number-pad"
+                    textContentType="oneTimeCode"
+                    autoComplete="sms-otp"
+                    maxLength={OTP_LENGTH}
+                    autoFocus
+                    style={styles.hiddenInput}
+                    caretHidden
+                  />
+                </Pressable>
+
+                {/* Resend Countdown */}
+                <View className="flex-row justify-center items-center mt-6">
+                  <Text
+                    className={`text-sm ${
+                      isDark ? "text-slate-400" : "text-slate-600"
+                    }`}
+                  >
+                    Didn&apos;t receive code?{" "}
+                  </Text>
+                  {resendCooldown > 0 ? (
+                    <Text className="text-primary font-bold text-sm">
+                      Resend in {resendCooldown}s
+                    </Text>
+                  ) : (
+                    <Pressable
+                      onPress={handleResend}
+                      disabled={resending}
+                      hitSlop={8}
+                      className="px-1 py-0.5"
+                    >
+                      <Text className="text-primary font-bold text-sm">
+                        {resending ? "Sending..." : "Resend Code"}
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
+              </View>
+            </View>
+
+            {/* Bottom Actions */}
+            <View className="mt-6 mb-2">
+              <AppButton
+                title="Verify & Continue"
+                icon="checkmark-circle"
+                iconPosition="right"
+                onPress={handleVerify}
+                loading={loading}
+                disabled={isButtonDisabled}
+                isDark={isDark}
+                variant="primary"
+                size="lg"
+              />
+
+              {/* Graceful Skip / Verify Later option */}
+              <View className="flex-row justify-center mt-4 items-center">
+                <Pressable
+                  onPress={handleVerifyLater}
+                  hitSlop={8}
+                  className="px-3 py-2"
+                >
+                  <Text className="text-primary font-semibold text-sm">
+                    {purpose === "signup"
+                      ? "Verify Later (Continue to App) →"
+                      : "Skip to Sign In →"}
+                  </Text>
+                </Pressable>
               </View>
             </View>
           </ScrollView>
@@ -332,18 +404,26 @@ export default function OtpVerify() {
         type={errorModal.type || "error"}
         isDark={isDark}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  otpBox: {
-    width: 48,
-    height: 56,
-    borderRadius: 16,
-    borderWidth: 2,
-    textAlign: "center",
-    fontSize: 22,
-    fontWeight: "700",
+  slotContainer: {
+    width: 44,
+    height: 60,
+  },
+  dashLine: {
+    width: "100%",
+    borderRadius: 2,
+    marginTop: 6,
+  },
+  hiddenInput: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0,
   },
 });
