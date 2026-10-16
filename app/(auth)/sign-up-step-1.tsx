@@ -1,9 +1,11 @@
 import AppButton from "@/components/AppButton";
 import AuthIcon from "@/components/AuthIcon";
 import { InfoModal } from "@/components/Modals/InfoModal";
+import { NativeRipplePressable } from "@/components/NativeRipplePressable";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useSignupStore } from "@/stores/signup.store";
+import { formatErrorMessage } from "@/utils/alertUtils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useHeaderHeight } from "expo-router/react-navigation";
@@ -41,6 +43,7 @@ type SignUpStep1FormValues = z.infer<typeof signUpStep1Schema>;
 export default function SignUpStep1() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState<boolean>(false);
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -132,8 +135,8 @@ export default function SignUpStep1() {
       if (isRegistered) {
         setErrorModal({
           visible: true,
-          title: "Phone Already Registered",
-          message,
+          title: "Already Registered",
+          message: "This phone number is already registered. Please sign in.",
         });
       } else {
         // OTP service unavailable (API key, network, etc.)
@@ -325,25 +328,43 @@ export default function SignUpStep1() {
                     name="password"
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View
-                        style={{ height: 58, justifyContent: "center" }}
-                        className="relative"
+                        style={{
+                          width: "100%",
+                          height: 58,
+                          position: "relative",
+                          justifyContent: "center",
+                        }}
                       >
                         <TextInput
                           style={{
+                            width: "100%",
                             height: 58,
                             borderRadius: 22,
                             paddingLeft: 50,
-                            paddingRight: 50,
+                            paddingRight: 56,
                             textAlignVertical: "center",
-                            includeFontPadding: false,
+                            fontSize: 16,
+                            borderWidth: 2,
+                            borderColor: isPasswordFocused
+                              ? "#ff6719"
+                              : isDark
+                                ? "#1e293b"
+                                : "#e2e8f0",
+                            backgroundColor: isDark ? "#0f172a" : "#f8fafc",
+                            color: isDark ? "#ffffff" : "#0f172a",
                           }}
-                          className={`w-full ${isDark ? "bg-slate-900 text-white focus:border-primary border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-[22px] text-base focus:bg-transparent focus:border-primary`}
                           placeholder="Create a strong password"
                           placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           secureTextEntry={!showPassword}
                           value={value}
                           onChangeText={onChange}
-                          onBlur={onBlur}
+                          onFocus={() => setIsPasswordFocused(true)}
+                          onBlur={() => {
+                            onBlur();
+                            setIsPasswordFocused(false);
+                          }}
+                          autoCapitalize="none"
+                          autoCorrect={false}
                           textContentType="newPassword"
                           autoComplete="password-new"
                           importantForAutofill="yes"
@@ -352,7 +373,8 @@ export default function SignUpStep1() {
                           style={{
                             position: "absolute",
                             left: 16,
-                            height: 58,
+                            top: 0,
+                            bottom: 0,
                             justifyContent: "center",
                             alignItems: "center",
                           }}
@@ -366,23 +388,27 @@ export default function SignUpStep1() {
                         </View>
                         <Pressable
                           onPress={() => setShowPassword(!showPassword)}
-                          hitSlop={8}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                           android_ripple={{
                             color: isDark
                               ? "rgba(255, 255, 255, 0.2)"
                               : "rgba(0, 0, 0, 0.12)",
                             borderless: true,
-                            radius: 20,
-                            foreground: true,
+                            radius: 22,
+                            foreground: false,
                           }}
                           style={{
                             position: "absolute",
-                            right: 12,
+                            right: 4,
+                            top: 0,
                             height: 58,
-                            width: 44,
+                            width: 52,
                             justifyContent: "center",
                             alignItems: "center",
+                            zIndex: 10,
                           }}
+                          accessibilityRole="button"
+                          accessibilityLabel={showPassword ? "Hide password" : "Show password"}
                         >
                           <AuthIcon
                             name={showPassword ? "eye-off" : "eye"}
@@ -420,14 +446,15 @@ export default function SignUpStep1() {
                   >
                     Already have an account?{" "}
                   </Text>
-                  <Pressable
+                  <NativeRipplePressable
                     onPress={handleBackToLogin}
-                    className="px-1 py-0.5"
+                    className="px-2.5 py-1"
+                    isDark={isDark}
                   >
                     <Text className="text-primary font-bold text-base">
                       Log In
                     </Text>
-                  </Pressable>
+                  </NativeRipplePressable>
                 </View>
               </View>
             </View>

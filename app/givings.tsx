@@ -1,3 +1,4 @@
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { PRIMARY } from "@/constants/colors";
 import { useTheme } from "@/context/ThemeContext";
 import { GivingRecord, usePaymentStore } from "@/stores/payment.store";
@@ -119,34 +120,13 @@ const GivingsScreen = () => {
       <StatusBar style={isDark ? "light" : "dark"} />
 
       {/* Header */}
-      <View
-        className={`px-5 pb-4 flex-row items-center border-b ${
-          isDark
-            ? "bg-[#0A0A0A] border-gray-800"
-            : "bg-[#f8fafc] border-gray-200"
-        }`}
-        style={{ paddingTop: top + 10 }}
-      >
-        <Pressable
-          onPress={() => router.back()}
-          android_ripple={{
-            color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
-            borderless: true,
-          }}
-          className="w-11 h-11 rounded-full items-center justify-center mr-4"
-        >
-          <Ionicons
-            name="arrow-back"
-            size={24}
-            color={isDark ? "white" : "#0f172a"}
-          />
-        </Pressable>
-        <Text
-          className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
-        >
-          My Giving History
-        </Text>
-      </View>
+      <ScreenHeader
+        title="My Giving History"
+        containerStyle={{
+          backgroundColor: isDark ? "#0A0A0A" : "#f8fafc",
+          borderBottomColor: isDark ? "#1f2937" : "#e5e7eb",
+        }}
+      />
 
       {isLoadingGivings && myGivings.length === 0 ? (
         <View className="flex-1 items-center justify-center">

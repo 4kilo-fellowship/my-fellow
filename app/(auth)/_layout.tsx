@@ -68,14 +68,8 @@ export default function AuthLayout() {
         <Stack.Screen
           name="legal"
           options={{
-            ...navBar,
-            title: "Legal Information",
-            headerShown: true,
+            headerShown: false,
             gestureEnabled: true,
-            headerStyle: {
-              backgroundColor: isDark ? "#1A1A1B" : "#ffffff",
-            },
-            headerTintColor: isDark ? "#ffffff" : "#0f172a",
           }}
         />
       </Stack>

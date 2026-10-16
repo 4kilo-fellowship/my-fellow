@@ -1,4 +1,5 @@
 import AuthIcon from "@/components/AuthIcon";
+import { NativeRipplePressable } from "@/components/NativeRipplePressable";
 import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { BlurView } from "expo-blur";
@@ -32,22 +33,16 @@ const ForgotPasswordModal = () => {
 
   return (
     <>
-      <Pressable
+      <NativeRipplePressable
         onPress={() => setModalVisible(true)}
-        android_ripple={{
-          color: "rgba(255, 103, 25, 0.2)",
-          borderless: true,
-          radius: 60,
-        }}
-        style={({ pressed }) => [
-          Platform.OS === "ios" && pressed ? { opacity: 0.7 } : undefined,
-        ]}
-        className="mt-2"
+        className="mt-2 px-2.5 py-1"
+        isDark={isDark}
       >
         <Text className="text-primary font-bold text-base">
           Forgot Password?
         </Text>
-      </Pressable>
+      </NativeRipplePressable>
+
 
       <Modal
         animationType="fade"

@@ -2,10 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
+  Alert,
   Image,
   StyleSheet,
   Text,
-  ToastAndroid,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -26,7 +26,7 @@ const VideoItem = ({ item, isDark = false }: VideoItemProps) => {
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={() => {
-        ToastAndroid.show("Coming soon...", ToastAndroid.SHORT);
+        Alert.alert("Coming Soon", "Videos will be available soon.");
       }}
     >
       <View

@@ -1,11 +1,14 @@
 import AppButton from "@/components/AppButton";
 import AuthIcon from "@/components/AuthIcon";
 import ForgotPasswordModal from "@/components/Modals/ForgotPasswordModal";
+import { NativeAlert } from "@/components/NativeAlert";
+import { NativeRipplePressable } from "@/components/NativeRipplePressable";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
-import { Link, useRouter } from "expo-router";
+import { formatErrorMessage } from "@/utils/alertUtils";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useHeaderHeight } from "expo-router/react-navigation";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   Dimensions,
@@ -38,10 +41,22 @@ type SignInFormValues = z.infer<typeof signInSchema>;
 
 export default function SignIn() {
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [isPhoneFocused, setIsPhoneFocused] = useState<boolean>(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const { login } = useAuth();
   const router = useRouter();
-  const [loginError, setLoginError] = useState<string | null>(null);
+  const params = useLocalSearchParams<{ verifiedPhone?: string }>();
+  const [alertConfig, setAlertConfig] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type?: "success" | "error" | "info";
+  }>({
+    visible: false,
+    title: "",
+    message: "",
+  });
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const headerHeight = useHeaderHeight();
@@ -49,6 +64,7 @@ export default function SignIn() {
     control,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema),
@@ -57,6 +73,18 @@ export default function SignIn() {
       password: "",
     },
   });
+
+  useEffect(() => {
+    if (params.verifiedPhone) {
+      setValue("phoneNumber", params.verifiedPhone);
+      setAlertConfig({
+        visible: true,
+        title: "Success",
+        message: "Phone number verified.",
+        type: "success",
+      });
+    }
+  }, [params.verifiedPhone, setValue]);
 
   const phoneNumberValue = watch("phoneNumber");
   const passwordValue = watch("password");
@@ -72,7 +100,6 @@ export default function SignIn() {
     const trimmedPhone = phoneNumber.trim();
 
     setLoading(true);
-    setLoginError(null);
 
     try {
       await login(trimmedPhone, password);
@@ -81,9 +108,14 @@ export default function SignIn() {
       } else {
         router.replace("/(tabs)");
       }
-    } catch {
-      const message = "Invalid phone number or password. Please try again.";
-      setLoginError(message);
+    } catch (err: any) {
+      const formatted = formatErrorMessage(err);
+      setAlertConfig({
+        visible: true,
+        title: formatted.title,
+        message: formatted.message,
+        type: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -138,24 +170,40 @@ export default function SignIn() {
                     name="phoneNumber"
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View
-                        style={{ height: 58, justifyContent: "center" }}
-                        className="relative"
+                        style={{
+                          width: "100%",
+                          height: 58,
+                          position: "relative",
+                          justifyContent: "center",
+                        }}
                       >
                         <TextInput
                           style={{
+                            width: "100%",
                             height: 58,
                             borderRadius: 22,
                             paddingLeft: 50,
                             paddingRight: 16,
                             textAlignVertical: "center",
-                            includeFontPadding: false,
+                            fontSize: 16,
+                            borderWidth: 2,
+                            borderColor: isPhoneFocused
+                              ? "#ff6719"
+                              : isDark
+                                ? "#1e293b"
+                                : "#e2e8f0",
+                            backgroundColor: isDark ? "#0f172a" : "#f8fafc",
+                            color: isDark ? "#ffffff" : "#0f172a",
                           }}
-                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-[22px] text-base focus:bg-transparent focus:border-primary`}
                           placeholder="0911234567"
                           placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           value={value}
                           onChangeText={onChange}
-                          onBlur={onBlur}
+                          onFocus={() => setIsPhoneFocused(true)}
+                          onBlur={() => {
+                            onBlur();
+                            setIsPhoneFocused(false);
+                          }}
                           keyboardType="phone-pad"
                           autoCapitalize="none"
                           textContentType="username"
@@ -166,7 +214,8 @@ export default function SignIn() {
                           style={{
                             position: "absolute",
                             left: 16,
-                            height: 58,
+                            top: 0,
+                            bottom: 0,
                             justifyContent: "center",
                             alignItems: "center",
                           }}
@@ -198,26 +247,43 @@ export default function SignIn() {
                     name="password"
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View
-                        style={{ height: 58, justifyContent: "center" }}
-                        className="relative"
+                        style={{
+                          width: "100%",
+                          height: 58,
+                          position: "relative",
+                          justifyContent: "center",
+                        }}
                       >
                         <TextInput
                           style={{
+                            width: "100%",
                             height: 58,
                             borderRadius: 22,
                             paddingLeft: 50,
-                            paddingRight: 50,
+                            paddingRight: 56,
                             textAlignVertical: "center",
-                            includeFontPadding: false,
+                            fontSize: 16,
+                            borderWidth: 2,
+                            borderColor: isPasswordFocused
+                              ? "#ff6719"
+                              : isDark
+                                ? "#1e293b"
+                                : "#e2e8f0",
+                            backgroundColor: isDark ? "#0f172a" : "#f8fafc",
+                            color: isDark ? "#ffffff" : "#0f172a",
                           }}
-                          className={`w-full ${isDark ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-900 border-slate-200"} border-2 rounded-[22px] text-base focus:bg-transparent focus:border-primary`}
                           placeholder="Enter your password"
                           placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
                           value={value}
-                          keyboardType="default"
                           onChangeText={onChange}
-                          onBlur={onBlur}
+                          onFocus={() => setIsPasswordFocused(true)}
+                          onBlur={() => {
+                            onBlur();
+                            setIsPasswordFocused(false);
+                          }}
                           secureTextEntry={!showPassword}
+                          autoCapitalize="none"
+                          autoCorrect={false}
                           textContentType="password"
                           autoComplete="password"
                           importantForAutofill="yes"
@@ -226,7 +292,8 @@ export default function SignIn() {
                           style={{
                             position: "absolute",
                             left: 16,
-                            height: 58,
+                            top: 0,
+                            bottom: 0,
                             justifyContent: "center",
                             alignItems: "center",
                           }}
@@ -240,23 +307,27 @@ export default function SignIn() {
                         </View>
                         <Pressable
                           onPress={() => setShowPassword((prev) => !prev)}
-                          hitSlop={8}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                           android_ripple={{
                             color: isDark
                               ? "rgba(255, 255, 255, 0.2)"
                               : "rgba(0, 0, 0, 0.12)",
                             borderless: true,
-                            radius: 20,
-                            foreground: true,
+                            radius: 22,
+                            foreground: false,
                           }}
                           style={{
                             position: "absolute",
-                            right: 12,
+                            right: 4,
+                            top: 0,
                             height: 58,
-                            width: 44,
+                            width: 52,
                             justifyContent: "center",
                             alignItems: "center",
+                            zIndex: 10,
                           }}
+                          accessibilityRole="button"
+                          accessibilityLabel={showPassword ? "Hide password" : "Show password"}
                         >
                           <AuthIcon
                             name={showPassword ? "eye-off" : "eye"}
@@ -273,12 +344,6 @@ export default function SignIn() {
                     </Text>
                   ) : null}
                 </View>
-
-                {loginError ? (
-                  <Text className="text-red-500 text-sm mt-3 ml-1">
-                    {loginError}
-                  </Text>
-                ) : null}
 
                 <View className="items-end">
                   <ForgotPasswordModal />
@@ -302,13 +367,15 @@ export default function SignIn() {
                   >
                     Don&apos;t have an account?{" "}
                   </Text>
-                  <Link href="/sign-up-step-1" asChild>
-                    <Pressable className="px-1 py-0.5">
-                      <Text className="text-primary font-bold text-base">
-                        Register
-                      </Text>
-                    </Pressable>
-                  </Link>
+                  <NativeRipplePressable
+                    onPress={() => router.push("/sign-up-step-1")}
+                    className="px-2.5 py-1"
+                    isDark={isDark}
+                  >
+                    <Text className="text-primary font-bold text-base">
+                      Register
+                    </Text>
+                  </NativeRipplePressable>
                 </View>
 
                 <View className="mt-6 px-2">
@@ -339,6 +406,16 @@ export default function SignIn() {
           </ScrollView>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
+
+      <NativeAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() => setAlertConfig((prev) => ({ ...prev, visible: false }))}
+        isDark={isDark}
+        type={alertConfig.type}
+      />
     </View>
   );
 }
+

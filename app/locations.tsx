@@ -1,4 +1,4 @@
-import { Placeholder } from "@/components";
+import { Placeholder, ScreenHeader } from "@/components";
 import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { useLocationsStore } from "@/stores/locations.store";
@@ -176,31 +176,13 @@ export default function LocationsScreen() {
 
       <View className={`flex-1 ${isDark ? "bg-dark" : "bg-white"}`}>
         {/* Header */}
-        <View
-          className={`px-5 pb-4 flex-row items-center border-b ${
-            isDark ? "bg-dark border-gray-800" : "bg-white border-gray-200"
-          }`}
-          style={{ paddingTop: top + 10 }}
-        >
-          <TouchableOpacity
-            onPress={() => router.back()}
-            activeOpacity={0.8}
-            className="w-11 h-11 rounded-full items-center justify-center mr-4"
-          >
-            <Ionicons
-              name="arrow-back"
-              size={22}
-              color={isDark ? "white" : "#0f172a"}
-            />
-          </TouchableOpacity>
-          <Text
-            className={`text-xl font-bold ${
-              isDark ? "text-white" : "text-gray-900"
-            }`}
-          >
-            Locations
-          </Text>
-        </View>
+        <ScreenHeader
+          title="Locations"
+          containerStyle={{
+            backgroundColor: isDark ? "#0A0A0A" : "#ffffff",
+            borderBottomColor: isDark ? "#1f2937" : "#e5e7eb",
+          }}
+        />
 
         {loading && locations.length === 0 ? (
           <View

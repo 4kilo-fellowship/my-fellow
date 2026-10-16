@@ -1,3 +1,4 @@
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { useTheme } from "@/context/ThemeContext";
 import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useRef } from "react";
@@ -7,11 +8,12 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function LegalScreen() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const insets = useSafeAreaInsets();
   const { section } = useLocalSearchParams<{ section?: string }>();
   const scrollViewRef = useRef<ScrollView>(null);
   const privacyRef = useRef<View>(null);
@@ -45,13 +47,15 @@ export default function LegalScreen() {
   );
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-black" : "bg-white"}`}>
+    <View className={`flex-1 ${isDark ? "bg-black" : "bg-white"}`}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+
+      <ScreenHeader title="Legal Information" />
 
       <ScrollView
         ref={scrollViewRef}
         className="flex-1 px-6"
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         showsVerticalScrollIndicator={false}
       >
         <View
@@ -99,6 +103,6 @@ export default function LegalScreen() {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

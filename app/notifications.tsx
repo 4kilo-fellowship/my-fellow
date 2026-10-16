@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Animated,
   FlatList,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -152,15 +153,31 @@ export default function NotificationsScreen() {
           <View style={styles.headerLeft}>
             <Pressable
               onPress={() => router.back()}
+              hitSlop={8}
               android_ripple={{
-                color: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+                color: isDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.12)",
                 borderless: true,
+                radius: 22,
               }}
-              style={styles.backBtn}
+              style={({ pressed }) => [
+                styles.backBtn,
+                {
+                  backgroundColor: isDark
+                    ? "rgba(255, 255, 255, 0.06)"
+                    : "rgba(0, 0, 0, 0.04)",
+                  ...(Platform.OS === "ios" && pressed
+                    ? {
+                        backgroundColor: isDark
+                          ? "rgba(255, 255, 255, 0.16)"
+                          : "rgba(0, 0, 0, 0.12)",
+                      }
+                    : null),
+                },
+              ]}
             >
               <Ionicons
                 name="arrow-back"
-                size={26}
+                size={22}
                 color={isDark ? "white" : "#111827"}
               />
             </Pressable>
@@ -382,10 +399,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   backBtn: {
-    padding: 8,
-    marginLeft: -8,
-    marginRight: 8,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
   },
   headerTitle: {
     fontSize: 24,

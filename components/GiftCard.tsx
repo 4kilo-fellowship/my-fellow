@@ -3,10 +3,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React from "react";
 import {
+  Alert,
   Platform,
   StyleSheet,
   Text,
-  ToastAndroid,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -19,12 +19,9 @@ interface GiftCardProps {
 
 const GiftCard = ({ item, onPress, isDark }: GiftCardProps) => {
   const handlePress = () => {
-    if (Platform.OS === "android") {
-      ToastAndroid.show("Coming Soon...", ToastAndroid.SHORT);
-    } else {
-      onPress(item);
-    }
+    onPress(item);
   };
+
 
   return (
     <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>

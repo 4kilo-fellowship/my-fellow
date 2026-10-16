@@ -1,3 +1,4 @@
+import { ScreenHeader } from "@/components/ScreenHeader";
 import OrderCard from "@/components/Marketplace/OrderCard";
 import { useTheme } from "@/context/ThemeContext";
 import { useMarketplaceStore } from "@/stores/marketplace.store";
@@ -103,38 +104,13 @@ export default function OrdersScreen() {
       <StatusBar style={isDark ? "light" : "dark"} />
 
       {/* Header */}
-      <View
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 10,
-          paddingTop: top + 10,
-          paddingHorizontal: 20,
-          height: STATIC_HEADER_HEIGHT,
+      <ScreenHeader
+        title="My Orders"
+        containerStyle={{
           backgroundColor: isDark ? "#0A0A0A" : "#f8fafc",
+          borderBottomColor: isDark ? "#1f2937" : "#e5e7eb",
         }}
-      >
-        <View className="flex-row items-center">
-          <TouchableOpacity
-            onPress={() => router.back()}
-            activeOpacity={0.8}
-            className="w-11 h-11 rounded-full items-center justify-center mr-4"
-          >
-            <Ionicons
-              name="arrow-back"
-              size={24}
-              color={isDark ? "white" : "#0f172a"}
-            />
-          </TouchableOpacity>
-          <Text
-            className={`flex-1 text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
-          >
-            My Orders
-          </Text>
-        </View>
-      </View>
+      />
 
       {/* Loading */}
       {ordersLoading && orders.length === 0 ? (
@@ -151,13 +127,10 @@ export default function OrdersScreen() {
         <FlatList
           data={orders}
           keyExtractor={(item) => item.id}
-          ListHeaderComponent={
-            <View style={{ height: STATIC_HEADER_HEIGHT }} />
-          }
           contentContainerStyle={{
             paddingHorizontal: 20,
             paddingBottom: 40,
-            paddingTop: 4,
+            paddingTop: 16,
           }}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => <OrderCard order={item} isDark={isDark} />}

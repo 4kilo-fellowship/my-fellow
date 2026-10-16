@@ -1,3 +1,4 @@
+import { ScreenHeader } from "@/components/ScreenHeader";
 import CartBadge from "@/components/Marketplace/CartBadge";
 import CartSheet from "@/components/Marketplace/CartSheet";
 import ProductCard from "@/components/Marketplace/ProductCard";
@@ -279,40 +280,13 @@ export default function MarketplaceScreen() {
       )}
 
       {/* Static Header */}
-      <View
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 10,
-          paddingTop: top + 10,
-          paddingHorizontal: 20,
-          height: STATIC_HEADER_HEIGHT,
-          backgroundColor: isDark ? "#0A0A0A" : "#f8fafc",
-        }}
-      >
-        <View className="flex-row items-center">
-          <TouchableOpacity
-            onPress={() => router.back()}
-            activeOpacity={0.8}
-            className="w-11 h-11 rounded-full items-center justify-center mr-4"
-          >
-            <Ionicons
-              name="arrow-back"
-              size={24}
-              color={isDark ? "white" : "#0f172a"}
-            />
-          </TouchableOpacity>
-          <Text
-            className={`flex-1 text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
-          >
-            Fellowship Store
-          </Text>
+      <ScreenHeader
+        title="Fellowship Store"
+        rightAction={
           <TouchableOpacity
             onPress={() => router.push("/marketplace/orders" as any)}
             activeOpacity={0.8}
-            className="w-11 h-11 rounded-full items-center justify-center ml-auto"
+            className="w-11 h-11 rounded-full items-center justify-center"
           >
             <Ionicons
               name="receipt-outline"
@@ -320,8 +294,16 @@ export default function MarketplaceScreen() {
               color={isDark ? "white" : "#0f172a"}
             />
           </TouchableOpacity>
-        </View>
-      </View>
+        }
+        containerStyle={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: isDark ? "#0A0A0A" : "#f8fafc",
+          borderBottomColor: isDark ? "#1f2937" : "#e5e7eb",
+        }}
+      />
 
       {/* Collapsible Section: Description and Filters */}
       <Animated.View

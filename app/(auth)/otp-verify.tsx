@@ -1,7 +1,9 @@
 import { InfoModal } from "@/components/Modals/InfoModal";
+import { NativeRipplePressable } from "@/components/NativeRipplePressable";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useSignupStore } from "@/stores/signup.store";
+import { formatErrorMessage } from "@/utils/alertUtils";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -247,11 +249,8 @@ export default function OtpVerify() {
         });
       }
     } catch (err: any) {
-      const message =
-        err.response?.data?.message ||
-        err.message ||
-        "Invalid OTP code. Please try again.";
-      flashError(message, true);
+      const formatted = formatErrorMessage(err, "Incorrect verification code. Try again.");
+      flashError(formatted.message, true);
     } finally {
       submitLock.current = false;
       setLoading(false);
@@ -294,15 +293,12 @@ export default function OtpVerify() {
       setInfoModal({
         visible: true,
         title: "Code Sent",
-        message: `A new 6-digit code has been sent via SMS to ${currentPhone}.`,
+        message: "Verification code sent.",
         type: "info",
       });
     } catch (err: any) {
-      const message =
-        err.response?.data?.message ||
-        err.message ||
-        "Could not resend code. Please try again later.";
-      flashError(message);
+      const formatted = formatErrorMessage(err, "Could not resend code. Try again.");
+      flashError(formatted.message);
     } finally {
       setResending(false);
     }
@@ -383,17 +379,14 @@ export default function OtpVerify() {
       setInfoModal({
         visible: true,
         title: "Phone Updated",
-        message: `Phone number updated to ${editPhoneValue}. A new verification code has been sent.`,
+        message: "Phone number updated.",
         type: "info",
       });
       inputRef.current?.focus();
     } catch (err: any) {
-      const message =
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to send code to new number.";
+      const formatted = formatErrorMessage(err, "Failed to update phone number.");
       setCheckingState("invalid");
-      setCheckingMessage(message);
+      setCheckingMessage(formatted.message);
     } finally {
       setIsUpdatingPhone(false);
     }
@@ -441,51 +434,93 @@ export default function OtpVerify() {
           color: isDark ? "#ffffff" : "#0f172a",
           marginBottom: 8,
         },
+        // Unified Horizontal Subtitle Row with Edit Pill
+        subtitleRow: {
+          flexDirection: "row",
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 26,
+          marginTop: 2,
+          paddingHorizontal: 4,
+        },
+        subtitleText: {
+          fontSize: 15,
+          lineHeight: 22,
+          textAlign: "center",
+          color: isDark ? "#94a3b8" : "#64748b",
+          marginRight: 8,
+          includeFontPadding: false,
+          textAlignVertical: "center",
+        },
+        phoneBoxWrapper: {
+          borderRadius: 16,
+          overflow: "hidden",
+        },
+        phoneBox: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          flexWrap: "nowrap",
+          height: 32,
+          paddingHorizontal: 10,
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: isDark ? "#334155" : "#e2e8f0",
+          backgroundColor: isDark ? "#1e293b" : "#f8fafc",
+        },
+        phoneText: {
+          fontSize: 14,
+          fontWeight: "700",
+          lineHeight: 18,
+          color: isDark ? "#ffffff" : "#0f172a",
+          includeFontPadding: false,
+          textAlignVertical: "center",
+          marginRight: 6,
+        },
         subtitle: {
           fontSize: 15,
           lineHeight: 22,
           textAlign: "center",
           color: isDark ? "#94a3b8" : "#64748b",
-          marginBottom: 10,
         },
-        phoneRow: {
+        phoneIconWrap: {
+          marginRight: 4,
+          justifyContent: "center",
+          alignItems: "center",
+        },
+        phoneDivider: {
+          width: 1,
+          height: 14,
+          backgroundColor: isDark ? "#334155" : "#e2e8f0",
+          marginHorizontal: 6,
+        },
+        editIconWrap: {
+          marginRight: 2,
+          justifyContent: "center",
+          alignItems: "center",
+        },
+        editActionRow: {
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "center",
-          gap: 6,
-          marginBottom: 28,
-          paddingVertical: 5,
-          paddingHorizontal: 12,
-          borderRadius: 20,
-          backgroundColor: isDark
-            ? "rgba(255, 255, 255, 0.06)"
-            : "rgba(0, 0, 0, 0.04)",
+          flexWrap: "nowrap",
         },
-        phoneText: {
-          fontSize: 16,
-          fontWeight: "700",
-          color: isDark ? "#ffffff" : "#0f172a",
-        },
-        editBadge: {
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 3,
-          paddingHorizontal: 8,
-          paddingVertical: 3,
-          borderRadius: 12,
-          backgroundColor: "rgba(255, 103, 25, 0.12)",
-        },
-        editBadgeText: {
+        editText: {
           fontSize: 12,
           fontWeight: "700",
+          lineHeight: 16,
           color: "#ff6719",
+          includeFontPadding: false,
+          textAlignVertical: "center",
+          marginLeft: 3,
         },
         otpWrap: {
           position: "relative",
           width: "100%",
           height: 62,
           justifyContent: "center",
-          marginBottom: 12,
+          marginBottom: 8,
         },
         cells: {
           flexDirection: "row",
@@ -524,25 +559,57 @@ export default function OtpVerify() {
           borderRadius: 1,
           backgroundColor: isDark ? "#ffffff" : "#0f172a",
         },
-        errorSlot: {
-          width: "100%",
-          minHeight: 28,
-          justifyContent: "center",
+        // Right below boxes row: left has error/loading, right has Verify Later
+        belowBoxesRow: {
+          flexDirection: "row",
           alignItems: "center",
-          marginBottom: 12,
+          justifyContent: "space-between",
+          width: "100%",
+          minHeight: 36,
+          marginBottom: 20,
+          paddingHorizontal: 2,
+        },
+        statusArea: {
+          flex: 1,
+          justifyContent: "center",
+          paddingRight: 8,
         },
         errorText: {
           fontSize: 13,
           fontWeight: "600",
           color: "#ef4444",
-          textAlign: "center",
+        },
+        verifyingRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 6,
+        },
+        verifyingText: {
+          fontSize: 13,
+          fontWeight: "600",
+          color: "#ff6719",
+        },
+        // Verify Later Button at the right of below the boxes
+        verifyLaterWrapper: {
+          borderRadius: 10,
+          overflow: "hidden",
+        },
+        verifyLaterButton: {
+          paddingVertical: 6,
+          paddingHorizontal: 10,
+          borderRadius: 10,
+        },
+        verifyLaterText: {
+          fontSize: 14,
+          fontWeight: "700",
+          color: "#ff6719",
         },
         resendRow: {
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "center",
           gap: 6,
-          marginBottom: 28,
+          marginTop: 6,
         },
         resendHint: {
           fontSize: 14,
@@ -604,14 +671,17 @@ export default function OtpVerify() {
         },
         modalInput: {
           flex: 1,
-          fontSize: 17,
+          fontSize: 16,
           fontWeight: "600",
           color: isDark ? "#ffffff" : "#0f172a",
           marginLeft: 8,
+          paddingVertical: 0,
+          textAlignVertical: "center",
         },
         checkingRow: {
           flexDirection: "row",
           alignItems: "center",
+          justifyContent: "flex-start",
           gap: 6,
           minHeight: 22,
           marginBottom: 20,
@@ -620,6 +690,44 @@ export default function OtpVerify() {
         checkingText: {
           fontSize: 12,
           fontWeight: "600",
+          lineHeight: 16,
+          includeFontPadding: false,
+          textAlignVertical: "center",
+        },
+        modalButtonsRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        },
+        modalCancelButton: {
+          flex: 1,
+          height: 46,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: isDark ? "#334155" : "#e2e8f0",
+          backgroundColor: isDark ? "#1e293b" : "#f1f5f9",
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        modalCancelText: {
+          fontSize: 15,
+          fontWeight: "600",
+          color: isDark ? "#94a3b8" : "#64748b",
+        },
+        modalConfirmButton: {
+          flex: 1,
+          height: 46,
+          borderRadius: 12,
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "row",
+          gap: 6,
+        },
+        modalConfirmText: {
+          color: "#ffffff",
+          fontWeight: "700",
+          fontSize: 15,
         },
       }),
     [isDark],
@@ -657,22 +765,45 @@ export default function OtpVerify() {
               Enter the 6-digit code we sent to
             </Text>
 
-            {/* Phone Number with Interactive "Checking State" Edit Trigger */}
-            <Pressable
-              onPress={() => {
-                setEditPhoneValue(currentPhone);
-                setCheckingState("valid");
-                setCheckingMessage("Current phone number");
-                setIsEditModalOpen(true);
-              }}
-              style={styles.phoneRow}
-            >
-              <Text style={styles.phoneText}>{currentPhone}</Text>
-              <View style={styles.editBadge}>
-                <Ionicons name="pencil" size={11} color="#ff6719" />
-                <Text style={styles.editBadgeText}>Edit</Text>
-              </View>
-            </Pressable>
+            {/* Native Ripple Edit Phone Box right below Enter 6-digit */}
+            <View style={styles.phoneBoxWrapper}>
+              <Pressable
+                onPress={() => {
+                  setEditPhoneValue(currentPhone);
+                  setCheckingState("valid");
+                  setCheckingMessage("Current phone number");
+                  setIsEditModalOpen(true);
+                }}
+                android_ripple={{
+                  color: isDark
+                    ? "rgba(255, 255, 255, 0.14)"
+                    : "rgba(0, 0, 0, 0.08)",
+                  borderless: false,
+                }}
+                style={({ pressed }) => [
+                  styles.phoneBox,
+                  Platform.OS === "ios" && pressed
+                    ? { opacity: 0.7 }
+                    : undefined,
+                ]}
+              >
+                <View style={styles.phoneIconWrap}>
+                  <Ionicons
+                    name="call"
+                    size={13}
+                    color={isDark ? "#94a3b8" : "#64748b"}
+                  />
+                </View>
+                <Text style={styles.phoneText}>{currentPhone}</Text>
+                <View style={styles.phoneDivider} />
+                <View style={styles.editActionRow}>
+                  <View style={styles.editIconWrap}>
+                    <Ionicons name="pencil" size={11} color="#ff6719" />
+                  </View>
+                  <Text style={styles.editText}>Edit</Text>
+                </View>
+              </Pressable>
+            </View>
 
             {/* High-Performance Fast Input Boxes with 100% Reliable Native Touch Capture */}
             <Animated.View
@@ -760,94 +891,54 @@ export default function OtpVerify() {
               </View>
             </Animated.View>
 
-            {/* Inline Error Slot */}
-            <View style={styles.errorSlot}>
-              {error ? (
-                <Text style={styles.errorText}>{error}</Text>
-              ) : loading ? (
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
+            {/* Right below the boxes: Left has status/error, Right has "Verify Later →" */}
+            <View style={styles.belowBoxesRow}>
+              <View style={styles.statusArea}>
+                {error ? (
+                  <Text style={styles.errorText}>{error}</Text>
+                ) : loading ? (
+                  <View style={styles.verifyingRow}>
+                    <ActivityIndicator size="small" color="#ff6719" />
+                    <Text style={styles.verifyingText}>Verifying code...</Text>
+                  </View>
+                ) : null}
+              </View>
+
+              {/* Verify Later positioned at the RIGHT of the area right below the boxes */}
+              <View style={styles.verifyLaterWrapper}>
+                <NativeRipplePressable
+                  onPress={handleVerifyLater}
+                  className="px-2.5 py-1.5"
+                  isDark={isDark}
                 >
-                  <ActivityIndicator size="small" color="#ff6719" />
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "600",
-                      color: "#ff6719",
-                    }}
-                  >
-                    Verifying code...
+                  <Text style={styles.verifyLaterText}>
+                    {purpose === "signup"
+                      ? "Verify Later →"
+                      : "Skip to Sign In →"}
                   </Text>
-                </View>
-              ) : null}
+                </NativeRipplePressable>
+              </View>
             </View>
 
             {/* Resend Row matching prime-capital */}
             <View style={styles.resendRow}>
               <Text style={styles.resendHint}>Didn&apos;t get the code?</Text>
               {canResend ? (
-                <TouchableOpacity
+                <NativeRipplePressable
                   onPress={handleResend}
                   disabled={resending || loading}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  className="px-2 py-1"
+                  isDark={isDark}
                 >
                   <Text style={styles.resendButtonText}>
                     {resending ? "Sending..." : "Resend code"}
                   </Text>
-                </TouchableOpacity>
+                </NativeRipplePressable>
               ) : (
                 <Text style={styles.resendCountdown}>
                   Resend in {formatCountdown(cooldown)}
                 </Text>
               )}
-            </View>
-
-            {/* Verify Later Button centered with native ripple (Verify button removed as code auto-submits) */}
-            <View className="items-center mt-2 w-full">
-              <View
-                style={{
-                  borderRadius: 16,
-                  overflow: "hidden",
-                  width: "100%",
-                  maxWidth: 240,
-                }}
-              >
-                <Pressable
-                  onPress={handleVerifyLater}
-                  android_ripple={{
-                    color: isDark
-                      ? "rgba(255, 255, 255, 0.15)"
-                      : "rgba(0, 0, 0, 0.08)",
-                    borderless: false,
-                    foreground: true,
-                  }}
-                  style={({ pressed }) => [
-                    Platform.OS === "ios" && pressed
-                      ? { opacity: 0.65 }
-                      : undefined,
-                    {
-                      paddingVertical: 14,
-                      paddingHorizontal: 20,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    },
-                  ]}
-                >
-                  <Text
-                    className={`font-semibold text-base ${
-                      isDark ? "text-slate-300" : "text-slate-700"
-                    }`}
-                  >
-                    {purpose === "signup"
-                      ? "Verify Later"
-                      : "Skip to Sign In"}
-                  </Text>
-                </Pressable>
-              </View>
             </View>
           </View>
         </ScrollView>

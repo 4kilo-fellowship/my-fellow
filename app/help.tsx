@@ -1,3 +1,4 @@
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -188,26 +189,13 @@ export default function HelpScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      <View
-        className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"}`}
-        style={{ paddingTop: insets.top + 10, zIndex: 10 }}
-      >
-        <Pressable
-          onPress={() => router.back()}
-          className="w-11 h-11 rounded-full items-center justify-center mr-4"
-        >
-          <Ionicons
-            name="arrow-back"
-            size={24}
-            color={isDark ? "white" : "#0f172a"}
-          />
-        </Pressable>
-        <Text
-          className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
-        >
-          Support
-        </Text>
-      </View>
+      <ScreenHeader
+        title="Support"
+        containerStyle={{
+          backgroundColor: isDark ? "#0A0A0A" : "#f8fafc",
+          borderBottomColor: isDark ? "#1f2937" : "#e5e7eb",
+        }}
+      />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}

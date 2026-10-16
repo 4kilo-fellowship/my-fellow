@@ -4,6 +4,7 @@ import { InfoModal } from "@/components/Modals/InfoModal";
 import { DEPARTMENTS, TEAM_NAMES, YEARS } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { formatErrorMessage } from "@/utils/alertUtils";
 import { useSignupStore } from "@/stores/signup.store";
 import { SignUpData } from "@/types";
 import { SignUpStep2FormValues, signUpStep2Schema } from "@/utils";
@@ -238,10 +239,13 @@ export default function SignUpStep2() {
         errorMessage.toLowerCase().includes("already exists") ||
         errorMessage.toLowerCase().includes("phone number already in use");
 
+      const formatted = formatErrorMessage(error);
       setErrorModal({
         visible: true,
-        title: isRegisteredError ? "Account Exists" : "Registration Failed",
-        message: errorMessage,
+        title: isRegisteredError ? "Already Registered" : formatted.title,
+        message: isRegisteredError
+          ? "This phone number is already registered. Please sign in."
+          : formatted.message,
         isRegisteredError,
       });
     } finally {

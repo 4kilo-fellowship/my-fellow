@@ -2,14 +2,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useRef } from "react";
 import {
+  Alert,
   Dimensions,
   FlatList,
   Platform,
   Text,
-  ToastAndroid,
   TouchableOpacity,
   View,
 } from "react-native";
+
 
 type DevotionItem = {
   id: string;
@@ -34,8 +35,8 @@ function DevotionCard({ item, isDark, onPress }: DevotionCardProps) {
   const handlePress = () => {
     if (onPress) {
       onPress();
-    } else if (Platform.OS === "android") {
-      ToastAndroid.show("Coming Soon...", ToastAndroid.SHORT);
+    } else {
+      Alert.alert("Coming Soon", "Devotions will be available soon.");
     }
   };
 

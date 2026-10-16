@@ -1,4 +1,4 @@
-import { InfoModal, LeaderCard, Placeholder } from "@/components";
+import { InfoModal, LeaderCard, Placeholder, ScreenHeader } from "@/components";
 import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { useLeadersStore } from "@/stores/leaders.store";
@@ -224,38 +224,17 @@ export default function LeadersScreen() {
         )}
 
         {/* Static Header: Back and Title */}
-        <View
-          style={{
+        <ScreenHeader
+          title="Fellowship Leaders"
+          containerStyle={{
             position: "absolute",
             top: 0,
             left: 0,
             right: 0,
-            zIndex: 10,
-            height: STATIC_HEADER_HEIGHT,
             backgroundColor: isDark ? "#0A0A0A" : "#f8fafc",
-            paddingTop: top + 10,
-            paddingHorizontal: 20,
+            borderBottomColor: isDark ? "#1f2937" : "#e5e7eb",
           }}
-        >
-          <View className="flex-row items-center">
-            <TouchableOpacity
-              onPress={() => router.back()}
-              activeOpacity={0.8}
-              className="w-11 h-11 rounded-full items-center justify-center mr-4"
-            >
-              <Ionicons
-                name="arrow-back"
-                size={22}
-                color={isDark ? "white" : "#0f172a"}
-              />
-            </TouchableOpacity>
-            <Text
-              className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
-            >
-              Fellowship Leaders
-            </Text>
-          </View>
-        </View>
+        />
 
         {/* Animated Filters and Description */}
         <Animated.View

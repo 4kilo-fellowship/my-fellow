@@ -1,4 +1,4 @@
-import { InfoModal } from "@/components";
+import { InfoModal, ScreenHeader } from "@/components";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useUserStore } from "@/stores/user.store";
@@ -96,14 +96,14 @@ export default function EditProfileScreen() {
       });
       setModalConfig({
         title: "Success",
-        message: "Profile updated successfully",
+        message: "Profile updated.",
         type: "success",
       });
       setModalVisible(true);
     } catch (error: any) {
       setModalConfig({
         title: "Error",
-        message: error.message || "Failed to update profile",
+        message: error.message || "Failed to update profile.",
         type: "error",
       });
       setModalVisible(true);
@@ -121,30 +121,13 @@ export default function EditProfileScreen() {
     >
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      <View
-        className={`px-5 pb-4 flex-row items-center border-b ${isDark ? "bg-[#0A0A0A] border-gray-800" : "bg-[#f8fafc] border-gray-200"}`}
-        style={{ paddingTop: top + 10 }}
-      >
-        <Pressable
-          onPress={() => router.back()}
-          className="w-11 h-11 rounded-full items-center justify-center mr-4"
-          android_ripple={{
-            color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
-            borderless: true,
-          }}
-        >
-          <Ionicons
-            name="arrow-back"
-            size={24}
-            color={isDark ? "white" : "#0f172a"}
-          />
-        </Pressable>
-        <Text
-          className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
-        >
-          Edit Profile
-        </Text>
-      </View>
+      <ScreenHeader
+        title="Edit Profile"
+        containerStyle={{
+          backgroundColor: isDark ? "#0A0A0A" : "#f8fafc",
+          borderBottomColor: isDark ? "#1f2937" : "#e5e7eb",
+        }}
+      />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -355,10 +338,17 @@ export default function EditProfileScreen() {
               />
             </View>
 
-            <TouchableOpacity
-              style={styles.saveButton}
+            <Pressable
+              style={({ pressed }) => [
+                styles.saveButton,
+                Platform.OS === "ios" && pressed && { opacity: 0.85 },
+              ]}
+              android_ripple={{
+                color: "rgba(255, 255, 255, 0.25)",
+                borderless: false,
+                foreground: true,
+              }}
               onPress={handleSubmit(onSave)}
-              activeOpacity={1}
               disabled={isUpdatingProfile}
             >
               {isUpdatingProfile ? (
@@ -366,7 +356,7 @@ export default function EditProfileScreen() {
               ) : (
                 <Text style={styles.saveButtonText}>Save Changes</Text>
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -457,6 +447,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ff6619",
     height: 52,
     borderRadius: 12,
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 10,
