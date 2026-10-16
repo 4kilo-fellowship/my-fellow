@@ -62,6 +62,7 @@ export const NativeRipplePressable = React.forwardRef<
       style={[
         styles.outer,
         { borderRadius },
+        typeof style === "function" ? undefined : style,
       ]}
     >
       <Pressable
@@ -86,7 +87,7 @@ export const NativeRipplePressable = React.forwardRef<
           Platform.OS === "ios" && state.pressed && {
             transform: [{ scale: 0.96 }],
           },
-          typeof style === "function" ? style(state) : style,
+          typeof style === "function" ? style(state) : undefined,
         ]}
         {...props}
       >
@@ -100,15 +101,15 @@ const styles = StyleSheet.create({
   outer: {
     borderRadius: 9999,
     overflow: "hidden",
-    alignSelf: "flex-start",
   },
   inner: {
     borderRadius: 9999,
     overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    minHeight: 38,
   },
 });
 

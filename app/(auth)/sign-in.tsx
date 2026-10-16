@@ -345,7 +345,7 @@ export default function SignIn() {
                   ) : null}
                 </View>
 
-                <View className="items-end">
+                <View style={{ width: "100%", alignItems: "flex-end", marginTop: 4 }}>
                   <ForgotPasswordModal />
                 </View>
               </View>
