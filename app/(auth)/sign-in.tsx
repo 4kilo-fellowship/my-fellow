@@ -369,7 +369,6 @@ export default function SignIn() {
                   </Text>
                   <NativeRipplePressable
                     onPress={() => router.push("/sign-up-step-1")}
-                    className="px-2.5 py-1"
                     isDark={isDark}
                   >
                     <Text className="text-primary font-bold text-base">

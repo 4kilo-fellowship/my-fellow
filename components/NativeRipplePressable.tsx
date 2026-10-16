@@ -20,10 +20,11 @@ export interface NativeRipplePressableProps extends Omit<PressableProps, "style"
 }
 
 /**
- * A native-feeling pressable component that provides a small, fully-rounded
- * ripple effect on Android (strictly hardware-clipped to a perfect pill via parent View)
- * and a subtle rounded highlight with native scale compression on iOS.
- * When idle, introduces ZERO UI changes to the wrapped elements.
+ * A native-feeling pressable component that provides a fully-rounded (pill capsule)
+ * ripple effect on Android with generous space/padding, strictly hardware-clipped
+ * to a perfect semicircular pill boundary via parent View, plus subtle native scale
+ * compression on iOS.
+ * When idle, background is transparent.
  */
 export const NativeRipplePressable = React.forwardRef<
   any,
@@ -32,7 +33,7 @@ export const NativeRipplePressable = React.forwardRef<
   {
     children,
     rippleColor,
-    borderRadius = 10,
+    borderRadius = 9999,
     style,
     className = "",
     isDark: isDarkProp,
@@ -58,11 +59,10 @@ export const NativeRipplePressable = React.forwardRef<
 
   return (
     <View
-      style={{
-        borderRadius,
-        overflow: "hidden",
-      }}
-      className={className}
+      style={[
+        styles.outer,
+        { borderRadius },
+      ]}
     >
       <Pressable
         ref={ref}
@@ -72,8 +72,9 @@ export const NativeRipplePressable = React.forwardRef<
           borderless: false,
           foreground: false,
         }}
+        className={className}
         style={(state) => [
-          styles.base,
+          styles.inner,
           {
             borderRadius,
             backgroundColor: state.pressed
@@ -96,13 +97,18 @@ export const NativeRipplePressable = React.forwardRef<
 });
 
 const styles = StyleSheet.create({
-  base: {
-    borderRadius: 10,
+  outer: {
+    borderRadius: 9999,
+    overflow: "hidden",
+    alignSelf: "flex-start",
+  },
+  inner: {
+    borderRadius: 9999,
     overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 6,
-    paddingVertical: 3,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
   },
 });
 

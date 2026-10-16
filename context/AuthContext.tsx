@@ -51,7 +51,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             .then((user) => {
               useUserStore.getState().setUser(user);
             })
-            .catch(console.error);
+            .catch(async (err: any) => {
+              // If the token is expired or unauthorized, reset auth state
+              if (
+                err?.message?.includes("401") ||
+                err?.response?.status === 401
+              ) {
+                await SecureStore.deleteItemAsync("userToken");
+                delete api.defaults.headers.common.Authorization;
+                setAuthState({ token: null, authenticated: false });
+                useUserStore.getState().clearUser();
+              }
+            });
         } else {
           setAuthState({ token: null, authenticated: false });
         }

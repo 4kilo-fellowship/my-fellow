@@ -35,7 +35,7 @@ const ForgotPasswordModal = () => {
     <>
       <NativeRipplePressable
         onPress={() => setModalVisible(true)}
-        className="mt-2 px-2.5 py-1"
+        className="mt-1"
         isDark={isDark}
       >
         <Text className="text-primary font-bold text-base">

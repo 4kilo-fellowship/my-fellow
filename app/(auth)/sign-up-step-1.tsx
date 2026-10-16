@@ -448,7 +448,6 @@ export default function SignUpStep1() {
                   </Text>
                   <NativeRipplePressable
                     onPress={handleBackToLogin}
-                    className="px-2.5 py-1"
                     isDark={isDark}
                   >
                     <Text className="text-primary font-bold text-base">

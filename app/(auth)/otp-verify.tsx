@@ -908,7 +908,6 @@ export default function OtpVerify() {
               <View style={styles.verifyLaterWrapper}>
                 <NativeRipplePressable
                   onPress={handleVerifyLater}
-                  className="px-2.5 py-1.5"
                   isDark={isDark}
                 >
                   <Text style={styles.verifyLaterText}>
@@ -927,7 +926,6 @@ export default function OtpVerify() {
                 <NativeRipplePressable
                   onPress={handleResend}
                   disabled={resending || loading}
-                  className="px-2 py-1"
                   isDark={isDark}
                 >
                   <Text style={styles.resendButtonText}>
