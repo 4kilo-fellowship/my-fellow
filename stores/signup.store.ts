@@ -2,7 +2,11 @@ import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-export type SignupStep = "signup-step-1" | "otp-verify" | "signup-step-2";
+export type SignupStep =
+  | "signup-step-1"
+  | "otp-verify"
+  | "signup-step-2"
+  | "personalization";
 
 interface SignupState {
   step: SignupStep | null;

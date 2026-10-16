@@ -46,9 +46,33 @@ export default function AuthLayout() {
           }}
         />
         <Stack.Screen
+          name="personalization"
+          options={{
+            ...navBar,
+            title: "Personalization",
+            headerTitleAlign: "center",
+            headerTitleStyle: {
+              fontWeight: "700",
+              fontSize: 18,
+            },
+            headerShown: true,
+            gestureEnabled: true,
+            headerStyle: {
+              backgroundColor: isDark ? "#1A1A1B" : "#ffffff",
+            },
+            headerTintColor: isDark ? "#ffffff" : "#0f172a",
+          }}
+        />
+        <Stack.Screen
           name="sign-up-step-2"
           options={{
             ...navBar,
+            title: "Personalization",
+            headerTitleAlign: "center",
+            headerTitleStyle: {
+              fontWeight: "700",
+              fontSize: 18,
+            },
             headerShown: true,
             gestureEnabled: true,
             headerStyle: {

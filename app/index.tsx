@@ -7,7 +7,8 @@ import { useEffect, useState } from "react";
 const signupStepRoute = {
   "signup-step-1": "/(auth)/sign-up-step-1",
   "otp-verify": "/(auth)/otp-verify",
-  "signup-step-2": "/(auth)/sign-up-step-2",
+  "signup-step-2": "/(auth)/personalization",
+  "personalization": "/(auth)/personalization",
 } as const;
 
 export default function Index() {

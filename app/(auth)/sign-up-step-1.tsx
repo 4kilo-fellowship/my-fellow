@@ -140,9 +140,9 @@ export default function SignUpStep1() {
         });
       } else {
         // OTP service unavailable (API key, network, etc.)
-        // Skip OTP — proceed directly to step 2, user will be verified later
+        // Skip OTP — proceed directly to personalization, user will be verified later
         router.push({
-          pathname: "/sign-up-step-2",
+          pathname: "/personalization",
           params: {
             fullName: data.fullName.trim(),
             phoneNumber,

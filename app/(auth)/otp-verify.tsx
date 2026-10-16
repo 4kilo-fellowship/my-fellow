@@ -231,10 +231,10 @@ export default function OtpVerify() {
 
       if (purpose === "signup") {
         signupStore.setVerificationToken(token);
-        signupStore.setStep("signup-step-2");
+        signupStore.setStep("personalization");
 
         router.push({
-          pathname: "/sign-up-step-2",
+          pathname: "/personalization",
           params: {
             fullName: signupStore.fullName,
             phoneNumber: currentPhone,
@@ -306,9 +306,9 @@ export default function OtpVerify() {
 
   const handleVerifyLater = () => {
     if (purpose === "signup") {
-      signupStore.setStep("signup-step-2");
+      signupStore.setStep("personalization");
       router.push({
-        pathname: "/sign-up-step-2",
+        pathname: "/personalization",
         params: {
           fullName: signupStore.fullName,
           phoneNumber: currentPhone,
@@ -765,45 +765,70 @@ export default function OtpVerify() {
               Enter the 6-digit code we sent to
             </Text>
 
-            {/* Native Ripple Edit Phone Box right below Enter 6-digit */}
-            <View style={styles.phoneBoxWrapper}>
-              <Pressable
-                onPress={() => {
-                  setEditPhoneValue(currentPhone);
-                  setCheckingState("valid");
-                  setCheckingMessage("Current phone number");
-                  setIsEditModalOpen(true);
+            {/* Single Horizontal Pill Badge for Phone Number with Edit Trigger */}
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={() => {
+                setEditPhoneValue(currentPhone);
+                setCheckingState("valid");
+                setCheckingMessage("Current phone number");
+                setIsEditModalOpen(true);
+              }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                alignSelf: "center",
+                height: 36,
+                paddingHorizontal: 14,
+                borderRadius: 9999,
+                borderWidth: 1.5,
+                borderColor: isDark ? "#334155" : "#e2e8f0",
+                backgroundColor: isDark ? "#1e293b" : "#f8fafc",
+                marginTop: 12,
+                marginBottom: 26,
+              }}
+            >
+              <Ionicons
+                name="call-outline"
+                size={14}
+                color={isDark ? "#94a3b8" : "#64748b"}
+                style={{ marginRight: 6 }}
+              />
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "700",
+                  color: isDark ? "#ffffff" : "#0f172a",
+                  letterSpacing: 0.3,
                 }}
-                android_ripple={{
-                  color: isDark
-                    ? "rgba(255, 255, 255, 0.14)"
-                    : "rgba(0, 0, 0, 0.08)",
-                  borderless: false,
-                }}
-                style={({ pressed }) => [
-                  styles.phoneBox,
-                  Platform.OS === "ios" && pressed
-                    ? { opacity: 0.7 }
-                    : undefined,
-                ]}
               >
-                <View style={styles.phoneIconWrap}>
-                  <Ionicons
-                    name="call"
-                    size={13}
-                    color={isDark ? "#94a3b8" : "#64748b"}
-                  />
-                </View>
-                <Text style={styles.phoneText}>{currentPhone}</Text>
-                <View style={styles.phoneDivider} />
-                <View style={styles.editActionRow}>
-                  <View style={styles.editIconWrap}>
-                    <Ionicons name="pencil" size={11} color="#ff6719" />
-                  </View>
-                  <Text style={styles.editText}>Edit</Text>
-                </View>
-              </Pressable>
-            </View>
+                {currentPhone}
+              </Text>
+              <View
+                style={{
+                  width: 1.5,
+                  height: 14,
+                  backgroundColor: isDark ? "#334155" : "#cbd5e1",
+                  marginHorizontal: 8,
+                }}
+              />
+              <Ionicons
+                name="pencil"
+                size={12}
+                color="#ff6719"
+                style={{ marginRight: 3 }}
+              />
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: "700",
+                  color: "#ff6719",
+                }}
+              >
+                Edit
+              </Text>
+            </TouchableOpacity>
 
             {/* High-Performance Fast Input Boxes with 100% Reliable Native Touch Capture */}
             <Animated.View
