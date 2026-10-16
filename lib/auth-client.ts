@@ -16,4 +16,11 @@ export const authClient = createAuthClient({
     }),
     phoneNumberClient(),
   ],
+  fetchOptions: {
+    auth: {
+      type: "Bearer",
+      token: () => SecureStore.getItemAsync("userToken") as any,
+    },
+  },
 });
+
