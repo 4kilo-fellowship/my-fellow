@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { devotionsService } from "@/services/devotionsService";
 import { useDevotionsStore } from "@/stores/devotions.store";
+import { useStreakStore } from "@/stores/streak.store";
 import { Devotion } from "@/types/devotion.types";
 import { Ionicons } from "@expo/vector-icons";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
@@ -82,6 +83,7 @@ const DevotionDetail = () => {
           setLikesCount(response.data.likesFormatted || response.data.likes);
           setViewsCount(response.data.viewsFormatted || response.data.views);
           markAsRead(id);
+          useStreakStore.getState().recordDevotionRead();
 
           devotionsService.trackView(id).then((viewRes) => {
             if (viewRes.success) {

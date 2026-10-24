@@ -150,6 +150,15 @@ export default function Settings() {
           type: "navigation",
           onPress: () => handleAuthRequired(() => router.push("/update-phone")),
         },
+        {
+          id: "subscription",
+          icon: "diamond-outline",
+          iconFamily: "ionicons",
+          label: "Membership & Plans",
+          description: "Explore Pro & Partner plans",
+          type: "navigation",
+          onPress: () => router.push("/subscription" as any),
+        },
       ],
     },
     {

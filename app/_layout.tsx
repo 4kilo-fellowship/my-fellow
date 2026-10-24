@@ -1,7 +1,13 @@
 import { AuthProvider } from "@/context/AuthContext";
 import { useTheme, ThemeProvider } from "@/context/ThemeContext";
 import { useAppStore } from "@/stores/app.store";
-import { FontAwesome5, Ionicons, Octicons } from "@expo/vector-icons";
+import {
+  FontAwesome5,
+  Ionicons,
+  MaterialCommunityIcons,
+  MaterialIcons,
+  Octicons,
+} from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -135,12 +141,14 @@ function RootNavigator() {
       <Stack.Screen name="(tabs)" options={{ title: "Home" }} />
       <Stack.Screen name="(auth)" options={{ title: "Auth" }} />
       <Stack.Screen name="events/[id]" options={{ title: "Events" }} />
+      <Stack.Screen name="teams/index" options={{ title: "Teams" }} />
       <Stack.Screen name="teams/[id]" options={{ title: "Teams" }} />
       <Stack.Screen name="devotion/[id]" options={{ title: "Devotions" }} />
       <Stack.Screen name="leaders" options={{ title: "Leaders" }} />
       <Stack.Screen name="locations" options={{ title: "Locations" }} />
       <Stack.Screen name="programs" options={{ title: "Programs" }} />
       <Stack.Screen name="settings" options={{ title: "Settings" }} />
+      <Stack.Screen name="reminders/index" options={{ title: "Alerts" }} />
       <Stack.Screen
         name="reminders/manage"
         options={{ title: "Manage Alert" }}
@@ -164,6 +172,10 @@ function RootNavigator() {
         options={{ title: "My Orders" }}
       />
       <Stack.Screen name="givings" options={{ title: "My Givings" }} />
+      <Stack.Screen
+        name="subscription"
+        options={{ title: "Membership & Plans" }}
+      />
       <Stack.Screen
         name="change-password"
         options={{
@@ -197,6 +209,8 @@ export default function RootLayout() {
     ...Ionicons.font,
     ...Octicons.font,
     ...FontAwesome5.font,
+    ...MaterialCommunityIcons.font,
+    ...MaterialIcons.font,
   });
   const [hasHydrated, setHasHydrated] = useState(
     useAppStore.persist.hasHydrated(),

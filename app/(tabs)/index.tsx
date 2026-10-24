@@ -4,7 +4,8 @@ import {
   NoInternetScreen,
   Placeholder,
   QuickAction,
-  UserProfileMenu,
+  StreakBadge,
+  StreakModal,
   VideoItem,
 } from "@/components";
 import { PRIMARY, QUICK_ACTIONS, VIDEOS } from "@/constants";
@@ -17,6 +18,7 @@ import { useAppStore } from "@/stores/app.store";
 import { useDevotionsStore } from "@/stores/devotions.store";
 import { useEventsStore } from "@/stores/events.store";
 import { useNotificationsStore } from "@/stores/notifications.store";
+import { useUserStore } from "@/stores/user.store";
 import { Ionicons } from "@expo/vector-icons";
 import { Image as ExpoImage } from "expo-image";
 import { useRouter } from "expo-router";
@@ -41,6 +43,7 @@ const Home = () => {
   const { hasSeenFeatures, setHasSeenFeatures } = useAppStore();
   const isDark = theme === "dark";
   const [activeIndex, setActiveIndex] = useState(0);
+  const [showStreakModal, setShowStreakModal] = useState(false);
   const scrollX = useRef(new Animated.Value(0)).current;
   const { width } = useWindowDimensions();
   const cardWidth = width - 48;
@@ -51,6 +54,7 @@ const Home = () => {
   const { eventsList: events, setEventsList } = useEventsStore();
   const { devotionsList, setDevotionsList } = useDevotionsStore();
   const { isConnected } = useNetwork();
+  const { user } = useUserStore();
   const unreadCount = useNotificationsStore((s) => s.getUnreadCount());
 
   const devotions = (devotionsList || []).map((d) => ({
@@ -160,23 +164,92 @@ const Home = () => {
       <View className="flex-1" style={{ paddingTop: top * 0.95 }}>
         <StatusBar style={isDark ? "light" : "dark"} />
 
-        <View className="px-4 flex-row justify-between items-center">
-          <Image
-            source={require("@/assets/images/logo-primary.png")}
-            className="w-64 h-20"
-            resizeMode="contain"
-            style={{ transform: [{ scale: 2.1 }, { translateX: -13 }] }}
-          />
+        <View
+          style={{
+            paddingHorizontal: 20,
+            paddingTop: 4,
+            paddingBottom: 10,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          {/* Left: Profile Picture then Name */}
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/profile")}
+            activeOpacity={0.75}
+            accessibilityRole="button"
+            accessibilityLabel="View Profile"
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              flex: 1,
+              paddingRight: 12,
+            }}
+          >
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                overflow: "hidden",
+                borderWidth: 1.5,
+                borderColor: isDark ? "#3c3c3e" : "#e5e7eb",
+                backgroundColor: isDark ? "#2c2c2e" : "#f3f4f6",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {user?.profileImage ? (
+                <Image
+                  source={{ uri: user.profileImage }}
+                  style={{ width: "100%", height: "100%" }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Ionicons
+                  name="person"
+                  size={20}
+                  color={isDark ? "#9ca3af" : "#64748b"}
+                />
+              )}
+            </View>
 
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Text
+              numberOfLines={1}
+              style={{
+                fontSize: 17,
+                fontWeight: "800",
+                letterSpacing: -0.3,
+                color: isDark ? "#ffffff" : "#0f172a",
+                flexShrink: 1,
+              }}
+            >
+              {user?.fullName || "Guest User"}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Right: Devotion Streak Pill + Notification Bell */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <StreakBadge onPress={() => setShowStreakModal(true)} />
+
             <TouchableOpacity
               onPress={() => router.push("/notifications")}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Notifications"
               style={{
-                width: 42,
-                height: 42,
-                borderRadius: 21,
-                borderWidth: 2,
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                borderWidth: 1.5,
                 borderColor: isDark ? "#3c3c3e" : "#e5e7eb",
                 backgroundColor: isDark ? "#2c2c2e" : "#ffffff",
                 alignItems: "center",
@@ -187,7 +260,7 @@ const Home = () => {
                 name={
                   unreadCount > 0 ? "notifications" : "notifications-outline"
                 }
-                size={22}
+                size={21}
                 color={isDark ? "#fff" : "#374151"}
               />
               {unreadCount > 0 && (
@@ -197,13 +270,13 @@ const Home = () => {
                     top: -2,
                     right: -2,
                     backgroundColor: "#ff6619",
-                    borderRadius: 10,
-                    minWidth: 20,
-                    height: 20,
+                    borderRadius: 9,
+                    minWidth: 18,
+                    height: 18,
                     alignItems: "center",
                     justifyContent: "center",
                     paddingHorizontal: 4,
-                    borderWidth: 2,
+                    borderWidth: 1.5,
                     borderColor: isDark ? "#2c2c2e" : "#ffffff",
                   }}
                 >
@@ -219,7 +292,6 @@ const Home = () => {
                 </View>
               )}
             </TouchableOpacity>
-            <UserProfileMenu />
           </View>
         </View>
 
@@ -564,6 +636,11 @@ const Home = () => {
           </View>
         </ScrollView>
       </View>
+
+      <StreakModal
+        visible={showStreakModal}
+        onClose={() => setShowStreakModal(false)}
+      />
     </View>
   );
 };

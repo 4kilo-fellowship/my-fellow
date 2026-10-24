@@ -8,14 +8,14 @@ import { useSignupStore } from "@/stores/signup.store";
 import { SignUpData } from "@/types";
 import { SignUpStep2FormValues, signUpStep2Schema } from "@/utils";
 import { formatErrorMessage } from "@/utils/alertUtils";
-import { BottomSheet, Host } from "@expo/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useHeaderHeight } from "expo-router/react-navigation";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
+  Dimensions,
   Image,
   Keyboard,
   KeyboardAvoidingView,
@@ -30,10 +30,23 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, {
+  Easing,
+  Extrapolation,
+  interpolate,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const PRIMARY = "#ff6719";
 
@@ -79,6 +92,310 @@ const OPTION_ICONS: Record<string, AuthIconName> = {
   "4th Year": "ribbon",
   "5th Year": "ribbon",
 };
+
+interface OptionBottomSheetProps {
+  config: DropdownModalConfig | null;
+  onClose: () => void;
+  onSelect: (name: DropdownNameProps, value: string) => void;
+  currentValue: string;
+  isDark: boolean;
+  insetsBottom: number;
+}
+
+function OptionBottomSheet({
+  config,
+  onClose,
+  onSelect,
+  currentValue,
+  isDark,
+  insetsBottom,
+}: OptionBottomSheetProps) {
+  const [activeConfig, setActiveConfig] = useState<DropdownModalConfig | null>(
+    config,
+  );
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [selectedItem, setSelectedItem] = useState<string>(currentValue);
+
+  const translateY = useSharedValue(SCREEN_HEIGHT);
+  const backdropOpacity = useSharedValue(0);
+
+  const handleCloseComplete = useCallback(() => {
+    setModalVisible(false);
+    setActiveConfig(null);
+    onClose();
+  }, [onClose]);
+
+  const dismiss = useCallback(() => {
+    translateY.value = withTiming(
+      SCREEN_HEIGHT,
+      { duration: 220, easing: Easing.in(Easing.cubic) },
+      (finished) => {
+        if (finished) {
+          runOnJS(handleCloseComplete)();
+        }
+      },
+    );
+    backdropOpacity.value = withTiming(0, { duration: 180 });
+  }, [handleCloseComplete, translateY, backdropOpacity]);
+
+  useEffect(() => {
+    if (config) {
+      setActiveConfig(config);
+      setSelectedItem(currentValue);
+      setModalVisible(true);
+      translateY.value = SCREEN_HEIGHT;
+      backdropOpacity.value = 0;
+      translateY.value = withSpring(0, {
+        damping: 26,
+        stiffness: 280,
+        mass: 0.8,
+      });
+      backdropOpacity.value = withTiming(1, { duration: 220 });
+    }
+  }, [config, currentValue, translateY, backdropOpacity]);
+
+  const panGesture = Gesture.Pan()
+    .activeOffsetY([0, 5])
+    .onUpdate((event) => {
+      "worklet";
+      if (event.translationY > 0) {
+        translateY.value = event.translationY;
+      } else {
+        translateY.value = event.translationY * 0.18;
+      }
+    })
+    .onEnd((event) => {
+      "worklet";
+      if (event.translationY > 100 || event.velocityY > 500) {
+        translateY.value = withTiming(
+          SCREEN_HEIGHT,
+          { duration: 200, easing: Easing.out(Easing.cubic) },
+          (finished) => {
+            if (finished) {
+              runOnJS(handleCloseComplete)();
+            }
+          },
+        );
+        backdropOpacity.value = withTiming(0, { duration: 180 });
+      } else {
+        translateY.value = withSpring(0, {
+          damping: 24,
+          stiffness: 280,
+          mass: 0.8,
+        });
+      }
+    });
+
+  const backdropAnimatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      translateY.value,
+      [0, 250],
+      [1, 0],
+      Extrapolation.CLAMP,
+    );
+    return {
+      opacity: backdropOpacity.value * opacity,
+    };
+  });
+
+  const sheetAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: Math.max(-25, translateY.value) }],
+    };
+  });
+
+  if (!modalVisible || !activeConfig) return null;
+
+  return (
+    <Modal
+      visible={modalVisible}
+      transparent
+      animationType="none"
+      statusBarTranslucent
+      onRequestClose={dismiss}
+    >
+      <View style={styles.sheetOverlay}>
+        <TouchableWithoutFeedback onPress={dismiss}>
+          <Animated.View style={[styles.sheetBackdrop, backdropAnimatedStyle]} />
+        </TouchableWithoutFeedback>
+
+        <Animated.View
+          style={[
+            styles.sheetContainer,
+            sheetAnimatedStyle,
+            {
+              backgroundColor: isDark ? "#1e293b" : "#ffffff",
+              paddingBottom: Math.max(insetsBottom + 16, 24),
+            },
+          ]}
+        >
+          <GestureDetector gesture={panGesture}>
+            <Animated.View style={styles.sheetTopDragArea}>
+              <View style={styles.handleContainer}>
+                <View
+                  style={[
+                    styles.handle,
+                    { backgroundColor: isDark ? "#475569" : "#cbd5e1" },
+                  ]}
+                />
+              </View>
+
+              <View style={styles.sheetHeaderRow}>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[
+                      styles.sheetTitle,
+                      { color: isDark ? "#f8fafc" : "#0f172a" },
+                    ]}
+                  >
+                    Select {activeConfig.label}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.sheetSubtitle,
+                      { color: isDark ? "#94a3b8" : "#64748b" },
+                    ]}
+                  >
+                    Choose the option that fits you best
+                  </Text>
+                </View>
+
+                <Pressable
+                  onPress={dismiss}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  android_ripple={{
+                    color: isDark
+                      ? "rgba(255, 255, 255, 0.15)"
+                      : "rgba(0, 0, 0, 0.1)",
+                    borderless: true,
+                    radius: 18,
+                  }}
+                  style={({ pressed }) => [
+                    styles.sheetCloseBtn,
+                    {
+                      backgroundColor: isDark ? "#334155" : "#f1f5f9",
+                    },
+                    Platform.OS === "ios" && pressed
+                      ? { opacity: 0.6 }
+                      : undefined,
+                  ]}
+                >
+                  <AuthIcon
+                    name="close"
+                    size={20}
+                    color={isDark ? "#cbd5e1" : "#64748b"}
+                  />
+                </Pressable>
+              </View>
+            </Animated.View>
+          </GestureDetector>
+
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.optionsList}
+            style={{ maxHeight: SCREEN_HEIGHT * 0.58 }}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+          >
+            {activeConfig.options.map((item, index) => {
+              const isSelected = (selectedItem || currentValue) === item;
+              const icon =
+                OPTION_ICONS[item] ?? FIELD_META[activeConfig.name].icon;
+
+              return (
+                <Pressable
+                  key={`${item}-${index}`}
+                  onPress={() => {
+                    setSelectedItem(item);
+                    onSelect(activeConfig.name, item);
+                    dismiss();
+                  }}
+                  android_ripple={{
+                    color: "rgba(255, 103, 25, 0.12)",
+                    borderless: false,
+                  }}
+                  style={({ pressed }) => [
+                    styles.optionCard,
+                    {
+                      borderColor: isSelected
+                        ? PRIMARY
+                        : isDark
+                          ? "#334155"
+                          : "#e2e8f0",
+                      backgroundColor: isSelected
+                        ? isDark
+                          ? "rgba(255, 103, 25, 0.14)"
+                          : "#fff7f2"
+                        : isDark
+                          ? "#1e293b"
+                          : "#ffffff",
+                    },
+                    Platform.OS === "ios" && pressed
+                      ? { opacity: 0.8 }
+                      : undefined,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.optionCardIcon,
+                      {
+                        backgroundColor: isSelected
+                          ? "rgba(255, 103, 25, 0.16)"
+                          : isDark
+                            ? "#0f172a"
+                            : "#f1f5f9",
+                      },
+                    ]}
+                  >
+                    <AuthIcon
+                      name={icon}
+                      size={22}
+                      color={
+                        isSelected ? PRIMARY : isDark ? "#cbd5e1" : "#64748b"
+                      }
+                    />
+                  </View>
+
+                  <Text
+                    numberOfLines={2}
+                    style={[
+                      styles.optionCardLabel,
+                      {
+                        color: isSelected
+                          ? PRIMARY
+                          : isDark
+                            ? "#f8fafc"
+                            : "#0f172a",
+                        fontWeight: isSelected ? "700" : "600",
+                      },
+                    ]}
+                  >
+                    {item}
+                  </Text>
+
+                  <View
+                    style={[
+                      styles.radioCircle,
+                      {
+                        borderColor: isSelected
+                          ? PRIMARY
+                          : isDark
+                            ? "#475569"
+                            : "#cbd5e1",
+                      },
+                    ]}
+                  >
+                    {isSelected ? <View style={styles.radioInner} /> : null}
+                  </View>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+}
 
 export default function PersonalizationScreen() {
   const router = useRouter();
@@ -167,7 +484,6 @@ export default function PersonalizationScreen() {
         shouldDirty: true,
         shouldTouch: true,
       });
-      setModalConfig(null);
     },
     [setValue],
   );
@@ -398,92 +714,6 @@ export default function PersonalizationScreen() {
   };
 
   const currentValue = modalConfig ? watch(modalConfig.name) : "";
-
-  const renderOptionItem = (item: string, index: number) => {
-    if (!modalConfig) return null;
-    const isSelected = currentValue === item;
-    const icon = OPTION_ICONS[item] ?? FIELD_META[modalConfig.name].icon;
-
-    return (
-      <Pressable
-        key={`${item}-${index}`}
-        onPress={() => selectOption(modalConfig.name, item)}
-        android_ripple={{
-          color: "rgba(255, 103, 25, 0.12)",
-          borderless: false,
-        }}
-        style={({ pressed }) => [
-          styles.optionCard,
-          {
-            borderColor: isSelected
-              ? PRIMARY
-              : isDark
-                ? "#334155"
-                : "#e2e8f0",
-            backgroundColor: isSelected
-              ? isDark
-                ? "rgba(255, 103, 25, 0.14)"
-                : "#fff7f2"
-              : isDark
-                ? "#1e293b"
-                : "#ffffff",
-          },
-          Platform.OS === "ios" && pressed ? { opacity: 0.8 } : undefined,
-        ]}
-      >
-        <View
-          style={[
-            styles.optionCardIcon,
-            {
-              backgroundColor: isSelected
-                ? "rgba(255, 103, 25, 0.16)"
-                : isDark
-                  ? "#0f172a"
-                  : "#f1f5f9",
-            },
-          ]}
-        >
-          <AuthIcon
-            name={icon}
-            size={22}
-            color={isSelected ? PRIMARY : isDark ? "#cbd5e1" : "#64748b"}
-          />
-        </View>
-
-        <Text
-          numberOfLines={2}
-          style={[
-            styles.optionCardLabel,
-            {
-              color: isSelected
-                ? PRIMARY
-                : isDark
-                  ? "#f8fafc"
-                  : "#0f172a",
-              fontWeight: isSelected ? "700" : "600",
-            },
-          ]}
-        >
-          {item}
-        </Text>
-
-        <View
-          style={[
-            styles.radioCircle,
-            {
-              borderColor: isSelected
-                ? PRIMARY
-                : isDark
-                  ? "#475569"
-                  : "#cbd5e1",
-            },
-          ]}
-        >
-          {isSelected ? <View style={styles.radioInner} /> : null}
-        </View>
-      </Pressable>
-    );
-  };
 
   return (
     <SafeAreaView
@@ -727,96 +957,15 @@ export default function PersonalizationScreen() {
       </TouchableWithoutFeedback>
 
       {/* Options Selection BottomSheet Modal */}
-      {Platform.OS !== "web" ? (
-        <Host>
-          <BottomSheet
-            isPresented={modalConfig !== null}
-            onDismiss={closeModal}
-            showDragIndicator
-            snapPoints={["half", "full"]}
-          >
-            {modalConfig ? (
-              <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{
-                  paddingHorizontal: 20,
-                  paddingTop: 8,
-                  paddingBottom: insets.bottom + 28,
-                  backgroundColor: isDark ? "#1e293b" : "#ffffff",
-                }}
-              >
-                <Text
-                  style={[
-                    styles.sheetTitle,
-                    { color: isDark ? "#f8fafc" : "#0f172a" },
-                  ]}
-                >
-                  Select {modalConfig.label}
-                </Text>
-                <Text
-                  style={[
-                    styles.sheetSubtitle,
-                    { color: isDark ? "#94a3b8" : "#64748b" },
-                  ]}
-                >
-                  Choose the option that fits you best
-                </Text>
-                <View style={styles.optionsList}>
-                  {modalConfig.options.map(renderOptionItem)}
-                </View>
-              </ScrollView>
-            ) : null}
-          </BottomSheet>
-        </Host>
-      ) : (
-        <Modal
-          visible={modalConfig !== null}
-          transparent
-          animationType="fade"
-          onRequestClose={closeModal}
-        >
-          <View style={styles.webModalOverlay}>
-            <TouchableWithoutFeedback onPress={closeModal}>
-              <View style={styles.webBackdrop} />
-            </TouchableWithoutFeedback>
-            <View
-              style={[
-                styles.webSheetCard,
-                { backgroundColor: isDark ? "#1e293b" : "#ffffff" },
-              ]}
-            >
-              {modalConfig ? (
-                <>
-                  <Text
-                    style={[
-                      styles.sheetTitle,
-                      { color: isDark ? "#f8fafc" : "#0f172a" },
-                    ]}
-                  >
-                    Select {modalConfig.label}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.sheetSubtitle,
-                      { color: isDark ? "#94a3b8" : "#64748b" },
-                    ]}
-                  >
-                    Choose the option that fits you best
-                  </Text>
-                  <ScrollView
-                    showsVerticalScrollIndicator={false}
-                    style={{ maxHeight: 360 }}
-                  >
-                    <View style={styles.optionsList}>
-                      {modalConfig.options.map(renderOptionItem)}
-                    </View>
-                  </ScrollView>
-                </>
-              ) : null}
-            </View>
-          </View>
-        </Modal>
-      )}
+      {/* Options Selection BottomSheet Modal */}
+      <OptionBottomSheet
+        config={modalConfig}
+        onClose={closeModal}
+        onSelect={selectOption}
+        currentValue={currentValue}
+        isDark={isDark}
+        insetsBottom={insets.bottom}
+      />
 
       <InfoModal
         visible={errorModal.visible}
@@ -1017,18 +1166,74 @@ const styles = StyleSheet.create({
   },
 
   /* BottomSheet Options List */
+  sheetOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "transparent",
+  },
+  sheetBackdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(0, 0, 0, 0.55)",
+  },
+  sheetContainer: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 22,
+    paddingTop: 10,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -6 },
+        shadowOpacity: 0.18,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 20,
+      },
+    }),
+  },
+  sheetTopDragArea: {
+    width: "100%",
+    paddingTop: 4,
+    paddingBottom: 2,
+  },
+  handleContainer: {
+    alignItems: "center",
+    paddingVertical: 10,
+    width: "100%",
+  },
+  handle: {
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+  },
+  sheetHeaderRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 16,
+    marginTop: 4,
+  },
+  sheetCloseBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 12,
+  },
   sheetTitle: {
     fontSize: 20,
     fontWeight: "800",
-    marginTop: 4,
+    letterSpacing: -0.3,
   },
   sheetSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
-    marginBottom: 18,
+    fontSize: 13,
+    marginTop: 3,
   },
   optionsList: {
     gap: 10,
+    paddingBottom: 8,
   },
   optionCard: {
     flexDirection: "row",
@@ -1064,23 +1269,5 @@ const styles = StyleSheet.create({
     height: 11,
     borderRadius: 6,
     backgroundColor: PRIMARY,
-  },
-
-  /* Web Modal Fallback */
-  webModalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    padding: 20,
-  },
-  webBackdrop: {
-    ...StyleSheet.absoluteFill,
-  },
-  webSheetCard: {
-    width: "100%",
-    maxWidth: 440,
-    borderRadius: 20,
-    padding: 20,
   },
 });

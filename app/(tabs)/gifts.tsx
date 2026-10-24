@@ -278,6 +278,56 @@ const Gifts = () => {
               </Text>
             </View>
 
+            {/* Partner Plans Banner */}
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => router.push("/subscription" as any)}
+              className="mx-5 mb-5 overflow-hidden rounded-[32px] border-2 border-orange-500/30 shadow-lg shadow-orange-500/15"
+            >
+              <View
+                className={`p-6 flex-row items-center justify-between ${
+                  isDark ? "bg-zinc-900" : "bg-white"
+                }`}
+              >
+                <View className="flex-row items-center gap-4 flex-1">
+                  <View className="w-14 h-14 rounded-2xl bg-orange-500/10 items-center justify-center">
+                    <Ionicons name="diamond" size={28} color="#ff6719" />
+                  </View>
+                  <View className="flex-1">
+                    <View className="flex-row items-center gap-2 mb-1">
+                      <Text
+                        className={`text-[10px] font-black uppercase tracking-[2px] ${
+                          isDark ? "text-orange-400" : "text-orange-600"
+                        }`}
+                      >
+                        Partner Plans
+                      </Text>
+                      <View className="bg-orange-500 px-2 py-0.5 rounded-full">
+                        <Text className="text-white text-[9px] font-black">PRO</Text>
+                      </View>
+                    </View>
+                    <Text
+                      className={`text-lg font-black ${
+                        isDark ? "text-white" : "text-black"
+                      }`}
+                    >
+                      Invest in Your Growth
+                    </Text>
+                    <Text
+                      className={`text-xs font-semibold ${
+                        isDark ? "text-zinc-400" : "text-zinc-500"
+                      }`}
+                    >
+                      Explore seasonal partner & study tiers
+                    </Text>
+                  </View>
+                </View>
+                <View className="w-10 h-10 rounded-full bg-orange-500/10 items-center justify-center ml-2">
+                  <Ionicons name="arrow-forward" size={18} color="#ff6719" />
+                </View>
+              </View>
+            </TouchableOpacity>
+
             {/* Total Givings Card */}
             <TouchableOpacity
               activeOpacity={0.9}

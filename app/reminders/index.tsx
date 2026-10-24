@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const Reminder = () => {
+const RemindersScreen = () => {
   const { theme } = useTheme();
   const { top } = useSafeAreaInsets();
   const isDark = theme === "dark";
@@ -59,24 +59,38 @@ const Reminder = () => {
 
       <View className="flex-1" style={{ paddingTop: top + 10 }}>
         <View className="px-6 mb-8 flex-row justify-between items-center">
-          <View>
-            <Text
-              className={`text-4xl font-black ${isDark ? "text-white" : "text-black"}`}
-            >
-              Alerts
-            </Text>
-            <Text
-              className={`text-sm font-bold mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}
-            >
-              {alerts.length} active schedule{alerts.length !== 1 ? "s" : ""}
-            </Text>
+          <View className="flex-row items-center">
+            {router.canGoBack() && (
+              <TouchableOpacity
+                onPress={() => router.back()}
+                className="mr-3 p-2 -ml-2 rounded-full"
+              >
+                <Ionicons
+                  name="arrow-back"
+                  size={24}
+                  color={isDark ? "white" : "black"}
+                />
+              </TouchableOpacity>
+            )}
+            <View>
+              <Text
+                className={`text-3xl font-black ${isDark ? "text-white" : "text-black"}`}
+              >
+                Alerts
+              </Text>
+              <Text
+                className={`text-sm font-bold mt-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+              >
+                {alerts.length} active schedule{alerts.length !== 1 ? "s" : ""}
+              </Text>
+            </View>
           </View>
           <TouchableOpacity
             onPress={handleAddPress}
             activeOpacity={0.8}
-            className="w-14 h-14 rounded-2xl bg-orange-500 items-center justify-center shadow-lg shadow-orange-500/40"
+            className="w-13 h-13 rounded-2xl bg-orange-500 items-center justify-center shadow-lg shadow-orange-500/40 px-3 py-3"
           >
-            <Ionicons name="add" size={32} color="white" />
+            <Ionicons name="add" size={28} color="white" />
           </TouchableOpacity>
         </View>
 
@@ -155,4 +169,4 @@ const Reminder = () => {
   );
 };
 
-export default Reminder;
+export default RemindersScreen;

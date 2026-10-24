@@ -65,15 +65,21 @@ export default function SignUpStep1() {
     control,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<SignUpStep1FormValues>({
     resolver: zodResolver(signUpStep1Schema),
     defaultValues: {
-      fullName: signup.fullName || "",
+      fullName: "",
       phoneNumber: signup.phoneNumber || "",
       password: signup.password || "",
     },
   });
+
+  useEffect(() => {
+    setValue("fullName", "");
+    useSignupStore.setState({ fullName: "" });
+  }, [setValue]);
 
   const fullNameValue = watch("fullName");
   const phoneNumberValue = watch("phoneNumber");

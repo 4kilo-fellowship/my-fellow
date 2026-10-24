@@ -63,7 +63,7 @@ const GridCard = ({
     activeOpacity={0.9}
     style={{
       width: ITEM_WIDTH,
-      height: ITEM_WIDTH * 0.85, // Aspect ratio similar to screenshot
+      height: ITEM_WIDTH * 0.85,
       backgroundColor: item.color,
     }}
     className="rounded-2xl p-4 relative overflow-hidden justify-between mb-3 shadow-sm"
@@ -150,7 +150,7 @@ const Teams = () => {
       if (authState.authenticated) {
         fetchUserRequests();
         getCurrentUser().catch(console.error);
-        loadTeams(); // Check for updates in background on focus
+        loadTeams();
       }
     }, [authState.authenticated, fetchUserRequests, getCurrentUser, loadTeams]),
   );
@@ -163,7 +163,6 @@ const Teams = () => {
     loadTeams(true);
   };
 
-  // Filter logic
   const filteredTeams = teams.filter((t) =>
     t.name.toLowerCase().includes(searchText.toLowerCase()),
   );
@@ -174,9 +173,21 @@ const Teams = () => {
 
       <View style={{ paddingTop: top + 10 }}>
         {/* HEADER */}
-        <View className="px-5 mb-4">
+        <View className="px-5 mb-4 flex-row items-center">
+          {router.canGoBack() && (
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="mr-3 p-2 -ml-2 rounded-full"
+            >
+              <Ionicons
+                name="arrow-back"
+                size={24}
+                color={isDark ? "white" : "black"}
+              />
+            </TouchableOpacity>
+          )}
           <Text
-            className={`text-4xl font-extrabold ${isDark ? "text-white" : "text-black"}`}
+            className={`text-3xl font-extrabold ${isDark ? "text-white" : "text-black"}`}
           >
             Teams
           </Text>
@@ -232,7 +243,6 @@ const Teams = () => {
             norm(item.category),
           ];
 
-          // Fuzzy match helper: checks if either string contains the other
           const fuzzyMatch = (a: string, b: string) =>
             a !== "" && b !== "" && (a.includes(b) || b.includes(a));
 
