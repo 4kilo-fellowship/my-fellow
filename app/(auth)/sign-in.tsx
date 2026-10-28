@@ -14,6 +14,7 @@ import {
   Image,
   Keyboard,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   Text,
@@ -139,7 +140,7 @@ export default function SignIn() {
             <View className="flex-1 w-full justify-end items-center pb-0">
               <Image
                 source={require("@/assets/images/logo-white.png")}
-                style={{ width: "99%", height: "99%", marginBottom: -46 }}
+                style={{ width: "104%", height: "104%", marginBottom: -56 }}
                 resizeMode="contain"
               />
             </View>
@@ -259,7 +260,11 @@ export default function SignIn() {
                     By continuing, you agree to our{" "}
                     <Text
                       className="text-primary font-bold text-xs"
-                      onPress={() => router.push("/(auth)/legal?section=terms")}
+                      onPress={() =>
+                        Linking.openURL(
+                          "https://my-fellow-website.vercel.app/terms",
+                        )
+                      }
                     >
                       Terms of Use
                     </Text>{" "}
@@ -267,7 +272,9 @@ export default function SignIn() {
                     <Text
                       className="text-primary font-bold text-xs"
                       onPress={() =>
-                        router.push("/(auth)/legal?section=privacy")
+                        Linking.openURL(
+                          "https://my-fellow-website.vercel.app/privacy",
+                        )
                       }
                     >
                       Privacy Policy

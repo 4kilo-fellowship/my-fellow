@@ -292,7 +292,8 @@ export default function Settings() {
           iconFamily: "ionicons",
           label: "Privacy Policy",
           type: "navigation",
-          onPress: () => router.push("/(auth)/legal?section=privacy"),
+          onPress: () =>
+            Linking.openURL("https://my-fellow-website.vercel.app/privacy"),
         },
         {
           id: "terms",
@@ -300,7 +301,8 @@ export default function Settings() {
           iconFamily: "ionicons",
           label: "Terms of Service",
           type: "navigation",
-          onPress: () => router.push("/(auth)/legal?section=terms"),
+          onPress: () =>
+            Linking.openURL("https://my-fellow-website.vercel.app/terms"),
         },
         {
           id: "dataUsage",
