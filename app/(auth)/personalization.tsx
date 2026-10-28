@@ -701,48 +701,74 @@ export default function PersonalizationScreen() {
                     { color: isDark ? "#94A3B8" : "#64748B" },
                   ]}
                 >
-                  NAME
+                  FULL NAME
                 </Text>
-                <TextInput
-                  value={name}
-                  onChangeText={setName}
-                  onFocus={() => setNameFocused(true)}
-                  onBlur={() => setNameFocused(false)}
-                  placeholder="Enter your full name"
-                  placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                  returnKeyType="done"
-                  onSubmitEditing={() => {
-                    if (name.trim().length >= 2) {
-                      handleNextPress(0);
-                    }
-                  }}
+                <View
                   style={[
-                    styles.textInputBox,
+                    styles.nameInputBoxContainer,
                     {
                       backgroundColor: isDark ? "#18181B" : "#F8FAFC",
-                      borderColor: isDark ? "#27272A" : "#E2E8F0",
-                      color: isDark ? "#FFFFFF" : "#0F172A",
+                      borderColor: nameFocused
+                        ? PRIMARY
+                        : isDark
+                        ? "#27272A"
+                        : "#E2E8F0",
                     },
-                    nameFocused && styles.textInputBoxFocused,
                   ]}
+                >
+                  <View style={styles.nameInputIcon}>
+                    <AuthIcon
+                      name="person"
+                      size={20}
+                      color={nameFocused ? PRIMARY : isDark ? "#94A3B8" : "#64748B"}
+                    />
+                  </View>
+                  <TextInput
+                    value={name}
+                    onChangeText={setName}
+                    onFocus={() => setNameFocused(true)}
+                    onBlur={() => setNameFocused(false)}
+                    placeholder="Enter your full name"
+                    placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+                    autoCapitalize="words"
+                    autoCorrect={false}
+                    returnKeyType="done"
+                    onSubmitEditing={() => {
+                      if (name.trim().length >= 2) {
+                        handleNextPress(0);
+                      }
+                    }}
+                    style={[
+                      styles.nameInputText,
+                      { color: isDark ? "#FFFFFF" : "#0F172A" },
+                    ]}
+                  />
+                  {name.length > 0 && (
+                    <Pressable onPress={() => setName("")} hitSlop={6}>
+                      <Ionicons
+                        name="close-circle"
+                        size={18}
+                        color={isDark ? "#94A3B8" : "#64748B"}
+                      />
+                    </Pressable>
+                  )}
+                </View>
+              </View>
+
+              {/* Continue Button placed right near the Name field (matching Auth screen) */}
+              <View style={styles.nameActionButtonWrapper}>
+                <AuthButton
+                  title="Continue"
+                  onPress={() => handleNextPress(0)}
+                  disabled={!isPageValid(0)}
+                  loading={false}
+                  variant="primary"
+                  shape="pill"
+                  isDark={isDark}
+                  style={styles.actionButton}
                 />
               </View>
             </ScrollView>
-
-            <View style={styles.bottomDockedAction}>
-              <AuthButton
-                title="Continue"
-                onPress={() => handleNextPress(0)}
-                disabled={!isPageValid(0)}
-                loading={false}
-                variant="primary"
-                shape="pill"
-                isDark={isDark}
-                style={styles.actionButton}
-              />
-            </View>
           </KeyboardAvoidingView>
         );
 
@@ -2513,7 +2539,7 @@ const styles = StyleSheet.create({
     }),
   },
 
-  /* Name Input */
+  /* Name Input (matches Auth Screen) */
   inputFieldContainer: {
     marginTop: 20,
   },
@@ -2523,6 +2549,29 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     marginBottom: 8,
     textTransform: "uppercase",
+  },
+  nameInputBoxContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 56,
+    borderRadius: 18,
+    borderWidth: 2,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  nameInputIcon: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  nameInputText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "600",
+    height: "100%",
+  },
+  nameActionButtonWrapper: {
+    marginTop: 24,
+    marginBottom: 20,
   },
   textInputBox: {
     height: 52,
