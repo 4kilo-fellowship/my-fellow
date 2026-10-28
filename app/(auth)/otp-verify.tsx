@@ -19,6 +19,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  type TextInputInstance,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -78,7 +79,7 @@ export default function OtpVerify() {
     type: "info",
   });
 
-  const inputRef = useRef<TextInput | null>(null);
+  const inputRef = useRef<TextInputInstance | null>(null);
   const submitLock = useRef<boolean>(false);
   const flashClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const checkingDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);

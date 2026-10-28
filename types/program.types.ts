@@ -1,4 +1,4 @@
-import { ImageSourcePropType } from "react-native";
+import type { ImageSource } from "expo-image";
 
 export type Program = {
   id: string;
@@ -12,5 +12,5 @@ export type Program = {
     lat: number;
     lng: number;
   };
-  image: string | ImageSourcePropType;
+  image: string | number | ImageSource;
 };

@@ -202,7 +202,7 @@ export default function ChangePasswordScreen() {
                 borderless: false,
                 foreground: true,
               }}
-              onPress={handleSubmit(onSubmit)}
+              onPress={() => handleSubmit(onSubmit)()}
               disabled={isChanging}
             >
               {isChanging ? (

@@ -3,6 +3,10 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 
+export const unstable_settings = {
+  initialRouteName: "sign-up-step-1",
+};
+
 export default function AuthLayout() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -17,7 +21,6 @@ export default function AuthLayout() {
     <>
       <StatusBar style={isDark ? "light" : "dark"} animated />
       <Stack
-        initialRouteName="sign-up-step-1"
         screenOptions={{
           headerShown: false,
           animation: "simple_push",

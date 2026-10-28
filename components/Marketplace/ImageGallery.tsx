@@ -6,7 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
-  ViewToken,
+  type ListViewToken as ViewToken,
 } from "react-native";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");

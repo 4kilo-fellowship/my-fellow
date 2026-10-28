@@ -461,7 +461,7 @@ const Gifts = () => {
                 </View>
 
                 <TouchableOpacity
-                  onPress={handleSubmit(onGivePress)}
+                  onPress={() => handleSubmit(onGivePress)()}
                   disabled={loading}
                   activeOpacity={0.9}
                   className={`mt-12 py-5 rounded-3xl flex-row items-center justify-center ${

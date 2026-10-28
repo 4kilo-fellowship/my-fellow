@@ -21,6 +21,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  type TextInputInstance,
   View,
 } from "react-native";
 import Animated, {
@@ -46,7 +47,7 @@ export default function HelpScreen() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
 
   const [infoModal, setInfoModal] = useState<{
     visible: boolean;

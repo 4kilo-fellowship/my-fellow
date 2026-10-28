@@ -353,7 +353,7 @@ const Teams = () => {
                 </TouchableOpacity>
               </View>
             </View>
-          ) : null
+          ) : undefined
         }
       />
     </View>

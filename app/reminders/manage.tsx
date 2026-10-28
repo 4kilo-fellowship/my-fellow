@@ -419,7 +419,7 @@ export default function ManageAlertScreen() {
           style={{ paddingBottom: Math.max(insets.bottom + 10, 24) }}
         >
           <TouchableOpacity
-            onPress={handleSubmit(onSubmit)}
+            onPress={() => handleSubmit(onSubmit)()}
             activeOpacity={0.8}
             style={{
               backgroundColor: "#F97316",

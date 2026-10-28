@@ -21,6 +21,7 @@ import {
   ScrollView,
   Text,
   TextInput,
+  type TextInputInstance,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
@@ -47,7 +48,7 @@ export default function SignUpStep1() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const phoneInputRef = useRef<TextInput>(null);
+  const phoneInputRef = useRef<TextInputInstance>(null);
   const headerHeight = useHeaderHeight();
 
   const params = useLocalSearchParams();

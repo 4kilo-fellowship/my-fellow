@@ -7,6 +7,8 @@ import {
   StatusBar,
   Text,
   View,
+  type ScrollViewInstance,
+  type ViewInstance,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -15,9 +17,9 @@ export default function LegalScreen() {
   const isDark = theme === "dark";
   const insets = useSafeAreaInsets();
   const { section } = useLocalSearchParams<{ section?: string }>();
-  const scrollViewRef = useRef<ScrollView>(null);
-  const privacyRef = useRef<View>(null);
-  const termsRef = useRef<View>(null);
+  const scrollViewRef = useRef<ScrollViewInstance>(null);
+  const privacyRef = useRef<ViewInstance>(null);
+  const termsRef = useRef<ViewInstance>(null);
 
   const [privacyY, setPrivacyY] = React.useState(0);
   const [termsY, setTermsY] = React.useState(0);

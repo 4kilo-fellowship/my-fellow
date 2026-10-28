@@ -348,7 +348,7 @@ export default function EditProfileScreen() {
                 borderless: false,
                 foreground: true,
               }}
-              onPress={handleSubmit(onSave)}
+              onPress={() => handleSubmit(onSave)()}
               disabled={isUpdatingProfile}
             >
               {isUpdatingProfile ? (

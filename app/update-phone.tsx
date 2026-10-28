@@ -216,7 +216,7 @@ export default function UpdatePhoneScreen() {
                 borderless: false,
                 foreground: true,
               }}
-              onPress={handleSubmit(onSubmit)}
+              onPress={() => handleSubmit(onSubmit)()}
               disabled={isUpdating}
             >
               {isUpdating ? (
