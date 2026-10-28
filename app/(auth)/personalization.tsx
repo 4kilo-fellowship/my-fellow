@@ -425,12 +425,13 @@ export default function PersonalizationScreen() {
     }
   };
 
-  // Allow natural backward swipe even when forward scroll is locked
+  // PanResponder to allow natural backward gesture even when native forward scroll is locked
   const panResponder = useMemo(
     () =>
       PanResponder.create({
-        onMoveShouldSetPanResponder: (_, gestureState) => {
+        onMoveShouldSetPanResponderCapture: (_, gestureState) => {
           const activePage = currentPageRef.current;
+          // When current step is incomplete and user drags rightwards (backwards: dx > 15)
           if (activePage > 0 && !isPageValidRef.current(activePage)) {
             return (
               gestureState.dx > 15 &&
@@ -499,6 +500,9 @@ export default function PersonalizationScreen() {
   const handleScrollStateChanged = (
     e: PageScrollStateChangedNativeEvent
   ) => {
+    if (e.nativeEvent.pageScrollState === "dragging") {
+      Keyboard.dismiss();
+    }
     if (e.nativeEvent.pageScrollState === "idle") {
       isProgrammaticNav.current = false;
     }
