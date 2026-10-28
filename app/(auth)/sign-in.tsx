@@ -136,10 +136,10 @@ export default function SignIn() {
               borderBottomRightRadius: 40,
             }}
           >
-            <View className="flex-1 w-full justify-end items-center pb-2">
+            <View className="flex-1 w-full justify-end items-center pb-0">
               <Image
                 source={require("@/assets/images/logo-white.png")}
-                style={{ width: "92%", height: "92%", marginBottom: -10 }}
+                style={{ width: "102%", height: "102%", marginBottom: -22 }}
                 resizeMode="contain"
               />
             </View>
