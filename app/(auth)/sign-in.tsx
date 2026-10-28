@@ -24,7 +24,7 @@ import {
 import { z } from "zod";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-const HEADER_HEIGHT = SCREEN_HEIGHT * 0.28;
+const HEADER_HEIGHT = SCREEN_HEIGHT * 0.4;
 
 const phoneSchema = z.object({
   phoneNumber: z
@@ -136,10 +136,10 @@ export default function SignIn() {
               borderBottomRightRadius: 40,
             }}
           >
-            <View className="flex-1 w-full justify-center items-center pt-10">
+            <View className="flex-1 w-full justify-center items-center pt-8">
               <Image
                 source={require("@/assets/images/logo-white.png")}
-                style={{ width: "150%", height: "150%" }}
+                style={{ width: "120%", height: "120%" }}
                 resizeMode="contain"
               />
             </View>
@@ -155,26 +155,8 @@ export default function SignIn() {
             keyboardDismissMode="on-drag"
           >
             <View
-              className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} pt-10 px-6`}
+              className={`flex-1 ${isDark ? "bg-dark" : "bg-white"} pt-8 px-6`}
             >
-              <View className="mb-8">
-                <Text
-                  className={`text-2xl font-bold ${
-                    isDark ? "text-white" : "text-slate-900"
-                  }`}
-                >
-                  Welcome
-                </Text>
-                <Text
-                  className={`text-sm mt-1.5 ${
-                    isDark ? "text-slate-400" : "text-slate-500"
-                  }`}
-                >
-                  Enter your phone number to sign in or register with 4 Kilo
-                  Fellowship
-                </Text>
-              </View>
-
               <View className="flex-col gap-6">
                 <View>
                   <Text
