@@ -1,11 +1,12 @@
 import AuthIcon, { AuthIconName } from "@/components/AuthIcon";
-import { AuthButton } from "@/components/AuthButton";
+import AppButton from "@/components/AppButton";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { PRIMARY } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useSignupStore } from "@/stores/signup.store";
 import { useUserStore } from "@/stores/user.store";
+import { generateCoolAvatarUrl, getPrefilledAvatar } from "@/utils/avatar";
 import { BottomSheet, Host, RNHostView } from "@expo/ui";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
@@ -32,6 +33,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  type TextInputInstance,
   View,
 } from "react-native";
 import PagerView, {
@@ -275,6 +277,7 @@ export default function PersonalizationScreen() {
   const isDark = theme === "dark";
 
   const pagerRef = useRef<PagerView>(null);
+  const nameInputRef = useRef<TextInputInstance | null>(null);
 
   const initialName =
     (params.fullName as string) ||
@@ -285,7 +288,47 @@ export default function PersonalizationScreen() {
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [name, setName] = useState<string>(initialName);
   const [nameFocused, setNameFocused] = useState<boolean>(false);
-  const [image, setImage] = useState<string | null>(user?.profileImage || null);
+
+  // Deterministically prefill cool avatar using phone number / ID / name
+  const defaultGeneratedAvatar = useMemo(() => {
+    if (user?.profileImage) return user.profileImage;
+    return getPrefilledAvatar(
+      user?.phoneNumber ||
+        signupStore.phoneNumber ||
+        user?.id ||
+        (params.fullName as string) ||
+        "fellow_member"
+    );
+  }, [
+    user?.profileImage,
+    user?.phoneNumber,
+    signupStore.phoneNumber,
+    user?.id,
+    params.fullName,
+  ]);
+
+  const [image, setImage] = useState<string>(
+    user?.profileImage || defaultGeneratedAvatar
+  );
+  const [isRollingAvatar, setIsRollingAvatar] = useState<boolean>(false);
+
+  // Auto focus Name input when landing on screen from auth
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      nameInputRef.current?.focus();
+    }, 280);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleRandomizeAvatar = () => {
+    try {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
+    setIsRollingAvatar(true);
+    const newAvatar = generateCoolAvatarUrl();
+    setImage(newAvatar);
+    setTimeout(() => setIsRollingAvatar(false), 250);
+  };
 
   const [team, setTeam] = useState<string>(user?.team || "");
   const [department, setDepartment] = useState<string>(user?.department || "");
@@ -671,7 +714,9 @@ export default function PersonalizationScreen() {
                     style={[
                       styles.avatarCircle,
                       {
-                        backgroundColor: PRIMARY,
+                        backgroundColor: isDark ? "#27272A" : "#FFF7ED",
+                        borderColor: PRIMARY,
+                        borderWidth: 2.5,
                       },
                     ]}
                   >
@@ -688,10 +733,71 @@ export default function PersonalizationScreen() {
                     )}
 
                     <View style={styles.avatarCameraBadge}>
-                      <Ionicons name="camera" size={16} color="#FFFFFF" />
+                      <Ionicons name="camera" size={15} color="#FFFFFF" />
                     </View>
                   </View>
                 </Pressable>
+
+                {/* Avatar Action Pills: Roll new avatar & Choose photo */}
+                <View style={styles.avatarActionRow}>
+                  <Pressable
+                    onPress={handleRandomizeAvatar}
+                    style={({ pressed }) => [
+                      styles.avatarChip,
+                      {
+                        backgroundColor: isDark ? "#27272A" : "#FFF7ED",
+                        borderColor: isDark ? "#3F3F46" : "#FFEDD5",
+                      },
+                      pressed && { opacity: 0.75, transform: [{ scale: 0.96 }] },
+                    ]}
+                    hitSlop={6}
+                    accessibilityRole="button"
+                    accessibilityLabel="Roll new avatar"
+                  >
+                    <Ionicons
+                      name="dice-outline"
+                      size={15}
+                      color={PRIMARY}
+                    />
+                    <Text
+                      style={[
+                        styles.avatarChipText,
+                        { color: PRIMARY },
+                      ]}
+                    >
+                      {isRollingAvatar ? "Rolling..." : "Roll Avatar"}
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={handlePickImage}
+                    style={({ pressed }) => [
+                      styles.avatarChip,
+                      {
+                        backgroundColor: isDark ? "#27272A" : "#F1F5F9",
+                        borderColor: isDark ? "#3F3F46" : "#E2E8F0",
+                      },
+                      pressed && { opacity: 0.75, transform: [{ scale: 0.96 }] },
+                    ]}
+                    hitSlop={6}
+                    accessibilityRole="button"
+                    accessibilityLabel="Choose photo from gallery"
+                  >
+                    <Ionicons
+                      name="image-outline"
+                      size={15}
+                      color={isDark ? "#CBD5E1" : "#475569"}
+                    />
+                    <Text
+                      style={[
+                        styles.avatarChipText,
+                        { color: isDark ? "#CBD5E1" : "#475569" },
+                      ]}
+                    >
+                      Gallery
+                    </Text>
+                  </Pressable>
+                </View>
               </View>
 
               <View style={styles.inputFieldContainer}>
@@ -724,6 +830,8 @@ export default function PersonalizationScreen() {
                     />
                   </View>
                   <TextInput
+                    ref={nameInputRef}
+                    autoFocus={true}
                     value={name}
                     onChangeText={setName}
                     onFocus={() => setNameFocused(true)}
@@ -757,15 +865,14 @@ export default function PersonalizationScreen() {
 
               {/* Continue Button placed right near the Name field (matching Auth screen) */}
               <View style={styles.nameActionButtonWrapper}>
-                <AuthButton
+                <AppButton
                   title="Continue"
                   onPress={() => handleNextPress(0)}
                   disabled={!isPageValid(0)}
                   loading={false}
                   variant="primary"
-                  shape="pill"
+                  size="lg"
                   isDark={isDark}
-                  style={styles.actionButton}
                 />
               </View>
             </ScrollView>
@@ -1017,15 +1124,14 @@ export default function PersonalizationScreen() {
             </View>
 
             <View style={styles.stepButtonWrapper}>
-              <AuthButton
+              <AppButton
                 title="Next"
                 onPress={() => handleNextPress(1)}
                 disabled={!isPageValid(1)}
                 loading={false}
                 variant="primary"
-                shape="pill"
+                size="lg"
                 isDark={isDark}
-                style={styles.actionButton}
               />
             </View>
           </ScrollView>
@@ -1341,15 +1447,14 @@ export default function PersonalizationScreen() {
             </View>
 
             <View style={styles.stepButtonWrapper}>
-              <AuthButton
+              <AppButton
                 title="Next"
                 onPress={() => handleNextPress(2)}
                 disabled={!isPageValid(2)}
                 loading={false}
                 variant="primary"
-                shape="pill"
+                size="lg"
                 isDark={isDark}
-                style={styles.actionButton}
               />
             </View>
           </ScrollView>
@@ -1600,15 +1705,14 @@ export default function PersonalizationScreen() {
             </View>
 
             <View style={styles.stepButtonWrapper}>
-              <AuthButton
+              <AppButton
                 title="Next"
                 onPress={() => handleNextPress(3)}
                 disabled={!isPageValid(3)}
                 loading={false}
                 variant="primary"
-                shape="pill"
+                size="lg"
                 isDark={isDark}
-                style={styles.actionButton}
               />
             </View>
           </ScrollView>
@@ -1732,15 +1836,14 @@ export default function PersonalizationScreen() {
               </View>
 
               <View style={styles.stepButtonWrapper}>
-                <AuthButton
+                <AppButton
                   title="Get Connected"
                   onPress={() => void handleComplete()}
                   disabled={!isPageValid(4)}
                   loading={submitting}
                   variant="primary"
-                  shape="pill"
+                  size="lg"
                   isDark={isDark}
-                  style={styles.actionButton}
                 />
               </View>
             </ScrollView>
@@ -2537,6 +2640,26 @@ const styles = StyleSheet.create({
         elevation: 2,
       },
     }),
+  },
+  avatarActionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    marginTop: 14,
+  },
+  avatarChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  avatarChipText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
 
   /* Name Input (matches Auth Screen) */
