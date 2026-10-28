@@ -129,17 +129,17 @@ export default function SignIn() {
           keyboardVerticalOffset={Platform.OS === "ios" ? headerHeight : 20}
         >
           <View
-            className="bg-primary relative overflow-hidden items-center justify-center"
+            className="bg-primary relative overflow-hidden items-center justify-end"
             style={{
               height: HEADER_HEIGHT,
               borderBottomLeftRadius: 40,
               borderBottomRightRadius: 40,
             }}
           >
-            <View className="flex-1 w-full justify-center items-center pt-8">
+            <View className="flex-1 w-full justify-end items-center pb-2">
               <Image
                 source={require("@/assets/images/logo-white.png")}
-                style={{ width: "120%", height: "120%" }}
+                style={{ width: "92%", height: "92%", marginBottom: -10 }}
                 resizeMode="contain"
               />
             </View>
