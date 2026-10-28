@@ -298,7 +298,8 @@ export default function PersonalizationScreen() {
   );
 
   const [isTeamSheetOpen, setIsTeamSheetOpen] = useState<boolean>(false);
-  const [isSheetOpen, setIsSheetOpen] = useState<boolean>(false);
+  const [isDeptSheetOpen, setIsDeptSheetOpen] = useState<boolean>(false);
+  const [isYearSheetOpen, setIsYearSheetOpen] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [errorModal, setErrorModal] = useState<{
     visible: boolean;
@@ -313,6 +314,16 @@ export default function PersonalizationScreen() {
   const selectedTeamMeta = useMemo(
     () => FELLOWSHIP_TEAMS.find((t) => t.id === team),
     [team]
+  );
+
+  const selectedDeptMeta = useMemo(
+    () => FELLOWSHIP_DEPARTMENTS.find((d) => d.id === department),
+    [department]
+  );
+
+  const selectedYearMeta = useMemo(
+    () => FELLOWSHIP_YEARS.find((y) => y.id === year),
+    [year]
   );
 
   // Smooth continuous filling progress bar matching TNT Ethiopia
@@ -1023,6 +1034,127 @@ export default function PersonalizationScreen() {
               </Text>
             </View>
 
+            {/* TNT-Ethiopia Dropdown Selector (opens native BottomSheet) */}
+            <View style={styles.institutionInputSection}>
+              <Text
+                style={[
+                  styles.inputFieldLabel,
+                  { color: isDark ? "#94A3B8" : "#64748B" },
+                ]}
+              >
+                AAU FACULTY / DEPARTMENT
+              </Text>
+              <Pressable
+                onPress={() => {
+                  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                  setIsDeptSheetOpen(true);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={department ? `Selected department: ${department}` : "Select your department"}
+                style={({ pressed }) => [
+                  styles.dropdownSelector,
+                  Boolean(department) && styles.dropdownSelectorSelected,
+                  {
+                    backgroundColor: Boolean(department)
+                      ? isDark
+                        ? "rgba(255, 103, 25, 0.12)"
+                        : "#FFF7ED"
+                      : isDark
+                      ? "#18181B"
+                      : "#F8FAFC",
+                    borderColor: Boolean(department)
+                      ? PRIMARY
+                      : isDark
+                      ? "#27272A"
+                      : "#E2E8F0",
+                  },
+                  pressed && Platform.OS === "ios" && { opacity: 0.8 },
+                ]}
+              >
+                <View style={styles.dropdownLeft}>
+                  <View
+                    style={[
+                      styles.dropdownIconBadge,
+                      {
+                        backgroundColor: Boolean(department)
+                          ? "rgba(255, 103, 25, 0.18)"
+                          : isDark
+                          ? "#27272A"
+                          : "#E2E8F0",
+                      },
+                    ]}
+                  >
+                    <AuthIcon
+                      name={selectedDeptMeta?.icon || "department"}
+                      size={20}
+                      color={Boolean(department) ? PRIMARY : isDark ? "#94A3B8" : "#64748B"}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.dropdownValueText,
+                        !department && styles.dropdownPlaceholderText,
+                        { color: Boolean(department) ? PRIMARY : isDark ? "#FFFFFF" : "#0F172A" },
+                      ]}
+                    >
+                      {selectedDeptMeta ? selectedDeptMeta.name : "Select your AAU department..."}
+                    </Text>
+                    {selectedDeptMeta && (
+                      <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.dropdownSubText,
+                          { color: isDark ? "#94A3B8" : "#64748B" },
+                        ]}
+                      >
+                        {selectedDeptMeta.subtitle}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+                <Ionicons
+                  name="chevron-down"
+                  size={20}
+                  color={Boolean(department) ? PRIMARY : isDark ? "#94A3B8" : "#64748B"}
+                />
+              </Pressable>
+            </View>
+
+            {/* Native BottomSheet Drawer Trigger */}
+            <Pressable
+              onPress={() => {
+                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setIsDeptSheetOpen(true);
+              }}
+              style={({ pressed }) => [
+                styles.sheetTriggerRow,
+                {
+                  backgroundColor: isDark ? "#1E293B" : "#FFF7ED",
+                  borderColor: isDark ? "#334155" : "#FFEDD5",
+                },
+                pressed && { opacity: 0.8 },
+              ]}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <Ionicons name="list" size={18} color={PRIMARY} />
+                <Text
+                  style={[
+                    styles.sheetTriggerText,
+                    { color: isDark ? "#F8FAFC" : "#C2410C" },
+                  ]}
+                >
+                  Browse all AAU departments in drawer ({FELLOWSHIP_DEPARTMENTS.length})
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={isDark ? "#94A3B8" : "#C2410C"}
+              />
+            </Pressable>
+
             {/* TNT-Ethiopia Pill Search box */}
             <View
               style={[
@@ -1059,36 +1191,6 @@ export default function PersonalizationScreen() {
                 </Pressable>
               )}
             </View>
-
-            {/* Native BottomSheet Drawer Trigger */}
-            <Pressable
-              onPress={() => setIsSheetOpen(true)}
-              style={({ pressed }) => [
-                styles.sheetTriggerRow,
-                {
-                  backgroundColor: isDark ? "#1E293B" : "#FFF7ED",
-                  borderColor: isDark ? "#334155" : "#FFEDD5",
-                },
-                pressed && { opacity: 0.8 },
-              ]}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <Ionicons name="list" size={18} color={PRIMARY} />
-                <Text
-                  style={[
-                    styles.sheetTriggerText,
-                    { color: isDark ? "#F8FAFC" : "#C2410C" },
-                  ]}
-                >
-                  Browse all AAU departments ({FELLOWSHIP_DEPARTMENTS.length})
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={16}
-                color={isDark ? "#94A3B8" : "#C2410C"}
-              />
-            </Pressable>
 
             <View style={styles.cardsStack}>
               {filteredDepartments.map((item) => {
@@ -1255,6 +1357,127 @@ export default function PersonalizationScreen() {
                 Tell us where you are on your campus journey so we can tailor cell groups and resources.
               </Text>
             </View>
+
+            {/* TNT-Ethiopia Dropdown Selector (opens native BottomSheet) */}
+            <View style={styles.institutionInputSection}>
+              <Text
+                style={[
+                  styles.inputFieldLabel,
+                  { color: isDark ? "#94A3B8" : "#64748B" },
+                ]}
+              >
+                ACADEMIC YEAR AT AAU
+              </Text>
+              <Pressable
+                onPress={() => {
+                  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                  setIsYearSheetOpen(true);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={year ? `Selected year: ${year}` : "Select your academic year"}
+                style={({ pressed }) => [
+                  styles.dropdownSelector,
+                  Boolean(year) && styles.dropdownSelectorSelected,
+                  {
+                    backgroundColor: Boolean(year)
+                      ? isDark
+                        ? "rgba(255, 103, 25, 0.12)"
+                        : "#FFF7ED"
+                      : isDark
+                      ? "#18181B"
+                      : "#F8FAFC",
+                    borderColor: Boolean(year)
+                      ? PRIMARY
+                      : isDark
+                      ? "#27272A"
+                      : "#E2E8F0",
+                  },
+                  pressed && Platform.OS === "ios" && { opacity: 0.8 },
+                ]}
+              >
+                <View style={styles.dropdownLeft}>
+                  <View
+                    style={[
+                      styles.dropdownIconBadge,
+                      {
+                        backgroundColor: Boolean(year)
+                          ? "rgba(255, 103, 25, 0.18)"
+                          : isDark
+                          ? "#27272A"
+                          : "#E2E8F0",
+                      },
+                    ]}
+                  >
+                    <AuthIcon
+                      name="year"
+                      size={20}
+                      color={Boolean(year) ? PRIMARY : isDark ? "#94A3B8" : "#64748B"}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.dropdownValueText,
+                        !year && styles.dropdownPlaceholderText,
+                        { color: Boolean(year) ? PRIMARY : isDark ? "#FFFFFF" : "#0F172A" },
+                      ]}
+                    >
+                      {selectedYearMeta ? selectedYearMeta.name : "Select your academic year..."}
+                    </Text>
+                    {selectedYearMeta && (
+                      <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.dropdownSubText,
+                          { color: isDark ? "#94A3B8" : "#64748B" },
+                        ]}
+                      >
+                        {selectedYearMeta.subtitle}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+                <Ionicons
+                  name="chevron-down"
+                  size={20}
+                  color={Boolean(year) ? PRIMARY : isDark ? "#94A3B8" : "#64748B"}
+                />
+              </Pressable>
+            </View>
+
+            {/* Quick Trigger Button to open BottomSheet */}
+            <Pressable
+              onPress={() => {
+                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setIsYearSheetOpen(true);
+              }}
+              style={({ pressed }) => [
+                styles.sheetTriggerRow,
+                {
+                  backgroundColor: isDark ? "#1E293B" : "#FFF7ED",
+                  borderColor: isDark ? "#334155" : "#FFEDD5",
+                },
+                pressed && { opacity: 0.8 },
+              ]}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <Ionicons name="list" size={18} color={PRIMARY} />
+                <Text
+                  style={[
+                    styles.sheetTriggerText,
+                    { color: isDark ? "#F8FAFC" : "#C2410C" },
+                  ]}
+                >
+                  Browse academic years in drawer ({FELLOWSHIP_YEARS.length})
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={isDark ? "#94A3B8" : "#C2410C"}
+              />
+            </Pressable>
 
             <View style={styles.cardsStack}>
               {FELLOWSHIP_YEARS.map((item) => {
@@ -1782,15 +2005,15 @@ export default function PersonalizationScreen() {
       )}
 
       {/* Expo UI Native BottomSheet for Department Drawer */}
-      {isSheetOpen && (
+      {isDeptSheetOpen && (
         <Host
           colorScheme={isDark ? "dark" : "light"}
           style={StyleSheet.absoluteFill}
           pointerEvents="box-none"
         >
           <BottomSheet
-            isPresented={isSheetOpen}
-            onDismiss={() => setIsSheetOpen(false)}
+            isPresented={isDeptSheetOpen}
+            onDismiss={() => setIsDeptSheetOpen(false)}
             snapPoints={["half", "full"]}
             showDragIndicator={true}
             contentPadding={0}
@@ -1824,7 +2047,7 @@ export default function PersonalizationScreen() {
                     </Text>
                   </View>
                   <Pressable
-                    onPress={() => setIsSheetOpen(false)}
+                    onPress={() => setIsDeptSheetOpen(false)}
                     hitSlop={10}
                     style={[
                       styles.sheetCloseBtn,
@@ -1882,7 +2105,7 @@ export default function PersonalizationScreen() {
                         key={dept.id}
                         onPress={() => {
                           setDepartment(dept.id);
-                          setIsSheetOpen(false);
+                          setIsDeptSheetOpen(false);
                           void Haptics.selectionAsync().catch(() => {});
                         }}
                         style={({ pressed }) => [
@@ -1929,6 +2152,174 @@ export default function PersonalizationScreen() {
                           <Ionicons
                             name="checkmark-circle"
                             size={20}
+                            color={PRIMARY}
+                          />
+                        )}
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            </RNHostView>
+          </BottomSheet>
+        </Host>
+      )}
+
+      {/* Expo UI Native BottomSheet for Academic Year Selection (TNT Ethiopia design) */}
+      {isYearSheetOpen && (
+        <Host
+          colorScheme={isDark ? "dark" : "light"}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="box-none"
+        >
+          <BottomSheet
+            isPresented={isYearSheetOpen}
+            onDismiss={() => setIsYearSheetOpen(false)}
+            snapPoints={["half", "full"]}
+            showDragIndicator={true}
+            contentPadding={0}
+            scrimColor={isDark ? "rgba(0, 0, 0, 0.7)" : "rgba(0, 0, 0, 0.5)"}
+            containerColor={isDark ? "#18181B" : "#FFFFFF"}
+          >
+            <RNHostView style={{ width: "100%" }}>
+              <View
+                style={[
+                  styles.sheetContent,
+                  { backgroundColor: isDark ? "#18181B" : "#FFFFFF" },
+                ]}
+              >
+                <View style={styles.sheetHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={[
+                        styles.sheetTitle,
+                        { color: isDark ? "#FFFFFF" : "#0F172A" },
+                      ]}
+                    >
+                      Select Academic Year
+                    </Text>
+                    <Text
+                      style={[
+                        styles.sheetSubtitle,
+                        { color: isDark ? "#94A3B8" : "#64748B" },
+                      ]}
+                    >
+                      Tell us where you are on your campus journey at AAU
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={() => setIsYearSheetOpen(false)}
+                    hitSlop={10}
+                    style={[
+                      styles.sheetCloseBtn,
+                      { backgroundColor: isDark ? "#27272A" : "#F1F5F9" },
+                    ]}
+                  >
+                    <Ionicons
+                      name="close"
+                      size={18}
+                      color={isDark ? "#94A3B8" : "#64748B"}
+                    />
+                  </Pressable>
+                </View>
+
+                <ScrollView
+                  style={styles.sheetList}
+                  contentContainerStyle={styles.sheetListContent}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  nestedScrollEnabled={true}
+                >
+                  {FELLOWSHIP_YEARS.map((item) => {
+                    const isSelected = year === item.id;
+                    return (
+                      <Pressable
+                        key={item.id}
+                        onPress={() => {
+                          setYear(item.id);
+                          setIsYearSheetOpen(false);
+                          void Haptics.selectionAsync().catch(() => {});
+                        }}
+                        style={({ pressed }) => [
+                          styles.sheetRow,
+                          {
+                            backgroundColor: isSelected
+                              ? isDark
+                                ? "rgba(255, 103, 25, 0.16)"
+                                : "#FFF7ED"
+                              : isDark
+                              ? "#1F2937"
+                              : "#FAFAFA",
+                            borderColor: isSelected
+                              ? PRIMARY
+                              : isDark
+                              ? "#374151"
+                              : "#E5E7EB",
+                          },
+                          pressed && { opacity: 0.7 },
+                        ]}
+                      >
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 12,
+                            flex: 1,
+                          }}
+                        >
+                          <View
+                            style={[
+                              styles.sheetIconBadge,
+                              {
+                                backgroundColor: isSelected
+                                  ? "rgba(255, 103, 25, 0.2)"
+                                  : isDark
+                                  ? "#374151"
+                                  : "#E5E7EB",
+                              },
+                            ]}
+                          >
+                            <AuthIcon
+                              name="year"
+                              size={20}
+                              color={
+                                isSelected
+                                  ? PRIMARY
+                                  : isDark
+                                  ? "#CBD5E1"
+                                  : "#64748B"
+                              }
+                            />
+                          </View>
+                          <View style={{ flex: 1, paddingRight: 8 }}>
+                            <Text
+                              style={[
+                                styles.sheetRowText,
+                                {
+                                  color: isSelected
+                                    ? PRIMARY
+                                    : isDark
+                                    ? "#FFFFFF"
+                                    : "#0F172A",
+                                },
+                              ]}
+                            >
+                              {item.name}
+                            </Text>
+                            <Text
+                              style={[
+                                styles.sheetRowSubText,
+                                { color: isDark ? "#94A3B8" : "#64748B" },
+                              ]}
+                            >
+                              {item.subtitle}
+                            </Text>
+                          </View>
+                        </View>
+                        {isSelected && (
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={22}
                             color={PRIMARY}
                           />
                         )}
