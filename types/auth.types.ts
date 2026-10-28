@@ -80,10 +80,30 @@ export interface ResetPasswordResponse {
   user?: User;
 }
 
+export interface PhoneAuthSendOtpResponse {
+  success: boolean;
+  message: string;
+  phoneNumber: string;
+  expiresIn?: number;
+}
+
+export interface PhoneAuthVerifyOtpResponse {
+  success: boolean;
+  message: string;
+  token: string;
+  user: User;
+  isNewUser: boolean;
+}
+
 export interface AuthContextType {
   authState: AuthState;
   login: (phoneNumber: string, password: string) => Promise<LoginResponse>;
   signup: (data: SignUpData) => Promise<SignUpResponse>;
+  sendPhoneAuthOtp: (phoneNumber: string) => Promise<PhoneAuthSendOtpResponse>;
+  verifyPhoneAuthOtp: (
+    phoneNumber: string,
+    code: string,
+  ) => Promise<PhoneAuthVerifyOtpResponse>;
   logout: () => Promise<void>;
   getCurrentUser: () => Promise<User>;
   updateProfile: (data: Partial<SignUpData>) => Promise<User>;

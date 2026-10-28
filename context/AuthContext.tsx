@@ -10,6 +10,8 @@ import {
   AuthState,
   ChangePasswordData,
   LoginResponse,
+  PhoneAuthSendOtpResponse,
+  PhoneAuthVerifyOtpResponse,
   RequestOtpResponse,
   ResetPasswordResponse,
   SignUpData,
@@ -113,6 +115,37 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (user) {
         useUserStore.getState().setUser(user);
       }
+
+      return response;
+    } catch (error) {
+      setAuthState({ token: null, authenticated: false });
+      throw error;
+    }
+  };
+
+  const sendPhoneAuthOtp = async (
+    phoneNumber: string,
+  ): Promise<PhoneAuthSendOtpResponse> => {
+    return await authService.sendPhoneAuthOtp(phoneNumber);
+  };
+
+  const verifyPhoneAuthOtp = async (
+    phoneNumber: string,
+    code: string,
+  ): Promise<PhoneAuthVerifyOtpResponse> => {
+    try {
+      const response = await authService.verifyPhoneAuthOtp(phoneNumber, code);
+      const { token, user } = response;
+
+      await SecureStore.setItemAsync("userToken", token);
+      api.defaults.headers.common.Authorization = `Bearer ${token}`;
+      setAuthState({ token, authenticated: true });
+
+      if (user) {
+        useUserStore.getState().setUser(user);
+      }
+
+      useSignupStore.getState().clear();
 
       return response;
     } catch (error) {
@@ -236,6 +269,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         authState,
         login,
         signup,
+        sendPhoneAuthOtp,
+        verifyPhoneAuthOtp,
         logout,
         getCurrentUser,
         updateProfile,

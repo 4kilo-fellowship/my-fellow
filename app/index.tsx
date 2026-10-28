@@ -1,37 +1,16 @@
 import { useAuth } from "@/context/AuthContext";
 import { useAppStore } from "@/stores/app.store";
-import { useSignupStore } from "@/stores/signup.store";
+import { useUserStore } from "@/stores/user.store";
 import { Redirect } from "expo-router";
-import { useEffect, useState } from "react";
-
-const signupStepRoute = {
-  "signup-step-1": "/(auth)/sign-up-step-1",
-  "otp-verify": "/(auth)/otp-verify",
-  "signup-step-2": "/(auth)/personalization",
-  "personalization": "/(auth)/personalization",
-} as const;
+import React from "react";
 
 export default function Index() {
   const { authState } = useAuth();
   const hasCompletedOnboarding = useAppStore(
     (state) => state.hasCompletedOnboarding,
   );
-  const signupStep = useSignupStore((state) => state.step);
-  const [signupHydrated, setSignupHydrated] = useState(
-    useSignupStore.persist.hasHydrated(),
-  );
 
-  useEffect(() => {
-    const unsubscribe = useSignupStore.persist.onFinishHydration(() => {
-      setSignupHydrated(true);
-    });
-    if (useSignupStore.persist.hasHydrated()) {
-      setSignupHydrated(true);
-    }
-    return unsubscribe;
-  }, []);
-
-  if (authState.authenticated === null || !signupHydrated) {
+  if (authState.authenticated === null) {
     return null;
   }
 
@@ -39,14 +18,15 @@ export default function Index() {
   if (!hasCompletedOnboarding) {
     destination = "/onboarding";
   } else if (authState.authenticated) {
-    destination = "/(tabs)";
-  } else if (signupStep) {
-    destination = signupStepRoute[signupStep];
+    const user = useUserStore.getState().user;
+    if (user && (!user.fullName || !user.department)) {
+      destination = "/(auth)/personalization";
+    } else {
+      destination = "/(tabs)";
+    }
   } else {
-    destination = "/(auth)/sign-up-step-1";
+    destination = "/(auth)/sign-in";
   }
 
-  return (
-    <Redirect href={destination} />
-  );
+  return <Redirect href={destination as any} />;
 }

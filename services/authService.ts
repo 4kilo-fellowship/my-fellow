@@ -1,5 +1,7 @@
 import {
   LoginResponse,
+  PhoneAuthSendOtpResponse,
+  PhoneAuthVerifyOtpResponse,
   RequestOtpResponse,
   ResetPasswordResponse,
   SignUpData,
@@ -300,6 +302,46 @@ export const authService = {
           error.response?.data?.message ||
           error.response?.data?.error ||
           "Password reset failed";
+        throw new Error(message);
+      }
+      throw error;
+    }
+  },
+
+  sendPhoneAuthOtp: async (
+    phoneNumber: string,
+  ): Promise<PhoneAuthSendOtpResponse> => {
+    try {
+      const response = await api.post("/auth/phone/send-otp", { phoneNumber });
+      return response.data;
+    } catch (error) {
+      if (isAxiosError(error)) {
+        const message =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          "Failed to send verification code";
+        throw new Error(message);
+      }
+      throw error;
+    }
+  },
+
+  verifyPhoneAuthOtp: async (
+    phoneNumber: string,
+    code: string,
+  ): Promise<PhoneAuthVerifyOtpResponse> => {
+    try {
+      const response = await api.post("/auth/phone/verify-otp", {
+        phoneNumber,
+        code,
+      });
+      return response.data;
+    } catch (error) {
+      if (isAxiosError(error)) {
+        const message =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          "Invalid or expired verification code";
         throw new Error(message);
       }
       throw error;

@@ -5,12 +5,10 @@ import { DEPARTMENTS, TEAM_NAMES, YEARS } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useSignupStore } from "@/stores/signup.store";
-import { SignUpData } from "@/types";
 import { SignUpStep2FormValues, signUpStep2Schema } from "@/utils";
-import { formatErrorMessage } from "@/utils/alertUtils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -26,7 +24,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
@@ -399,18 +396,11 @@ function OptionBottomSheet({
 
 export default function PersonalizationScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  const { signup } = useAuth();
+  const { updateProfile } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const headerHeight = useHeaderHeight();
-
-  const signupStore = useSignupStore.getState();
-  const fullName = (params.fullName as string) || signupStore.fullName || "";
-  const phoneNumber =
-    (params.phoneNumber as string) || signupStore.phoneNumber || "";
-  const password = (params.password as string) || signupStore.password || "";
 
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -440,6 +430,7 @@ export default function PersonalizationScreen() {
   } = useForm<SignUpStep2FormValues>({
     resolver: zodResolver(signUpStep2Schema),
     defaultValues: {
+      fullName: "",
       team: "",
       department: "",
       year: "",
@@ -447,26 +438,28 @@ export default function PersonalizationScreen() {
     },
   });
 
+  const fullNameValue = watch("fullName");
   const teamValue = watch("team");
   const departmentValue = watch("department");
   const yearValue = watch("year");
-  const telegramValue = watch("telegram");
 
   const isFilled = Boolean(
-    teamValue &&
+    fullNameValue &&
+      fullNameValue.trim().length >= 2 &&
+      teamValue &&
       teamValue.trim().length > 0 &&
       departmentValue &&
       departmentValue.trim().length > 0 &&
       yearValue &&
-      yearValue.trim().length > 0 &&
-      telegramValue &&
-      telegramValue.trim().length >= 3,
+      yearValue.trim().length > 0,
   );
 
   const avatarInitial = useMemo(() => {
-    if (fullName.trim()) return fullName.trim().charAt(0).toUpperCase();
+    if (fullNameValue && fullNameValue.trim()) {
+      return fullNameValue.trim().charAt(0).toUpperCase();
+    }
     return "F";
-  }, [fullName]);
+  }, [fullNameValue]);
 
   const openModal = useCallback((config: DropdownModalConfig) => {
     Keyboard.dismiss();
@@ -538,53 +531,30 @@ export default function PersonalizationScreen() {
   };
 
   const handleComplete = async (data: SignUpStep2FormValues) => {
-    if (!fullName || !phoneNumber || !password) {
-      setErrorModal({
-        visible: true,
-        title: "Missing Information",
-        message: "Please complete all required fields.",
-        isRegisteredError: false,
-      });
-      router.back();
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const registrationData: SignUpData = {
-        fullName,
-        phoneNumber,
-        password,
+      await updateProfile({
+        fullName: data.fullName,
         team: data.team,
         department: data.department,
         yearOfStudy: data.year,
         telegramUserName: data.telegram || "",
         profileImage: image || undefined,
-      };
+      });
 
-      await signup(registrationData);
-
-      useSignupStore.getState().clear();
       router.replace("/(tabs)");
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
-        "Something went wrong. Please try again.";
-      const isRegisteredError =
-        errorMessage.toLowerCase().includes("already registered") ||
-        errorMessage.toLowerCase().includes("already exists") ||
-        errorMessage.toLowerCase().includes("phone number already in use");
+        "Could not save fellowship profile. Please try again.";
 
-      const formatted = formatErrorMessage(error);
       setErrorModal({
         visible: true,
-        title: isRegisteredError ? "Already Registered" : formatted.title,
-        message: isRegisteredError
-          ? "This phone number is already registered. Please sign in."
-          : formatted.message,
-        isRegisteredError,
+        title: "Setup Error",
+        message: errorMessage,
+        isRegisteredError: false,
       });
     } finally {
       setLoading(false);
@@ -825,6 +795,67 @@ export default function PersonalizationScreen() {
 
             {/* Dropdown Selectors Stack */}
             <View style={styles.fieldsStack}>
+              <View style={styles.fieldWrapper}>
+                <Text
+                  style={[
+                    styles.fieldLabel,
+                    { color: isDark ? "#94a3b8" : "#64748b" },
+                  ]}
+                >
+                  Full Name
+                </Text>
+                <Controller
+                  control={control}
+                  name="fullName"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <View
+                      style={[
+                        styles.inputContainer,
+                        {
+                          borderColor: errors.fullName
+                            ? "#ef4444"
+                            : isDark
+                              ? "#334155"
+                              : "#e2e8f0",
+                          backgroundColor: isDark ? "#1e293b" : "#f8fafc",
+                        },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.iconBadge,
+                          {
+                            backgroundColor: isDark ? "#0f172a" : "#ffffff",
+                          },
+                        ]}
+                      >
+                        <AuthIcon
+                          name="person"
+                          size={20}
+                          color={isDark ? "#cbd5e1" : "#64748b"}
+                        />
+                      </View>
+                      <TextInput
+                        placeholder="Enter your full name"
+                        placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
+                        value={value}
+                        onChangeText={onChange}
+                        onBlur={onBlur}
+                        style={[
+                          styles.textInput,
+                          { color: isDark ? "#ffffff" : "#0f172a" },
+                        ]}
+                      />
+                    </View>
+                  )}
+                />
+                {errors.fullName?.message ? (
+                  <Text style={styles.errorText}>
+                    {errors.fullName.message}
+                  </Text>
+                ) : null}
+              </View>
+
               {renderDropdownSelector(
                 "team",
                 "Team",
@@ -943,8 +974,8 @@ export default function PersonalizationScreen() {
             {/* Bottom CTA Button */}
             <View style={styles.buttonWrapper}>
               <AppButton
-                title="Finish Registration"
-                onPress={handleSubmit(handleComplete)}
+                title="Complete Fellowship Profile"
+                onPress={() => handleSubmit(handleComplete)()}
                 loading={loading}
                 disabled={!isFilled}
                 isDark={isDark}

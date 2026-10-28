@@ -4,7 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import React from "react";
 
 export const unstable_settings = {
-  initialRouteName: "sign-up-step-1",
+  initialRouteName: "sign-in",
 };
 
 export default function AuthLayout() {
@@ -29,23 +29,17 @@ export default function AuthLayout() {
         }}
       >
         <Stack.Screen
-          name="sign-up-step-1"
+          name="sign-in"
           options={{
-            ...navBar,
-            headerShown: true,
-            gestureEnabled: true,
-            headerStyle: { backgroundColor: "#ff6719" },
-            headerTintColor: "#ffffff",
+            headerShown: false,
+            gestureEnabled: false,
           }}
         />
         <Stack.Screen
-          name="sign-in"
+          name="sign-up-step-1"
           options={{
-            ...navBar,
-            headerShown: true,
-            gestureEnabled: true,
-            headerStyle: { backgroundColor: "#ff6719" },
-            headerTintColor: "#ffffff",
+            headerShown: false,
+            gestureEnabled: false,
           }}
         />
         <Stack.Screen
