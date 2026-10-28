@@ -1,4 +1,5 @@
 import { InfoModal } from "@/components/Modals/InfoModal";
+import { PRIMARY } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -13,17 +14,17 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  type ScrollViewInstance,
   StatusBar,
   StyleSheet,
   Text,
   TextInput,
   type TextInputInstance,
-  TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const PRIMARY_ORANGE = "#FF6719";
 const CODE_LENGTH = 6;
 const DEFAULT_RESEND_SECONDS = 60;
 
@@ -41,6 +42,8 @@ export default function OtpVerifyScreen() {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [cooldown, setCooldown] = useState(DEFAULT_RESEND_SECONDS);
+  const [isFocused, setIsFocused] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   const [modalConfig, setModalConfig] = useState<{
     visible: boolean;
@@ -54,18 +57,53 @@ export default function OtpVerifyScreen() {
   });
 
   const inputRef = useRef<TextInputInstance | null>(null);
+  const scrollViewRef = useRef<ScrollViewInstance | null>(null);
   const submittingRef = useRef(false);
   const shakeAnim = useRef(new Animated.Value(0)).current;
+
+  // Track keyboard state for compact layout
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, () => {
+      setIsKeyboardVisible(true);
+      setTimeout(
+        () => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        },
+        Platform.OS === "ios" ? 40 : 100,
+      );
+    });
+
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  // Redirect back if phone is missing
+  useEffect(() => {
+    if (!phone) {
+      router.replace("/(auth)/sign-in");
+    }
+  }, [phone, router]);
 
   // Auto-focus input on mount
   useEffect(() => {
     const timer = setTimeout(() => {
       inputRef.current?.focus();
-    }, 150);
+    }, 120);
     return () => clearTimeout(timer);
   }, []);
 
-  // Cooldown timer
+  // Cooldown countdown timer
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     if (cooldown > 0) {
@@ -78,35 +116,44 @@ export default function OtpVerifyScreen() {
     shakeAnim.setValue(0);
     Animated.sequence([
       Animated.timing(shakeAnim, {
-        toValue: 10,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shakeAnim, {
-        toValue: -10,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shakeAnim, {
         toValue: 6,
-        duration: 50,
+        duration: 40,
         useNativeDriver: true,
       }),
       Animated.timing(shakeAnim, {
         toValue: -6,
-        duration: 50,
+        duration: 40,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: 4,
+        duration: 40,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: -4,
+        duration: 40,
         useNativeDriver: true,
       }),
       Animated.timing(shakeAnim, {
         toValue: 0,
-        duration: 50,
+        duration: 40,
         useNativeDriver: true,
       }),
     ]).start();
   };
 
+  const formatDisplayPhone = (raw: string) => {
+    const digits = (raw || "").replace(/\D/g, "");
+    let local = digits;
+    if (local.startsWith("251")) local = local.slice(3);
+    if (local.startsWith("0")) local = local.slice(1);
+    if (!local) return "+251";
+    return `+251 ${local.slice(0, 2)} ${local.slice(2, 5)} ${local.slice(5, 9)}`.trim();
+  };
+
   const handleVerify = async (candidateCode?: string) => {
-    const finalCode = (candidateCode || code).trim();
+    const finalCode = (candidateCode ?? code).trim();
     if (finalCode.length !== CODE_LENGTH || submittingRef.current || loading) {
       return;
     }
@@ -177,197 +224,277 @@ export default function OtpVerifyScreen() {
     }
   };
 
-  const formatDisplayPhone = (raw: string) => {
-    const digits = (raw || "").replace(/\D/g, "");
-    let local = digits;
-    if (local.startsWith("251")) local = local.slice(3);
-    if (local.startsWith("0")) local = local.slice(1);
-    if (!local) return "+251";
-    return `+251 ${local.slice(0, 2)} ${local.slice(2, 5)} ${local.slice(5, 9)}`.trim();
+  const handleEditPhone = () => {
+    if (Platform.OS !== "web") {
+      try {
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {}
+    }
+    Keyboard.dismiss();
+    router.back();
   };
 
   return (
     <SafeAreaView
+      edges={isKeyboardVisible ? ["top"] : ["top", "bottom"]}
       style={[
         styles.safeArea,
-        { backgroundColor: isDark ? "#09090B" : "#F9FAFB" },
+        { backgroundColor: isDark ? "#09090B" : "#FFFFFF" },
       ]}
     >
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
-      {/* Header bar */}
+      {/* Top Header Bar */}
       <View style={styles.headerBar}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={[
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Back to Phone Number"
+          onPress={handleEditPhone}
+          hitSlop={8}
+          android_ripple={{
+            color: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.08)",
+            borderless: true,
+            radius: 20,
+          }}
+          style={({ pressed }) => [
             styles.backButton,
-            { backgroundColor: isDark ? "#27272A" : "#FFFFFF" },
+            {
+              backgroundColor: isDark
+                ? "rgba(255, 255, 255, 0.08)"
+                : "rgba(0, 0, 0, 0.04)",
+              opacity: pressed ? 0.7 : 1,
+              transform:
+                Platform.OS === "ios" && pressed
+                  ? [{ scale: 0.94 }]
+                  : undefined,
+            },
           ]}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
           <Ionicons
             name="arrow-back"
             size={22}
-            color={isDark ? "#FFFFFF" : "#111827"}
+            color={isDark ? "#FFFFFF" : "#0F172A"}
           />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.keyboardContainer}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 48 : 0}
+        style={styles.keyboardAvoid}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.titleSection}>
-            <Text
-              style={[
-                styles.title,
-                { color: isDark ? "#FFFFFF" : "#111827" },
-              ]}
-            >
-              Verify your phone
-            </Text>
-            <Text
-              style={[
-                styles.subtitle,
-                { color: isDark ? "#A1A1AA" : "#6B7280" },
-              ]}
-            >
-              Enter the 6-digit code sent to{" "}
-              <Text
-                style={{
-                  color: isDark ? "#FFFFFF" : "#111827",
-                  fontWeight: "700",
-                }}
-              >
-                {formatDisplayPhone(phone)}
-              </Text>
-            </Text>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={styles.editPhoneBtn}
-            >
-              <Text style={styles.editPhoneText}>Edit phone number</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* OTP Code Input Boxes */}
-          <Animated.View
-            style={[
-              styles.otpInputContainer,
-              { transform: [{ translateX: shakeAnim }] },
-            ]}
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <ScrollView
+            ref={scrollViewRef}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
           >
-            <Pressable
-              onPress={() => inputRef.current?.focus()}
-              style={styles.boxesRow}
-            >
-              {Array.from({ length: CODE_LENGTH }).map((_, index) => {
-                const char = code[index] || "";
-                const isCurrent = index === code.length;
-                const isFilled = Boolean(char);
-
-                return (
-                  <View
-                    key={index}
-                    style={[
-                      styles.codeBox,
-                      {
-                        backgroundColor: isDark ? "#18181B" : "#FFFFFF",
-                        borderColor: isCurrent
-                          ? PRIMARY_ORANGE
-                          : Boolean(error)
-                            ? "#EF4444"
-                            : isDark
-                              ? "#27272A"
-                              : "#E5E7EB",
-                      },
-                      isCurrent && styles.codeBoxCurrent,
-                      isFilled && styles.codeBoxFilled,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.codeBoxText,
-                        { color: isDark ? "#FFFFFF" : "#111827" },
-                      ]}
-                    >
-                      {char}
-                    </Text>
-                  </View>
-                );
-              })}
-            </Pressable>
-
-            {/* Hidden actual TextInput */}
-            <TextInput
-              ref={inputRef}
-              value={code}
-              onChangeText={(text) => {
-                const cleaned = text.replace(/\D/g, "").slice(0, CODE_LENGTH);
-                setCode(cleaned);
-                if (error) setError(null);
-                if (cleaned.length === CODE_LENGTH) {
-                  handleVerify(cleaned);
-                }
-              }}
-              keyboardType="number-pad"
-              maxLength={CODE_LENGTH}
-              style={styles.hiddenInput}
-              autoFocus
-            />
-          </Animated.View>
-
-          {Boolean(error) && (
-            <Text style={styles.errorText}>{error}</Text>
-          )}
-
-          {/* Action button */}
-          <Pressable
-            onPress={() => handleVerify()}
-            disabled={code.length !== CODE_LENGTH || loading}
-            style={({ pressed }) => [
-              styles.verifyButton,
-              (code.length !== CODE_LENGTH || loading) && styles.verifyButtonDisabled,
-              pressed && { opacity: 0.88 },
-            ]}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Text style={styles.verifyButtonText}>Verify & Continue</Text>
-            )}
-          </Pressable>
-
-          {/* Resend timer */}
-          <View style={styles.resendSection}>
-            {cooldown > 0 ? (
-              <Text
+            <View style={styles.contentCard}>
+              {/* Icon badge inspired by TNT Ethiopia */}
+              <View
                 style={[
-                  styles.resendTimerText,
-                  { color: isDark ? "#71717A" : "#9CA3AF" },
+                  styles.iconBadge,
+                  isKeyboardVisible && styles.iconBadgeCompact,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(255, 103, 25, 0.15)"
+                      : "#FFF7ED",
+                    borderColor: isDark
+                      ? "rgba(255, 103, 25, 0.25)"
+                      : "#FED7AA",
+                  },
                 ]}
               >
-                Resend code in <Text style={{ fontWeight: "700" }}>{cooldown}s</Text>
-              </Text>
-            ) : (
-              <TouchableOpacity
-                onPress={handleResend}
-                disabled={resending}
-                style={styles.resendButton}
+                <Ionicons
+                  name="chatbubble-ellipses-outline"
+                  size={isKeyboardVisible ? 24 : 32}
+                  color={PRIMARY}
+                />
+              </View>
+
+              {/* Title & Subtitle */}
+              <Text
+                style={[
+                  styles.title,
+                  { color: isDark ? "#FFFFFF" : "#111827" },
+                ]}
               >
-                {resending ? (
-                  <ActivityIndicator color={PRIMARY_ORANGE} size="small" />
-                ) : (
-                  <Text style={styles.resendActiveText}>Resend code via SMS</Text>
+                Enter verification code
+              </Text>
+              <Text
+                style={[
+                  styles.subtitle,
+                  { color: isDark ? "#A1A1AA" : "#6B7280" },
+                ]}
+              >
+                We sent a 6-digit verification code to
+              </Text>
+
+              {/* Phone display with Edit badge */}
+              <View
+                style={[
+                  styles.phoneRow,
+                  isKeyboardVisible && styles.phoneRowCompact,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.phoneText,
+                    { color: isDark ? "#FFFFFF" : "#111827" },
+                  ]}
+                >
+                  {formatDisplayPhone(phone)}
+                </Text>
+                <Pressable
+                  onPress={handleEditPhone}
+                  hitSlop={8}
+                  style={({ pressed }) => [
+                    styles.editBadge,
+                    { backgroundColor: isDark ? "#27272A" : "#F3F4F6" },
+                    pressed && { opacity: 0.7 },
+                  ]}
+                >
+                  <Text style={styles.editText}>Edit</Text>
+                </Pressable>
+              </View>
+
+              {/* Unified Clean OTP Input Box */}
+              <Animated.View
+                style={[
+                  styles.otpWrapper,
+                  { transform: [{ translateX: shakeAnim }] },
+                ]}
+              >
+                <Pressable
+                  onPress={() => inputRef.current?.focus()}
+                  accessible={false}
+                  style={[
+                    styles.inputWrapper,
+                    {
+                      backgroundColor: isDark ? "#18181B" : "#FFFFFF",
+                      borderColor: isDark ? "#27272A" : "#E2E8F0",
+                    },
+                    isFocused && [
+                      styles.inputWrapperFocused,
+                      {
+                        borderColor: PRIMARY,
+                        backgroundColor: isDark ? "#18181B" : "#FFFFFF",
+                      },
+                    ],
+                    Boolean(error) && [
+                      styles.inputWrapperError,
+                      {
+                        backgroundColor: isDark
+                          ? "rgba(239, 68, 68, 0.08)"
+                          : "#FEF2F2",
+                      },
+                    ],
+                    loading && styles.inputWrapperDisabled,
+                  ]}
+                >
+                  <TextInput
+                    ref={inputRef}
+                    value={code}
+                    onChangeText={(text) => {
+                      const cleaned = text
+                        .replace(/\D/g, "")
+                        .slice(0, CODE_LENGTH);
+                      setCode(cleaned);
+                      if (error) setError(null);
+                      if (cleaned.length === CODE_LENGTH) {
+                        void handleVerify(cleaned);
+                      }
+                    }}
+                    placeholder="Code"
+                    placeholderTextColor={isDark ? "#71717A" : "#94A3B8"}
+                    keyboardType="number-pad"
+                    inputMode="numeric"
+                    textContentType="oneTimeCode"
+                    autoComplete="one-time-code"
+                    maxLength={CODE_LENGTH}
+                    editable={!loading}
+                    selectTextOnFocus
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    selectionColor={PRIMARY}
+                    cursorColor={PRIMARY}
+                    style={[
+                      styles.input,
+                      { color: isDark ? "#FFFFFF" : "#0F172A" },
+                      code.length > 0
+                        ? styles.inputWithDigits
+                        : styles.inputEmpty,
+                      Boolean(error) && styles.inputError,
+                    ]}
+                  />
+                </Pressable>
+
+                {Boolean(error) && (
+                  <View style={styles.errorRow}>
+                    <Ionicons
+                      name="alert-circle-outline"
+                      size={15}
+                      color="#EF4444"
+                    />
+                    <Text style={styles.errorText}>{error}</Text>
+                  </View>
                 )}
-              </TouchableOpacity>
-            )}
-          </View>
-        </ScrollView>
+              </Animated.View>
+
+              {/* Verify Button */}
+              <View style={styles.buttonWrapper}>
+                <Pressable
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    void handleVerify();
+                  }}
+                  disabled={loading || code.length !== CODE_LENGTH}
+                  style={({ pressed }) => [
+                    styles.verifyButton,
+                    (loading || code.length !== CODE_LENGTH) &&
+                      styles.verifyButtonDisabled,
+                    pressed &&
+                      !(loading || code.length !== CODE_LENGTH) && {
+                        opacity: 0.9,
+                        transform: [{ scale: 0.99 }],
+                      },
+                  ]}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <Text style={styles.verifyButtonText}>Verify & Continue</Text>
+                  )}
+                </Pressable>
+              </View>
+
+              {/* Resend Code Section */}
+              <View style={styles.resendSection}>
+                {cooldown > 0 ? (
+                  <Text style={styles.cooldownText}>
+                    Resend code in{" "}
+                    <Text style={styles.cooldownNumber}>{cooldown}s</Text>
+                  </Text>
+                ) : (
+                  <Pressable
+                    onPress={handleResend}
+                    disabled={resending}
+                    hitSlop={10}
+                    style={styles.resendButton}
+                  >
+                    {resending ? (
+                      <ActivityIndicator size="small" color={PRIMARY} />
+                    ) : (
+                      <Text style={styles.resendText}>Resend code</Text>
+                    )}
+                  </Pressable>
+                )}
+              </View>
+            </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
 
       <InfoModal
@@ -386,107 +513,190 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerBar: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    minHeight: 48,
   },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
   },
-  keyboardContainer: {
+  keyboardAvoid: {
     flex: 1,
   },
   scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 40,
+    paddingTop: 8,
+    paddingBottom: Platform.OS === "ios" ? 36 : 24,
+    justifyContent: "flex-start",
   },
-  titleSection: {
-    marginBottom: 32,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "800",
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginTop: 8,
-  },
-  editPhoneBtn: {
-    marginTop: 8,
-    alignSelf: "flex-start",
-  },
-  editPhoneText: {
-    color: PRIMARY_ORANGE,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  otpInputContainer: {
-    marginBottom: 20,
-    position: "relative",
-  },
-  boxesRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  contentCard: {
+    width: "100%",
+    maxWidth: 420,
+    alignSelf: "center",
     alignItems: "center",
   },
-  codeBox: {
-    width: 48,
-    height: 56,
-    borderRadius: 14,
+  iconBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
     borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 16,
   },
-  codeBoxCurrent: {
-    borderWidth: 2,
+  iconBadgeCompact: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    marginBottom: 8,
   },
-  codeBoxFilled: {
-    borderColor: PRIMARY_ORANGE,
-  },
-  codeBoxText: {
+  title: {
     fontSize: 22,
     fontWeight: "800",
+    textAlign: "center",
+    letterSpacing: -0.4,
+    marginBottom: 6,
   },
-  hiddenInput: {
-    position: "absolute",
-    width: 1,
-    height: 1,
-    opacity: 0,
+  subtitle: {
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  phoneRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 6,
+    marginBottom: 20,
+  },
+  phoneRowCompact: {
+    marginTop: 2,
+    marginBottom: 10,
+  },
+  phoneText: {
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.2,
+  },
+  editBadge: {
+    marginLeft: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  editText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: PRIMARY,
+  },
+  otpWrapper: {
+    width: "100%",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  inputWrapper: {
+    width: "100%",
+    minHeight: 56,
+    height: 56,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 0,
+      },
+    }),
+  },
+  inputWrapperFocused: {
+    borderWidth: 2,
+  },
+  inputWrapperError: {
+    borderColor: "#EF4444",
+    borderWidth: 2,
+  },
+  inputWrapperDisabled: {
+    opacity: 0.6,
+  },
+  input: {
+    width: "100%",
+    height: "100%",
+    textAlign: "center",
+    paddingVertical: 0,
+    margin: 0,
+    includeFontPadding: false,
+  },
+  inputEmpty: {
+    fontSize: 18,
+    fontWeight: "500",
+    letterSpacing: 0,
+  },
+  inputWithDigits: {
+    fontSize: 24,
+    fontWeight: "700",
+    letterSpacing: 8,
+  },
+  inputError: {
+    color: "#EF4444",
+  },
+  errorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    paddingHorizontal: 4,
   },
   errorText: {
-    color: "#EF4444",
     fontSize: 13,
-    fontWeight: "600",
-    textAlign: "center",
+    color: "#EF4444",
+    fontWeight: "500",
+    marginLeft: 5,
+  },
+  buttonWrapper: {
+    width: "100%",
     marginBottom: 16,
   },
   verifyButton: {
     height: 56,
     borderRadius: 16,
-    backgroundColor: PRIMARY_ORANGE,
+    backgroundColor: PRIMARY,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: PRIMARY_ORANGE,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 4,
-    marginTop: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: PRIMARY,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   verifyButtonDisabled: {
     opacity: 0.5,
+    ...Platform.select({
+      ios: {
+        shadowOpacity: 0,
+      },
+      android: {
+        elevation: 0,
+      },
+    }),
   },
   verifyButtonText: {
     color: "#FFFFFF",
@@ -494,19 +704,28 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   resendSection: {
-    marginTop: 24,
     alignItems: "center",
+    paddingVertical: 8,
+    width: "100%",
   },
-  resendTimerText: {
+  cooldownText: {
     fontSize: 14,
+    fontWeight: "600",
+    color: PRIMARY,
+    textAlign: "center",
+  },
+  cooldownNumber: {
+    fontWeight: "800",
+    color: PRIMARY,
   },
   resendButton: {
-    paddingVertical: 8,
+    paddingVertical: 6,
     paddingHorizontal: 16,
   },
-  resendActiveText: {
-    color: PRIMARY_ORANGE,
+  resendText: {
     fontSize: 14,
     fontWeight: "700",
+    color: PRIMARY,
+    textAlign: "center",
   },
 });
