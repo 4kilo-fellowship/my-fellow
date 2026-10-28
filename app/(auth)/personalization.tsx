@@ -297,6 +297,7 @@ export default function PersonalizationScreen() {
     user?.telegramUserName?.replace(/^@/, "") || ""
   );
 
+  const [isTeamSheetOpen, setIsTeamSheetOpen] = useState<boolean>(false);
   const [isSheetOpen, setIsSheetOpen] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [errorModal, setErrorModal] = useState<{
@@ -308,6 +309,11 @@ export default function PersonalizationScreen() {
     title: "",
     message: "",
   });
+
+  const selectedTeamMeta = useMemo(
+    () => FELLOWSHIP_TEAMS.find((t) => t.id === team),
+    [team]
+  );
 
   // Smooth continuous filling progress bar matching TNT Ethiopia
   const progressAnim = useRef(new Animated.Value(1 / TOTAL_PAGES)).current;
@@ -757,6 +763,127 @@ export default function PersonalizationScreen() {
                 Select your primary fellowship ministry team where you want to serve, grow, and minister together.
               </Text>
             </View>
+
+            {/* TNT-Ethiopia Dropdown Selector (opens native BottomSheet) */}
+            <View style={styles.institutionInputSection}>
+              <Text
+                style={[
+                  styles.inputFieldLabel,
+                  { color: isDark ? "#94A3B8" : "#64748B" },
+                ]}
+              >
+                FELLOWSHIP MINISTRY TEAM
+              </Text>
+              <Pressable
+                onPress={() => {
+                  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                  setIsTeamSheetOpen(true);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={team ? `Selected team: ${team}` : "Select your team"}
+                style={({ pressed }) => [
+                  styles.dropdownSelector,
+                  Boolean(team) && styles.dropdownSelectorSelected,
+                  {
+                    backgroundColor: Boolean(team)
+                      ? isDark
+                        ? "rgba(255, 103, 25, 0.12)"
+                        : "#FFF7ED"
+                      : isDark
+                      ? "#18181B"
+                      : "#F8FAFC",
+                    borderColor: Boolean(team)
+                      ? PRIMARY
+                      : isDark
+                      ? "#27272A"
+                      : "#E2E8F0",
+                  },
+                  pressed && Platform.OS === "ios" && { opacity: 0.8 },
+                ]}
+              >
+                <View style={styles.dropdownLeft}>
+                  <View
+                    style={[
+                      styles.dropdownIconBadge,
+                      {
+                        backgroundColor: Boolean(team)
+                          ? "rgba(255, 103, 25, 0.18)"
+                          : isDark
+                          ? "#27272A"
+                          : "#E2E8F0",
+                      },
+                    ]}
+                  >
+                    <AuthIcon
+                      name={selectedTeamMeta?.icon || "team"}
+                      size={20}
+                      color={Boolean(team) ? PRIMARY : isDark ? "#94A3B8" : "#64748B"}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.dropdownValueText,
+                        !team && styles.dropdownPlaceholderText,
+                        { color: Boolean(team) ? PRIMARY : isDark ? "#FFFFFF" : "#0F172A" },
+                      ]}
+                    >
+                      {selectedTeamMeta ? selectedTeamMeta.name : "Select your fellowship team..."}
+                    </Text>
+                    {selectedTeamMeta && (
+                      <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.dropdownSubText,
+                          { color: isDark ? "#94A3B8" : "#64748B" },
+                        ]}
+                      >
+                        {selectedTeamMeta.subtitle}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+                <Ionicons
+                  name="chevron-down"
+                  size={20}
+                  color={Boolean(team) ? PRIMARY : isDark ? "#94A3B8" : "#64748B"}
+                />
+              </Pressable>
+            </View>
+
+            {/* Quick Trigger Button to open BottomSheet */}
+            <Pressable
+              onPress={() => {
+                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setIsTeamSheetOpen(true);
+              }}
+              style={({ pressed }) => [
+                styles.sheetTriggerRow,
+                {
+                  backgroundColor: isDark ? "#1E293B" : "#FFF7ED",
+                  borderColor: isDark ? "#334155" : "#FFEDD5",
+                },
+                pressed && { opacity: 0.8 },
+              ]}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <Ionicons name="list" size={18} color={PRIMARY} />
+                <Text
+                  style={[
+                    styles.sheetTriggerText,
+                    { color: isDark ? "#F8FAFC" : "#C2410C" },
+                  ]}
+                >
+                  Browse all {FELLOWSHIP_TEAMS.length} ministry teams in drawer
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={isDark ? "#94A3B8" : "#C2410C"}
+              />
+            </Pressable>
 
             <View style={styles.cardsStack}>
               {FELLOWSHIP_TEAMS.map((item) => {
@@ -1486,6 +1613,174 @@ export default function PersonalizationScreen() {
         )}
       </View>
 
+      {/* Expo UI Native BottomSheet for Ministry Team Selection (TNT Ethiopia design) */}
+      {isTeamSheetOpen && (
+        <Host
+          colorScheme={isDark ? "dark" : "light"}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="box-none"
+        >
+          <BottomSheet
+            isPresented={isTeamSheetOpen}
+            onDismiss={() => setIsTeamSheetOpen(false)}
+            snapPoints={["half", "full"]}
+            showDragIndicator={true}
+            contentPadding={0}
+            scrimColor={isDark ? "rgba(0, 0, 0, 0.7)" : "rgba(0, 0, 0, 0.5)"}
+            containerColor={isDark ? "#18181B" : "#FFFFFF"}
+          >
+            <RNHostView style={{ width: "100%" }}>
+              <View
+                style={[
+                  styles.sheetContent,
+                  { backgroundColor: isDark ? "#18181B" : "#FFFFFF" },
+                ]}
+              >
+                <View style={styles.sheetHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={[
+                        styles.sheetTitle,
+                        { color: isDark ? "#FFFFFF" : "#0F172A" },
+                      ]}
+                    >
+                      Select Ministry Team
+                    </Text>
+                    <Text
+                      style={[
+                        styles.sheetSubtitle,
+                        { color: isDark ? "#94A3B8" : "#64748B" },
+                      ]}
+                    >
+                      Choose your fellowship team to serve, grow, and minister
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={() => setIsTeamSheetOpen(false)}
+                    hitSlop={10}
+                    style={[
+                      styles.sheetCloseBtn,
+                      { backgroundColor: isDark ? "#27272A" : "#F1F5F9" },
+                    ]}
+                  >
+                    <Ionicons
+                      name="close"
+                      size={18}
+                      color={isDark ? "#94A3B8" : "#64748B"}
+                    />
+                  </Pressable>
+                </View>
+
+                <ScrollView
+                  style={styles.sheetList}
+                  contentContainerStyle={styles.sheetListContent}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  nestedScrollEnabled={true}
+                >
+                  {FELLOWSHIP_TEAMS.map((item) => {
+                    const isSelected = team === item.id;
+                    return (
+                      <Pressable
+                        key={item.id}
+                        onPress={() => {
+                          setTeam(item.id);
+                          setIsTeamSheetOpen(false);
+                          void Haptics.selectionAsync().catch(() => {});
+                        }}
+                        style={({ pressed }) => [
+                          styles.sheetRow,
+                          {
+                            backgroundColor: isSelected
+                              ? isDark
+                                ? "rgba(255, 103, 25, 0.16)"
+                                : "#FFF7ED"
+                              : isDark
+                              ? "#1F2937"
+                              : "#FAFAFA",
+                            borderColor: isSelected
+                              ? PRIMARY
+                              : isDark
+                              ? "#374151"
+                              : "#E5E7EB",
+                          },
+                          pressed && { opacity: 0.7 },
+                        ]}
+                      >
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 12,
+                            flex: 1,
+                          }}
+                        >
+                          <View
+                            style={[
+                              styles.sheetIconBadge,
+                              {
+                                backgroundColor: isSelected
+                                  ? "rgba(255, 103, 25, 0.2)"
+                                  : isDark
+                                  ? "#374151"
+                                  : "#E5E7EB",
+                              },
+                            ]}
+                          >
+                            <AuthIcon
+                              name={item.icon}
+                              size={20}
+                              color={
+                                isSelected
+                                  ? PRIMARY
+                                  : isDark
+                                  ? "#CBD5E1"
+                                  : "#64748B"
+                              }
+                            />
+                          </View>
+                          <View style={{ flex: 1, paddingRight: 8 }}>
+                            <Text
+                              style={[
+                                styles.sheetRowText,
+                                {
+                                  color: isSelected
+                                    ? PRIMARY
+                                    : isDark
+                                    ? "#FFFFFF"
+                                    : "#0F172A",
+                                },
+                              ]}
+                            >
+                              {item.name}
+                            </Text>
+                            <Text
+                              style={[
+                                styles.sheetRowSubText,
+                                { color: isDark ? "#94A3B8" : "#64748B" },
+                              ]}
+                            >
+                              {item.subtitle}
+                            </Text>
+                          </View>
+                        </View>
+                        {isSelected && (
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={22}
+                            color={PRIMARY}
+                          />
+                        )}
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            </RNHostView>
+          </BottomSheet>
+        </Host>
+      )}
+
       {/* Expo UI Native BottomSheet for Department Drawer */}
       {isSheetOpen && (
         <Host
@@ -2072,6 +2367,61 @@ const styles = StyleSheet.create({
   sheetListContent: {
     paddingBottom: 20,
     gap: 6,
+  },
+  /* Dropdown Selector (TNT Ethiopia design) */
+  institutionInputSection: {
+    marginBottom: 16,
+  },
+  dropdownSelector: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    minHeight: 56,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  dropdownSelectorSelected: {
+    borderWidth: 1.5,
+  },
+  dropdownLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+    marginRight: 8,
+  },
+  dropdownIconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dropdownValueText: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  dropdownPlaceholderText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  dropdownSubText: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  sheetIconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sheetRowSubText: {
+    fontSize: 12,
+    marginTop: 2,
+    lineHeight: 16,
   },
   sheetRow: {
     flexDirection: "row",
