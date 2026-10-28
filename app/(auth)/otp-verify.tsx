@@ -332,13 +332,31 @@ export default function OtpVerifyScreen() {
                 We sent a 6-digit verification code to
               </Text>
 
-              {/* Phone display with Edit badge */}
-              <View
-                style={[
+              {/* Phone display with Interactive Edit badge */}
+              <Pressable
+                onPress={handleEditPhone}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Edit phone number"
+                style={({ pressed }) => [
                   styles.phoneRow,
                   isKeyboardVisible && styles.phoneRowCompact,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(255, 255, 255, 0.06)"
+                      : "rgba(0, 0, 0, 0.04)",
+                    borderColor: isDark
+                      ? "rgba(255, 255, 255, 0.08)"
+                      : "rgba(0, 0, 0, 0.06)",
+                  },
+                  pressed && { opacity: 0.75, transform: [{ scale: 0.98 }] },
                 ]}
               >
+                <Ionicons
+                  name="call-outline"
+                  size={14}
+                  color={isDark ? "#94A3B8" : "#64748B"}
+                />
                 <Text
                   style={[
                     styles.phoneText,
@@ -347,18 +365,20 @@ export default function OtpVerifyScreen() {
                 >
                   {formatDisplayPhone(phone)}
                 </Text>
-                <Pressable
-                  onPress={handleEditPhone}
-                  hitSlop={8}
-                  style={({ pressed }) => [
+                <View
+                  style={[
                     styles.editBadge,
-                    { backgroundColor: isDark ? "#27272A" : "#F3F4F6" },
-                    pressed && { opacity: 0.7 },
+                    {
+                      backgroundColor: isDark
+                        ? "rgba(255, 103, 25, 0.15)"
+                        : "#FFF7ED",
+                    },
                   ]}
                 >
+                  <Ionicons name="pencil" size={11} color={PRIMARY} />
                   <Text style={styles.editText}>Edit</Text>
-                </Pressable>
-              </View>
+                </View>
+              </Pressable>
 
               {/* Unified Clean OTP Input Box */}
               <Animated.View
@@ -515,8 +535,9 @@ const styles = StyleSheet.create({
   headerBar: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 6,
     minHeight: 48,
   },
   backButton: {
@@ -573,28 +594,40 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 6,
-    marginBottom: 20,
+    alignSelf: "center",
+    gap: 8,
+    marginTop: 8,
+    marginBottom: 22,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
   },
   phoneRowCompact: {
-    marginTop: 2,
-    marginBottom: 10,
+    marginTop: 4,
+    marginBottom: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
   },
   phoneText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
   editBadge: {
-    marginLeft: 8,
-    paddingHorizontal: 9,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 3,
+    paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   editText: {
     fontSize: 12,
     fontWeight: "700",
     color: PRIMARY,
+    includeFontPadding: false,
   },
   otpWrapper: {
     width: "100%",
