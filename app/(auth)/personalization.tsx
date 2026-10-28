@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useSignupStore } from "@/stores/signup.store";
 import { useUserStore } from "@/stores/user.store";
-import { generateCoolAvatarUrl, getPrefilledAvatar } from "@/utils/avatar";
+import { getPrefilledAvatar } from "@/utils/avatar";
 import { BottomSheet, Host, RNHostView } from "@expo/ui";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
@@ -310,7 +310,6 @@ export default function PersonalizationScreen() {
   const [image, setImage] = useState<string>(
     user?.profileImage || defaultGeneratedAvatar
   );
-  const [isRollingAvatar, setIsRollingAvatar] = useState<boolean>(false);
 
   // Auto focus Name input when landing on screen from auth
   useEffect(() => {
@@ -319,16 +318,6 @@ export default function PersonalizationScreen() {
     }, 280);
     return () => clearTimeout(timer);
   }, []);
-
-  const handleRandomizeAvatar = () => {
-    try {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
-    setIsRollingAvatar(true);
-    const newAvatar = generateCoolAvatarUrl();
-    setImage(newAvatar);
-    setTimeout(() => setIsRollingAvatar(false), 250);
-  };
 
   const [team, setTeam] = useState<string>(user?.team || "");
   const [department, setDepartment] = useState<string>(user?.department || "");
@@ -737,67 +726,6 @@ export default function PersonalizationScreen() {
                     </View>
                   </View>
                 </Pressable>
-
-                {/* Avatar Action Pills: Roll new avatar & Choose photo */}
-                <View style={styles.avatarActionRow}>
-                  <Pressable
-                    onPress={handleRandomizeAvatar}
-                    style={({ pressed }) => [
-                      styles.avatarChip,
-                      {
-                        backgroundColor: isDark ? "#27272A" : "#FFF7ED",
-                        borderColor: isDark ? "#3F3F46" : "#FFEDD5",
-                      },
-                      pressed && { opacity: 0.75, transform: [{ scale: 0.96 }] },
-                    ]}
-                    hitSlop={6}
-                    accessibilityRole="button"
-                    accessibilityLabel="Roll new avatar"
-                  >
-                    <Ionicons
-                      name="dice-outline"
-                      size={15}
-                      color={PRIMARY}
-                    />
-                    <Text
-                      style={[
-                        styles.avatarChipText,
-                        { color: PRIMARY },
-                      ]}
-                    >
-                      {isRollingAvatar ? "Rolling..." : "Roll Avatar"}
-                    </Text>
-                  </Pressable>
-
-                  <Pressable
-                    onPress={handlePickImage}
-                    style={({ pressed }) => [
-                      styles.avatarChip,
-                      {
-                        backgroundColor: isDark ? "#27272A" : "#F1F5F9",
-                        borderColor: isDark ? "#3F3F46" : "#E2E8F0",
-                      },
-                      pressed && { opacity: 0.75, transform: [{ scale: 0.96 }] },
-                    ]}
-                    hitSlop={6}
-                    accessibilityRole="button"
-                    accessibilityLabel="Choose photo from gallery"
-                  >
-                    <Ionicons
-                      name="image-outline"
-                      size={15}
-                      color={isDark ? "#CBD5E1" : "#475569"}
-                    />
-                    <Text
-                      style={[
-                        styles.avatarChipText,
-                        { color: isDark ? "#CBD5E1" : "#475569" },
-                      ]}
-                    >
-                      Gallery
-                    </Text>
-                  </Pressable>
-                </View>
               </View>
 
               <View style={styles.inputFieldContainer}>
@@ -2640,26 +2568,6 @@ const styles = StyleSheet.create({
         elevation: 2,
       },
     }),
-  },
-  avatarActionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    marginTop: 14,
-  },
-  avatarChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  avatarChipText: {
-    fontSize: 13,
-    fontWeight: "600",
   },
 
   /* Name Input (matches Auth Screen) */
