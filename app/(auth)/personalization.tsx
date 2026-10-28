@@ -1,498 +1,301 @@
-import AppButton from "@/components/AppButton";
 import AuthIcon, { AuthIconName } from "@/components/AuthIcon";
 import { InfoModal } from "@/components/Modals/InfoModal";
-import { DEPARTMENTS, TEAM_NAMES, YEARS } from "@/constants";
+import { PRIMARY } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useSignupStore } from "@/stores/signup.store";
-import { SignUpStep2FormValues, signUpStep2Schema } from "@/utils";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useUserStore } from "@/stores/user.store";
+import { BottomSheet, Host, RNHostView } from "@expo/ui";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
-import { useRouter } from "expo-router";
-import { useHeaderHeight } from "expo-router/react-navigation";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
-  Dimensions,
+  ActivityIndicator,
+  Animated,
+  BackHandler,
   Image,
   Keyboard,
   KeyboardAvoidingView,
-  Modal,
+  PanResponder,
   Platform,
   Pressable,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, {
-  Easing,
-  Extrapolation,
-  interpolate,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import PagerView, {
+  PageScrollStateChangedNativeEvent,
+  PagerViewOnPageScrollEvent,
+  PagerViewOnPageSelectedEvent,
+} from "react-native-pager-view";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+const TOTAL_PAGES = 5;
 
-const PRIMARY = "#ff6719";
-
-type DropdownNameProps = "team" | "department" | "year";
-
-interface DropdownModalConfig {
-  name: DropdownNameProps;
-  label: string;
-  options: readonly string[];
-  placeholder: string;
+interface MinistryTeamMeta {
+  id: string;
+  name: string;
+  subtitle: string;
+  icon: AuthIconName;
 }
 
-const FIELD_META: Record<
-  DropdownNameProps,
-  { icon: AuthIconName; label: string }
-> = {
-  team: { icon: "team", label: "TEAM" },
-  department: { icon: "department", label: "DEPARTMENT" },
-  year: { icon: "year", label: "ACADEMIC YEAR" },
-};
+const FELLOWSHIP_TEAMS: MinistryTeamMeta[] = [
+  {
+    id: "Bible Study",
+    name: "Bible Study",
+    subtitle: "Deep scripture study, weekly cell groups & discipleship.",
+    icon: "book",
+  },
+  {
+    id: "Evangelism",
+    name: "Evangelism",
+    subtitle: "Sharing the Gospel across campus and university outreach.",
+    icon: "megaphone",
+  },
+  {
+    id: "Freshman",
+    name: "Freshman Ministry",
+    subtitle: "Welcoming and guiding new campus students in faith and life.",
+    icon: "school",
+  },
+  {
+    id: "I4U",
+    name: "I4U (Discipleship)",
+    subtitle: "Care, encouragement, mutual support, and student welfare.",
+    icon: "heart",
+  },
+  {
+    id: "Media",
+    name: "Media & Tech",
+    subtitle: "Audio/visuals, photography, livestream, and tech creativity.",
+    icon: "video",
+  },
+  {
+    id: "Prayer",
+    name: "Prayer & Intercession",
+    subtitle: "Intercession, morning prayers, and fellowship fasting nights.",
+    icon: "hand",
+  },
+  {
+    id: "Worship",
+    name: "Worship & Choir",
+    subtitle: "Choir, acoustic teams, and leading fellowship praise.",
+    icon: "music",
+  },
+  {
+    id: "Other",
+    name: "Other Fellowship Ministry",
+    subtitle: "General fellowship member and community ministries.",
+    icon: "apps",
+  },
+];
 
-const OPTION_ICONS: Record<string, AuthIconName> = {
-  "Bible Study": "book",
-  Evangelism: "megaphone",
-  Freshman: "school",
-  I4U: "heart",
-  Media: "video",
-  Prayer: "hand",
-  Worship: "music",
-  Other: "apps",
-  "Applied Chemistry": "flask",
-  "Applied Mathematics": "calculator",
-  "Applied Biology": "leaf",
-  "Applied Physics": "globe",
-  "Information System": "server",
-  "Computer Science": "laptop",
-  Statistics: "chart",
-  "Engineering(5 Kilo)": "wrench",
-  "Social Science(6 Kilo)": "groups",
-  "1st Year": "ribbon",
-  "2nd Year": "ribbon",
-  "3rd Year": "ribbon",
-  "4th Year": "ribbon",
-  "5th Year": "ribbon",
-};
-
-interface OptionBottomSheetProps {
-  config: DropdownModalConfig | null;
-  onClose: () => void;
-  onSelect: (name: DropdownNameProps, value: string) => void;
-  currentValue: string;
-  isDark: boolean;
-  insetsBottom: number;
+interface DepartmentMeta {
+  id: string;
+  name: string;
+  subtitle: string;
+  icon: AuthIconName;
 }
 
-function OptionBottomSheet({
-  config,
-  onClose,
-  onSelect,
-  currentValue,
-  isDark,
-  insetsBottom,
-}: OptionBottomSheetProps) {
-  const [activeConfig, setActiveConfig] = useState<DropdownModalConfig | null>(
-    config,
-  );
-  const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [selectedItem, setSelectedItem] = useState<string>(currentValue);
+const FELLOWSHIP_DEPARTMENTS: DepartmentMeta[] = [
+  {
+    id: "Computer Science",
+    name: "Computer Science",
+    subtitle: "Algorithms, software engineering & tech systems",
+    icon: "laptop",
+  },
+  {
+    id: "Information System",
+    name: "Information System",
+    subtitle: "Information systems, enterprise tech & data management",
+    icon: "server",
+  },
+  {
+    id: "Applied Mathematics",
+    name: "Applied Mathematics",
+    subtitle: "Mathematical modeling, computation & analysis",
+    icon: "calculator",
+  },
+  {
+    id: "Applied Physics",
+    name: "Applied Physics",
+    subtitle: "Classical & modern physics, instrumentation & optics",
+    icon: "globe",
+  },
+  {
+    id: "Applied Chemistry",
+    name: "Applied Chemistry",
+    subtitle: "Chemical sciences, research labs & industrial chemistry",
+    icon: "flask",
+  },
+  {
+    id: "Applied Biology",
+    name: "Applied Biology",
+    subtitle: "Biological sciences, ecology, genetics & microbiology",
+    icon: "leaf",
+  },
+  {
+    id: "Statistics",
+    name: "Statistics",
+    subtitle: "Data analytics, probability & statistical modeling",
+    icon: "chart",
+  },
+  {
+    id: "Engineering(5 Kilo)",
+    name: "Engineering (5 Kilo AAiT)",
+    subtitle: "Engineering disciplines and technical computing",
+    icon: "wrench",
+  },
+  {
+    id: "Social Science(6 Kilo)",
+    name: "Social Science (6 Kilo)",
+    subtitle: "Social sciences, humanities & business studies",
+    icon: "groups",
+  },
+  {
+    id: "Freshman",
+    name: "Freshman Stream",
+    subtitle: "First-year general natural or social science students",
+    icon: "school",
+  },
+  {
+    id: "Other",
+    name: "Other Department / Faculty",
+    subtitle: "Other university academic programs and faculties",
+    icon: "apps",
+  },
+];
 
-  const translateY = useSharedValue(SCREEN_HEIGHT);
-  const backdropOpacity = useSharedValue(0);
-
-  const handleCloseComplete = useCallback(() => {
-    setModalVisible(false);
-    setActiveConfig(null);
-    onClose();
-  }, [onClose]);
-
-  const dismiss = useCallback(() => {
-    translateY.value = withTiming(
-      SCREEN_HEIGHT,
-      { duration: 220, easing: Easing.in(Easing.cubic) },
-      (finished) => {
-        if (finished) {
-          runOnJS(handleCloseComplete)();
-        }
-      },
-    );
-    backdropOpacity.value = withTiming(0, { duration: 180 });
-  }, [handleCloseComplete, translateY, backdropOpacity]);
-
-  useEffect(() => {
-    if (config) {
-      setActiveConfig(config);
-      setSelectedItem(currentValue);
-      setModalVisible(true);
-      translateY.value = SCREEN_HEIGHT;
-      backdropOpacity.value = 0;
-      translateY.value = withSpring(0, {
-        damping: 26,
-        stiffness: 280,
-        mass: 0.8,
-      });
-      backdropOpacity.value = withTiming(1, { duration: 220 });
-    }
-  }, [config, currentValue, translateY, backdropOpacity]);
-
-  const panGesture = Gesture.Pan()
-    .activeOffsetY([0, 5])
-    .onUpdate((event) => {
-      "worklet";
-      if (event.translationY > 0) {
-        translateY.value = event.translationY;
-      } else {
-        translateY.value = event.translationY * 0.18;
-      }
-    })
-    .onEnd((event) => {
-      "worklet";
-      if (event.translationY > 100 || event.velocityY > 500) {
-        translateY.value = withTiming(
-          SCREEN_HEIGHT,
-          { duration: 200, easing: Easing.out(Easing.cubic) },
-          (finished) => {
-            if (finished) {
-              runOnJS(handleCloseComplete)();
-            }
-          },
-        );
-        backdropOpacity.value = withTiming(0, { duration: 180 });
-      } else {
-        translateY.value = withSpring(0, {
-          damping: 24,
-          stiffness: 280,
-          mass: 0.8,
-        });
-      }
-    });
-
-  const backdropAnimatedStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
-      translateY.value,
-      [0, 250],
-      [1, 0],
-      Extrapolation.CLAMP,
-    );
-    return {
-      opacity: backdropOpacity.value * opacity,
-    };
-  });
-
-  const sheetAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateY: Math.max(-25, translateY.value) }],
-    };
-  });
-
-  if (!modalVisible || !activeConfig) return null;
-
-  return (
-    <Modal
-      visible={modalVisible}
-      transparent
-      animationType="none"
-      statusBarTranslucent
-      onRequestClose={dismiss}
-    >
-      <View style={styles.sheetOverlay}>
-        <TouchableWithoutFeedback onPress={dismiss}>
-          <Animated.View style={[styles.sheetBackdrop, backdropAnimatedStyle]} />
-        </TouchableWithoutFeedback>
-
-        <Animated.View
-          style={[
-            styles.sheetContainer,
-            sheetAnimatedStyle,
-            {
-              backgroundColor: isDark ? "#1e293b" : "#ffffff",
-              paddingBottom: Math.max(insetsBottom + 16, 24),
-            },
-          ]}
-        >
-          <GestureDetector gesture={panGesture}>
-            <Animated.View style={styles.sheetTopDragArea}>
-              <View style={styles.handleContainer}>
-                <View
-                  style={[
-                    styles.handle,
-                    { backgroundColor: isDark ? "#475569" : "#cbd5e1" },
-                  ]}
-                />
-              </View>
-
-              <View style={styles.sheetHeaderRow}>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={[
-                      styles.sheetTitle,
-                      { color: isDark ? "#f8fafc" : "#0f172a" },
-                    ]}
-                  >
-                    Select {activeConfig.label}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.sheetSubtitle,
-                      { color: isDark ? "#94a3b8" : "#64748b" },
-                    ]}
-                  >
-                    Choose the option that fits you best
-                  </Text>
-                </View>
-
-                <Pressable
-                  onPress={dismiss}
-                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                  android_ripple={{
-                    color: isDark
-                      ? "rgba(255, 255, 255, 0.15)"
-                      : "rgba(0, 0, 0, 0.1)",
-                    borderless: true,
-                    radius: 18,
-                  }}
-                  style={({ pressed }) => [
-                    styles.sheetCloseBtn,
-                    {
-                      backgroundColor: isDark ? "#334155" : "#f1f5f9",
-                    },
-                    Platform.OS === "ios" && pressed
-                      ? { opacity: 0.6 }
-                      : undefined,
-                  ]}
-                >
-                  <AuthIcon
-                    name="close"
-                    size={20}
-                    color={isDark ? "#cbd5e1" : "#64748b"}
-                  />
-                </Pressable>
-              </View>
-            </Animated.View>
-          </GestureDetector>
-
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.optionsList}
-            style={{ maxHeight: SCREEN_HEIGHT * 0.58 }}
-            keyboardShouldPersistTaps="handled"
-            bounces={false}
-          >
-            {activeConfig.options.map((item, index) => {
-              const isSelected = (selectedItem || currentValue) === item;
-              const icon =
-                OPTION_ICONS[item] ?? FIELD_META[activeConfig.name].icon;
-
-              return (
-                <Pressable
-                  key={`${item}-${index}`}
-                  onPress={() => {
-                    setSelectedItem(item);
-                    onSelect(activeConfig.name, item);
-                    dismiss();
-                  }}
-                  android_ripple={{
-                    color: "rgba(255, 103, 25, 0.12)",
-                    borderless: false,
-                  }}
-                  style={({ pressed }) => [
-                    styles.optionCard,
-                    {
-                      borderColor: isSelected
-                        ? PRIMARY
-                        : isDark
-                          ? "#334155"
-                          : "#e2e8f0",
-                      backgroundColor: isSelected
-                        ? isDark
-                          ? "rgba(255, 103, 25, 0.14)"
-                          : "#fff7f2"
-                        : isDark
-                          ? "#1e293b"
-                          : "#ffffff",
-                    },
-                    Platform.OS === "ios" && pressed
-                      ? { opacity: 0.8 }
-                      : undefined,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.optionCardIcon,
-                      {
-                        backgroundColor: isSelected
-                          ? "rgba(255, 103, 25, 0.16)"
-                          : isDark
-                            ? "#0f172a"
-                            : "#f1f5f9",
-                      },
-                    ]}
-                  >
-                    <AuthIcon
-                      name={icon}
-                      size={22}
-                      color={
-                        isSelected ? PRIMARY : isDark ? "#cbd5e1" : "#64748b"
-                      }
-                    />
-                  </View>
-
-                  <Text
-                    numberOfLines={2}
-                    style={[
-                      styles.optionCardLabel,
-                      {
-                        color: isSelected
-                          ? PRIMARY
-                          : isDark
-                            ? "#f8fafc"
-                            : "#0f172a",
-                        fontWeight: isSelected ? "700" : "600",
-                      },
-                    ]}
-                  >
-                    {item}
-                  </Text>
-
-                  <View
-                    style={[
-                      styles.radioCircle,
-                      {
-                        borderColor: isSelected
-                          ? PRIMARY
-                          : isDark
-                            ? "#475569"
-                            : "#cbd5e1",
-                      },
-                    ]}
-                  >
-                    {isSelected ? <View style={styles.radioInner} /> : null}
-                  </View>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </Animated.View>
-      </View>
-    </Modal>
-  );
+interface YearMeta {
+  id: string;
+  name: string;
+  subtitle: string;
 }
+
+const ACADEMIC_YEARS: YearMeta[] = [
+  {
+    id: "1st Year",
+    name: "1st Year (Freshman)",
+    subtitle: "Navigating first year campus life and fellowship community",
+  },
+  {
+    id: "2nd Year",
+    name: "2nd Year (Sophomore)",
+    subtitle: "Putting down deep academic and spiritual roots",
+  },
+  {
+    id: "3rd Year",
+    name: "3rd Year (Junior)",
+    subtitle: "Growing in spiritual maturity, fellowship, and service",
+  },
+  {
+    id: "4th Year",
+    name: "4th Year (Senior)",
+    subtitle: "Campus leadership, project execution, and mentoring",
+  },
+  {
+    id: "5th Year",
+    name: "5th Year (Finalist / GC)",
+    subtitle: "Finishing university strong and preparing for kingdom impact",
+  },
+  {
+    id: "Other",
+    name: "Other (Postgraduate / Alumni)",
+    subtitle: "Postgraduate scholars, researchers, or fellowship visitors",
+  },
+];
 
 export default function PersonalizationScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const { updateProfile } = useAuth();
+  const user = useUserStore((state) => state.user);
+  const signupStore = useSignupStore();
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const headerHeight = useHeaderHeight();
 
-  const [image, setImage] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [telegramFocused, setTelegramFocused] = useState<boolean>(false);
-  const [modalConfig, setModalConfig] = useState<DropdownModalConfig | null>(
-    null,
+  const pagerRef = useRef<PagerView>(null);
+
+  const initialName =
+    (params.fullName as string) ||
+    signupStore.fullName ||
+    user?.fullName ||
+    "";
+
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [name, setName] = useState<string>(initialName);
+  const [nameFocused, setNameFocused] = useState<boolean>(false);
+  const [image, setImage] = useState<string | null>(user?.profileImage || null);
+
+  const [team, setTeam] = useState<string>(user?.team || "");
+  const [department, setDepartment] = useState<string>(user?.department || "");
+  const [customDepartment, setCustomDepartment] = useState<string>("");
+  const [departmentSearch, setDepartmentSearch] = useState<string>("");
+
+  const [year, setYear] = useState<string>(user?.yearOfStudy || "");
+  const [telegram, setTelegram] = useState<string>(
+    user?.telegramUserName?.replace(/^@/, "") || ""
   );
+  const [telegramFocused, setTelegramFocused] = useState<boolean>(false);
+
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [isSheetOpen, setIsSheetOpen] = useState<boolean>(false);
 
   const [errorModal, setErrorModal] = useState<{
     visible: boolean;
     title: string;
     message: string;
-    isRegisteredError: boolean;
   }>({
     visible: false,
     title: "",
     message: "",
-    isRegisteredError: false,
   });
 
-  const {
-    control,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm<SignUpStep2FormValues>({
-    resolver: zodResolver(signUpStep2Schema),
-    defaultValues: {
-      fullName: "",
-      team: "",
-      department: "",
-      year: "",
-      telegram: "",
-    },
+  // Smooth connected filling progress bar (like TNT Ethiopia)
+  const progressAnim = useRef(new Animated.Value(1 / TOTAL_PAGES)).current;
+
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: (currentPage + 1) / TOTAL_PAGES,
+      duration: 260,
+      useNativeDriver: false,
+    }).start();
+  }, [currentPage, progressAnim]);
+
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0%", "100%"],
   });
 
-  const fullNameValue = watch("fullName");
-  const teamValue = watch("team");
-  const departmentValue = watch("department");
-  const yearValue = watch("year");
-
-  const isFilled = Boolean(
-    fullNameValue &&
-      fullNameValue.trim().length >= 2 &&
-      teamValue &&
-      teamValue.trim().length > 0 &&
-      departmentValue &&
-      departmentValue.trim().length > 0 &&
-      yearValue &&
-      yearValue.trim().length > 0,
-  );
-
-  const avatarInitial = useMemo(() => {
-    if (fullNameValue && fullNameValue.trim()) {
-      return fullNameValue.trim().charAt(0).toUpperCase();
-    }
+  const userFullName = user?.fullName;
+  const avatarInitial = (() => {
+    if (name.trim()) return name.trim().charAt(0).toUpperCase();
+    if (userFullName?.trim()) return userFullName.trim().charAt(0).toUpperCase();
     return "F";
-  }, [fullNameValue]);
+  })();
 
-  const openModal = useCallback((config: DropdownModalConfig) => {
-    Keyboard.dismiss();
-    setModalConfig(config);
-  }, []);
-
-  const closeModal = useCallback(() => {
-    setModalConfig(null);
-  }, []);
-
-  const selectOption = useCallback(
-    (name: DropdownNameProps, option: string) => {
-      setValue(name, option, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true,
-      });
-    },
-    [setValue],
-  );
-
-  const pickImage = async () => {
+  const handlePickImage = async () => {
     try {
       const permissionResult =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
-
       if (!permissionResult.granted) {
         setErrorModal({
           visible: true,
-          title: "Permission Needed",
+          title: "Permission Required",
           message:
-            "Allow photo library access in Settings to upload a profile picture.",
-          isRegisteredError: false,
+            "Permission to access photo gallery is required to select a profile picture.",
         });
         return;
       }
@@ -506,43 +309,227 @@ export default function PersonalizationScreen() {
 
       if (!result.canceled && result.assets?.[0]?.uri) {
         setImage(result.assets[0].uri);
+        void Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success
+        ).catch(() => {});
       }
     } catch {
       setErrorModal({
         visible: true,
         title: "Image Upload",
         message: "Could not select picture. Please try again.",
-        isRegisteredError: false,
       });
     }
   };
 
-  const handleErrorModalClose = () => {
-    const wasRegisteredError = errorModal.isRegisteredError;
-    setErrorModal((prev) => ({ ...prev, visible: false }));
+  const isPageValid = useCallback(
+    (pageIndex: number): boolean => {
+      switch (pageIndex) {
+        case 0:
+          return name.trim().length >= 2;
+        case 1:
+          return Boolean(team);
+        case 2:
+          if (department === "Other") {
+            return customDepartment.trim().length > 0;
+          }
+          return Boolean(department);
+        case 3:
+          return Boolean(year);
+        case 4:
+          return true; // Telegram is optional
+        default:
+          return true;
+      }
+    },
+    [name, team, department, customDepartment, year]
+  );
 
-    if (wasRegisteredError) {
-      useSignupStore.getState().clear();
-      router.push({
-        pathname: "/sign-up-step-1",
-        params: { focus: "phoneNumber" },
-      });
+  const isProgrammaticNav = useRef<boolean>(false);
+  const currentPageRef = useRef<number>(currentPage);
+  const isPageValidRef = useRef(isPageValid);
+
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
+
+  useEffect(() => {
+    isPageValidRef.current = isPageValid;
+  }, [isPageValid]);
+
+  const goToPage = (pageIndex: number) => {
+    if (pageIndex < 0 || pageIndex >= TOTAL_PAGES) return;
+    Keyboard.dismiss();
+    isProgrammaticNav.current = true;
+    setCurrentPage(pageIndex);
+    if (Platform.OS !== "web") {
+      pagerRef.current?.setPage(pageIndex);
     }
   };
 
-  const handleComplete = async (data: SignUpStep2FormValues) => {
-    setLoading(true);
+  // Allow natural backward swipe even when native forward scroll is locked
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+          const activePage = currentPageRef.current;
+          if (activePage > 0 && !isPageValidRef.current(activePage)) {
+            return (
+              gestureState.dx > 15 &&
+              Math.abs(gestureState.dx) > Math.abs(gestureState.dy)
+            );
+          }
+          return false;
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          const activePage = currentPageRef.current;
+          if (activePage > 0 && !isPageValidRef.current(activePage)) {
+            if (gestureState.dx > 35 || gestureState.vx > 0.25) {
+              goToPage(activePage - 1);
+            }
+          }
+        },
+      }),
+    []
+  );
+
+  const handlePageScroll = (e: PagerViewOnPageScrollEvent) => {
+    if (isProgrammaticNav.current) return;
+    const { position, offset } = e.nativeEvent;
+    const activePage = currentPageRef.current;
+
+    if (
+      !isPageValidRef.current(activePage) &&
+      position >= activePage &&
+      offset > 0.005
+    ) {
+      pagerRef.current?.setPageWithoutAnimation(activePage);
+    }
+  };
+
+  const handlePageSelected = (e: PagerViewOnPageSelectedEvent) => {
+    const selectedPage = e.nativeEvent.position;
+
+    if (isProgrammaticNav.current) {
+      isProgrammaticNav.current = false;
+      setCurrentPage(selectedPage);
+      try {
+        void Haptics.selectionAsync().catch(() => {});
+      } catch {}
+      return;
+    }
+
+    if (selectedPage < currentPage) {
+      setCurrentPage(selectedPage);
+      try {
+        void Haptics.selectionAsync().catch(() => {});
+      } catch {}
+      return;
+    }
+
+    if (selectedPage > currentPage && !isPageValid(currentPage)) {
+      pagerRef.current?.setPageWithoutAnimation(currentPage);
+      return;
+    }
+
+    setCurrentPage(selectedPage);
+    try {
+      void Haptics.selectionAsync().catch(() => {});
+    } catch {}
+  };
+
+  const handleScrollStateChanged = (e: PageScrollStateChangedNativeEvent) => {
+    if (e.nativeEvent.pageScrollState === "dragging") {
+      Keyboard.dismiss();
+    }
+  };
+
+  const handleNextPress = async (pageIndex: number) => {
+    if (!isPageValid(pageIndex) || submitting) return;
 
     try {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    } catch {}
+
+    if (pageIndex < TOTAL_PAGES - 1) {
+      goToPage(pageIndex + 1);
+    } else {
+      await handleComplete();
+    }
+  };
+
+  const handleBackPress = useCallback(() => {
+    if (currentPage > 0) {
+      try {
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      } catch {}
+      goToPage(currentPage - 1);
+    } else {
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace("/(tabs)");
+      }
+    }
+  }, [currentPage, router]);
+
+  useEffect(() => {
+    const onBackPress = () => {
+      if (currentPage > 0) {
+        handleBackPress();
+        return true;
+      }
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      onBackPress
+    );
+    return () => backHandler.remove();
+  }, [currentPage, handleBackPress]);
+
+  const handleSkipPress = async () => {
+    try {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    } catch {}
+    if (currentPage < TOTAL_PAGES - 1) {
+      goToPage(currentPage + 1);
+    } else {
+      await handleComplete();
+    }
+  };
+
+  const handleComplete = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+
+    try {
+      const resolvedDepartment =
+        department === "Other"
+          ? customDepartment.trim() || "Other"
+          : department;
+
+      const formattedTelegram = telegram.trim()
+        ? telegram.trim().startsWith("@")
+          ? telegram.trim()
+          : `@${telegram.trim()}`
+        : "";
+
       await updateProfile({
-        fullName: data.fullName,
-        team: data.team,
-        department: data.department,
-        yearOfStudy: data.year,
-        telegramUserName: data.telegram || "",
+        fullName: name.trim(),
+        team: team,
+        department: resolvedDepartment,
+        yearOfStudy: year,
+        telegramUserName: formattedTelegram,
         profileImage: image || undefined,
       });
 
+      void Haptics.notificationAsync(
+        Haptics.NotificationFeedbackType.Success
+      ).catch(() => {});
+
+      useSignupStore.getState().clear();
       router.replace("/(tabs)");
     } catch (error: any) {
       const errorMessage =
@@ -554,457 +541,1087 @@ export default function PersonalizationScreen() {
         visible: true,
         title: "Setup Error",
         message: errorMessage,
-        isRegisteredError: false,
       });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const renderDropdownSelector = (
-    name: DropdownNameProps,
-    label: string,
-    options: readonly string[],
-    placeholder: string,
-  ) => {
-    const meta = FIELD_META[name];
+  const filteredDepartments = useMemo(() => {
+    if (!departmentSearch.trim()) return FELLOWSHIP_DEPARTMENTS;
+    const q = departmentSearch.toLowerCase();
+    return FELLOWSHIP_DEPARTMENTS.filter(
+      (d) =>
+        d.name.toLowerCase().includes(q) ||
+        d.subtitle.toLowerCase().includes(q)
+    );
+  }, [departmentSearch]);
 
-    return (
-      <View style={styles.fieldWrapper}>
-        <Text
-          style={[
-            styles.fieldLabel,
-            { color: isDark ? "#94a3b8" : "#64748b" },
-          ]}
-        >
-          {meta.label}
-        </Text>
-        <Controller
-          control={control}
-          name={name}
-          render={({ field: { value } }) => {
-            const isSelected = Boolean(value && value.trim().length > 0);
+  const renderPageContent = (pageIndex: number) => {
+    switch (pageIndex) {
+      case 0:
+        return (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            style={styles.pageContainer}
+            keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 24 : 0}
+          >
+            <ScrollView
+              key="scroll-0"
+              style={styles.pageScroll}
+              contentContainerStyle={styles.scrollContentProfile}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              nestedScrollEnabled={true}
+            >
+              <View style={styles.headerBlock}>
+                <Text
+                  style={[
+                    styles.titleText,
+                    { color: isDark ? "#FFFFFF" : "#0F172A" },
+                  ]}
+                >
+                  Get Connected
+                </Text>
+                <Text
+                  style={[
+                    styles.subtitleText,
+                    { color: isDark ? "#94A3B8" : "#64748B" },
+                  ]}
+                >
+                  Add your full name and a photo so brothers and sisters in the
+                  fellowship family can know you.
+                </Text>
+              </View>
 
-            return (
-              <View style={styles.selectorOuterWrap}>
+              <View style={styles.avatarSection}>
                 <Pressable
-                  onPress={() =>
-                    openModal({ name, label, options, placeholder })
-                  }
-                  android_ripple={{
-                    color: "rgba(255, 103, 25, 0.1)",
-                    borderless: false,
-                  }}
+                  onPress={handlePickImage}
+                  accessibilityRole="button"
+                  accessibilityLabel="Upload profile photo"
                   style={({ pressed }) => [
-                    styles.selectorButton,
-                    {
-                      borderColor: isSelected
-                        ? PRIMARY
-                        : isDark
-                          ? "#334155"
-                          : "#e2e8f0",
-                      backgroundColor: isSelected
-                        ? isDark
-                          ? "rgba(255, 103, 25, 0.08)"
-                          : "#fffbf7"
-                        : isDark
-                          ? "#1e293b"
-                          : "#f8fafc",
-                    },
-                    Platform.OS === "ios" && pressed
-                      ? { opacity: 0.8 }
-                      : undefined,
+                    styles.avatarPressable,
+                    pressed && { opacity: 0.88, transform: [{ scale: 0.98 }] },
                   ]}
                 >
                   <View
                     style={[
-                      styles.iconBadge,
+                      styles.avatarCircle,
                       {
-                        backgroundColor: isSelected
-                          ? "rgba(255, 103, 25, 0.15)"
-                          : isDark
-                            ? "#0f172a"
-                            : "#ffffff",
+                        backgroundColor: isDark ? "#1E293B" : "#FFF7ED",
+                        borderColor: PRIMARY,
                       },
                     ]}
                   >
-                    <AuthIcon
-                      name={meta.icon}
-                      size={20}
-                      color={
-                        isSelected
-                          ? PRIMARY
-                          : isDark
-                            ? "#cbd5e1"
-                            : "#64748b"
-                      }
+                    {image ? (
+                      <Image
+                        source={{ uri: image }}
+                        style={styles.avatarImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={styles.avatarFallback}>
+                        <Text style={styles.avatarInitial}>{avatarInitial}</Text>
+                      </View>
+                    )}
+
+                    <View style={styles.avatarCameraBadge}>
+                      <Ionicons name="camera" size={16} color="#FFFFFF" />
+                    </View>
+                  </View>
+                </Pressable>
+                <Text
+                  style={[
+                    styles.avatarHintText,
+                    { color: isDark ? "#94A3B8" : "#64748B" },
+                  ]}
+                >
+                  Tap to add your photo
+                </Text>
+              </View>
+
+              <View style={styles.inputFieldContainer}>
+                <Text
+                  style={[
+                    styles.inputFieldLabel,
+                    { color: isDark ? "#94A3B8" : "#64748B" },
+                  ]}
+                >
+                  FULL NAME
+                </Text>
+                <TextInput
+                  value={name}
+                  onChangeText={setName}
+                  onFocus={() => setNameFocused(true)}
+                  onBlur={() => setNameFocused(false)}
+                  placeholder="Enter your full name"
+                  placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  returnKeyType="done"
+                  onSubmitEditing={() => {
+                    if (name.trim().length >= 2) {
+                      void handleNextPress(0);
+                    }
+                  }}
+                  style={[
+                    styles.textInputBox,
+                    {
+                      backgroundColor: isDark ? "#18181B" : "#FFFFFF",
+                      borderColor: isDark ? "#27272A" : "#E2E8F0",
+                      color: isDark ? "#FFFFFF" : "#0F172A",
+                    },
+                    nameFocused && styles.textInputBoxFocused,
+                  ]}
+                />
+              </View>
+            </ScrollView>
+
+            <View style={styles.bottomDockedAction}>
+              <Pressable
+                onPress={() => handleNextPress(0)}
+                disabled={!isPageValid(0)}
+                style={({ pressed }) => [
+                  styles.actionButton,
+                  !isPageValid(0) && styles.actionButtonDisabled,
+                  pressed && isPageValid(0) && { opacity: 0.9 },
+                ]}
+              >
+                <Text style={styles.actionButtonText}>Continue</Text>
+              </Pressable>
+            </View>
+          </KeyboardAvoidingView>
+        );
+
+      case 1:
+        return (
+          <View style={styles.pageContainer}>
+            <ScrollView
+              key="scroll-1"
+              style={styles.pageScroll}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled={true}
+            >
+              <View style={styles.headerBlock}>
+                <Text
+                  style={[
+                    styles.titleText,
+                    { color: isDark ? "#FFFFFF" : "#0F172A" },
+                  ]}
+                >
+                  Which team do you serve in?
+                </Text>
+                <Text
+                  style={[
+                    styles.subtitleText,
+                    { color: isDark ? "#94A3B8" : "#64748B" },
+                  ]}
+                >
+                  Select your fellowship ministry team where you would love to
+                  fellowship, grow, and serve together.
+                </Text>
+              </View>
+
+              <View style={styles.cardsStack}>
+                {FELLOWSHIP_TEAMS.map((item) => {
+                  const isSelected = team === item.id;
+                  return (
+                    <Pressable
+                      key={item.id}
+                      onPress={() => {
+                        setTeam(item.id);
+                        void Haptics.selectionAsync().catch(() => {});
+                      }}
+                      accessibilityRole="radio"
+                      accessibilityState={{ checked: isSelected }}
+                      style={({ pressed }) => [
+                        styles.optionCard,
+                        {
+                          backgroundColor: isDark ? "#18181B" : "#FFFFFF",
+                          borderColor: isDark ? "#27272A" : "#E2E8F0",
+                        },
+                        isSelected && [
+                          styles.optionCardActive,
+                          {
+                            backgroundColor: isDark
+                              ? "rgba(255, 103, 25, 0.12)"
+                              : "#FFFBF7",
+                          },
+                        ],
+                        pressed && { opacity: 0.85 },
+                      ]}
+                    >
+                      <View style={styles.cardContentRow}>
+                        <View style={styles.iconCircleWrapper}>
+                          <View
+                            style={[
+                              styles.illustratedBadge,
+                              {
+                                backgroundColor: isSelected
+                                  ? "rgba(255, 103, 25, 0.16)"
+                                  : isDark
+                                  ? "#27272A"
+                                  : "#F1F5F9",
+                              },
+                            ]}
+                          >
+                            <AuthIcon
+                              name={item.icon}
+                              size={22}
+                              color={isSelected ? PRIMARY : isDark ? "#CBD5E1" : "#64748B"}
+                            />
+                          </View>
+                        </View>
+
+                        <View style={styles.cardTextCol}>
+                          <Text
+                            style={[
+                              styles.cardTitle,
+                              { color: isDark ? "#FFFFFF" : "#0F172A" },
+                              isSelected && styles.cardTitleActive,
+                            ]}
+                          >
+                            {item.name}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.cardSubtitle,
+                              { color: isDark ? "#94A3B8" : "#64748B" },
+                            ]}
+                          >
+                            {item.subtitle}
+                          </Text>
+                        </View>
+
+                        <View
+                          style={[
+                            styles.radioOuter,
+                            { borderColor: isSelected ? PRIMARY : isDark ? "#475569" : "#CBD5E1" },
+                            isSelected && styles.radioOuterActive,
+                          ]}
+                        >
+                          {isSelected && <View style={styles.radioInner} />}
+                        </View>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </ScrollView>
+
+            <View style={styles.bottomDockedAction}>
+              <Pressable
+                onPress={() => handleNextPress(1)}
+                disabled={!isPageValid(1)}
+                style={({ pressed }) => [
+                  styles.actionButton,
+                  !isPageValid(1) && styles.actionButtonDisabled,
+                  pressed && isPageValid(1) && { opacity: 0.9 },
+                ]}
+              >
+                <Text style={styles.actionButtonText}>Next</Text>
+              </Pressable>
+            </View>
+          </View>
+        );
+
+      case 2:
+        return (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            style={styles.pageContainer}
+            keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 24 : 0}
+          >
+            <ScrollView
+              key="scroll-2"
+              style={styles.pageScroll}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              nestedScrollEnabled={true}
+            >
+              <View style={styles.headerBlock}>
+                <Text
+                  style={[
+                    styles.titleText,
+                    { color: isDark ? "#FFFFFF" : "#0F172A" },
+                  ]}
+                >
+                  What is your department?
+                </Text>
+                <Text
+                  style={[
+                    styles.subtitleText,
+                    { color: isDark ? "#94A3B8" : "#64748B" },
+                  ]}
+                >
+                  Select your academic department at 4 Kilo or nearby AAU
+                  campus.
+                </Text>
+              </View>
+
+              {/* Search box for department */}
+              <View
+                style={[
+                  styles.searchBox,
+                  {
+                    backgroundColor: isDark ? "#18181B" : "#F8FAFC",
+                    borderColor: isDark ? "#27272A" : "#E2E8F0",
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="search"
+                  size={18}
+                  color={isDark ? "#94A3B8" : "#64748B"}
+                />
+                <TextInput
+                  value={departmentSearch}
+                  onChangeText={setDepartmentSearch}
+                  placeholder="Search department (e.g. Computer Science, Math...)"
+                  placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+                  style={[
+                    styles.searchInput,
+                    { color: isDark ? "#FFFFFF" : "#0F172A" },
+                  ]}
+                  autoCorrect={false}
+                />
+                {departmentSearch.length > 0 && (
+                  <Pressable
+                    onPress={() => setDepartmentSearch("")}
+                    hitSlop={8}
+                  >
+                    <Ionicons
+                      name="close-circle"
+                      size={18}
+                      color={isDark ? "#94A3B8" : "#64748B"}
+                    />
+                  </Pressable>
+                )}
+              </View>
+
+              {/* Department quick selector BottomSheet trigger */}
+              <Pressable
+                onPress={() => setIsSheetOpen(true)}
+                style={({ pressed }) => [
+                  styles.sheetTriggerRow,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(255, 103, 25, 0.08)"
+                      : "#FFF7ED",
+                    borderColor: isDark ? "#27272A" : "#FED7AA",
+                  },
+                  pressed && { opacity: 0.8 },
+                ]}
+              >
+                <Ionicons name="list" size={18} color={PRIMARY} />
+                <Text style={styles.sheetTriggerText}>
+                  {department
+                    ? `Selected: ${department} (Tap to change)`
+                    : "Or choose from Bottom Sheet drawer"}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={PRIMARY} />
+              </Pressable>
+
+              <View style={styles.cardsStack}>
+                {filteredDepartments.map((dept) => {
+                  const isSelected = department === dept.id;
+                  return (
+                    <Pressable
+                      key={dept.id}
+                      onPress={() => {
+                        setDepartment(dept.id);
+                        void Haptics.selectionAsync().catch(() => {});
+                      }}
+                      accessibilityRole="radio"
+                      accessibilityState={{ checked: isSelected }}
+                      style={({ pressed }) => [
+                        styles.optionCard,
+                        {
+                          backgroundColor: isDark ? "#18181B" : "#FFFFFF",
+                          borderColor: isDark ? "#27272A" : "#E2E8F0",
+                        },
+                        isSelected && [
+                          styles.optionCardActive,
+                          {
+                            backgroundColor: isDark
+                              ? "rgba(255, 103, 25, 0.12)"
+                              : "#FFFBF7",
+                          },
+                        ],
+                        pressed && { opacity: 0.85 },
+                      ]}
+                    >
+                      <View style={styles.cardContentRow}>
+                        <View style={styles.iconCircleWrapper}>
+                          <View
+                            style={[
+                              styles.illustratedBadge,
+                              {
+                                backgroundColor: isSelected
+                                  ? "rgba(255, 103, 25, 0.16)"
+                                  : isDark
+                                  ? "#27272A"
+                                  : "#F1F5F9",
+                              },
+                            ]}
+                          >
+                            <AuthIcon
+                              name={dept.icon}
+                              size={22}
+                              color={isSelected ? PRIMARY : isDark ? "#CBD5E1" : "#64748B"}
+                            />
+                          </View>
+                        </View>
+
+                        <View style={styles.cardTextCol}>
+                          <Text
+                            style={[
+                              styles.cardTitle,
+                              { color: isDark ? "#FFFFFF" : "#0F172A" },
+                              isSelected && styles.cardTitleActive,
+                            ]}
+                          >
+                            {dept.name}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.cardSubtitle,
+                              { color: isDark ? "#94A3B8" : "#64748B" },
+                            ]}
+                          >
+                            {dept.subtitle}
+                          </Text>
+                        </View>
+
+                        <View
+                          style={[
+                            styles.radioOuter,
+                            { borderColor: isSelected ? PRIMARY : isDark ? "#475569" : "#CBD5E1" },
+                            isSelected && styles.radioOuterActive,
+                          ]}
+                        >
+                          {isSelected && <View style={styles.radioInner} />}
+                        </View>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+
+                {department === "Other" && (
+                  <View style={styles.customFieldBox}>
+                    <Text
+                      style={[
+                        styles.inputFieldLabel,
+                        { color: isDark ? "#94A3B8" : "#64748B" },
+                      ]}
+                    >
+                      ENTER YOUR DEPARTMENT NAME
+                    </Text>
+                    <TextInput
+                      value={customDepartment}
+                      onChangeText={setCustomDepartment}
+                      placeholder="e.g. Pharmacy, Civil Engineering, Architecture..."
+                      placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+                      autoCapitalize="words"
+                      style={[
+                        styles.textInputBox,
+                        {
+                          backgroundColor: isDark ? "#18181B" : "#FFFFFF",
+                          borderColor: isDark ? "#27272A" : "#E2E8F0",
+                          color: isDark ? "#FFFFFF" : "#0F172A",
+                        },
+                        customDepartment.trim().length > 0 &&
+                          styles.textInputBoxFocused,
+                      ]}
                     />
                   </View>
+                )}
+              </View>
+            </ScrollView>
 
-                  <Text
-                    numberOfLines={1}
+            <View style={styles.bottomDockedAction}>
+              <Pressable
+                onPress={() => handleNextPress(2)}
+                disabled={!isPageValid(2)}
+                style={({ pressed }) => [
+                  styles.actionButton,
+                  !isPageValid(2) && styles.actionButtonDisabled,
+                  pressed && isPageValid(2) && { opacity: 0.9 },
+                ]}
+              >
+                <Text style={styles.actionButtonText}>Next</Text>
+              </Pressable>
+            </View>
+          </KeyboardAvoidingView>
+        );
+
+      case 3:
+        return (
+          <View style={styles.pageContainer}>
+            <ScrollView
+              key="scroll-3"
+              style={styles.pageScroll}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled={true}
+            >
+              <View style={styles.headerBlock}>
+                <Text
+                  style={[
+                    styles.titleText,
+                    { color: isDark ? "#FFFFFF" : "#0F172A" },
+                  ]}
+                >
+                  What academic year are you in?
+                </Text>
+                <Text
+                  style={[
+                    styles.subtitleText,
+                    { color: isDark ? "#94A3B8" : "#64748B" },
+                  ]}
+                >
+                  Help us connect you with your batch and fellowship year
+                  programs.
+                </Text>
+              </View>
+
+              <View style={styles.cardsStack}>
+                {ACADEMIC_YEARS.map((y) => {
+                  const isSelected = year === y.id;
+                  return (
+                    <Pressable
+                      key={y.id}
+                      onPress={() => {
+                        setYear(y.id);
+                        void Haptics.selectionAsync().catch(() => {});
+                      }}
+                      accessibilityRole="radio"
+                      accessibilityState={{ checked: isSelected }}
+                      style={({ pressed }) => [
+                        styles.optionCard,
+                        {
+                          backgroundColor: isDark ? "#18181B" : "#FFFFFF",
+                          borderColor: isDark ? "#27272A" : "#E2E8F0",
+                        },
+                        isSelected && [
+                          styles.optionCardActive,
+                          {
+                            backgroundColor: isDark
+                              ? "rgba(255, 103, 25, 0.12)"
+                              : "#FFFBF7",
+                          },
+                        ],
+                        pressed && { opacity: 0.85 },
+                      ]}
+                    >
+                      <View style={styles.cardContentRow}>
+                        <View style={styles.iconCircleWrapper}>
+                          <View
+                            style={[
+                              styles.illustratedBadge,
+                              {
+                                backgroundColor: isSelected
+                                  ? "rgba(255, 103, 25, 0.16)"
+                                  : isDark
+                                  ? "#27272A"
+                                  : "#F1F5F9",
+                              },
+                            ]}
+                          >
+                            <AuthIcon
+                              name="ribbon"
+                              size={22}
+                              color={isSelected ? PRIMARY : isDark ? "#CBD5E1" : "#64748B"}
+                            />
+                          </View>
+                        </View>
+
+                        <View style={styles.cardTextCol}>
+                          <Text
+                            style={[
+                              styles.cardTitle,
+                              { color: isDark ? "#FFFFFF" : "#0F172A" },
+                              isSelected && styles.cardTitleActive,
+                            ]}
+                          >
+                            {y.name}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.cardSubtitle,
+                              { color: isDark ? "#94A3B8" : "#64748B" },
+                            ]}
+                          >
+                            {y.subtitle}
+                          </Text>
+                        </View>
+
+                        <View
+                          style={[
+                            styles.radioOuter,
+                            { borderColor: isSelected ? PRIMARY : isDark ? "#475569" : "#CBD5E1" },
+                            isSelected && styles.radioOuterActive,
+                          ]}
+                        >
+                          {isSelected && <View style={styles.radioInner} />}
+                        </View>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </ScrollView>
+
+            <View style={styles.bottomDockedAction}>
+              <Pressable
+                onPress={() => handleNextPress(3)}
+                disabled={!isPageValid(3)}
+                style={({ pressed }) => [
+                  styles.actionButton,
+                  !isPageValid(3) && styles.actionButtonDisabled,
+                  pressed && isPageValid(3) && { opacity: 0.9 },
+                ]}
+              >
+                <Text style={styles.actionButtonText}>Next</Text>
+              </Pressable>
+            </View>
+          </View>
+        );
+
+      case 4:
+        return (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            style={styles.pageContainer}
+            keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 24 : 0}
+          >
+            <ScrollView
+              key="scroll-4"
+              style={styles.pageScroll}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              nestedScrollEnabled={true}
+            >
+              <View style={styles.headerBlock}>
+                <Text
+                  style={[
+                    styles.titleText,
+                    { color: isDark ? "#FFFFFF" : "#0F172A" },
+                  ]}
+                >
+                  Join the Community
+                </Text>
+                <Text
+                  style={[
+                    styles.subtitleText,
+                    { color: isDark ? "#94A3B8" : "#64748B" },
+                  ]}
+                >
+                  Add your Telegram username to be connected to fellowship
+                  discussion channels, cell groups, and prayer updates.
+                </Text>
+              </View>
+
+              <View style={styles.telegramInputSection}>
+                <Text
+                  style={[
+                    styles.inputFieldLabel,
+                    { color: isDark ? "#94A3B8" : "#64748B" },
+                  ]}
+                >
+                  TELEGRAM USERNAME (OPTIONAL)
+                </Text>
+
+                <View
+                  style={[
+                    styles.telegramBox,
+                    {
+                      backgroundColor: isDark ? "#18181B" : "#FFFFFF",
+                      borderColor: isDark ? "#27272A" : "#E2E8F0",
+                    },
+                    telegramFocused && styles.textInputBoxFocused,
+                  ]}
+                >
+                  <View
                     style={[
-                      styles.selectorValueText,
+                      styles.atBadge,
                       {
-                        color: isSelected
-                          ? isDark
-                            ? "#ffffff"
-                            : "#0f172a"
-                          : isDark
-                            ? "#64748b"
-                            : "#94a3b8",
-                        fontWeight: isSelected ? "600" : "400",
+                        backgroundColor: isDark ? "#27272A" : "#F3F4F6",
                       },
                     ]}
                   >
-                    {value || placeholder}
-                  </Text>
-
-                  <AuthIcon
-                    name="chevron-down"
-                    size={18}
-                    color={
-                      isSelected
-                        ? PRIMARY
-                        : isDark
-                          ? "#64748b"
-                          : "#94a3b8"
-                    }
+                    <Ionicons name="send" size={16} color={PRIMARY} />
+                    <Text
+                      style={[
+                        styles.atSymbol,
+                        { color: isDark ? "#FFFFFF" : "#0F172A" },
+                      ]}
+                    >
+                      @
+                    </Text>
+                  </View>
+                  <TextInput
+                    value={telegram}
+                    onChangeText={setTelegram}
+                    onFocus={() => setTelegramFocused(true)}
+                    onBlur={() => setTelegramFocused(false)}
+                    placeholder="username"
+                    placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    returnKeyType="done"
+                    style={[
+                      styles.telegramInput,
+                      { color: isDark ? "#FFFFFF" : "#0F172A" },
+                    ]}
                   />
-                </Pressable>
+                  {telegram.length > 0 && (
+                    <Pressable onPress={() => setTelegram("")} hitSlop={8}>
+                      <Ionicons
+                        name="close-circle"
+                        size={18}
+                        color={isDark ? "#94A3B8" : "#64748B"}
+                      />
+                    </Pressable>
+                  )}
+                </View>
               </View>
-            );
-          }}
-        />
-        {errors[name]?.message ? (
-          <Text style={styles.errorText}>{errors[name]?.message}</Text>
-        ) : null}
-      </View>
-    );
-  };
 
-  const currentValue = modalConfig ? watch(modalConfig.name) : "";
+              {/* Fellowship welcome card */}
+              <View
+                style={[
+                  styles.communityCard,
+                  {
+                    backgroundColor: isDark ? "#18181B" : "#FFF7ED",
+                    borderColor: isDark ? "#27272A" : "#FED7AA",
+                  },
+                ]}
+              >
+                <View style={styles.communityCardIconBadge}>
+                  <Ionicons name="heart" size={20} color={PRIMARY} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[
+                      styles.communityCardTitle,
+                      { color: isDark ? "#FFFFFF" : "#0F172A" },
+                    ]}
+                  >
+                    4 Kilo Fellowship Family
+                  </Text>
+                  <Text
+                    style={[
+                      styles.communityCardSubtitle,
+                      { color: isDark ? "#94A3B8" : "#64748B" },
+                    ]}
+                  >
+                    {'"That which we have seen and heard we declare unto you, that ye also may have fellowship with us." — 1 John 1:3'}
+                  </Text>
+                </View>
+              </View>
+            </ScrollView>
+
+            <View style={styles.bottomDockedAction}>
+              <Pressable
+                onPress={() => handleNextPress(4)}
+                disabled={submitting}
+                style={({ pressed }) => [
+                  styles.actionButton,
+                  submitting && styles.actionButtonDisabled,
+                  pressed && !submitting && { opacity: 0.9 },
+                ]}
+              >
+                {submitting ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.actionButtonText}>Get Connected</Text>
+                )}
+              </Pressable>
+            </View>
+          </KeyboardAvoidingView>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <SafeAreaView
-      edges={["bottom"]}
       style={[
         styles.safeArea,
-        { backgroundColor: isDark ? "#1A1A1B" : "#ffffff" },
+        { backgroundColor: isDark ? "#09090B" : "#FFFFFF" },
       ]}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={{ flex: 1 }}
-          keyboardVerticalOffset={Platform.OS === "ios" ? headerHeight : 20}
-        >
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.scrollContent}
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        animated={true}
+      />
+
+      <View style={styles.mainContainer}>
+        {/* Top Navigation Bar with Connected Filling Progress Indicator */}
+        <View style={styles.topBar}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            onPress={handleBackPress}
+            hitSlop={8}
+            android_ripple={{
+              color: isDark
+                ? "rgba(255, 255, 255, 0.15)"
+                : "rgba(0, 0, 0, 0.08)",
+              borderless: true,
+              radius: 20,
+            }}
+            style={({ pressed }) => [
+              styles.navBackButton,
+              {
+                backgroundColor: isDark
+                  ? "rgba(255, 255, 255, 0.08)"
+                  : "rgba(0, 0, 0, 0.04)",
+                opacity: pressed ? 0.7 : 1,
+              },
+            ]}
           >
-            {/* Top Stepper Indicator inspired by tnt-ethiopia */}
-            <View style={styles.progressContainer}>
-              <View style={[styles.progressSegment, styles.progressSegmentActive]} />
-              <View style={[styles.progressSegment, styles.progressSegmentActive]} />
-            </View>
+            <Ionicons
+              name="arrow-back"
+              size={20}
+              color={isDark ? "#FFFFFF" : "#0F172A"}
+            />
+          </Pressable>
 
-            {/* Header Block */}
-            <View style={styles.headerBlock}>
+          {/* Connected filling progress track */}
+          <View
+            style={[
+              styles.continuousTrack,
+              {
+                backgroundColor: isDark
+                  ? "rgba(255, 255, 255, 0.12)"
+                  : "#E2E8F0",
+              },
+            ]}
+          >
+            <Animated.View
+              style={[
+                styles.continuousFill,
+                { width: progressWidth, backgroundColor: PRIMARY },
+              ]}
+            />
+          </View>
+
+          {currentPage === 4 ? (
+            <Pressable
+              onPress={handleSkipPress}
+              hitSlop={8}
+              style={[
+                styles.skipButton,
+                { backgroundColor: isDark ? "#27272A" : "#F3F4F6" },
+              ]}
+            >
               <Text
                 style={[
-                  styles.titleText,
-                  { color: isDark ? "#ffffff" : "#0f172a" },
+                  styles.skipText,
+                  { color: isDark ? "#CBD5E1" : "#475569" },
                 ]}
               >
-                Personalize your profile
+                Skip
               </Text>
-              <Text
+            </Pressable>
+          ) : (
+            <View style={{ width: 40 }} />
+          )}
+        </View>
+
+        {/* Native Horizontal Pager for Question Flow */}
+        {Platform.OS === "web" ? (
+          <View style={styles.webContainer}>
+            {renderPageContent(currentPage)}
+          </View>
+        ) : (
+          <View style={styles.pagerContainer} {...panResponder.panHandlers}>
+            <PagerView
+              ref={pagerRef}
+              style={styles.pagerView}
+              initialPage={0}
+              scrollEnabled={isPageValid(currentPage)}
+              onPageScroll={handlePageScroll}
+              onPageSelected={handlePageSelected}
+              onPageScrollStateChanged={handleScrollStateChanged}
+            >
+              <View key="page-profile" style={styles.page}>
+                {renderPageContent(0)}
+              </View>
+              <View key="page-team" style={styles.page}>
+                {renderPageContent(1)}
+              </View>
+              <View key="page-dept" style={styles.page}>
+                {renderPageContent(2)}
+              </View>
+              <View key="page-year" style={styles.page}>
+                {renderPageContent(3)}
+              </View>
+              <View key="page-telegram" style={styles.page}>
+                {renderPageContent(4)}
+              </View>
+            </PagerView>
+          </View>
+        )}
+      </View>
+
+      {/* Expo UI Native BottomSheet for Department Drawer */}
+      {isSheetOpen && (
+        <Host
+          colorScheme={isDark ? "dark" : "light"}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="box-none"
+        >
+          <BottomSheet
+            isPresented={isSheetOpen}
+            onDismiss={() => setIsSheetOpen(false)}
+            snapPoints={["half", "full"]}
+            showDragIndicator={true}
+            contentPadding={0}
+            scrimColor={isDark ? "rgba(0, 0, 0, 0.7)" : "rgba(0, 0, 0, 0.5)"}
+            containerColor={isDark ? "#18181B" : "#FFFFFF"}
+          >
+            <RNHostView style={{ width: "100%" }}>
+              <View
                 style={[
-                  styles.subtitleText,
-                  { color: isDark ? "#94a3b8" : "#64748b" },
+                  styles.sheetContent,
+                  { backgroundColor: isDark ? "#18181B" : "#FFFFFF" },
                 ]}
               >
-                Choose your fellowship team, department, and academic year to get connected.
-              </Text>
-            </View>
-
-            {/* Profile Avatar Uploader inspired by tnt-ethiopia */}
-            <View style={styles.avatarSection}>
-              <Pressable
-                onPress={pickImage}
-                accessibilityRole="button"
-                accessibilityLabel="Upload profile picture"
-                style={({ pressed }) => [
-                  styles.avatarPressable,
-                  Platform.OS === "ios" && pressed
-                    ? { opacity: 0.88, transform: [{ scale: 0.98 }] }
-                    : undefined,
-                ]}
-              >
-                <View
-                  style={[
-                    styles.avatarCircle,
-                    {
-                      backgroundColor: isDark ? "#1e293b" : "#fff5ed",
-                      borderColor: isDark ? "#334155" : "#fed7aa",
-                    },
-                  ]}
-                >
-                  {image ? (
-                    <Image
-                      source={{ uri: image }}
-                      style={styles.avatarImage}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View style={styles.avatarFallback}>
-                      <Text style={styles.avatarInitialText}>
-                        {avatarInitial}
-                      </Text>
-                    </View>
-                  )}
-
-                  {/* Camera / Plus badge at bottom-right */}
-                  <View
-                    style={[
-                      styles.avatarBadge,
-                      {
-                        borderColor: isDark ? "#1A1A1B" : "#ffffff",
-                      },
-                    ]}
-                  >
-                    <AuthIcon
-                      name={image ? "edit" : "camera"}
-                      size={15}
-                      color="#ffffff"
-                    />
-                  </View>
-                </View>
-              </Pressable>
-              <Text
-                style={[
-                  styles.avatarHintText,
-                  { color: isDark ? "#94a3b8" : "#64748b" },
-                ]}
-              >
-                {image ? "Tap to change photo" : "Add a profile photo"}
-              </Text>
-            </View>
-
-            {/* Dropdown Selectors Stack */}
-            <View style={styles.fieldsStack}>
-              <View style={styles.fieldWrapper}>
-                <Text
-                  style={[
-                    styles.fieldLabel,
-                    { color: isDark ? "#94a3b8" : "#64748b" },
-                  ]}
-                >
-                  Full Name
-                </Text>
-                <Controller
-                  control={control}
-                  name="fullName"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <View
+                <View style={styles.sheetHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text
                       style={[
-                        styles.inputContainer,
-                        {
-                          borderColor: errors.fullName
-                            ? "#ef4444"
-                            : isDark
-                              ? "#334155"
-                              : "#e2e8f0",
-                          backgroundColor: isDark ? "#1e293b" : "#f8fafc",
-                        },
+                        styles.sheetTitle,
+                        { color: isDark ? "#FFFFFF" : "#0F172A" },
                       ]}
                     >
-                      <View
-                        style={[
-                          styles.iconBadge,
-                          {
-                            backgroundColor: isDark ? "#0f172a" : "#ffffff",
-                          },
-                        ]}
-                      >
-                        <AuthIcon
-                          name="person"
-                          size={20}
-                          color={isDark ? "#cbd5e1" : "#64748b"}
-                        />
-                      </View>
-                      <TextInput
-                        placeholder="Enter your full name"
-                        placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
-                        value={value}
-                        onChangeText={onChange}
-                        onBlur={onBlur}
-                        style={[
-                          styles.textInput,
-                          { color: isDark ? "#ffffff" : "#0f172a" },
-                        ]}
-                      />
-                    </View>
-                  )}
-                />
-                {errors.fullName?.message ? (
-                  <Text style={styles.errorText}>
-                    {errors.fullName.message}
-                  </Text>
-                ) : null}
-              </View>
+                      Select Department
+                    </Text>
+                    <Text
+                      style={[
+                        styles.sheetSubtitle,
+                        { color: isDark ? "#94A3B8" : "#64748B" },
+                      ]}
+                    >
+                      Choose your AAU department or field of study
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={() => setIsSheetOpen(false)}
+                    hitSlop={10}
+                    style={[
+                      styles.sheetCloseBtn,
+                      { backgroundColor: isDark ? "#27272A" : "#F1F5F9" },
+                    ]}
+                  >
+                    <Ionicons
+                      name="close"
+                      size={18}
+                      color={isDark ? "#94A3B8" : "#64748B"}
+                    />
+                  </Pressable>
+                </View>
 
-              {renderDropdownSelector(
-                "team",
-                "Team",
-                TEAM_NAMES,
-                "Select your team",
-              )}
-
-              {renderDropdownSelector(
-                "department",
-                "Department",
-                DEPARTMENTS,
-                "Select your department",
-              )}
-
-              {renderDropdownSelector(
-                "year",
-                "Year",
-                YEARS,
-                "Select your academic year",
-              )}
-
-              {/* Telegram Handle Input Field matching selector card styling */}
-              <View style={styles.fieldWrapper}>
-                <Text
-                  style={[
-                    styles.fieldLabel,
-                    { color: isDark ? "#94a3b8" : "#64748b" },
-                  ]}
+                <ScrollView
+                  style={styles.sheetList}
+                  contentContainerStyle={styles.sheetListContent}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  nestedScrollEnabled={true}
                 >
-                  TELEGRAM USERNAME
-                </Text>
-                <Controller
-                  control={control}
-                  name="telegram"
-                  render={({ field: { onChange, onBlur, value } }) => {
-                    const hasValue = Boolean(value && value.trim().length > 0);
-                    const isActive = telegramFocused || hasValue;
-
+                  {FELLOWSHIP_DEPARTMENTS.map((dept) => {
+                    const isSelected = department === dept.id;
                     return (
-                      <View
-                        style={[
-                          styles.inputContainer,
+                      <Pressable
+                        key={dept.id}
+                        onPress={() => {
+                          setDepartment(dept.id);
+                          setIsSheetOpen(false);
+                          void Haptics.selectionAsync().catch(() => {});
+                        }}
+                        style={({ pressed }) => [
+                          styles.sheetRow,
+                          isSelected && styles.sheetRowActive,
                           {
-                            borderColor: isActive
+                            backgroundColor: isSelected
+                              ? isDark
+                                ? "rgba(255, 103, 25, 0.16)"
+                                : "#FFF7ED"
+                              : isDark
+                              ? "#1F2937"
+                              : "#FAFAFA",
+                            borderColor: isSelected
                               ? PRIMARY
                               : isDark
-                                ? "#334155"
-                                : "#e2e8f0",
-                            backgroundColor: isActive
-                              ? isDark
-                                ? "rgba(255, 103, 25, 0.08)"
-                                : "#fffbf7"
-                              : isDark
-                                ? "#1e293b"
-                                : "#f8fafc",
+                              ? "#374151"
+                              : "#E5E7EB",
                           },
+                          pressed && { opacity: 0.8 },
                         ]}
                       >
-                        <View
-                          style={[
-                            styles.iconBadge,
-                            {
-                              backgroundColor: isActive
-                                ? "rgba(255, 103, 25, 0.15)"
-                                : isDark
-                                  ? "#0f172a"
-                                  : "#ffffff",
-                            },
-                          ]}
-                        >
-                          <AuthIcon
-                            name="telegram"
-                            size={20}
-                            color={
-                              isActive
-                                ? PRIMARY
-                                : isDark
-                                  ? "#cbd5e1"
-                                  : "#64748b"
-                            }
-                          />
+                        <View style={styles.sheetRowLeft}>
+                          <View
+                            style={[
+                              styles.sheetIconBadge,
+                              {
+                                backgroundColor: isSelected
+                                  ? "rgba(255, 103, 25, 0.18)"
+                                  : isDark
+                                  ? "#111827"
+                                  : "#FFFFFF",
+                              },
+                            ]}
+                          >
+                            <AuthIcon
+                              name={dept.icon}
+                              size={18}
+                              color={isSelected ? PRIMARY : isDark ? "#9CA3AF" : "#6B7280"}
+                            />
+                          </View>
+                          <Text
+                            style={[
+                              styles.sheetRowText,
+                              { color: isSelected ? PRIMARY : isDark ? "#FFFFFF" : "#0F172A" },
+                            ]}
+                          >
+                            {dept.name}
+                          </Text>
                         </View>
-                        <TextInput
-                          style={[
-                            styles.textInput,
-                            {
-                              color: isDark ? "#ffffff" : "#0f172a",
-                            },
-                          ]}
-                          placeholder="@username"
-                          placeholderTextColor={
-                            isDark ? "#64748b" : "#94a3b8"
-                          }
-                          value={value}
-                          onChangeText={onChange}
-                          onFocus={() => setTelegramFocused(true)}
-                          onBlur={() => {
-                            setTelegramFocused(false);
-                            onBlur();
-                          }}
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                        />
-                      </View>
+                        {isSelected && (
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={20}
+                            color={PRIMARY}
+                          />
+                        )}
+                      </Pressable>
                     );
-                  }}
-                />
-                {errors.telegram?.message ? (
-                  <Text style={styles.errorText}>
-                    {errors.telegram.message}
-                  </Text>
-                ) : null}
+                  })}
+                </ScrollView>
               </View>
-            </View>
-
-            {/* Bottom CTA Button */}
-            <View style={styles.buttonWrapper}>
-              <AppButton
-                title="Complete Fellowship Profile"
-                onPress={() => handleSubmit(handleComplete)()}
-                loading={loading}
-                disabled={!isFilled}
-                isDark={isDark}
-                variant="primary"
-                size="lg"
-              />
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
-
-      {/* Options Selection BottomSheet Modal */}
-      {/* Options Selection BottomSheet Modal */}
-      <OptionBottomSheet
-        config={modalConfig}
-        onClose={closeModal}
-        onSelect={selectOption}
-        currentValue={currentValue}
-        isDark={isDark}
-        insetsBottom={insets.bottom}
-      />
+            </RNHostView>
+          </BottomSheet>
+        </Host>
+      )}
 
       <InfoModal
         visible={errorModal.visible}
-        onClose={handleErrorModalClose}
         title={errorModal.title}
         message={errorModal.message}
         type="error"
-        isDark={isDark}
+        onClose={() => setErrorModal((prev) => ({ ...prev, visible: false }))}
       />
     </SafeAreaView>
   );
@@ -1014,46 +1631,96 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  scrollContent: {
-    paddingHorizontal: 22,
-    paddingTop: 12,
-    paddingBottom: 36,
+  mainContainer: {
+    flex: 1,
   },
-  progressContainer: {
+  pageContainer: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  topBar: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 20,
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === "android" ? 10 : 6,
+    paddingBottom: 10,
+    minHeight: 48,
   },
-  progressSegment: {
+  navBackButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  continuousTrack: {
+    width: 160,
+    height: 5,
+    borderRadius: 2.5,
+    overflow: "hidden",
+  },
+  continuousFill: {
+    height: "100%",
+    borderRadius: 2.5,
+  },
+  skipButton: {
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 16,
+    paddingHorizontal: 12,
+  },
+  skipText: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  pagerContainer: {
     flex: 1,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#e2e8f0",
   },
-  progressSegmentActive: {
-    backgroundColor: PRIMARY,
+  pagerView: {
+    flex: 1,
+  },
+  webContainer: {
+    flex: 1,
+  },
+  page: {
+    flex: 1,
+  },
+  pageScroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
+  scrollContentProfile: {
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 20,
+    flexGrow: 1,
   },
   headerBlock: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   titleText: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: "800",
-    letterSpacing: -0.4,
-    lineHeight: 32,
+    letterSpacing: -0.5,
+    lineHeight: 34,
     marginBottom: 8,
   },
   subtitleText: {
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 15,
+    lineHeight: 22,
   },
 
-  /* Avatar Uploader */
+  /* Avatar Profile Picture Uploader */
   avatarSection: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 28,
+    marginVertical: 18,
   },
   avatarPressable: {
     width: 104,
@@ -1069,9 +1736,9 @@ const styles = StyleSheet.create({
     position: "relative",
     ...Platform.select({
       ios: {
-        shadowColor: "#000",
+        shadowColor: PRIMARY,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.12,
+        shadowOpacity: 0.22,
         shadowRadius: 8,
       },
       android: {
@@ -1091,31 +1758,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarInitialText: {
-    fontSize: 40,
+  avatarInitial: {
+    fontSize: 44,
     fontWeight: "800",
     color: PRIMARY,
   },
-  avatarBadge: {
+  avatarCameraBadge: {
     position: "absolute",
     bottom: -2,
     right: -2,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: PRIMARY,
-    borderWidth: 2.5,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
     ...Platform.select({
       ios: {
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
+        shadowOpacity: 0.2,
         shadowRadius: 3,
       },
       android: {
-        elevation: 4,
+        elevation: 3,
       },
     }),
   },
@@ -1125,133 +1793,254 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
 
-  /* Fields Stack */
-  fieldsStack: {
-    gap: 18,
+  /* Input fields */
+  inputFieldContainer: {
+    marginTop: 16,
   },
-  fieldWrapper: {
-    width: "100%",
-  },
-  fieldLabel: {
+  inputFieldLabel: {
     fontSize: 12,
     fontWeight: "700",
     letterSpacing: 0.8,
     marginBottom: 8,
-    marginLeft: 2,
+    textTransform: "uppercase",
   },
-  selectorOuterWrap: {
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  selectorButton: {
-    height: 56,
-    minHeight: 56,
-    borderRadius: 16,
+  textInputBox: {
+    height: 54,
+    borderRadius: 14,
     borderWidth: 1.5,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    gap: 12,
-  },
-  iconBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  selectorValueText: {
-    flex: 1,
-    fontSize: 15,
-  },
-  inputContainer: {
-    height: 56,
-    minHeight: 56,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    gap: 12,
-  },
-  textInput: {
-    flex: 1,
-    height: 56,
-    fontSize: 15,
+    paddingHorizontal: 16,
+    fontSize: 16,
     fontWeight: "500",
-    paddingVertical: 0,
-    textAlignVertical: "center",
-    includeFontPadding: false,
   },
-  errorText: {
-    color: "#ef4444",
-    fontSize: 12,
-    fontWeight: "600",
-    marginTop: 5,
-    marginLeft: 4,
+  textInputBoxFocused: {
+    borderColor: PRIMARY,
   },
 
-  /* Button */
-  buttonWrapper: {
-    marginTop: 28,
+  /* Option Cards (Questions) */
+  cardsStack: {
+    gap: 12,
+    marginBottom: 20,
   },
-
-  /* BottomSheet Options List */
-  sheetOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "transparent",
-  },
-  sheetBackdrop: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(0, 0, 0, 0.55)",
-  },
-  sheetContainer: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 22,
-    paddingTop: 10,
+  optionCard: {
+    borderRadius: 18,
+    overflow: "hidden",
+    borderWidth: 1.5,
+    padding: 16,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: -6 },
-        shadowOpacity: 0.18,
-        shadowRadius: 16,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 5,
       },
       android: {
-        elevation: 20,
+        elevation: 1,
       },
     }),
   },
-  sheetTopDragArea: {
-    width: "100%",
-    paddingTop: 4,
-    paddingBottom: 2,
+  optionCardActive: {
+    borderColor: PRIMARY,
+    borderWidth: 2,
   },
-  handleContainer: {
-    alignItems: "center",
-    paddingVertical: 10,
-    width: "100%",
-  },
-  handle: {
-    width: 44,
-    height: 5,
-    borderRadius: 3,
-  },
-  sheetHeaderRow: {
+  cardContentRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    marginBottom: 16,
-    marginTop: 4,
+    alignItems: "center",
+    gap: 14,
   },
-  sheetCloseBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  iconCircleWrapper: {
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 12,
+  },
+  illustratedBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cardTextCol: {
+    flex: 1,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 3,
+  },
+  cardTitleActive: {
+    color: PRIMARY,
+  },
+  cardSubtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  radioOuter: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  radioOuterActive: {
+    borderColor: PRIMARY,
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: PRIMARY,
+  },
+
+  /* Search Box */
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    paddingHorizontal: 12,
+    gap: 8,
+    marginBottom: 12,
+  },
+  searchInput: {
+    flex: 1,
+    height: 48,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  sheetTriggerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 16,
+    gap: 8,
+  },
+  sheetTriggerText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "700",
+    color: PRIMARY,
+  },
+  customFieldBox: {
+    marginTop: 10,
+  },
+
+  /* Telegram step */
+  telegramInputSection: {
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  telegramBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 54,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    paddingHorizontal: 12,
+    gap: 10,
+  },
+  atBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  atSymbol: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  telegramInput: {
+    flex: 1,
+    height: 54,
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  communityCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  communityCardIconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: "rgba(255, 103, 25, 0.16)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  communityCardTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  communityCardSubtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontStyle: "italic",
+  },
+
+  /* Bottom Action Button */
+  bottomDockedAction: {
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === "ios" ? 16 : 22,
+  },
+  actionButton: {
+    height: 54,
+    borderRadius: 16,
+    backgroundColor: PRIMARY,
+    alignItems: "center",
+    justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: PRIMARY,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  actionButtonDisabled: {
+    opacity: 0.5,
+    ...Platform.select({
+      ios: {
+        shadowOpacity: 0,
+      },
+      android: {
+        elevation: 0,
+      },
+    }),
+  },
+  actionButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+
+  /* Native BottomSheet Content */
+  sheetContent: {
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 36,
+  },
+  sheetHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
   },
   sheetTitle: {
     fontSize: 20,
@@ -1260,45 +2049,50 @@ const styles = StyleSheet.create({
   },
   sheetSubtitle: {
     fontSize: 13,
-    marginTop: 3,
+    marginTop: 2,
   },
-  optionsList: {
+  sheetCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sheetList: {
+    maxHeight: 400,
+  },
+  sheetListContent: {
     gap: 10,
-    paddingBottom: 8,
+    paddingBottom: 20,
   },
-  optionCard: {
+  sheetRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
+    justifyContent: "space-between",
+    paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 14,
     borderWidth: 1.5,
-    gap: 14,
   },
-  optionCardIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  optionCardLabel: {
-    flex: 1,
-    fontSize: 15,
-  },
-  radioCircle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+  sheetRowActive: {
     borderWidth: 2,
+  },
+  sheetRowLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  sheetIconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "transparent",
   },
-  radioInner: {
-    width: 11,
-    height: 11,
-    borderRadius: 6,
-    backgroundColor: PRIMARY,
+  sheetRowText: {
+    fontSize: 15,
+    fontWeight: "600",
+    flex: 1,
   },
 });
