@@ -12,6 +12,7 @@ export interface AppEvent {
   buttonText: string;
   registrationLimit?: number | null;
   registrationsCount?: number;
+  scheduledAt?: string;
   createdAt?: string;
   updatedAt?: string;
 }

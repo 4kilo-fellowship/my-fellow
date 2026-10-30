@@ -48,3 +48,25 @@ export const unregisterFromEventApi = async (data: {
   );
   return res.data;
 };
+
+export const createEventApi = async (
+  data: FormData | any,
+): Promise<ApiResponse<AppEvent>> => {
+  const res = await api.post<ApiResponse<AppEvent>>("/events", data);
+  return res.data;
+};
+
+export const updateEventApi = async (
+  id: string,
+  data: FormData | any,
+): Promise<ApiResponse<AppEvent>> => {
+  const res = await api.put<ApiResponse<AppEvent>>(`/events/${id}`, data);
+  return res.data;
+};
+
+export const deleteEventApi = async (
+  id: string,
+): Promise<ApiResponse<{ message: string }>> => {
+  const res = await api.delete<ApiResponse<{ message: string }>>(`/events/${id}`);
+  return res.data;
+};

@@ -4,6 +4,9 @@ import {
   registerForEventApi,
   unregisterFromEventApi,
   checkRegistrationStatusApi,
+  createEventApi,
+  updateEventApi,
+  deleteEventApi,
 } from "@/services/events.api";
 import { AppEvent, EventRegistrationData } from "@/types/events.types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -27,6 +30,9 @@ type EventsState = {
   unregisterFromEvent: (data: { eventId: string }) => Promise<void>;
   checkRegistrationStatus: (eventId: string) => Promise<void>;
   toggleLikeEvent: (eventId: string) => void;
+  createEvent: (data: FormData | any) => Promise<AppEvent | null>;
+  updateEvent: (id: string, data: FormData | any) => Promise<AppEvent | null>;
+  deleteEvent: (id: string) => Promise<boolean>;
   setEventsList: (events: AppEvent[]) => void;
   setError: (error: string | null) => void;
 };
@@ -193,6 +199,71 @@ export const useEventsStore = create<EventsState>()(
       },
 
       setError: (error) => set({ error }),
+
+      createEvent: async (data: FormData | any) => {
+        set({ loading: true, error: null });
+        try {
+          const res = await createEventApi(data);
+          if (res.success && res.data) {
+            const newEvent = res.data;
+            set((state) => ({
+              eventsList: [newEvent, ...state.eventsList],
+              loading: false,
+            }));
+            return newEvent;
+          }
+          set({ loading: false, error: res.message || "Failed to create event" });
+          return null;
+        } catch (err: any) {
+          const msg = err?.response?.data?.message || err?.message || "Error creating event";
+          set({ loading: false, error: msg });
+          return null;
+        }
+      },
+
+      updateEvent: async (id: string, data: FormData | any) => {
+        set({ loading: true, error: null });
+        try {
+          const res = await updateEventApi(id, data);
+          if (res.success && res.data) {
+            const updatedEvent = res.data;
+            set((state) => ({
+              eventsList: state.eventsList.map((e) =>
+                (e._id === id || (e as any).id === id) ? updatedEvent : e
+              ),
+              currentEvent: updatedEvent,
+              loading: false,
+            }));
+            return updatedEvent;
+          }
+          set({ loading: false, error: res.message || "Failed to update event" });
+          return null;
+        } catch (err: any) {
+          const msg = err?.response?.data?.message || err?.message || "Error updating event";
+          set({ loading: false, error: msg });
+          return null;
+        }
+      },
+
+      deleteEvent: async (id: string) => {
+        set({ loading: true, error: null });
+        try {
+          const res = await deleteEventApi(id);
+          if (res.success) {
+            set((state) => ({
+              eventsList: state.eventsList.filter((e) => e._id !== id && (e as any).id !== id),
+              loading: false,
+            }));
+            return true;
+          }
+          set({ loading: false, error: res.message || "Failed to delete event" });
+          return false;
+        } catch (err: any) {
+          const msg = err?.response?.data?.message || err?.message || "Error deleting event";
+          set({ loading: false, error: msg });
+          return false;
+        }
+      },
     }),
     {
       name: "events-storage",
