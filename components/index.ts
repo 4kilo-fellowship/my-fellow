@@ -31,3 +31,5 @@ export { NativeViewAllButton } from "./NativeViewAllButton";
 export { ScreenHeader, type ScreenHeaderProps } from "./ScreenHeader";
 export { default as StreakBadge } from "./StreakBadge";
 export { default as StreakModal } from "./StreakModal";
+export { VideoPlayerModal } from "./VideoPlayer/VideoPlayerModal";
+export { WhoToFollowSection } from "./WhoToFollow";

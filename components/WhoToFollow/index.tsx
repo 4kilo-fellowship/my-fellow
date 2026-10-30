@@ -1,0 +1,457 @@
+import { NativeViewAllButton } from "@/components/NativeViewAllButton";
+import { PRIMARY } from "@/constants/colors";
+import { Ionicons } from "@expo/vector-icons";
+import { Image as ExpoImage } from "expo-image";
+import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import {
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+
+export interface SuggestedMember {
+  id: string;
+  name: string;
+  role: string;
+  department: string;
+  mutualCount: number;
+  badge?: string;
+  avatar: string;
+}
+
+const DEFAULT_MEMBERS: SuggestedMember[] = [
+  {
+    id: "m1",
+    name: "Abenezer Bekele",
+    role: "Worship Leader",
+    department: "Software Eng. • 4th Yr",
+    mutualCount: 28,
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "m2",
+    name: "Hiwot Tadesse",
+    role: "Prayer Coordinator",
+    department: "Biomedical Eng. • 3rd Yr",
+    mutualCount: 34,
+    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "m3",
+    name: "Yohannes Hailu",
+    role: "Bible Study Lead",
+    department: "Electrical Eng. • 5th Yr",
+    mutualCount: 19,
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "m4",
+    name: "Bethelhem Assefa",
+    role: "Freshman Mentor",
+    department: "Computer Eng. • 4th Yr",
+    mutualCount: 22,
+    avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "m5",
+    name: "Natnael Tamiru",
+    role: "Media & Tech Lead",
+    department: "Information Systems • 5th Yr",
+    mutualCount: 42,
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
+  },
+];
+
+interface WhoToFollowSectionProps {
+  isDark?: boolean;
+}
+
+export const WhoToFollowSection: React.FC<WhoToFollowSectionProps> = ({ isDark = false }) => {
+  const router = useRouter();
+  const [members, setMembers] = useState<SuggestedMember[]>(DEFAULT_MEMBERS);
+  const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({});
+
+  const toggleFollow = (id: string) => {
+    if (Platform.OS !== "web") {
+      try {
+        Haptics.selectionAsync();
+      } catch {}
+    }
+    setFollowingMap((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const dismissMember = (id: string) => {
+    if (Platform.OS !== "web") {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {}
+    }
+    setMembers((prev) => prev.filter((m) => m.id !== id));
+  };
+
+  if (members.length === 0) return null;
+
+  const cardRippleColor = isDark
+    ? "rgba(255, 255, 255, 0.08)"
+    : "rgba(0, 0, 0, 0.06)";
+
+  return (
+    <View style={styles.sectionContainer}>
+      {/* Header Row with View all button on the right */}
+      <View style={styles.headerRow}>
+        <Text
+          style={[
+            styles.sectionTitle,
+            { color: isDark ? "#ffffff" : "#0f172a" },
+          ]}
+        >
+          Who to Follow
+        </Text>
+        <NativeViewAllButton
+          label="View all"
+          onPress={() => {
+            router.push("/community/search" as any);
+          }}
+          isDark={isDark}
+          accessibilityLabel="View all suggested fellowship members"
+        />
+      </View>
+
+      {/* Horizontal Carousel of Recommended Cards */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        overScrollMode="never"
+        contentContainerStyle={styles.scrollContent}
+        decelerationRate="fast"
+        snapToInterval={218}
+        snapToAlignment="start"
+      >
+        {members.map((member) => {
+          const isFollowing = !!followingMap[member.id];
+
+          return (
+            <View
+              key={member.id}
+              style={[
+                styles.memberCardOuter,
+                {
+                  backgroundColor: isDark ? "#18181b" : "#ffffff",
+                  borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+                },
+              ]}
+            >
+              <Pressable
+                onPress={() => {
+                  if (Platform.OS !== "web") {
+                    try {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    } catch {}
+                  }
+                }}
+                unstable_pressDelay={0}
+                android_ripple={{
+                  color: cardRippleColor,
+                  borderless: false,
+                  foreground: true,
+                }}
+                style={({ pressed }) => [
+                  styles.memberCardInner,
+                  { backgroundColor: isDark ? "#18181b" : "#ffffff" },
+                  Platform.OS === "ios" && pressed && { opacity: 0.9 },
+                ]}
+              >
+                {/* Dismiss "X" Button */}
+                <Pressable
+                  hitSlop={8}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    dismissMember(member.id);
+                  }}
+                  android_ripple={{ color: "rgba(0,0,0,0.12)", borderless: true, radius: 14 }}
+                  style={styles.dismissBtn}
+                >
+                  <Ionicons
+                    name="close"
+                    size={16}
+                    color={isDark ? "#71717a" : "#94a3b8"}
+                  />
+                </Pressable>
+
+                {/* Avatar with Status Ring */}
+                <View style={styles.avatarWrap}>
+                  <ExpoImage
+                    source={{ uri: member.avatar }}
+                    style={styles.avatar}
+                    contentFit="cover"
+                    transition={150}
+                  />
+                  <View
+                    style={[
+                      styles.onlineDot,
+                      { borderColor: isDark ? "#18181b" : "#ffffff" },
+                    ]}
+                  />
+                </View>
+
+                {/* Name & Role */}
+                <Text
+                  numberOfLines={1}
+                  style={[styles.memberName, { color: isDark ? "#ffffff" : "#0f172a" }]}
+                >
+                  {member.name}
+                </Text>
+
+                <Text numberOfLines={1} style={styles.memberRole}>
+                  {member.role}
+                </Text>
+
+                <Text
+                  numberOfLines={1}
+                  style={[styles.memberDept, { color: isDark ? "#94a3b8" : "#64748b" }]}
+                >
+                  {member.department}
+                </Text>
+
+                {/* Centered Social Proof Pill Badge */}
+                <View
+                  style={[
+                    styles.socialProofWrap,
+                    {
+                      backgroundColor: isDark
+                        ? "rgba(255, 255, 255, 0.06)"
+                        : "rgba(0, 0, 0, 0.04)",
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="people"
+                    size={13}
+                    color={isDark ? "#94a3b8" : "#64748b"}
+                  />
+                  <Text
+                    style={[
+                      styles.socialProofText,
+                      { color: isDark ? "#94a3b8" : "#64748b" },
+                    ]}
+                  >
+                    {member.mutualCount} mutual peers
+                  </Text>
+                </View>
+
+                {/* Primary Action Button: Fully Rounded Pill */}
+                <View
+                  style={[
+                    styles.followBtnContainer,
+                    !isFollowing && styles.followBtnShadow,
+                  ]}
+                >
+                  <Pressable
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      toggleFollow(member.id);
+                    }}
+                    unstable_pressDelay={0}
+                    android_ripple={{
+                      color: isFollowing
+                        ? (isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)")
+                        : "rgba(255,255,255,0.3)",
+                      borderless: false,
+                      foreground: true,
+                    }}
+                    style={({ pressed }) => [
+                      styles.followBtn,
+                      {
+                        backgroundColor: isFollowing
+                          ? isDark
+                            ? "#27272a"
+                            : "#f1f5f9"
+                          : PRIMARY,
+                        borderWidth: isFollowing ? 1 : 0,
+                        borderColor: isFollowing
+                          ? isDark
+                            ? "#3f3f46"
+                            : "#cbd5e1"
+                          : "transparent",
+                      },
+                      Platform.OS === "ios" && pressed && { opacity: 0.8 },
+                    ]}
+                  >
+                    <Ionicons
+                      name={isFollowing ? "checkmark" : "person-add"}
+                      size={14}
+                      color={isFollowing ? (isDark ? "#e2e8f0" : "#334155") : "#ffffff"}
+                    />
+                    <Text
+                      style={[
+                        styles.followBtnText,
+                        {
+                          color: isFollowing
+                            ? isDark
+                              ? "#e2e8f0"
+                              : "#334155"
+                            : "#ffffff",
+                        },
+                      ]}
+                    >
+                      {isFollowing ? "Following" : "Follow"}
+                    </Text>
+                  </Pressable>
+                </View>
+              </Pressable>
+            </View>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  sectionContainer: {
+    marginTop: 24,
+    marginBottom: 10,
+  },
+  headerRow: {
+    paddingHorizontal: 20,
+    marginBottom: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    gap: 14,
+    paddingBottom: 10,
+  },
+  memberCardOuter: {
+    width: 204,
+    minHeight: 255,
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: "hidden",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1.5 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+  },
+  memberCardInner: {
+    width: "100%",
+    paddingTop: 18,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    borderRadius: 20,
+  },
+  dismissBtn: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    padding: 4,
+    borderRadius: 12,
+    zIndex: 2,
+  },
+  avatarWrap: {
+    width: 66,
+    height: 66,
+    position: "relative",
+    marginBottom: 12,
+    marginTop: 4,
+    alignSelf: "center",
+  },
+  avatar: {
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+  },
+  onlineDot: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#22c55e",
+    borderWidth: 2.5,
+  },
+  memberName: {
+    fontSize: 15,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 3,
+    width: "100%",
+  },
+  memberRole: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: PRIMARY,
+    textAlign: "center",
+    marginBottom: 3,
+  },
+  memberDept: {
+    fontSize: 12,
+    textAlign: "center",
+    marginBottom: 10,
+    width: "100%",
+  },
+  socialProofWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 9999,
+    gap: 6,
+    marginBottom: 16,
+  },
+  socialProofText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  followBtnContainer: {
+    width: "100%",
+    borderRadius: 9999,
+  },
+  followBtnShadow: Platform.select({
+    ios: {
+      shadowColor: "#ff6719",
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.35,
+      shadowRadius: 5,
+    },
+    default: {
+      elevation: 2,
+    },
+  }) as any,
+  followBtn: {
+    width: "100%",
+    height: 40,
+    borderRadius: 9999,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    overflow: "hidden",
+  },
+  followBtnText: {
+    fontSize: 13,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+});
+
+export default WhoToFollowSection;
