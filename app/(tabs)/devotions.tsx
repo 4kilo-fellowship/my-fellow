@@ -1,4 +1,4 @@
-import { Placeholder } from "@/components";
+import { MainTabHeader, Placeholder } from "@/components";
 import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { devotionsService } from "@/services/devotionsService";
@@ -36,7 +36,6 @@ const CATEGORIES: {
 ];
 
 const Devotions = () => {
-  const { top } = useSafeAreaInsets();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [selectedCat, setSelectedCat] = useState<DevotionType | "all" | "new">(
@@ -314,10 +313,12 @@ const Devotions = () => {
     <View className={`flex-1 ${isDark ? "bg-zinc-950" : "bg-gray-50"}`}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      <View style={{ paddingTop: top + 10 }} className="flex-1">
-        <View className="px-6 mb-6">
+      <MainTabHeader borderBottom={true} />
+
+      <View className="flex-1 pt-3">
+        <View className="px-6 mb-4">
           <Text
-            className={`text-3xl font-black tracking-tight ${isDark ? "text-white" : "text-zinc-900"}`}
+            className={`text-2xl font-black tracking-tight ${isDark ? "text-white" : "text-zinc-900"}`}
           >
             Devotions
           </Text>

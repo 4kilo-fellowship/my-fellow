@@ -1,3 +1,4 @@
+import { MainTabHeader } from "@/components/MainTabHeader";
 import { ConfirmModal } from "@/components/Modals/ConfirmModal";
 import { PRIMARY } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
@@ -68,40 +69,28 @@ export default function ProfileScreen() {
       <StatusBar style={isDark ? "light" : "dark"} />
 
       {/* Top Header */}
-      <View
-        style={[
-          styles.headerBar,
-          {
-            paddingTop: top + 10,
-            backgroundColor: isDark ? "#121212" : "#ffffff",
-            borderBottomColor: isDark ? "#262626" : "#f1f5f9",
-          },
-        ]}
-      >
-        <Text
-          style={[
-            styles.headerTitle,
-            { color: isDark ? "#ffffff" : "#0f172a" },
-          ]}
-        >
-          Profile
-        </Text>
-
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => router.push("/settings" as any)}
-          style={[
-            styles.settingsIconBtn,
-            { backgroundColor: isDark ? "#1e293b" : "#f1f5f9" },
-          ]}
-        >
-          <Ionicons
-            name="settings-outline"
-            size={20}
-            color={isDark ? "#cbd5e1" : "#475569"}
-          />
-        </TouchableOpacity>
-      </View>
+      <MainTabHeader
+        showAvatar={false}
+        showStreak={false}
+        showNotification={false}
+        borderBottom={true}
+        rightExtra={
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => router.push("/settings" as any)}
+            style={[
+              styles.settingsIconBtn,
+              { backgroundColor: isDark ? "#1e293b" : "#f1f5f9" },
+            ]}
+          >
+            <Ionicons
+              name="settings-outline"
+              size={20}
+              color={isDark ? "#cbd5e1" : "#475569"}
+            />
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

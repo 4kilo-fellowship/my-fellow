@@ -1,3 +1,4 @@
+import { MainTabHeader } from "@/components/MainTabHeader";
 import ProductCard from "@/components/Marketplace/ProductCard";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { ProductBottomSheet } from "@/components/Modals/ProductBottomSheet";
@@ -234,11 +235,13 @@ const Gifts = () => {
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
-        <View style={{ flex: 1, paddingTop: top + 10 }}>
+        <MainTabHeader borderBottom={true} />
+
+        <View style={{ flex: 1, paddingTop: 10 }}>
           {/* header section */}
           <View className="px-5 mb-4">
             <Text
-              className={`text-4xl font-extrabold ${isDark ? "text-white" : "text-black"}`}
+              className={`text-2xl font-extrabold ${isDark ? "text-white" : "text-black"}`}
             >
               Gifts
             </Text>
@@ -497,12 +500,40 @@ const Gifts = () => {
                 <TouchableOpacity
                   onPress={() => router.push("/marketplace" as any)}
                   activeOpacity={0.7}
-                  className="flex-row items-center gap-0.5 pb-1"
+                  accessibilityRole="button"
+                  accessibilityLabel="View all store items"
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    height: 28,
+                    paddingHorizontal: 10,
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    borderColor: isDark
+                      ? "rgba(255, 255, 255, 0.14)"
+                      : "rgba(0, 0, 0, 0.08)",
+                    backgroundColor: isDark
+                      ? "rgba(255, 255, 255, 0.06)"
+                      : "#f4f4f5",
+                  }}
                 >
-                  <Text className="text-sm font-bold text-[#ff6719]">
-                    View All
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "600",
+                      letterSpacing: -0.1,
+                      color: isDark ? "#ffffff" : "#09090b",
+                      includeFontPadding: false,
+                    }}
+                  >
+                    View all
                   </Text>
-                  <Ionicons name="chevron-forward" size={16} color="#ff6719" />
+                  <Ionicons
+                    name="chevron-forward"
+                    size={13}
+                    color={isDark ? "#a1a1aa" : "#71717a"}
+                    style={{ marginLeft: 3 }}
+                  />
                 </TouchableOpacity>
               </View>
 

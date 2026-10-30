@@ -5,9 +5,9 @@ import * as Haptics from "expo-haptics";
 import React, { useEffect } from "react";
 import {
   Platform,
+  Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -36,11 +36,7 @@ export const StreakBadge = ({ onPress }: StreakBadgeProps) => {
   };
 
   return (
-    <TouchableOpacity
-      onPress={handlePress}
-      activeOpacity={0.75}
-      accessibilityRole="button"
-      accessibilityLabel={`Devotion streak: ${currentStreak} days`}
+    <View
       style={[
         styles.container,
         {
@@ -54,37 +50,51 @@ export const StreakBadge = ({ onPress }: StreakBadgeProps) => {
         },
       ]}
     >
-      <Ionicons
-        name="flame"
-        size={18}
-        color={completed ? "#ff6619" : "#ff8533"}
-      />
-      <Text
-        style={[
-          styles.streakText,
-          {
-            color: isDark ? "#ffffff" : "#1f2937",
-          },
+      <Pressable
+        onPress={handlePress}
+        accessibilityRole="button"
+        accessibilityLabel={`Devotion streak: ${currentStreak} days`}
+        android_ripple={{
+          color: isDark ? "rgba(255, 102, 25, 0.22)" : "rgba(255, 102, 25, 0.14)",
+          borderless: false,
+        }}
+        style={({ pressed }) => [
+          styles.pressableInner,
+          pressed && Platform.OS === "ios" && { opacity: 0.75 },
         ]}
       >
-        {currentStreak}
-      </Text>
-      {completed && (
-        <View style={styles.activeDot} />
-      )}
-    </TouchableOpacity>
+        <View style={styles.contentRow}>
+          <Ionicons
+            name="flame"
+            size={21}
+            color={completed ? "#ff6619" : "#ff8533"}
+          />
+          <Text
+            style={[
+              styles.streakText,
+              {
+                color: isDark ? "#ffffff" : "#1f2937",
+              },
+            ]}
+          >
+            {currentStreak}
+          </Text>
+          {completed && (
+            <View style={styles.activeDot} />
+          )}
+        </View>
+      </Pressable>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    height: 40,
-    paddingHorizontal: 11,
-    borderRadius: 20,
-    flexDirection: "row",
+    height: 44,
+    borderRadius: 22,
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
-    gap: 5,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -97,10 +107,25 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  pressableInner: {
+    width: "100%",
+    height: "100%",
+    paddingHorizontal: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  contentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    flexWrap: "nowrap",
+  },
   streakText: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: "800",
     letterSpacing: -0.2,
+    includeFontPadding: false,
   },
   activeDot: {
     width: 6,

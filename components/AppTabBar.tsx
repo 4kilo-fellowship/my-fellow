@@ -1,6 +1,7 @@
 import { useTheme } from "@/context/ThemeContext";
 import { useUserStore } from "@/stores/user.store";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { CommonActions } from "@react-navigation/native";
 import { BlurView } from "expo-blur";
 import {
   GlassView,
@@ -8,6 +9,7 @@ import {
   isLiquidGlassAvailable,
 } from "expo-glass-effect";
 import * as Haptics from "expo-haptics";
+import { router as expoRouter } from "expo-router";
 import { SFSymbol, SymbolView } from "expo-symbols";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -36,7 +38,7 @@ const ICON_SIZE = 28;
 // Safe native haptic trigger
 const triggerTabHaptic = () => {
   try {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
   } catch {
     // Unsupported environment fallback
   }
@@ -71,6 +73,9 @@ function TabIcon({
   avatarUri?: string | null;
 }) {
   const isIOS = Platform.OS === "ios";
+  // Home icon is just a tiny bit bigger (31 vs 28)
+  const isHome = routeName === "index";
+  const iconSize = isHome ? 31 : ICON_SIZE;
 
   // Profile tab: if custom photo uploaded, render a clean single-ring circular avatar.
   // Otherwise, render the native platform person glyph — 100% consistent with other tabs, NO double border!
@@ -115,11 +120,11 @@ function TabIcon({
     return (
       <SymbolView
         name={sfName}
-        size={ICON_SIZE}
+        size={iconSize}
         tintColor={color}
         resizeMode="scaleAspectFit"
         weight={focused ? "bold" : "medium"}
-        style={{ width: ICON_SIZE, height: ICON_SIZE }}
+        style={{ width: iconSize, height: iconSize }}
       />
     );
   }
@@ -151,7 +156,7 @@ function TabIcon({
   return (
     <MaterialCommunityIcons
       name={materialName}
-      size={ICON_SIZE}
+      size={iconSize}
       color={color}
     />
   );
@@ -165,12 +170,14 @@ function TabBarButton({
   onLongPress,
   children,
   accessibilityLabel,
+  isDark,
 }: {
   focused: boolean;
   onPress: () => void;
   onLongPress: () => void;
   children: React.ReactNode;
   accessibilityLabel?: string;
+  isDark: boolean;
 }) {
   return (
     <View style={styles.tabButtonColumn}>
@@ -184,10 +191,20 @@ function TabBarButton({
         }}
         onLongPress={onLongPress}
         hitSlop={{ top: 12, bottom: 12, left: 10, right: 10 }}
-        style={styles.tabPillContainer}
+        android_ripple={{
+          borderless: true,
+          radius: 26,
+          color: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
+        }}
+        style={({ pressed }) => [
+          styles.tabButtonTouchArea,
+          pressed && Platform.OS === "ios" && { opacity: 0.65 },
+        ]}
       >
-        <View style={styles.tabContentCenter}>
-          {children}
+        <View style={styles.tabPillContainer}>
+          <View style={styles.tabContentCenter}>
+            {children}
+          </View>
         </View>
       </Pressable>
     </View>
@@ -196,12 +213,18 @@ function TabBarButton({
 
 // --- Main App Tab Bar Component ---
 
-export default function AppTabBar({
-  state,
-  descriptors,
-  navigation,
-}: any) {
-  const insets = useSafeAreaInsets();
+export default function AppTabBar(props: any) {
+  const {
+    state,
+    descriptors,
+    navigation,
+    emitter,
+    navigateToTab,
+    insets: passedInsets,
+  } = props || {};
+
+  const contextInsets = useSafeAreaInsets();
+  const insets = passedInsets || contextInsets;
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const { user } = useUserStore();
@@ -215,7 +238,8 @@ export default function AppTabBar({
 
   const avatarUri = user?.profileImage;
 
-  const numTabs = state.routes.length || 5;
+  const routes = state?.routes || [];
+  const numTabs = routes.length || 5;
   const [containerWidth, setContainerWidth] = useState(SCREEN_WIDTH);
 
   // Measure tab bar width on layout
@@ -226,9 +250,11 @@ export default function AppTabBar({
     }
   }, []);
 
+  const currentIndex = state?.index ?? 0;
+
   // Compute initial position for the sliding active indicator
   const initialTargetX =
-    (state.index + 0.5) * (SCREEN_WIDTH / numTabs) - INDICATOR_WIDTH / 2;
+    (currentIndex + 0.5) * (SCREEN_WIDTH / numTabs) - INDICATOR_WIDTH / 2;
 
   const translateX = useSharedValue(initialTargetX);
 
@@ -236,7 +262,7 @@ export default function AppTabBar({
     if (containerWidth > 0 && numTabs > 0) {
       const currentTabWidth = containerWidth / numTabs;
       const targetX =
-        (state.index + 0.5) * currentTabWidth - INDICATOR_WIDTH / 2;
+        (currentIndex + 0.5) * currentTabWidth - INDICATOR_WIDTH / 2;
 
       translateX.value = withSpring(targetX, {
         damping: 20,
@@ -244,11 +270,15 @@ export default function AppTabBar({
         mass: 0.7,
       });
     }
-  }, [state.index, containerWidth, numTabs, translateX]);
+  }, [currentIndex, containerWidth, numTabs, translateX]);
 
   const indicatorAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
   }));
+
+  if (!state || !routes.length) {
+    return null;
+  }
 
   return (
     <View
@@ -282,12 +312,14 @@ export default function AppTabBar({
           <GlassView
             style={StyleSheet.absoluteFill}
             glassEffectStyle="regular"
+            pointerEvents="none"
           />
         ) : (
           <BlurView
             intensity={85}
             tint={isDark ? "systemMaterialDark" : "systemMaterialLight"}
             style={StyleSheet.absoluteFill}
+            pointerEvents="none"
           />
         )
       ) : null}
@@ -316,27 +348,54 @@ export default function AppTabBar({
         />
 
         {/* Tab Buttons */}
-        {state.routes.map((route: any, index: number) => {
-          const { options } = descriptors[route.key];
-          const isFocused = state.index === index;
+        {routes.map((route: any, index: number) => {
+          const descriptor = descriptors?.[route.key];
+          const options = descriptor?.options || {};
+          const isFocused = currentIndex === index;
 
           const onPress = () => {
-            const event = navigation.emit({
-              type: "tabPress",
-              target: route.key,
-              canPreventDefault: true,
-            });
+            const event = emitter?.emit
+              ? emitter.emit({
+                  type: "tabPress",
+                  target: route.key,
+                  canPreventDefault: true,
+                })
+              : navigation?.emit?.({
+                  type: "tabPress",
+                  target: route.key,
+                  canPreventDefault: true,
+                });
 
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name);
+            if (!isFocused && !event?.defaultPrevented) {
+              if (typeof navigateToTab === "function") {
+                navigateToTab(route.key);
+              } else if (navigation?.dispatch) {
+                navigation.dispatch({
+                  ...CommonActions.navigate(route),
+                  target: state.key,
+                });
+              } else if (navigation?.navigate) {
+                navigation.navigate(route.name);
+              } else {
+                const targetPath =
+                  route.name === "index" ? "/(tabs)" : `/(tabs)/${route.name}`;
+                expoRouter.navigate(targetPath as any);
+              }
             }
           };
 
           const onLongPress = () => {
-            navigation.emit({
-              type: "tabLongPress",
-              target: route.key,
-            });
+            if (emitter?.emit) {
+              emitter.emit({
+                type: "tabLongPress",
+                target: route.key,
+              });
+            } else if (navigation?.emit) {
+              navigation.emit({
+                type: "tabLongPress",
+                target: route.key,
+              });
+            }
           };
 
           return (
@@ -346,6 +405,7 @@ export default function AppTabBar({
               onPress={onPress}
               onLongPress={onLongPress}
               accessibilityLabel={options.title || route.name}
+              isDark={isDark}
             >
               <TabIcon
                 routeName={route.name}
@@ -364,6 +424,7 @@ export default function AppTabBar({
 const styles = StyleSheet.create({
   tabBarWrapper: {
     width: "100%",
+    zIndex: 100,
   },
   iosGlassContainer: {
     position: "absolute",
@@ -372,6 +433,7 @@ const styles = StyleSheet.create({
     right: 0,
     borderTopWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
+    zIndex: 100,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.06,
@@ -380,6 +442,7 @@ const styles = StyleSheet.create({
   androidContainer: {
     borderTopWidth: StyleSheet.hairlineWidth,
     elevation: 8,
+    zIndex: 100,
   },
   tabsRow: {
     flex: 1,
@@ -390,6 +453,12 @@ const styles = StyleSheet.create({
   },
   tabButtonColumn: {
     flex: 1,
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tabButtonTouchArea: {
+    width: "100%",
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
@@ -414,6 +483,7 @@ const styles = StyleSheet.create({
     height: INDICATOR_HEIGHT,
     borderRadius: INDICATOR_RADIUS,
     borderWidth: 1,
+    pointerEvents: "none",
     ...Platform.select({
       ios: {
         shadowColor: "#000",
