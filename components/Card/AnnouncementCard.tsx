@@ -9,6 +9,7 @@ import React, { useCallback, useState } from "react";
 
 import { useAuth } from "@/context/AuthContext";
 import { useAlerts } from "@/hooks/useAlerts";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useEventsStore } from "@/stores/events.store";
 
 import { Image as ExpoImage } from "expo-image";
@@ -86,6 +87,15 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     ? !!checkingRegistrationMap[eventId]
     : false;
   const isLiked = eventId ? !!likedEvents[eventId] : false;
+  const isAdmin = useIsAdmin();
+
+  const handleAdminEdit = () => {
+    if (!eventId) return;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    } catch {}
+    router.push(`/events/manage?id=${eventId}`);
+  };
 
   const handleLike = () => {
     if (!eventId) return;
@@ -443,6 +453,25 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
               )}
             </Pressable>
           </View>
+
+          {/* Admin Edit Button */}
+          {isAdmin && (
+            <View style={[styles.actionIconBtnWrap, styles.adminBtnWrap as any]}>
+              <Pressable
+                onPress={handleAdminEdit}
+                accessibilityRole="button"
+                accessibilityLabel={`Edit ${item.title}`}
+                android_ripple={{
+                  color: "rgba(255, 103, 25, 0.35)",
+                  borderless: false,
+                  foreground: true,
+                }}
+                style={styles.actionIconBtnInner}
+              >
+                <Ionicons name="pencil" size={20} color="#ff6719" />
+              </Pressable>
+            </View>
+          )}
         </View>
       </View>
 
@@ -580,6 +609,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
+  },
+  adminBtnWrap: {
+    borderColor: "rgba(255, 103, 25, 0.45)",
+    backgroundColor: "rgba(0, 0, 0, 0.55)",
   },
   actionIconBtnInner: {
     width: "100%",

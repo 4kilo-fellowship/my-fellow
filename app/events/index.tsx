@@ -1,10 +1,12 @@
 import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { eventsService } from "@/services/eventsService";
 import { useEventsStore } from "@/stores/events.store";
 import { AppEvent } from "@/types/events.types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image as ExpoImage } from "expo-image";
+import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -32,6 +34,7 @@ export default function EventsDirectoryScreen() {
   const isDark = theme === "dark";
 
   const { eventsList, setEventsList } = useEventsStore();
+  const isAdmin = useIsAdmin();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -163,6 +166,29 @@ export default function EventsDirectoryScreen() {
               </View>
 
               <View style={styles.cardActionsTop}>
+                {isAdmin && (
+                  <Pressable
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                      router.push(`/events/manage?id=${eventId}`);
+                    }}
+                    android_ripple={{
+                      color: "rgba(255, 103, 25, 0.25)",
+                      borderless: true,
+                      radius: 18,
+                    }}
+                    hitSlop={8}
+                    style={styles.editIconButton}
+                    accessibilityLabel={`Edit ${item.title}`}
+                  >
+                    <Ionicons
+                      name="pencil"
+                      size={17}
+                      color={PRIMARY}
+                    />
+                  </Pressable>
+                )}
+
                 <Pressable
                   onPress={() => handleShareEvent(item)}
                   android_ripple={{
@@ -263,7 +289,26 @@ export default function EventsDirectoryScreen() {
             Events & Gatherings
           </Text>
 
-          <View style={{ width: 36 }} />
+          {isAdmin ? (
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                router.push("/events/manage");
+              }}
+              android_ripple={{
+                color: "rgba(255,255,255,0.2)",
+                borderless: false,
+                foreground: true,
+              }}
+              style={styles.addEventHeaderBtn}
+              accessibilityLabel="Create New Event"
+            >
+              <Ionicons name="add" size={18} color="#ffffff" />
+              <Text style={styles.addEventHeaderText}>New</Text>
+            </Pressable>
+          ) : (
+            <View style={{ width: 36 }} />
+          )}
         </View>
 
         {/* Search Bar */}
@@ -417,11 +462,67 @@ export default function EventsDirectoryScreen() {
           )
         }
       />
+
+      {isAdmin && (
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+            router.push("/events/manage");
+          }}
+          android_ripple={{
+            color: "rgba(0,0,0,0.2)",
+            borderless: false,
+            foreground: true,
+          }}
+          style={[styles.floatingActionBtn, { bottom: Math.max(bottom + 16, 24) }]}
+          accessibilityLabel="Create New Event"
+        >
+          <Ionicons name="add" size={28} color="#ffffff" />
+        </Pressable>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  addEventHeaderBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: PRIMARY,
+    paddingHorizontal: 12,
+    height: 32,
+    borderRadius: 16,
+    gap: 4,
+    overflow: "hidden",
+  },
+  addEventHeaderText: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  editIconButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  floatingActionBtn: {
+    position: "absolute",
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: PRIMARY,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 6,
+    shadowColor: PRIMARY,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    overflow: "hidden",
+  },
   container: {
     flex: 1,
   },

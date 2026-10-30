@@ -10,9 +10,13 @@ import {
   QuickAction,
   StreakModal,
   VideoItem,
+  VideoPlayerModal,
+  WhoToFollowSection,
 } from "@/components";
 import { PRIMARY, QUICK_ACTIONS, VIDEOS } from "@/constants";
+import { Video } from "@/constants/videos";
 import { useTheme } from "@/context/ThemeContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useNetwork } from "@/hooks/useNetwork";
 import { devotionsService } from "@/services/devotionsService";
 import { eventsService } from "@/services/eventsService";
@@ -23,6 +27,7 @@ import { useEventsStore } from "@/stores/events.store";
 import { useNotificationsStore } from "@/stores/notifications.store";
 import { useUserStore } from "@/stores/user.store";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { Image as ExpoImage } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -50,6 +55,9 @@ const Home = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [showNotificationsSheet, setShowNotificationsSheet] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [showAllVideos, setShowAllVideos] = useState(false);
   const scrollX = useRef(new Animated.Value(0)).current;
   const { width } = useWindowDimensions();
   const cardWidth = width - 48;
@@ -61,6 +69,7 @@ const Home = () => {
   const { devotionsList, setDevotionsList } = useDevotionsStore();
   const { isConnected } = useNetwork();
   const { user } = useUserStore();
+  const isAdmin = useIsAdmin();
   const {
     notifications,
     markAsRead,
@@ -217,19 +226,61 @@ const Home = () => {
                   className={`text-lg font-extrabold ${
                     isDark ? "text-white" : "text-gray-900"
                   }`}
-                  style={{ includeFontPadding: false, flexShrink: 1, marginRight: 8 }}
+                  style={{ includeFontPadding: false }}
                 >
                   Upcoming Events
                 </Text>
               )}
 
-              {events.length > 0 && (
-                <NativeViewAllButton
-                  onPress={() => router.push("/events")}
-                  isDark={isDark}
-                  accessibilityLabel="View all upcoming events"
-                />
-              )}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                {isAdmin && (
+                  <Pressable
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                      router.push("/events/manage");
+                    }}
+                    android_ripple={{
+                      color: "rgba(255, 103, 25, 0.2)",
+                      borderless: false,
+                      foreground: true,
+                    }}
+                    style={{
+                      height: 30,
+                      paddingHorizontal: 10,
+                      borderRadius: 15,
+                      backgroundColor: "rgba(255, 103, 25, 0.12)",
+                      borderWidth: 1,
+                      borderColor: "rgba(255, 103, 25, 0.35)",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 4,
+                      overflow: "hidden",
+                    }}
+                    accessibilityLabel="Create Event"
+                  >
+                    <Ionicons name="add" size={16} color="#ff6719" />
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "700",
+                        color: "#ff6719",
+                        includeFontPadding: false,
+                      }}
+                    >
+                      New
+                    </Text>
+                  </Pressable>
+                )}
+
+                {events.length > 0 && (
+                  <NativeViewAllButton
+                    onPress={() => router.push("/events")}
+                    isDark={isDark}
+                    accessibilityLabel="View all upcoming events"
+                  />
+                )}
+              </View>
             </View>
 
             {!hasSeenFeatures ||
@@ -320,7 +371,7 @@ const Home = () => {
                 </Text>
               </View>
             ) : (
-              <Animated.ScrollView
+              <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 decelerationRate="fast"
@@ -329,16 +380,22 @@ const Home = () => {
                 disableIntervalMomentum={true}
                 overScrollMode="never"
                 contentContainerStyle={{ paddingHorizontal: 20 }}
-                onMomentumScrollEnd={(e) => {
-                  const newIndex = Math.round(
-                    e.nativeEvent.contentOffset.x / itemWidth,
+                onScroll={(e) => {
+                  const offset = e.nativeEvent.contentOffset.x;
+                  // Fast transition threshold: triggers earlier at 25% of card swipe
+                  const newIndex = Math.min(
+                    Math.max(0, Math.floor((offset + itemWidth * 0.25) / itemWidth)),
+                    events.length - 1,
                   );
-                  setActiveIndex(newIndex);
+                  setActiveIndex((prev) => (prev !== newIndex ? newIndex : prev));
                 }}
-                onScroll={Animated.event(
-                  [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-                  { useNativeDriver: true },
-                )}
+                onMomentumScrollEnd={(e) => {
+                  const newIndex = Math.min(
+                    Math.max(0, Math.round(e.nativeEvent.contentOffset.x / itemWidth)),
+                    events.length - 1,
+                  );
+                  setActiveIndex((prev) => (prev !== newIndex ? newIndex : prev));
+                }}
                 scrollEventThrottle={16}
               >
                 {Array.isArray(events) &&
@@ -355,11 +412,42 @@ const Home = () => {
                       />
                     );
                   })}
-              </Animated.ScrollView>
+              </ScrollView>
+            )}
+
+            {/* Pagination Dots indicator for Events */}
+            {events.length > 1 && (
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginTop: 8,
+                  gap: 6,
+                }}
+              >
+                {events.map((_, i) => (
+                  <View
+                    key={i}
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor:
+                        activeIndex === i
+                          ? PRIMARY
+                          : isDark
+                          ? "rgba(255,255,255,0.2)"
+                          : "rgba(0,0,0,0.15)",
+                    }}
+                  />
+                ))}
+              </View>
             )}
           </View>
 
-          <View className="mt-7">
+          {/* Features Section - pulled upper */}
+          <View style={{ marginTop: 10 }}>
             <View className="px-5 flex-row justify-between items-center mb-3">
               {!hasSeenFeatures || (loading && events.length === 0) ? (
                 <Placeholder width={100} height={24} borderRadius={4} />
@@ -436,8 +524,8 @@ const Home = () => {
             )}
           </View>
 
-          {/* Recent Devotions */}
-          <View className="mt-7">
+          {/* Recent Devotions - spaced lower */}
+          <View style={{ marginTop: 36 }}>
             <View
               style={{
                 paddingHorizontal: 20,
@@ -510,25 +598,43 @@ const Home = () => {
             )}
           </View>
 
-          {/* Latest Sermons */}
-          <View className="mt-7 px-5">
-            {!hasSeenFeatures ||
-            ((loading || refreshing) && videos.length === 0) ? (
-              <Placeholder
-                width={140}
-                height={24}
-                borderRadius={4}
-                style={{ marginBottom: 12 }}
-              />
-            ) : (
-              <Text
-                className={`text-lg font-extrabold mb-3 ${
-                  isDark ? "text-white" : "text-gray-900"
-                }`}
-              >
-                Latest Videos
-              </Text>
-            )}
+          {/* Latest Videos Section */}
+          <View style={{ marginTop: 24, paddingHorizontal: 20 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 12,
+              }}
+            >
+              {!hasSeenFeatures ||
+              ((loading || refreshing) && videos.length === 0) ? (
+                <Placeholder
+                  width={140}
+                  height={24}
+                  borderRadius={4}
+                />
+              ) : (
+                <Text
+                  className={`text-lg font-extrabold ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Latest Videos
+                </Text>
+              )}
+
+              {videos.length > 3 && (
+                <NativeViewAllButton
+                  label={showAllVideos ? "Show less" : "View all"}
+                  onPress={() => setShowAllVideos((prev) => !prev)}
+                  isDark={isDark}
+                  accessibilityLabel={showAllVideos ? "Show fewer videos" : "View all fellowship videos"}
+                />
+              )}
+            </View>
+
             {!hasSeenFeatures ||
             ((loading || refreshing) && videos.length === 0) ? (
               <View>
@@ -543,11 +649,22 @@ const Home = () => {
                 ))}
               </View>
             ) : (
-              videos.map((v) => (
-                <VideoItem key={v.id} item={v} isDark={isDark} />
+              (showAllVideos ? videos : videos.slice(0, 3)).map((v) => (
+                <VideoItem
+                  key={v.id}
+                  item={v}
+                  isDark={isDark}
+                  onPress={() => {
+                    setSelectedVideo(v);
+                    setShowVideoModal(true);
+                  }}
+                />
               ))
             )}
           </View>
+
+          {/* Who to Follow Section */}
+          <WhoToFollowSection isDark={isDark} />
         </ScrollView>
       </View>
 
@@ -698,6 +815,16 @@ const Home = () => {
           </View>
         </View>
       </AppBottomSheet>
+
+      {/* Production-Quality Video Player Modal */}
+      <VideoPlayerModal
+        visible={showVideoModal}
+        video={selectedVideo}
+        videos={videos}
+        onClose={() => setShowVideoModal(false)}
+        onSelectVideo={(v) => setSelectedVideo(v)}
+        isDark={isDark}
+      />
     </View>
   );
 };
