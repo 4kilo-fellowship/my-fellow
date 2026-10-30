@@ -1,5 +1,5 @@
-import AuthIcon, { AuthIconName } from "@/components/AuthIcon";
 import AppButton from "@/components/AppButton";
+import AuthIcon, { AuthIconName } from "@/components/AuthIcon";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { PRIMARY } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
@@ -7,7 +7,6 @@ import { useTheme } from "@/context/ThemeContext";
 import { useSignupStore } from "@/stores/signup.store";
 import { useUserStore } from "@/stores/user.store";
 import { getPrefilledAvatar } from "@/utils/avatar";
-import { BottomSheet, Host, RNHostView } from "@expo/ui";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
@@ -33,7 +32,9 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   type TextInputInstance,
+  useWindowDimensions,
   View,
 } from "react-native";
 import PagerView, {
@@ -66,41 +67,48 @@ const FELLOWSHIP_TEAMS: MinistryTeamMeta[] = [
     icon: "megaphone",
   },
   {
-    id: "Freshman",
-    name: "Freshman Ministry",
-    subtitle: "Welcoming and guiding new campus students in faith and life.",
-    icon: "school",
+    id: "Worship",
+    name: "Worship",
+    subtitle: "Acoustic teams, praise, and leading fellowship worship.",
+    icon: "music",
   },
   {
     id: "I4U",
-    name: "I4U (Discipleship)",
+    name: "I4U",
     subtitle: "Care, encouragement, mutual support, and student welfare.",
     icon: "heart",
   },
   {
     id: "Media",
-    name: "Media & Tech",
-    subtitle: "Audio/visuals, photography, livestream, and tech creativity.",
+    name: "Media & Literature",
+    subtitle: "Media, literature, publications, and fellowship media.",
     icon: "video",
   },
   {
     id: "Prayer",
-    name: "Prayer & Intercession",
+    name: "Prayer",
     subtitle: "Intercession, morning prayers, and fellowship fasting nights.",
     icon: "hand",
   },
   {
-    id: "Worship",
-    name: "Worship & Choir",
-    subtitle: "Choir, acoustic teams, and leading fellowship praise.",
-    icon: "music",
+    id: "Freshman",
+    name: "Freshman",
+    subtitle: "Welcoming and guiding new campus students in faith and life.",
+    icon: "school",
   },
   {
     id: "Other",
-    name: "Other Fellowship Ministry",
+    name: "Other Ministry",
     subtitle: "General fellowship member and community ministries.",
     icon: "apps",
   },
+];
+
+const TEAM_PAIRS: [MinistryTeamMeta, MinistryTeamMeta][] = [
+  [FELLOWSHIP_TEAMS[0], FELLOWSHIP_TEAMS[1]],
+  [FELLOWSHIP_TEAMS[2], FELLOWSHIP_TEAMS[3]],
+  [FELLOWSHIP_TEAMS[4], FELLOWSHIP_TEAMS[5]],
+  [FELLOWSHIP_TEAMS[6], FELLOWSHIP_TEAMS[7]],
 ];
 
 interface DepartmentMeta {
@@ -287,7 +295,7 @@ export default function PersonalizationScreen() {
 
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [name, setName] = useState<string>(initialName);
-  const [nameFocused, setNameFocused] = useState<boolean>(false);
+  const [nameFocused, setNameFocused] = useState<boolean>(true);
 
   // Deterministically prefill cool avatar using phone number / ID / name
   const defaultGeneratedAvatar = useMemo(() => {
@@ -313,11 +321,15 @@ export default function PersonalizationScreen() {
 
   // Auto focus Name input when landing on screen from auth
   useEffect(() => {
+    nameInputRef.current?.focus();
     const timer = setTimeout(() => {
       nameInputRef.current?.focus();
-    }, 280);
+    }, 100);
     return () => clearTimeout(timer);
   }, []);
+
+  const { width: windowWidth } = useWindowDimensions();
+  const cardWidth = Math.floor((windowWidth - 40 - 12) / 2);
 
   const [team, setTeam] = useState<string>(user?.team || "");
   const [department, setDepartment] = useState<string>(user?.department || "");
@@ -329,9 +341,15 @@ export default function PersonalizationScreen() {
     user?.telegramUserName?.replace(/^@/, "") || ""
   );
 
-  const [isTeamSheetOpen, setIsTeamSheetOpen] = useState<boolean>(false);
-  const [isDeptSheetOpen, setIsDeptSheetOpen] = useState<boolean>(false);
-  const [isYearSheetOpen, setIsYearSheetOpen] = useState<boolean>(false);
+  const naturalRipple = useMemo(
+    () => ({
+      color: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+      borderless: false,
+      foreground: true,
+    }),
+    [isDark]
+  );
+
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [errorModal, setErrorModal] = useState<{
     visible: boolean;
@@ -343,20 +361,8 @@ export default function PersonalizationScreen() {
     message: "",
   });
 
-  const selectedTeamMeta = useMemo(
-    () => FELLOWSHIP_TEAMS.find((t) => t.id === team),
-    [team]
-  );
 
-  const selectedDeptMeta = useMemo(
-    () => FELLOWSHIP_DEPARTMENTS.find((d) => d.id === department),
-    [department]
-  );
 
-  const selectedYearMeta = useMemo(
-    () => FELLOWSHIP_YEARS.find((y) => y.id === year),
-    [year]
-  );
 
   // Smooth continuous filling progress bar matching TNT Ethiopia
   const progressAnim = useRef(new Animated.Value(1 / TOTAL_PAGES)).current;
@@ -384,7 +390,7 @@ export default function PersonalizationScreen() {
     (pageIndex: number): boolean => {
       switch (pageIndex) {
         case 0:
-          return name.trim().length >= 2;
+          return name.trim().length >= 3;
         case 1:
           return team.trim().length > 0;
         case 2:
@@ -480,7 +486,6 @@ export default function PersonalizationScreen() {
       PanResponder.create({
         onMoveShouldSetPanResponderCapture: (_, gestureState) => {
           const activePage = currentPageRef.current;
-          // When current step is incomplete and user drags rightwards (backwards: dx > 15)
           if (activePage > 0 && !isPageValidRef.current(activePage)) {
             return (
               gestureState.dx > 15 &&
@@ -651,6 +656,14 @@ export default function PersonalizationScreen() {
     );
   }, [departmentSearch]);
 
+  const deptPairs = useMemo(() => {
+    const pairs: [DepartmentMeta, DepartmentMeta?][] = [];
+    for (let i = 0; i < filteredDepartments.length; i += 2) {
+      pairs.push([filteredDepartments[i], filteredDepartments[i + 1]]);
+    }
+    return pairs;
+  }, [filteredDepartments]);
+
   const renderPageContent = (pageIndex: number) => {
     switch (pageIndex) {
       case 0:
@@ -737,7 +750,9 @@ export default function PersonalizationScreen() {
                 >
                   FULL NAME
                 </Text>
-                <View
+                <Pressable
+                  onPress={() => nameInputRef.current?.focus()}
+                  onPressIn={() => setNameFocused(true)}
                   style={[
                     styles.nameInputBoxContainer,
                     {
@@ -759,7 +774,6 @@ export default function PersonalizationScreen() {
                   </View>
                   <TextInput
                     ref={nameInputRef}
-                    autoFocus={true}
                     value={name}
                     onChangeText={setName}
                     onFocus={() => setNameFocused(true)}
@@ -770,7 +784,7 @@ export default function PersonalizationScreen() {
                     autoCorrect={false}
                     returnKeyType="done"
                     onSubmitEditing={() => {
-                      if (name.trim().length >= 2) {
+                      if (name.trim().length >= 3) {
                         handleNextPress(0);
                       }
                     }}
@@ -779,19 +793,10 @@ export default function PersonalizationScreen() {
                       { color: isDark ? "#FFFFFF" : "#0F172A" },
                     ]}
                   />
-                  {name.length > 0 && (
-                    <Pressable onPress={() => setName("")} hitSlop={6}>
-                      <Ionicons
-                        name="close-circle"
-                        size={18}
-                        color={isDark ? "#94A3B8" : "#64748B"}
-                      />
-                    </Pressable>
-                  )}
-                </View>
+                </Pressable>
               </View>
 
-              {/* Continue Button placed right near the Name field (matching Auth screen) */}
+              {/* Continue Button placed right near Name field */}
               <View style={styles.nameActionButtonWrapper}>
                 <AppButton
                   title="Continue"
@@ -836,219 +841,69 @@ export default function PersonalizationScreen() {
               </Text>
             </View>
 
-            {/* TNT-Ethiopia Dropdown Selector (opens native BottomSheet) */}
-            <View style={styles.institutionInputSection}>
-              <Text
-                style={[
-                  styles.inputFieldLabel,
-                  { color: isDark ? "#94A3B8" : "#64748B" },
-                ]}
-              >
-                FELLOWSHIP MINISTRY TEAM
-              </Text>
-              <Pressable
-                onPress={() => {
-                  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                  setIsTeamSheetOpen(true);
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={team ? `Selected team: ${team}` : "Select your team"}
-                style={({ pressed }) => [
-                  styles.dropdownSelector,
-                  Boolean(team) && styles.dropdownSelectorSelected,
-                  {
-                    backgroundColor: Boolean(team)
-                      ? isDark
-                        ? "rgba(255, 103, 25, 0.12)"
-                        : "#FFF7ED"
-                      : isDark
-                      ? "#18181B"
-                      : "#F8FAFC",
-                    borderColor: Boolean(team)
-                      ? PRIMARY
-                      : isDark
-                      ? "#27272A"
-                      : "#E2E8F0",
-                  },
-                  pressed && Platform.OS === "ios" && { opacity: 0.8 },
-                ]}
-              >
-                <View style={styles.dropdownLeft}>
-                  <View
-                    style={[
-                      styles.dropdownIconBadge,
-                      {
-                        backgroundColor: Boolean(team)
-                          ? "rgba(255, 103, 25, 0.18)"
-                          : isDark
-                          ? "#27272A"
-                          : "#E2E8F0",
-                      },
-                    ]}
-                  >
-                    <AuthIcon
-                      name={selectedTeamMeta?.icon || "team"}
-                      size={20}
-                      color={Boolean(team) ? PRIMARY : isDark ? "#94A3B8" : "#64748B"}
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.dropdownValueText,
-                        !team && styles.dropdownPlaceholderText,
-                        { color: Boolean(team) ? PRIMARY : isDark ? "#FFFFFF" : "#0F172A" },
-                      ]}
-                    >
-                      {selectedTeamMeta ? selectedTeamMeta.name : "Select your fellowship team..."}
-                    </Text>
-                    {selectedTeamMeta && (
-                      <Text
-                        numberOfLines={1}
-                        style={[
-                          styles.dropdownSubText,
-                          { color: isDark ? "#94A3B8" : "#64748B" },
-                        ]}
-                      >
-                        {selectedTeamMeta.subtitle}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-                <Ionicons
-                  name="chevron-down"
-                  size={20}
-                  color={Boolean(team) ? PRIMARY : isDark ? "#94A3B8" : "#64748B"}
-                />
-              </Pressable>
-            </View>
-
-            {/* Quick Trigger Button to open BottomSheet */}
-            <Pressable
-              onPress={() => {
-                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                setIsTeamSheetOpen(true);
-              }}
-              style={({ pressed }) => [
-                styles.sheetTriggerRow,
-                {
-                  backgroundColor: isDark ? "#1E293B" : "#FFF7ED",
-                  borderColor: isDark ? "#334155" : "#FFEDD5",
-                },
-                pressed && { opacity: 0.8 },
-              ]}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <Ionicons name="list" size={18} color={PRIMARY} />
-                <Text
-                  style={[
-                    styles.sheetTriggerText,
-                    { color: isDark ? "#F8FAFC" : "#C2410C" },
-                  ]}
-                >
-                  Browse all {FELLOWSHIP_TEAMS.length} ministry teams in drawer
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={16}
-                color={isDark ? "#94A3B8" : "#C2410C"}
-              />
-            </Pressable>
-
-            <View style={styles.cardsStack}>
-              {FELLOWSHIP_TEAMS.map((item) => {
-                const isSelected = team === item.id;
-                return (
-                  <Pressable
-                    key={item.id}
-                    onPress={() => {
-                      setTeam(item.id);
-                      void Haptics.selectionAsync().catch(() => {});
-                    }}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked: isSelected }}
-                    style={({ pressed }) => [
-                      styles.optionCard,
-                      {
-                        backgroundColor: isDark ? "#18181B" : "#FFFFFF",
-                        borderColor: isDark ? "#27272A" : "#E2E8F0",
-                      },
-                      isSelected && [
-                        styles.optionCardActive,
-                        {
-                          backgroundColor: isDark
-                            ? "rgba(255, 103, 25, 0.14)"
-                            : "#FFF7ED",
-                          borderColor: PRIMARY,
-                        },
-                      ],
-                      pressed && Platform.OS === "ios" && styles.optionCardPressed,
-                    ]}
-                  >
-                    <View style={styles.cardContentRow}>
-                      <View style={styles.iconCircleWrapper}>
-                        <View
-                          style={[
-                            styles.illustratedBadge,
-                            {
-                              backgroundColor: isSelected
-                                ? "rgba(255, 103, 25, 0.16)"
-                                : isDark
-                                ? "#27272A"
-                                : "#F1F5F9",
-                            },
-                          ]}
-                        >
-                          <AuthIcon
-                            name={item.icon}
-                            size={24}
-                            color={isSelected ? PRIMARY : isDark ? "#CBD5E1" : "#64748B"}
-                          />
-                        </View>
-                      </View>
-
-                      <View style={styles.cardTextCol}>
-                        <Text
-                          style={[
-                            styles.cardTitle,
-                            { color: isDark ? "#FFFFFF" : "#0F172A" },
-                            isSelected && styles.cardTitleActive,
-                          ]}
-                        >
-                          {item.name}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.cardSubtitle,
-                            { color: isDark ? "#94A3B8" : "#64748B" },
-                          ]}
-                        >
-                          {item.subtitle}
-                        </Text>
-                      </View>
-
+            {/* 2-Column Grid (centered on screen, matching reference) */}
+            <View style={styles.gridContainer}>
+              {TEAM_PAIRS.map(([item1, item2], rowIndex) => (
+                <View key={`team-row-${rowIndex}`} style={styles.gridRow}>
+                  {[item1, item2].map((item) => {
+                    const isSelected =
+                      team === item.id ||
+                      team === item.name ||
+                      (item.id === "Worship" && team === "Worship & Choir") ||
+                      (item.id === "I4U" && team.startsWith("I4U")) ||
+                      (item.id === "Media" && team.startsWith("Media"));
+                    return (
                       <View
+                        key={item.id}
                         style={[
-                          styles.radioOuter,
-                          {
-                            borderColor: isSelected
-                              ? PRIMARY
-                              : isDark
-                              ? "#475569"
-                              : "#CBD5E1",
-                            backgroundColor: isDark ? "#18181B" : "#FFFFFF",
-                          },
-                          isSelected && styles.radioOuterActive,
+                          styles.gridCardOuter,
+                          isDark && styles.gridCardOuterDark,
+                          isSelected && styles.gridCardOuterSelected,
+                          isSelected && isDark && styles.gridCardOuterSelectedDark,
                         ]}
                       >
-                        {isSelected && <View style={styles.radioInner} />}
+                        <TouchableOpacity
+                          onPress={() => {
+                            setTeam(item.id);
+                            requestAnimationFrame(() => {
+                              void Haptics.selectionAsync().catch(() => {});
+                            });
+                          }}
+                          activeOpacity={1}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${item.name} team${isSelected ? ", selected" : ""}`}
+                          accessibilityState={{ selected: isSelected }}
+                          style={styles.gridCardInner}
+                        >
+                          <View style={styles.gridCardIconWrap}>
+                            <AuthIcon
+                              name={item.icon}
+                              size={28}
+                              color={
+                                isSelected
+                                  ? PRIMARY
+                                  : isDark
+                                  ? "#F1F5F9"
+                                  : "#1E293B"
+                              }
+                            />
+                          </View>
+                          <Text
+                            numberOfLines={2}
+                            style={[
+                              styles.gridCardTitle,
+                              isDark && styles.gridCardTitleDark,
+                              isSelected && styles.gridCardTitleSelected,
+                            ]}
+                          >
+                            {item.name}
+                          </Text>
+                        </TouchableOpacity>
                       </View>
-                    </View>
-                  </Pressable>
-                );
-              })}
+                    );
+                  })}
+                </View>
+              ))}
             </View>
 
             <View style={styles.stepButtonWrapper}>
@@ -1094,131 +949,10 @@ export default function PersonalizationScreen() {
               </Text>
             </View>
 
-            {/* TNT-Ethiopia Dropdown Selector (opens native BottomSheet) */}
-            <View style={styles.institutionInputSection}>
-              <Text
-                style={[
-                  styles.inputFieldLabel,
-                  { color: isDark ? "#94A3B8" : "#64748B" },
-                ]}
-              >
-                AAU FACULTY / DEPARTMENT
-              </Text>
-              <Pressable
-                onPress={() => {
-                  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                  setIsDeptSheetOpen(true);
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={department ? `Selected department: ${department}` : "Select your department"}
-                style={({ pressed }) => [
-                  styles.dropdownSelector,
-                  Boolean(department) && styles.dropdownSelectorSelected,
-                  {
-                    backgroundColor: Boolean(department)
-                      ? isDark
-                        ? "rgba(255, 103, 25, 0.12)"
-                        : "#FFF7ED"
-                      : isDark
-                      ? "#18181B"
-                      : "#F8FAFC",
-                    borderColor: Boolean(department)
-                      ? PRIMARY
-                      : isDark
-                      ? "#27272A"
-                      : "#E2E8F0",
-                  },
-                  pressed && Platform.OS === "ios" && { opacity: 0.8 },
-                ]}
-              >
-                <View style={styles.dropdownLeft}>
-                  <View
-                    style={[
-                      styles.dropdownIconBadge,
-                      {
-                        backgroundColor: Boolean(department)
-                          ? "rgba(255, 103, 25, 0.18)"
-                          : isDark
-                          ? "#27272A"
-                          : "#E2E8F0",
-                      },
-                    ]}
-                  >
-                    <AuthIcon
-                      name={selectedDeptMeta?.icon || "department"}
-                      size={20}
-                      color={Boolean(department) ? PRIMARY : isDark ? "#94A3B8" : "#64748B"}
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.dropdownValueText,
-                        !department && styles.dropdownPlaceholderText,
-                        { color: Boolean(department) ? PRIMARY : isDark ? "#FFFFFF" : "#0F172A" },
-                      ]}
-                    >
-                      {selectedDeptMeta ? selectedDeptMeta.name : "Select your AAU department..."}
-                    </Text>
-                    {selectedDeptMeta && (
-                      <Text
-                        numberOfLines={1}
-                        style={[
-                          styles.dropdownSubText,
-                          { color: isDark ? "#94A3B8" : "#64748B" },
-                        ]}
-                      >
-                        {selectedDeptMeta.subtitle}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-                <Ionicons
-                  name="chevron-down"
-                  size={20}
-                  color={Boolean(department) ? PRIMARY : isDark ? "#94A3B8" : "#64748B"}
-                />
-              </Pressable>
-            </View>
-
-            {/* Native BottomSheet Drawer Trigger */}
-            <Pressable
-              onPress={() => {
-                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                setIsDeptSheetOpen(true);
-              }}
-              style={({ pressed }) => [
-                styles.sheetTriggerRow,
-                {
-                  backgroundColor: isDark ? "#1E293B" : "#FFF7ED",
-                  borderColor: isDark ? "#334155" : "#FFEDD5",
-                },
-                pressed && { opacity: 0.8 },
-              ]}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <Ionicons name="list" size={18} color={PRIMARY} />
-                <Text
-                  style={[
-                    styles.sheetTriggerText,
-                    { color: isDark ? "#F8FAFC" : "#C2410C" },
-                  ]}
-                >
-                  Browse all AAU departments in drawer ({FELLOWSHIP_DEPARTMENTS.length})
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={16}
-                color={isDark ? "#94A3B8" : "#C2410C"}
-              />
-            </Pressable>
-
-            {/* TNT-Ethiopia Pill Search box */}
+            {/* Department Search Input */}
             <View
               style={[
-                styles.uniSearchBox,
+                styles.deptSearchContainer,
                 {
                   backgroundColor: isDark ? "#18181B" : "#F8FAFC",
                   borderColor: isDark ? "#27272A" : "#E2E8F0",
@@ -1233,146 +967,142 @@ export default function PersonalizationScreen() {
               <TextInput
                 value={departmentSearch}
                 onChangeText={setDepartmentSearch}
-                placeholder="Search department..."
+                placeholder="Search AAU department..."
                 placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
                 style={[
-                  styles.uniSearchInput,
+                  styles.deptSearchInput,
                   { color: isDark ? "#FFFFFF" : "#0F172A" },
                 ]}
                 autoCorrect={false}
               />
               {departmentSearch.length > 0 && (
-                <Pressable onPress={() => setDepartmentSearch("")} hitSlop={6}>
+                <Pressable onPress={() => setDepartmentSearch("")} hitSlop={8}>
                   <Ionicons
                     name="close-circle"
-                    size={16}
+                    size={18}
                     color={isDark ? "#94A3B8" : "#64748B"}
                   />
                 </Pressable>
               )}
             </View>
 
-            <View style={styles.cardsStack}>
-              {filteredDepartments.map((item) => {
-                const isSelected = department === item.id;
-                return (
-                  <Pressable
-                    key={item.id}
-                    onPress={() => {
-                      setDepartment(item.id);
-                      void Haptics.selectionAsync().catch(() => {});
-                    }}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked: isSelected }}
-                    style={({ pressed }) => [
-                      styles.optionCard,
-                      {
-                        backgroundColor: isDark ? "#18181B" : "#FFFFFF",
-                        borderColor: isDark ? "#27272A" : "#E2E8F0",
-                      },
-                      isSelected && [
-                        styles.optionCardActive,
-                        {
-                          backgroundColor: isDark
-                            ? "rgba(255, 103, 25, 0.14)"
-                            : "#FFF7ED",
-                          borderColor: PRIMARY,
-                        },
-                      ],
-                      pressed && Platform.OS === "ios" && styles.optionCardPressed,
-                    ]}
-                  >
-                    <View style={styles.cardContentRow}>
-                      <View style={styles.iconCircleWrapper}>
+            {/* 2-Column Grid for Departments */}
+            <View style={styles.gridContainer}>
+              {deptPairs.map(([dept1, dept2], rowIndex) => (
+                <View key={`dept-row-${rowIndex}`} style={styles.gridRow}>
+                  {[dept1, dept2].map((item, idx) => {
+                    if (!item) {
+                      return (
                         <View
-                          style={[
-                            styles.illustratedBadge,
-                            {
-                              backgroundColor: isSelected
-                                ? "rgba(255, 103, 25, 0.16)"
-                                : isDark
-                                ? "#27272A"
-                                : "#F1F5F9",
-                            },
-                          ]}
-                        >
-                          <AuthIcon
-                            name={item.icon}
-                            size={24}
-                            color={isSelected ? PRIMARY : isDark ? "#CBD5E1" : "#64748B"}
-                          />
-                        </View>
-                      </View>
-
-                      <View style={styles.cardTextCol}>
-                        <Text
-                          style={[
-                            styles.cardTitle,
-                            { color: isDark ? "#FFFFFF" : "#0F172A" },
-                            isSelected && styles.cardTitleActive,
-                          ]}
-                        >
-                          {item.name}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.cardSubtitle,
-                            { color: isDark ? "#94A3B8" : "#64748B" },
-                          ]}
-                        >
-                          {item.subtitle}
-                        </Text>
-                      </View>
-
+                          key={`empty-placeholder-${idx}`}
+                          style={{ width: cardWidth }}
+                        />
+                      );
+                    }
+                    const isSelected =
+                      department === item.id || department === item.name;
+                    return (
                       <View
+                        key={item.id}
                         style={[
-                          styles.radioOuter,
-                          {
-                            borderColor: isSelected
-                              ? PRIMARY
-                              : isDark
-                              ? "#475569"
-                              : "#CBD5E1",
-                            backgroundColor: isDark ? "#18181B" : "#FFFFFF",
-                          },
-                          isSelected && styles.radioOuterActive,
+                          styles.gridCardOuter,
+                          isDark && styles.gridCardOuterDark,
+                          isSelected && styles.gridCardOuterSelected,
+                          isSelected && isDark && styles.gridCardOuterSelectedDark,
                         ]}
                       >
-                        {isSelected && <View style={styles.radioInner} />}
+                        <TouchableOpacity
+                          onPress={() => {
+                            setDepartment(item.id);
+                            requestAnimationFrame(() => {
+                              void Haptics.selectionAsync().catch(() => {});
+                            });
+                          }}
+                          activeOpacity={1}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${item.name} department${isSelected ? ", selected" : ""}`}
+                          accessibilityState={{ selected: isSelected }}
+                          style={styles.gridCardInner}
+                        >
+                          <View style={styles.gridCardIconWrap}>
+                            <AuthIcon
+                              name={item.icon}
+                              size={28}
+                              color={
+                                isSelected
+                                  ? PRIMARY
+                                  : isDark
+                                  ? "#F1F5F9"
+                                  : "#1E293B"
+                              }
+                            />
+                          </View>
+                          <Text
+                            numberOfLines={2}
+                            style={[
+                              styles.gridCardTitle,
+                              isDark && styles.gridCardTitleDark,
+                              isSelected && styles.gridCardTitleSelected,
+                            ]}
+                          >
+                            {item.name}
+                          </Text>
+                        </TouchableOpacity>
                       </View>
-                    </View>
-                  </Pressable>
-                );
-              })}
-
-              {/* Other Custom Department Input */}
-              {department === "Other" && (
-                <View style={styles.customDeptContainer}>
-                  <Text
-                    style={[
-                      styles.inputFieldLabel,
-                      { color: isDark ? "#94A3B8" : "#64748B" },
-                    ]}
-                  >
-                    SPECIFY YOUR DEPARTMENT
-                  </Text>
-                  <TextInput
-                    value={customDepartment}
-                    onChangeText={setCustomDepartment}
-                    placeholder="Enter department name"
-                    placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
-                    style={[
-                      styles.textInputBox,
-                      {
-                        backgroundColor: isDark ? "#18181B" : "#F8FAFC",
-                        borderColor: PRIMARY,
-                        color: isDark ? "#FFFFFF" : "#0F172A",
-                      },
-                    ]}
-                  />
+                    );
+                  })}
                 </View>
-              )}
+              ))}
             </View>
+
+            {/* Empty search results state */}
+            {filteredDepartments.length === 0 && (
+              <View style={styles.emptySearchContainer}>
+                <Ionicons
+                  name="search-outline"
+                  size={32}
+                  color={isDark ? "#64748B" : "#94A3B8"}
+                />
+                <Text
+                  style={[
+                    styles.emptySearchText,
+                    { color: isDark ? "#94A3B8" : "#64748B" },
+                  ]}
+                >
+                  No departments found matching &quot;{departmentSearch}&quot;
+                </Text>
+              </View>
+            )}
+
+            {/* Other Custom Department Input */}
+            {department === "Other" && (
+              <View style={styles.customDeptContainer}>
+                <Text
+                  style={[
+                    styles.inputFieldLabel,
+                    { color: isDark ? "#94A3B8" : "#64748B" },
+                  ]}
+                >
+                  SPECIFY YOUR AAU DEPARTMENT
+                </Text>
+                <TextInput
+                  value={customDepartment}
+                  onChangeText={setCustomDepartment}
+                  placeholder="Enter your department name"
+                  placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  style={[
+                    styles.textInputBox,
+                    {
+                      backgroundColor: isDark ? "#18181B" : "#F8FAFC",
+                      borderColor: PRIMARY,
+                      color: isDark ? "#FFFFFF" : "#0F172A",
+                    },
+                  ]}
+                />
+              </View>
+            )}
 
             <View style={styles.stepButtonWrapper}>
               <AppButton
@@ -1417,217 +1147,55 @@ export default function PersonalizationScreen() {
               </Text>
             </View>
 
-            {/* TNT-Ethiopia Dropdown Selector (opens native BottomSheet) */}
-            <View style={styles.institutionInputSection}>
-              <Text
-                style={[
-                  styles.inputFieldLabel,
-                  { color: isDark ? "#94A3B8" : "#64748B" },
-                ]}
-              >
-                ACADEMIC YEAR AT AAU
-              </Text>
-              <Pressable
-                onPress={() => {
-                  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                  setIsYearSheetOpen(true);
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={year ? `Selected year: ${year}` : "Select your academic year"}
-                style={({ pressed }) => [
-                  styles.dropdownSelector,
-                  Boolean(year) && styles.dropdownSelectorSelected,
-                  {
-                    backgroundColor: Boolean(year)
-                      ? isDark
-                        ? "rgba(255, 103, 25, 0.12)"
-                        : "#FFF7ED"
-                      : isDark
-                      ? "#18181B"
-                      : "#F8FAFC",
-                    borderColor: Boolean(year)
-                      ? PRIMARY
-                      : isDark
-                      ? "#27272A"
-                      : "#E2E8F0",
-                  },
-                  pressed && Platform.OS === "ios" && { opacity: 0.8 },
-                ]}
-              >
-                <View style={styles.dropdownLeft}>
-                  <View
-                    style={[
-                      styles.dropdownIconBadge,
-                      {
-                        backgroundColor: Boolean(year)
-                          ? "rgba(255, 103, 25, 0.18)"
-                          : isDark
-                          ? "#27272A"
-                          : "#E2E8F0",
-                      },
-                    ]}
-                  >
-                    <AuthIcon
-                      name="year"
-                      size={20}
-                      color={Boolean(year) ? PRIMARY : isDark ? "#94A3B8" : "#64748B"}
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.dropdownValueText,
-                        !year && styles.dropdownPlaceholderText,
-                        { color: Boolean(year) ? PRIMARY : isDark ? "#FFFFFF" : "#0F172A" },
-                      ]}
-                    >
-                      {selectedYearMeta ? selectedYearMeta.name : "Select your academic year..."}
-                    </Text>
-                    {selectedYearMeta && (
-                      <Text
-                        numberOfLines={1}
-                        style={[
-                          styles.dropdownSubText,
-                          { color: isDark ? "#94A3B8" : "#64748B" },
-                        ]}
-                      >
-                        {selectedYearMeta.subtitle}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-                <Ionicons
-                  name="chevron-down"
-                  size={20}
-                  color={Boolean(year) ? PRIMARY : isDark ? "#94A3B8" : "#64748B"}
-                />
-              </Pressable>
-            </View>
-
-            {/* Quick Trigger Button to open BottomSheet */}
-            <Pressable
-              onPress={() => {
-                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                setIsYearSheetOpen(true);
-              }}
-              style={({ pressed }) => [
-                styles.sheetTriggerRow,
-                {
-                  backgroundColor: isDark ? "#1E293B" : "#FFF7ED",
-                  borderColor: isDark ? "#334155" : "#FFEDD5",
-                },
-                pressed && { opacity: 0.8 },
-              ]}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <Ionicons name="list" size={18} color={PRIMARY} />
-                <Text
-                  style={[
-                    styles.sheetTriggerText,
-                    { color: isDark ? "#F8FAFC" : "#C2410C" },
-                  ]}
-                >
-                  Browse academic years in drawer ({FELLOWSHIP_YEARS.length})
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={16}
-                color={isDark ? "#94A3B8" : "#C2410C"}
-              />
-            </Pressable>
-
-            <View style={styles.cardsStack}>
+            {/* Inline Year Grid — 2-column small cards */}
+            <View style={styles.yearGrid}>
               {FELLOWSHIP_YEARS.map((item) => {
                 const isSelected = year === item.id;
                 return (
-                  <Pressable
+                  <View
                     key={item.id}
-                    onPress={() => {
-                      setYear(item.id);
-                      void Haptics.selectionAsync().catch(() => {});
-                    }}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked: isSelected }}
-                    style={({ pressed }) => [
-                      styles.optionCard,
-                      {
-                        backgroundColor: isDark ? "#18181B" : "#FFFFFF",
-                        borderColor: isDark ? "#27272A" : "#E2E8F0",
-                      },
-                      isSelected && [
-                        styles.optionCardActive,
-                        {
-                          backgroundColor: isDark
-                            ? "rgba(255, 103, 25, 0.14)"
-                            : "#FFF7ED",
-                          borderColor: PRIMARY,
-                        },
-                      ],
-                      pressed && Platform.OS === "ios" && styles.optionCardPressed,
+                    style={[
+                      styles.yearCardOuter,
+                      isDark && styles.yearCardOuterDark,
+                      isSelected && styles.yearCardOuterSelected,
+                      isSelected && isDark && styles.yearCardOuterSelectedDark,
                     ]}
                   >
-                    <View style={styles.cardContentRow}>
-                      <View style={styles.iconCircleWrapper}>
-                        <View
-                          style={[
-                            styles.illustratedBadge,
-                            {
-                              backgroundColor: isSelected
-                                ? "rgba(255, 103, 25, 0.16)"
-                                : isDark
-                                ? "#27272A"
-                                : "#F1F5F9",
-                            },
-                          ]}
-                        >
-                          <AuthIcon
-                            name="year"
-                            size={24}
-                            color={isSelected ? PRIMARY : isDark ? "#CBD5E1" : "#64748B"}
-                          />
-                        </View>
-                      </View>
-
-                      <View style={styles.cardTextCol}>
-                        <Text
-                          style={[
-                            styles.cardTitle,
-                            { color: isDark ? "#FFFFFF" : "#0F172A" },
-                            isSelected && styles.cardTitleActive,
-                          ]}
-                        >
-                          {item.name}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.cardSubtitle,
-                            { color: isDark ? "#94A3B8" : "#64748B" },
-                          ]}
-                        >
-                          {item.subtitle}
-                        </Text>
-                      </View>
-
-                      <View
+                    <TouchableOpacity
+                      onPress={() => {
+                        setYear(item.id);
+                        requestAnimationFrame(() => {
+                          void Haptics.selectionAsync().catch(() => {});
+                        });
+                      }}
+                      activeOpacity={1}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${item.name}${isSelected ? ", selected" : ""}`}
+                      accessibilityState={{ selected: isSelected }}
+                      style={styles.yearCardInner}
+                    >
+                      <Text
+                        numberOfLines={2}
                         style={[
-                          styles.radioOuter,
-                          {
-                            borderColor: isSelected
-                              ? PRIMARY
-                              : isDark
-                              ? "#475569"
-                              : "#CBD5E1",
-                            backgroundColor: isDark ? "#18181B" : "#FFFFFF",
-                          },
-                          isSelected && styles.radioOuterActive,
+                          styles.yearCardText,
+                          isDark && styles.yearCardTextDark,
+                          isSelected && styles.yearCardTextSelected,
                         ]}
                       >
-                        {isSelected && <View style={styles.radioInner} />}
-                      </View>
-                    </View>
-                  </Pressable>
+                        {item.id}
+                      </Text>
+                      <Text
+                        numberOfLines={2}
+                        style={[
+                          styles.yearCardSubText,
+                          isDark && styles.yearCardSubTextDark,
+                          isSelected && styles.yearCardSubTextSelected,
+                        ]}
+                      >
+                        {item.name.replace(item.id + " ", "").replace(/[()]/g, "").trim()}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 );
               })}
             </View>
@@ -1728,39 +1296,41 @@ export default function PersonalizationScreen() {
                 </View>
               </View>
 
-              {/* Fellowship Welcome Card */}
+              {/* Fellowship Welcome Scripture */}
               <View
                 style={[
                   styles.communityCard,
                   {
-                    backgroundColor: isDark ? "#1E293B" : "#FFF7ED",
-                    borderColor: isDark ? "#334155" : "#FFEDD5",
+                    backgroundColor: isDark ? "#18181B" : "#F8FAFC",
+                    borderColor: isDark ? "#27272A" : "#E2E8F0",
                   },
                 ]}
               >
-                <View style={styles.communityCardRow}>
-                  <View style={styles.communityCardIconBadge}>
-                    <Ionicons name="sparkles" size={20} color={PRIMARY} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={[
-                        styles.communityCardTitle,
-                        { color: isDark ? "#F8FAFC" : "#C2410C" },
-                      ]}
-                    >
-                      Welcome to the Family
-                    </Text>
-                    <Text
-                      style={[
-                        styles.communityCardBody,
-                        { color: isDark ? "#CBD5E1" : "#7C2D12" },
-                      ]}
-                    >
-                      {'"That which we have seen and heard declare we unto you, that ye also may have fellowship with us." — 1 John 1:3'}
-                    </Text>
-                  </View>
-                </View>
+                <Text
+                  style={[
+                    styles.communityCardBody,
+                    {
+                      color: isDark ? "#94A3B8" : "#64748B",
+                      textAlign: "center",
+                      fontStyle: "italic",
+                    },
+                  ]}
+                >
+                  {'"That which we have seen and heard declare we unto you, that ye also may have fellowship with us."'}
+                </Text>
+                <Text
+                  style={[
+                    styles.communityCardBody,
+                    {
+                      color: isDark ? "#64748B" : "#94A3B8",
+                      textAlign: "center",
+                      marginTop: 6,
+                      fontSize: 12,
+                    },
+                  ]}
+                >
+                  — 1 John 1:3
+                </Text>
               </View>
 
               <View style={styles.stepButtonWrapper}>
@@ -1834,27 +1404,7 @@ export default function PersonalizationScreen() {
             />
           </View>
 
-          {currentPage === 4 && (
-            <Pressable
-              onPress={handleSkipPress}
-              hitSlop={8}
-              style={[
-                styles.skipButton,
-                {
-                  backgroundColor: isDark ? "#27272A" : "#F1F5F9",
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.skipText,
-                  { color: isDark ? "#CBD5E1" : "#64748B" },
-                ]}
-              >
-                Skip
-              </Text>
-            </Pressable>
-          )}
+
         </View>
 
         {/* Horizontal Pager for Question Flow */}
@@ -1893,502 +1443,9 @@ export default function PersonalizationScreen() {
         )}
       </View>
 
-      {/* Expo UI Native BottomSheet for Ministry Team Selection (TNT Ethiopia design) */}
-      {isTeamSheetOpen && (
-        <Host
-          colorScheme={isDark ? "dark" : "light"}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="box-none"
-        >
-          <BottomSheet
-            isPresented={isTeamSheetOpen}
-            onDismiss={() => setIsTeamSheetOpen(false)}
-            snapPoints={["half", "full"]}
-            showDragIndicator={true}
-            contentPadding={0}
-            scrimColor={isDark ? "rgba(0, 0, 0, 0.7)" : "rgba(0, 0, 0, 0.5)"}
-            containerColor={isDark ? "#18181B" : "#FFFFFF"}
-          >
-            <RNHostView style={{ width: "100%" }}>
-              <View
-                style={[
-                  styles.sheetContent,
-                  { backgroundColor: isDark ? "#18181B" : "#FFFFFF" },
-                ]}
-              >
-                <View style={styles.sheetHeader}>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={[
-                        styles.sheetTitle,
-                        { color: isDark ? "#FFFFFF" : "#0F172A" },
-                      ]}
-                    >
-                      Select Ministry Team
-                    </Text>
-                    <Text
-                      style={[
-                        styles.sheetSubtitle,
-                        { color: isDark ? "#94A3B8" : "#64748B" },
-                      ]}
-                    >
-                      Choose your fellowship team to serve, grow, and minister
-                    </Text>
-                  </View>
-                  <Pressable
-                    onPress={() => setIsTeamSheetOpen(false)}
-                    hitSlop={10}
-                    style={[
-                      styles.sheetCloseBtn,
-                      { backgroundColor: isDark ? "#27272A" : "#F1F5F9" },
-                    ]}
-                  >
-                    <Ionicons
-                      name="close"
-                      size={18}
-                      color={isDark ? "#94A3B8" : "#64748B"}
-                    />
-                  </Pressable>
-                </View>
 
-                <ScrollView
-                  style={styles.sheetList}
-                  contentContainerStyle={styles.sheetListContent}
-                  showsVerticalScrollIndicator={false}
-                  keyboardShouldPersistTaps="handled"
-                  nestedScrollEnabled={true}
-                >
-                  {FELLOWSHIP_TEAMS.map((item) => {
-                    const isSelected = team === item.id;
-                    return (
-                      <Pressable
-                        key={item.id}
-                        onPress={() => {
-                          setTeam(item.id);
-                          setIsTeamSheetOpen(false);
-                          void Haptics.selectionAsync().catch(() => {});
-                        }}
-                        style={({ pressed }) => [
-                          styles.sheetRow,
-                          {
-                            backgroundColor: isSelected
-                              ? isDark
-                                ? "rgba(255, 103, 25, 0.16)"
-                                : "#FFF7ED"
-                              : isDark
-                              ? "#1F2937"
-                              : "#FAFAFA",
-                            borderColor: isSelected
-                              ? PRIMARY
-                              : isDark
-                              ? "#374151"
-                              : "#E5E7EB",
-                          },
-                          pressed && { opacity: 0.7 },
-                        ]}
-                      >
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 12,
-                            flex: 1,
-                          }}
-                        >
-                          <View
-                            style={[
-                              styles.sheetIconBadge,
-                              {
-                                backgroundColor: isSelected
-                                  ? "rgba(255, 103, 25, 0.2)"
-                                  : isDark
-                                  ? "#374151"
-                                  : "#E5E7EB",
-                              },
-                            ]}
-                          >
-                            <AuthIcon
-                              name={item.icon}
-                              size={20}
-                              color={
-                                isSelected
-                                  ? PRIMARY
-                                  : isDark
-                                  ? "#CBD5E1"
-                                  : "#64748B"
-                              }
-                            />
-                          </View>
-                          <View style={{ flex: 1, paddingRight: 8 }}>
-                            <Text
-                              style={[
-                                styles.sheetRowText,
-                                {
-                                  color: isSelected
-                                    ? PRIMARY
-                                    : isDark
-                                    ? "#FFFFFF"
-                                    : "#0F172A",
-                                },
-                              ]}
-                            >
-                              {item.name}
-                            </Text>
-                            <Text
-                              style={[
-                                styles.sheetRowSubText,
-                                { color: isDark ? "#94A3B8" : "#64748B" },
-                              ]}
-                            >
-                              {item.subtitle}
-                            </Text>
-                          </View>
-                        </View>
-                        {isSelected && (
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={22}
-                            color={PRIMARY}
-                          />
-                        )}
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-            </RNHostView>
-          </BottomSheet>
-        </Host>
-      )}
 
-      {/* Expo UI Native BottomSheet for Department Drawer */}
-      {isDeptSheetOpen && (
-        <Host
-          colorScheme={isDark ? "dark" : "light"}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="box-none"
-        >
-          <BottomSheet
-            isPresented={isDeptSheetOpen}
-            onDismiss={() => setIsDeptSheetOpen(false)}
-            snapPoints={["half", "full"]}
-            showDragIndicator={true}
-            contentPadding={0}
-            scrimColor={isDark ? "rgba(0, 0, 0, 0.7)" : "rgba(0, 0, 0, 0.5)"}
-            containerColor={isDark ? "#18181B" : "#FFFFFF"}
-          >
-            <RNHostView style={{ width: "100%" }}>
-              <View
-                style={[
-                  styles.sheetContent,
-                  { backgroundColor: isDark ? "#18181B" : "#FFFFFF" },
-                ]}
-              >
-                <View style={styles.sheetHeader}>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={[
-                        styles.sheetTitle,
-                        { color: isDark ? "#FFFFFF" : "#0F172A" },
-                      ]}
-                    >
-                      Select Department
-                    </Text>
-                    <Text
-                      style={[
-                        styles.sheetSubtitle,
-                        { color: isDark ? "#94A3B8" : "#64748B" },
-                      ]}
-                    >
-                      Choose your AAU department or field of study
-                    </Text>
-                  </View>
-                  <Pressable
-                    onPress={() => setIsDeptSheetOpen(false)}
-                    hitSlop={10}
-                    style={[
-                      styles.sheetCloseBtn,
-                      { backgroundColor: isDark ? "#27272A" : "#F1F5F9" },
-                    ]}
-                  >
-                    <Ionicons
-                      name="close"
-                      size={18}
-                      color={isDark ? "#94A3B8" : "#64748B"}
-                    />
-                  </Pressable>
-                </View>
 
-                {/* Search Box in Sheet */}
-                <View
-                  style={[
-                    styles.uniSearchBox,
-                    {
-                      backgroundColor: isDark ? "#27272A" : "#F8FAFC",
-                      borderColor: isDark ? "#3F3F46" : "#E2E8F0",
-                      marginBottom: 12,
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name="search"
-                    size={16}
-                    color={isDark ? "#94A3B8" : "#64748B"}
-                  />
-                  <TextInput
-                    value={departmentSearch}
-                    onChangeText={setDepartmentSearch}
-                    placeholder="Filter departments..."
-                    placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
-                    style={[
-                      styles.uniSearchInput,
-                      { color: isDark ? "#FFFFFF" : "#0F172A" },
-                    ]}
-                    autoCorrect={false}
-                  />
-                </View>
-
-                <ScrollView
-                  style={styles.sheetList}
-                  contentContainerStyle={styles.sheetListContent}
-                  showsVerticalScrollIndicator={false}
-                  keyboardShouldPersistTaps="handled"
-                  nestedScrollEnabled={true}
-                >
-                  {filteredDepartments.map((dept) => {
-                    const isSelected = department === dept.id;
-                    return (
-                      <Pressable
-                        key={dept.id}
-                        onPress={() => {
-                          setDepartment(dept.id);
-                          setIsDeptSheetOpen(false);
-                          void Haptics.selectionAsync().catch(() => {});
-                        }}
-                        style={({ pressed }) => [
-                          styles.sheetRow,
-                          {
-                            backgroundColor: isSelected
-                              ? isDark
-                                ? "rgba(255, 103, 25, 0.16)"
-                                : "#FFF7ED"
-                              : "transparent",
-                          },
-                          pressed && { opacity: 0.7 },
-                        ]}
-                      >
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 12,
-                            flex: 1,
-                          }}
-                        >
-                          <AuthIcon
-                            name={dept.icon}
-                            size={18}
-                            color={isSelected ? PRIMARY : isDark ? "#94A3B8" : "#64748B"}
-                          />
-                          <Text
-                            style={[
-                              styles.sheetRowText,
-                              {
-                                color: isSelected
-                                  ? PRIMARY
-                                  : isDark
-                                  ? "#FFFFFF"
-                                  : "#0F172A",
-                              },
-                            ]}
-                          >
-                            {dept.name}
-                          </Text>
-                        </View>
-                        {isSelected && (
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={20}
-                            color={PRIMARY}
-                          />
-                        )}
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-            </RNHostView>
-          </BottomSheet>
-        </Host>
-      )}
-
-      {/* Expo UI Native BottomSheet for Academic Year Selection (TNT Ethiopia design) */}
-      {isYearSheetOpen && (
-        <Host
-          colorScheme={isDark ? "dark" : "light"}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="box-none"
-        >
-          <BottomSheet
-            isPresented={isYearSheetOpen}
-            onDismiss={() => setIsYearSheetOpen(false)}
-            snapPoints={["half", "full"]}
-            showDragIndicator={true}
-            contentPadding={0}
-            scrimColor={isDark ? "rgba(0, 0, 0, 0.7)" : "rgba(0, 0, 0, 0.5)"}
-            containerColor={isDark ? "#18181B" : "#FFFFFF"}
-          >
-            <RNHostView style={{ width: "100%" }}>
-              <View
-                style={[
-                  styles.sheetContent,
-                  { backgroundColor: isDark ? "#18181B" : "#FFFFFF" },
-                ]}
-              >
-                <View style={styles.sheetHeader}>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={[
-                        styles.sheetTitle,
-                        { color: isDark ? "#FFFFFF" : "#0F172A" },
-                      ]}
-                    >
-                      Select Academic Year
-                    </Text>
-                    <Text
-                      style={[
-                        styles.sheetSubtitle,
-                        { color: isDark ? "#94A3B8" : "#64748B" },
-                      ]}
-                    >
-                      Tell us where you are on your campus journey at AAU
-                    </Text>
-                  </View>
-                  <Pressable
-                    onPress={() => setIsYearSheetOpen(false)}
-                    hitSlop={10}
-                    style={[
-                      styles.sheetCloseBtn,
-                      { backgroundColor: isDark ? "#27272A" : "#F1F5F9" },
-                    ]}
-                  >
-                    <Ionicons
-                      name="close"
-                      size={18}
-                      color={isDark ? "#94A3B8" : "#64748B"}
-                    />
-                  </Pressable>
-                </View>
-
-                <ScrollView
-                  style={styles.sheetList}
-                  contentContainerStyle={styles.sheetListContent}
-                  showsVerticalScrollIndicator={false}
-                  keyboardShouldPersistTaps="handled"
-                  nestedScrollEnabled={true}
-                >
-                  {FELLOWSHIP_YEARS.map((item) => {
-                    const isSelected = year === item.id;
-                    return (
-                      <Pressable
-                        key={item.id}
-                        onPress={() => {
-                          setYear(item.id);
-                          setIsYearSheetOpen(false);
-                          void Haptics.selectionAsync().catch(() => {});
-                        }}
-                        style={({ pressed }) => [
-                          styles.sheetRow,
-                          {
-                            backgroundColor: isSelected
-                              ? isDark
-                                ? "rgba(255, 103, 25, 0.16)"
-                                : "#FFF7ED"
-                              : isDark
-                              ? "#1F2937"
-                              : "#FAFAFA",
-                            borderColor: isSelected
-                              ? PRIMARY
-                              : isDark
-                              ? "#374151"
-                              : "#E5E7EB",
-                          },
-                          pressed && { opacity: 0.7 },
-                        ]}
-                      >
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 12,
-                            flex: 1,
-                          }}
-                        >
-                          <View
-                            style={[
-                              styles.sheetIconBadge,
-                              {
-                                backgroundColor: isSelected
-                                  ? "rgba(255, 103, 25, 0.2)"
-                                  : isDark
-                                  ? "#374151"
-                                  : "#E5E7EB",
-                              },
-                            ]}
-                          >
-                            <AuthIcon
-                              name="year"
-                              size={20}
-                              color={
-                                isSelected
-                                  ? PRIMARY
-                                  : isDark
-                                  ? "#CBD5E1"
-                                  : "#64748B"
-                              }
-                            />
-                          </View>
-                          <View style={{ flex: 1, paddingRight: 8 }}>
-                            <Text
-                              style={[
-                                styles.sheetRowText,
-                                {
-                                  color: isSelected
-                                    ? PRIMARY
-                                    : isDark
-                                    ? "#FFFFFF"
-                                    : "#0F172A",
-                                },
-                              ]}
-                            >
-                              {item.name}
-                            </Text>
-                            <Text
-                              style={[
-                                styles.sheetRowSubText,
-                                { color: isDark ? "#94A3B8" : "#64748B" },
-                              ]}
-                            >
-                              {item.subtitle}
-                            </Text>
-                          </View>
-                        </View>
-                        {isSelected && (
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={22}
-                            color={PRIMARY}
-                          />
-                        )}
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-            </RNHostView>
-          </BottomSheet>
-        </Host>
-      )}
 
       <InfoModal
         visible={errorModal.visible}
@@ -2469,8 +1526,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 18,
+    paddingHorizontal: 20,
+    paddingTop: 24,
     paddingBottom: 40,
   },
   scrollContentProfile: {
@@ -2480,7 +1537,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   headerBlock: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   titleText: {
     fontSize: 32,
@@ -2570,7 +1627,7 @@ const styles = StyleSheet.create({
     }),
   },
 
-  /* Name Input (matches Auth Screen) */
+  /* Name Input */
   inputFieldContainer: {
     marginTop: 20,
   },
@@ -2606,140 +1663,229 @@ const styles = StyleSheet.create({
   },
   textInputBox: {
     height: 52,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1.5,
     paddingHorizontal: 16,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "500",
   },
-  textInputBoxFocused: {
-    borderColor: PRIMARY,
-  },
 
-  /* Buttons */
-  actionButton: {
+  /* 2-Column Grid (Teams & Departments, centered with native ripple) */
+  gridContainer: {
     width: "100%",
-  },
-  bottomDockedAction: {
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: Platform.OS === "ios" ? 14 : 20,
-  },
-  stepButtonWrapper: {
-    marginTop: 20,
-    paddingBottom: 24,
-  },
-
-  /* TNT Ethiopia Option Cards */
-  cardsStack: {
-    gap: 14,
+    gap: 12,
+    marginTop: 8,
     marginBottom: 20,
   },
-  optionCard: {
-    borderRadius: 18,
+  gridRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  // Outer View: border, bg, shadow, overflow:hidden — the visual card shell
+  gridCardOuter: {
+    flex: 1,
+    height: 120,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderStyle: "solid",
+    borderColor: "#E5E7EB",
+    backgroundColor: "#FFFFFF",
     overflow: "hidden",
-    borderWidth: 2,
-    padding: 18,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.04,
-        shadowRadius: 6,
+        shadowRadius: 2,
       },
       android: {
         elevation: 1,
       },
     }),
+  },  gridCardOuterDark: {
+    borderColor: "#27272A",
+    backgroundColor: "#18181B",
   },
-  optionCardActive: {
+  gridCardOuterSelected: {
     borderWidth: 2,
-  },
-  optionCardPressed: {
-    transform: [{ scale: 0.99 }],
-  },
-  cardContentRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  iconCircleWrapper: {
-    marginRight: 16,
-  },
-  illustratedBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cardTextCol: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    marginBottom: 4,
-    letterSpacing: -0.2,
-  },
-  cardTitleActive: {
-    color: PRIMARY,
-  },
-  cardSubtitle: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  radioOuter: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  radioOuterActive: {
     borderColor: PRIMARY,
+    backgroundColor: "#FFF7ED",
   },
-  radioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: PRIMARY,
+  gridCardOuterSelectedDark: {
+    borderWidth: 2,
+    borderColor: PRIMARY,
+    backgroundColor: "rgba(255, 103, 25, 0.12)",
   },
-
-  /* TNT Ethiopia Pill Search Box */
-  uniSearchBox: {
+  // Inner Pressable: absolutely fills the card, centers content, handles ripple
+  gridCardInner: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 14,
+  },
+  gridCardIconWrap: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  gridCardTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    textAlign: "center",
+    lineHeight: 20,
+    color: "#0F172A",
+  },
+  gridCardTitleDark: {
+    color: "#FFFFFF",
+  },
+  gridCardTitleSelected: {
+    color: PRIMARY,
+    fontWeight: "700",
+  },
+  deptSearchContainer: {
     flexDirection: "row",
     alignItems: "center",
     height: 48,
-    borderRadius: 9999,
-    borderWidth: 1,
-    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    paddingHorizontal: 14,
     marginBottom: 16,
     gap: 10,
   },
-  uniSearchInput: {
+  deptSearchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "500",
     paddingVertical: 0,
   },
-  sheetTriggerRow: {
+
+  /* Action Buttons */
+  stepButtonWrapper: {
+    marginTop: 28,
+    paddingBottom: 24,
+  },
+
+  /* Year inline grid */
+  yearGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  yearCardOuter: {
+    width: "47%",
+    height: 72,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#FFFFFF",
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 2,
+      },
+      android: { elevation: 1 },
+    }),
+  },
+  yearCardOuterDark: {
+    borderColor: "#27272A",
+    backgroundColor: "#18181B",
+  },
+  yearCardOuterSelected: {
+    borderWidth: 2,
+    borderColor: PRIMARY,
+    backgroundColor: "#FFF7ED",
+  },
+  yearCardOuterSelectedDark: {
+    borderWidth: 2,
+    borderColor: PRIMARY,
+    backgroundColor: "rgba(255, 103, 25, 0.12)",
+  },
+  yearCardInner: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  yearCardText: {
+    fontSize: 14,
+    fontWeight: "700",
+    textAlign: "center",
+    color: "#0F172A",
+    lineHeight: 18,
+  },
+  yearCardTextDark: { color: "#FFFFFF" },
+  yearCardTextSelected: { color: PRIMARY },
+  yearCardSubText: {
+    fontSize: 11,
+    fontWeight: "400",
+    textAlign: "center",
+    color: "#64748B",
+    lineHeight: 14,
+    marginTop: 2,
+  },
+  yearCardSubTextDark: { color: "#94A3B8" },
+  yearCardSubTextSelected: { color: PRIMARY, opacity: 0.8 },
+
+  /* TNT Ethiopia Dropdown Selector */
+  institutionInputSection: {
+    marginBottom: 16,
+  },
+  dropdownSelector: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 16,
+    height: 52,
+    borderRadius: 14,
+    overflow: "hidden",
+    borderWidth: 1.5,
+    paddingHorizontal: 14,
   },
-  sheetTriggerText: {
-    fontSize: 13,
+  dropdownSelectorSelected: {
+    borderWidth: 1.5,
+  },
+  dropdownLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+    flexShrink: 1,
+    marginRight: 8,
+  },
+  dropdownValueText: {
+    flex: 1,
+    flexShrink: 1,
+    fontSize: 14,
     fontWeight: "600",
   },
+  dropdownPlaceholderText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  dropdownRight: {
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
   customDeptContainer: {
-    marginTop: 10,
+    marginBottom: 16,
   },
 
   /* Telegram Field */
@@ -2776,7 +1922,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    marginTop: 12,
+    marginTop: 16,
   },
   communityCardRow: {
     flexDirection: "row",
@@ -2802,18 +1948,19 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
 
-  /* Native BottomSheet Content */
-  sheetContent: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 24,
-    flex: 1,
-  },
+  /* TNT Ethiopia Style BottomSheet Header & List Rows */
   sheetHeader: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 14,
+    marginBottom: 12,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+  },
+  sheetTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    letterSpacing: -0.3,
   },
   sheetCloseBtn: {
     width: 32,
@@ -2821,89 +1968,75 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 12,
   },
-  sheetTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    letterSpacing: -0.3,
+  sheetSearchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+    gap: 10,
   },
-  sheetSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
+  sheetSearchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "500",
+    paddingVertical: 0,
   },
   sheetList: {
     flex: 1,
+    width: "100%",
   },
   sheetListContent: {
-    paddingBottom: 20,
-    gap: 6,
+    gap: 8,
+    paddingBottom: Platform.OS === "ios" ? 44 : 36,
   },
-  /* Dropdown Selector (TNT Ethiopia design) */
-  institutionInputSection: {
-    marginBottom: 16,
-  },
-  dropdownSelector: {
+  sheetRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    minHeight: 56,
-    borderRadius: 14,
-    borderWidth: 1.5,
+    height: 52,
     paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  dropdownSelectorSelected: {
+    borderRadius: 12,
+    overflow: "hidden",
     borderWidth: 1.5,
   },
-  dropdownLeft: {
+  sheetRowActive: {
+    borderColor: PRIMARY,
+  },
+  sheetRowLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     flex: 1,
     marginRight: 8,
   },
-  dropdownIconBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  dropdownValueText: {
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  dropdownPlaceholderText: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  dropdownSubText: {
-    fontSize: 12,
-    marginTop: 2,
-  },
   sheetIconBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-  },
-  sheetRowSubText: {
-    fontSize: 12,
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  sheetRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 12,
   },
   sheetRowText: {
+    flex: 1,
     fontSize: 15,
     fontWeight: "600",
+  },
+  sheetRowTextActive: {
+    fontWeight: "700",
+  },
+  emptySearchContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 36,
+    gap: 10,
+  },
+  emptySearchText: {
+    fontSize: 14,
+    textAlign: "center",
+    paddingHorizontal: 20,
   },
 });
