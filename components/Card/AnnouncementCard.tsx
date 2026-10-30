@@ -1,10 +1,8 @@
 import { PRIMARY } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
-import * as FileSystem from "expo-file-system/legacy";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Linking from "expo-linking";
-import * as Sharing from "expo-sharing";
 import React, { useCallback, useState } from "react";
 
 import { useAuth } from "@/context/AuthContext";
@@ -228,6 +226,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     if (isSharing) return;
     setIsSharing(true);
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       const eventId = (item as any)._id || (item as any).id;
       const eventLink = Linking.createURL(`events/${eventId}`);
       const rawDate = (item as any).startDate;
@@ -236,41 +235,26 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
             weekday: "short",
             month: "short",
             day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
           })
         : "";
       const location = (item as any).location || (item as any).venue || "AAU 4 Kilo Campus";
-      
+
       const shareMessage = `🔥 ${item.title}${formattedDate ? `\n📅 ${formattedDate}` : ""}\n📍 ${location}\n\n${subtitleText || ""}\n\n👉 View event: ${eventLink}\n\n#MyFellow #AAUECSF`;
 
-      if (!imageUri) {
-        await Share.share({
+      await Share.share(
+        {
+          title: item.title,
           message: shareMessage,
-        });
-        return;
-      }
-
-      const filename = imageUri.split("/").pop() || "event-image.jpg";
-      const localUri = `${FileSystem.cacheDirectory}${filename}`;
-      await FileSystem.createDownloadResumable(
-        imageUri,
-        localUri,
-      ).downloadAsync();
-
-      const isAvailable = await Sharing.isAvailableAsync();
-      if (!isAvailable) {
-        await Share.share({
-          message: shareMessage,
-        });
-        return;
-      }
-
-      await Sharing.shareAsync(localUri, {
-        mimeType: "image/jpeg",
-        dialogTitle: `Share ${item.title}`,
-        UTI: "public.image",
-      });
+          url: eventLink,
+        },
+        {
+          dialogTitle: `Share ${item.title}`,
+        },
+      );
     } catch (error: any) {
-      console.error("Error sharing image:", error);
+      console.error("Error sharing event link:", error);
       showInfoModal(
         "Sharing Failed",
         "Could not share the event. Please try again.",
