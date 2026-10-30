@@ -273,12 +273,35 @@ const Home = () => {
                   </Pressable>
                 )}
 
+                {/* Real-time total amount indicator */}
                 {events.length > 0 && (
-                  <NativeViewAllButton
-                    onPress={() => router.push("/events")}
-                    isDark={isDark}
-                    accessibilityLabel="View all upcoming events"
-                  />
+                  <View
+                    style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                      borderRadius: 9999,
+                      backgroundColor: isDark
+                        ? "rgba(255, 255, 255, 0.08)"
+                        : "rgba(0, 0, 0, 0.05)",
+                      borderWidth: 1,
+                      borderColor: isDark
+                        ? "rgba(255, 255, 255, 0.08)"
+                        : "rgba(0, 0, 0, 0.05)",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "700",
+                        color: isDark ? "#e2e8f0" : "#334155",
+                        includeFontPadding: false,
+                      }}
+                    >
+                      {`${Math.min(activeIndex + 1, events.length)} of ${events.length}`}
+                    </Text>
+                  </View>
                 )}
               </View>
             </View>

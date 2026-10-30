@@ -247,10 +247,23 @@ export const WhoToFollowSection: React.FC<WhoToFollowSectionProps> = ({ isDark =
                   </Text>
                 </View>
 
-                {/* Primary Action Button: Fully Rounded Pill */}
+                {/* Primary Action Button: Solid Rounded Pill */}
                 <View
                   style={[
                     styles.followBtnContainer,
+                    {
+                      backgroundColor: isFollowing
+                        ? isDark
+                          ? "#27272a"
+                          : "#f1f5f9"
+                        : PRIMARY,
+                      borderColor: isFollowing
+                        ? isDark
+                          ? "#3f3f46"
+                          : "#cbd5e1"
+                        : "transparent",
+                      borderWidth: isFollowing ? 1 : 0,
+                    },
                     !isFollowing && styles.followBtnShadow,
                   ]}
                 >
@@ -268,42 +281,31 @@ export const WhoToFollowSection: React.FC<WhoToFollowSectionProps> = ({ isDark =
                       foreground: true,
                     }}
                     style={({ pressed }) => [
-                      styles.followBtn,
-                      {
-                        backgroundColor: isFollowing
-                          ? isDark
-                            ? "#27272a"
-                            : "#f1f5f9"
-                          : PRIMARY,
-                        borderWidth: isFollowing ? 1 : 0,
-                        borderColor: isFollowing
-                          ? isDark
-                            ? "#3f3f46"
-                            : "#cbd5e1"
-                          : "transparent",
-                      },
+                      styles.followBtnPressable,
                       Platform.OS === "ios" && pressed && { opacity: 0.8 },
                     ]}
                   >
-                    <Ionicons
-                      name={isFollowing ? "checkmark" : "person-add"}
-                      size={14}
-                      color={isFollowing ? (isDark ? "#e2e8f0" : "#334155") : "#ffffff"}
-                    />
-                    <Text
-                      style={[
-                        styles.followBtnText,
-                        {
-                          color: isFollowing
-                            ? isDark
-                              ? "#e2e8f0"
-                              : "#334155"
-                            : "#ffffff",
-                        },
-                      ]}
-                    >
-                      {isFollowing ? "Following" : "Follow"}
-                    </Text>
+                    <View style={styles.followBtnContent}>
+                      <Ionicons
+                        name={isFollowing ? "checkmark" : "person-add"}
+                        size={14}
+                        color={isFollowing ? (isDark ? "#e2e8f0" : "#334155") : "#ffffff"}
+                      />
+                      <Text
+                        style={[
+                          styles.followBtnText,
+                          {
+                            color: isFollowing
+                              ? isDark
+                                ? "#e2e8f0"
+                                : "#334155"
+                              : "#ffffff",
+                          },
+                        ]}
+                      >
+                        {isFollowing ? "Following" : "Follow"}
+                      </Text>
+                    </View>
                   </Pressable>
                 </View>
               </Pressable>
@@ -423,8 +425,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   followBtnContainer: {
-    width: "100%",
+    width: 136,
+    height: 36,
     borderRadius: 9999,
+    overflow: "hidden",
+    alignSelf: "center",
   },
   followBtnShadow: Platform.select({
     ios: {
@@ -433,19 +438,20 @@ const styles = StyleSheet.create({
       shadowOpacity: 0.35,
       shadowRadius: 5,
     },
-    default: {
-      elevation: 2,
-    },
+    default: {},
   }) as any,
-  followBtn: {
+  followBtnPressable: {
     width: "100%",
-    height: 40,
+    height: "100%",
     borderRadius: 9999,
+  },
+  followBtnContent: {
+    width: "100%",
+    height: "100%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    overflow: "hidden",
   },
   followBtnText: {
     fontSize: 13,
