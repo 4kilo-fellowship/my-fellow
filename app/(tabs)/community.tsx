@@ -1,341 +1,212 @@
-import { PRIMARY } from "@/constants";
-import { useAuth } from "@/context/AuthContext";
+import { AppBottomSheet } from "@/components/AppBottomSheet";
+import { ImageViewerModal } from "@/components/ImageViewerModal";
+import { MainTabHeader } from "@/components/MainTabHeader";
+import { PRIMARY } from "@/constants/colors";
 import { useTheme } from "@/context/ThemeContext";
-import { useUserStore } from "@/stores/user.store";
-import { Ionicons } from "@expo/vector-icons";
-import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useMemo, useState } from "react";
 import {
-  Dimensions,
+  CommunityPost,
+  useCommunityStore,
+} from "@/stores/community.store";
+import { getPrefilledAvatar } from "@/utils/avatar";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useCallback, useState } from "react";
+import {
+  Alert,
   FlatList,
   Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   RefreshControl,
   Share,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
-export interface CommunityPost {
-  id: string;
-  authorName: string;
-  authorAvatar?: string | null;
-  authorTeam: string;
-  category: "Testimony" | "Prayer Request" | "Announcement" | "Encouragement";
-  timestamp: string;
-  title: string;
-  content: string;
-  likes: number;
-  commentsCount: number;
-  amensCount: number;
-  isLiked?: boolean;
-  isAmened?: boolean;
-}
-
-const INITIAL_POSTS: CommunityPost[] = [
-  {
-    id: "post-1",
-    authorName: "Samuel Kebede",
-    authorTeam: "Worship Team",
-    category: "Testimony",
-    timestamp: "2h ago",
-    title: "God answered our semester prayers!",
-    content:
-      "Just wanted to testify about God's faithfulness throughout this exam season. Our study fellowship group prayed together last week, and all 12 of us passed our difficult engineering fundamentals! All glory to Him! 🙏✨",
-    likes: 42,
-    commentsCount: 9,
-    amensCount: 31,
-  },
-  {
-    id: "post-2",
-    authorName: "Bethlehem Haile",
-    authorTeam: "Prayer Ministry",
-    category: "Prayer Request",
-    timestamp: "4h ago",
-    title: "Prayers for Freshman Welcome Week",
-    content:
-      "Fellowship family, please join us in praying for the incoming freshman students this week. We are hosting orientation talks and outreach across 4 Kilo and 5 Kilo campuses. Pray for open hearts and lasting connections!",
-    likes: 28,
-    commentsCount: 14,
-    amensCount: 56,
-  },
-  {
-    id: "post-3",
-    authorName: "Ministry Leadership",
-    authorTeam: "Executive Committee",
-    category: "Announcement",
-    timestamp: "Yesterday",
-    title: "Grand Worship Night this Friday at 6:00 PM",
-    content:
-      "Join the entire fellowship collective this Friday evening for an unforgettable night of deep worship, communion, and spirit-filled teaching. Come with expectant hearts and bring a friend! Location: Main Fellowship Auditorium.",
-    likes: 89,
-    commentsCount: 23,
-    amensCount: 78,
-  },
-  {
-    id: "post-4",
-    authorName: "Yared Tadesse",
-    authorTeam: "Bible Study",
-    category: "Encouragement",
-    timestamp: "2d ago",
-    title: "A verse that anchored my week",
-    content:
-      "\"Trust in the Lord with all your heart, and do not lean on your own understanding. In all your ways acknowledge him, and he will make straight your paths.\" — Proverbs 3:5-6. Whatever mountain you face today, hand it over to Him.",
-    likes: 64,
-    commentsCount: 7,
-    amensCount: 45,
-  },
-];
-
-const CATEGORIES = [
-  "All",
-  "Testimonies",
-  "Prayer Requests",
-  "Announcements",
-  "Encouragement",
-] as const;
-
 export default function CommunityScreen() {
-  const { top, bottom } = useSafeAreaInsets();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const { user } = useUserStore();
-  const { authState } = useAuth();
 
-  const [posts, setPosts] = useState<CommunityPost[]>(INITIAL_POSTS);
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const posts = useCommunityStore((s) => s.posts);
+  const toggleLike = useCommunityStore((s) => s.toggleLike);
+  const toggleRepost = useCommunityStore((s) => s.toggleRepost);
+  const toggleBookmark = useCommunityStore((s) => s.toggleBookmark);
+
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [expandedPostIds, setExpandedPostIds] = useState<Record<string, boolean>>({});
 
-  // New post modal state
-  const [composeModalVisible, setComposeModalVisible] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newContent, setNewContent] = useState("");
-  const [newCategory, setNewCategory] = useState<
-    "Testimony" | "Prayer Request" | "Announcement" | "Encouragement"
-  >("Testimony");
+  // Three-dots bottom sheet state
+  const [activePostForSheet, setActivePostForSheet] = useState<CommunityPost | null>(null);
+  const [sheetVisible, setSheetVisible] = useState(false);
+
+  // Fullscreen image viewer state
+  const [lightboxImage, setLightboxImage] = useState<{
+    uri: any;
+    caption?: string;
+    author?: string;
+  } | null>(null);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    } catch {}
     setTimeout(() => {
       setRefreshing(false);
-    }, 800);
+    }, 700);
   }, []);
 
   const handleToggleLike = (id: string) => {
-    setPosts((prev) =>
-      prev.map((post) => {
-        if (post.id === id) {
-          const isLiked = !post.isLiked;
-          return {
-            ...post,
-            isLiked,
-            likes: isLiked ? post.likes + 1 : Math.max(0, post.likes - 1),
-          };
-        }
-        return post;
-      }),
-    );
-  };
-
-  const handleToggleAmen = (id: string) => {
-    setPosts((prev) =>
-      prev.map((post) => {
-        if (post.id === id) {
-          const isAmened = !post.isAmened;
-          return {
-            ...post,
-            isAmened,
-            amensCount: isAmened
-              ? post.amensCount + 1
-              : Math.max(0, post.amensCount - 1),
-          };
-        }
-        return post;
-      }),
-    );
-  };
-
-  const handleSharePost = async (post: CommunityPost) => {
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    } catch {}
+    toggleLike(id);
+  };
+
+  const handleToggleRepost = (id: string) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    } catch {}
+    toggleRepost(id);
+  };
+
+  const handleToggleBookmark = (id: string) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    } catch {}
+    toggleBookmark(id);
+  };
+
+  const handleShare = async (post: CommunityPost) => {
+    try {
+      Haptics.selectionAsync().catch(() => {});
       await Share.share({
-        message: `${post.title}\n\n${post.content}\n\n— Shared via My Fellowship Community`,
+        message: `${post.content}\n\n— ${post.authorName} (${post.authorHandle}) on 4 Kilo Fellowship`,
       });
     } catch {
       // ignore
     }
   };
 
-  const handleCreatePost = () => {
-    if (!newTitle.trim() || !newContent.trim()) return;
-
-    const newPost: CommunityPost = {
-      id: `post-${Date.now()}`,
-      authorName: user?.fullName || "Fellowship Member",
-      authorAvatar: user?.profileImage || null,
-      authorTeam:
-        typeof user?.team === "string"
-          ? user.team
-          : (user?.team as any)?.name || "Fellowship Collective",
-      category: newCategory,
-      timestamp: "Just now",
-      title: newTitle.trim(),
-      content: newContent.trim(),
-      likes: 1,
-      commentsCount: 0,
-      amensCount: 1,
-      isLiked: true,
-      isAmened: true,
-    };
-
-    setPosts([newPost, ...posts]);
-    setNewTitle("");
-    setNewContent("");
-    setComposeModalVisible(false);
+  const toggleExpand = (id: string) => {
+    setExpandedPostIds((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const filteredPosts = useMemo(() => {
-    if (selectedCategory === "All") return posts;
-    if (selectedCategory === "Testimonies")
-      return posts.filter((p) => p.category === "Testimony");
-    if (selectedCategory === "Prayer Requests")
-      return posts.filter((p) => p.category === "Prayer Request");
-    if (selectedCategory === "Announcements")
-      return posts.filter((p) => p.category === "Announcement");
-    if (selectedCategory === "Encouragement")
-      return posts.filter((p) => p.category === "Encouragement");
-    return posts;
-  }, [posts, selectedCategory]);
+  const textColor = isDark ? "#e7e9ea" : "#0f1419";
+  const mutedColor = isDark ? "#71767b" : "#536471";
+  const borderColor = isDark ? "#27272a" : "#eff3f4";
+  const bg = isDark ? "#000000" : "#ffffff";
 
-  const getCategoryColor = (cat: CommunityPost["category"]) => {
-    switch (cat) {
-      case "Testimony":
-        return "#10b981";
-      case "Prayer Request":
-        return "#8b5cf6";
-      case "Announcement":
-        return PRIMARY;
-      case "Encouragement":
-        return "#0284c7";
-      default:
-        return PRIMARY;
-    }
+  // Helper to render styled tweet text with highlighted hashtags, mentions, and primary "Show more"
+  const renderFormattedText = (text: string, isExpanded: boolean, postId: string) => {
+    const isLong = text.length > 240;
+    const displayText = isLong && !isExpanded ? text.slice(0, 240) + "..." : text;
+    const words = displayText.split(/(\s+)/);
+
+    return (
+      <Text style={[styles.postText, { color: textColor }]}>
+        {words.map((word, idx) => {
+          if (
+            word.startsWith("@") ||
+            word.startsWith("#") ||
+            word.startsWith("http") ||
+            word.startsWith("youtu.be")
+          ) {
+            return (
+              <Text key={idx} style={{ color: PRIMARY, fontWeight: "600" }}>
+                {word}
+              </Text>
+            );
+          }
+          return word;
+        })}
+        {isLong && (
+          <Text
+            onPress={() => toggleExpand(postId)}
+            style={{ color: PRIMARY, fontWeight: "700" }}
+          >
+            {isExpanded ? " Show less" : " Show more"}
+          </Text>
+        )}
+      </Text>
+    );
   };
 
   return (
-    <View
-      style={[
-        styles.screen,
-        { backgroundColor: isDark ? "#121212" : "#f8fafc" },
-      ]}
-    >
+    <View style={[styles.screen, { backgroundColor: bg }]}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      {/* Header */}
+      {/* Top Main Tab Header */}
+      <MainTabHeader borderBottom={false} />
+
+      {/* Native Pill Search Bar (Exactly matching user's uploaded image with native ripple) */}
       <View
         style={[
-          styles.headerContainer,
+          styles.searchBarContainer,
           {
-            paddingTop: top + 12,
-            backgroundColor: isDark ? "#121212" : "#ffffff",
-            borderBottomColor: isDark ? "#262626" : "#f1f5f9",
+            backgroundColor: bg,
           },
         ]}
       >
-        <View style={styles.headerRow}>
-          <View style={{ flex: 1 }}>
-            <Text
-              style={[
-                styles.headerTitle,
-                { color: isDark ? "#ffffff" : "#0f172a" },
-              ]}
-            >
-              Community
-            </Text>
-            <Text
-              style={[
-                styles.headerSubtitle,
-                { color: isDark ? "#94a3b8" : "#64748b" },
-              ]}
-            >
-              Fellowship stories, testimonies & prayers
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => setComposeModalVisible(true)}
-            style={styles.composeHeaderBtn}
+        <View
+          style={[
+            styles.searchPillWrapper,
+            {
+              backgroundColor: isDark ? "#202327" : "#f0f2f5",
+            },
+          ]}
+        >
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              router.push("/community/search");
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Search"
+            android_ripple={{
+              color: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
+              borderless: false,
+            }}
+            style={({ pressed }) => [
+              styles.searchPressableInner,
+              pressed && Platform.OS === "ios" && { opacity: 0.7 },
+            ]}
           >
-            <Ionicons name="add" size={20} color="#ffffff" />
-            <Text style={styles.composeHeaderBtnText}>Post</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Filter Pills */}
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={CATEGORIES}
-          keyExtractor={(item) => item}
-          contentContainerStyle={styles.categoriesList}
-          renderItem={({ item }) => {
-            const isSelected = selectedCategory === item;
-            return (
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => setSelectedCategory(item)}
+            <View style={styles.searchCenterContent}>
+              <Ionicons
+                name="search-outline"
+                size={19}
+                color={isDark ? "#8e9196" : "#5f6368"}
+                style={styles.searchIcon}
+              />
+              <Text
                 style={[
-                  styles.categoryPill,
-                  {
-                    backgroundColor: isSelected
-                      ? PRIMARY
-                      : isDark
-                        ? "#1e293b"
-                        : "#f1f5f9",
-                  },
+                  styles.searchCenteredText,
+                  { color: isDark ? "#8e9196" : "#5f6368" },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.categoryPillText,
-                    {
-                      color: isSelected
-                        ? "#ffffff"
-                        : isDark
-                          ? "#94a3b8"
-                          : "#64748b",
-                      fontWeight: isSelected ? "700" : "500",
-                    },
-                  ]}
-                >
-                  {item}
-                </Text>
-              </TouchableOpacity>
-            );
-          }}
-        />
+                Search
+              </Text>
+            </View>
+          </Pressable>
+        </View>
       </View>
 
-      {/* Posts Feed */}
+      {/* FlatList Fellowship Feed */}
       <FlatList
-        data={filteredPosts}
+        data={posts}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.feedContainer,
-          { paddingBottom: bottom + 90 },
-        ]}
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + 100,
+        }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -345,370 +216,368 @@ export default function CommunityScreen() {
           />
         }
         renderItem={({ item }) => {
-          const badgeColor = getCategoryColor(item.category);
+          const isExpanded = !!expandedPostIds[item.id];
+          const avatarSource =
+            typeof item.authorAvatar === "string"
+              ? { uri: item.authorAvatar }
+              : item.authorAvatar || {
+                  uri: getPrefilledAvatar(item.authorHandle),
+                };
+
           return (
             <View
               style={[
-                styles.postCard,
+                styles.tweetRow,
                 {
-                  backgroundColor: isDark ? "#1e293b" : "#ffffff",
-                  borderColor: isDark ? "#334155" : "#e2e8f0",
+                  borderBottomColor: borderColor,
                 },
               ]}
             >
-              {/* Author Row */}
-              <View style={styles.authorRow}>
-                <View style={[styles.avatarCircle, { backgroundColor: badgeColor }]}>
-                  {item.authorAvatar ? (
-                    <Image
-                      source={{ uri: item.authorAvatar }}
-                      style={styles.avatarImg}
-                    />
-                  ) : (
-                    <Text style={styles.avatarInitial}>
-                      {item.authorName.charAt(0).toUpperCase()}
-                    </Text>
-                  )}
-                </View>
+              {/* Left Column: Author Avatar -> Navigates to Member Profile */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => {
+                  Haptics.selectionAsync().catch(() => {});
+                  router.push(`/community/user/${item.authorId || "user-fellowship"}` as any);
+                }}
+                style={styles.tweetAvatarWrap}
+              >
+                <Image source={avatarSource} style={styles.tweetAvatar} />
+              </TouchableOpacity>
 
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={[
-                      styles.authorName,
-                      { color: isDark ? "#f8fafc" : "#0f172a" },
-                    ]}
+              {/* Right Column: Tweet Content & Actions */}
+              <View style={styles.tweetBodyCol}>
+                {/* Header: Author Name, Verified Badge, Handle, Middot, Time, More */}
+                <View style={styles.tweetHeaderRow}>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      Haptics.selectionAsync().catch(() => {});
+                      router.push(`/community/user/${item.authorId || "user-fellowship"}` as any);
+                    }}
+                    style={styles.tweetAuthorInfo}
                   >
-                    {item.authorName}
-                  </Text>
-                  <View style={styles.authorMetaRow}>
                     <Text
+                      numberOfLines={1}
                       style={[
-                        styles.authorTeam,
-                        { color: isDark ? "#94a3b8" : "#64748b" },
+                        styles.tweetAuthorName,
+                        { color: isDark ? "#f7f9f9" : "#0f1419" },
                       ]}
                     >
-                      {item.authorTeam}
+                      {item.authorName}
                     </Text>
-                    <Text style={styles.metaDot}>•</Text>
+
+                    {item.isVerified && (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={15}
+                        color={PRIMARY}
+                        style={{ marginLeft: 3 }}
+                      />
+                    )}
+
                     <Text
-                      style={[
-                        styles.timestamp,
-                        { color: isDark ? "#64748b" : "#94a3b8" },
-                      ]}
+                      numberOfLines={1}
+                      style={[styles.tweetHandle, { color: mutedColor }]}
                     >
+                      {item.authorHandle}
+                    </Text>
+
+                    <Text style={[styles.tweetMiddot, { color: mutedColor }]}>
+                      ·
+                    </Text>
+
+                    <Text style={[styles.tweetTime, { color: mutedColor }]}>
                       {item.timestamp}
                     </Text>
-                  </View>
-                </View>
+                  </TouchableOpacity>
 
-                {/* Category Chip */}
-                <View
-                  style={[
-                    styles.categoryBadge,
-                    { backgroundColor: `${badgeColor}18` },
-                  ]}
-                >
-                  <Text
-                    style={[styles.categoryBadgeText, { color: badgeColor }]}
+                  {/* Three-dots Menu Trigger */}
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                      setActivePostForSheet(item);
+                      setSheetVisible(true);
+                    }}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    style={styles.tweetMoreBtn}
                   >
-                    {item.category}
-                  </Text>
+                    <Ionicons
+                      name="ellipsis-horizontal"
+                      size={16}
+                      color={mutedColor}
+                    />
+                  </TouchableOpacity>
                 </View>
-              </View>
 
-              {/* Title & Content */}
-              <Text
-                style={[
-                  styles.postTitle,
-                  { color: isDark ? "#ffffff" : "#0f172a" },
-                ]}
-              >
-                {item.title}
-              </Text>
-              <Text
-                style={[
-                  styles.postContent,
-                  { color: isDark ? "#cbd5e1" : "#334155" },
-                ]}
-              >
-                {item.content}
-              </Text>
-
-              {/* Engagement Bar */}
-              <View
-                style={[
-                  styles.engagementBar,
-                  { borderTopColor: isDark ? "#334155" : "#f1f5f9" },
-                ]}
-              >
+                {/* Body Content -> Navigates to Post Details */}
                 <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => handleToggleLike(item.id)}
-                  style={styles.actionBtn}
+                  activeOpacity={0.96}
+                  onPress={() => {
+                    router.push(`/community/${item.id}` as any);
+                  }}
+                  style={styles.tweetContentWrap}
                 >
-                  <Ionicons
-                    name={item.isLiked ? "heart" : "heart-outline"}
-                    size={20}
-                    color={item.isLiked ? "#ef4444" : isDark ? "#94a3b8" : "#64748b"}
-                  />
-                  <Text
-                    style={[
-                      styles.actionText,
-                      {
-                        color: item.isLiked
-                          ? "#ef4444"
-                          : isDark
-                            ? "#94a3b8"
-                            : "#64748b",
-                      },
-                    ]}
-                  >
-                    {item.likes}
-                  </Text>
+                  {renderFormattedText(item.content, isExpanded, item.id)}
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => handleToggleAmen(item.id)}
-                  style={styles.actionBtn}
-                >
-                  <Ionicons
-                    name={item.isAmened ? "flame" : "flame-outline"}
-                    size={20}
-                    color={
-                      item.isAmened
-                        ? PRIMARY
-                        : isDark
-                          ? "#94a3b8"
-                          : "#64748b"
+                {/* Attached Image -> Opens Lightbox */}
+                {item.image && (
+                  <TouchableOpacity
+                    activeOpacity={0.92}
+                    onPress={() =>
+                      setLightboxImage({
+                        uri: item.image,
+                        caption: item.content,
+                        author: item.authorName,
+                      })
                     }
-                  />
-                  <Text
                     style={[
-                      styles.actionText,
+                      styles.tweetMediaCard,
                       {
-                        color: item.isAmened
-                          ? PRIMARY
-                          : isDark
-                            ? "#94a3b8"
-                            : "#64748b",
+                        borderColor: isDark ? "#27272a" : "#e2e8f0",
+                        backgroundColor: isDark ? "#18181b" : "#f8fafc",
                       },
                     ]}
                   >
-                    {item.amensCount} Amen
-                  </Text>
-                </TouchableOpacity>
+                    <Image
+                      source={
+                        typeof item.image === "string"
+                          ? { uri: item.image }
+                          : item.image
+                      }
+                      style={styles.tweetMediaImg}
+                      resizeMode="cover"
+                    />
+                  </TouchableOpacity>
+                )}
 
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => handleSharePost(item)}
-                  style={[styles.actionBtn, { marginLeft: "auto" }]}
-                >
-                  <Ionicons
-                    name="paper-plane-outline"
-                    size={19}
-                    color={isDark ? "#94a3b8" : "#64748b"}
-                  />
-                  <Text
-                    style={[
-                      styles.actionText,
-                      { color: isDark ? "#94a3b8" : "#64748b" },
-                    ]}
+                {/* Action Row: Reply, Repost, Like, Bookmark */}
+                <View style={styles.tweetActionBar}>
+                  {/* Reply / Comment */}
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      Haptics.selectionAsync().catch(() => {});
+                      router.push(`/community/${item.id}` as any);
+                    }}
+                    style={styles.tweetActionBtn}
                   >
-                    Share
-                  </Text>
-                </TouchableOpacity>
+                    <Ionicons
+                      name="chatbubble-outline"
+                      size={17}
+                      color={mutedColor}
+                    />
+                    <Text
+                      style={[styles.tweetActionCount, { color: mutedColor }]}
+                    >
+                      {item.repliesCount}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Repost */}
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => handleToggleRepost(item.id)}
+                    style={styles.tweetActionBtn}
+                  >
+                    <Ionicons
+                      name="repeat-outline"
+                      size={19}
+                      color={item.isReposted ? "#00ba7c" : mutedColor}
+                    />
+                    <Text
+                      style={[
+                        styles.tweetActionCount,
+                        {
+                          color: item.isReposted ? "#00ba7c" : mutedColor,
+                          fontWeight: item.isReposted ? "700" : "500",
+                        },
+                      ]}
+                    >
+                      {item.repostsCount}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Like */}
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => handleToggleLike(item.id)}
+                    style={styles.tweetActionBtn}
+                  >
+                    <Ionicons
+                      name={item.isLiked ? "heart" : "heart-outline"}
+                      size={18}
+                      color={item.isLiked ? "#f91880" : mutedColor}
+                    />
+                    <Text
+                      style={[
+                        styles.tweetActionCount,
+                        {
+                          color: item.isLiked ? "#f91880" : mutedColor,
+                          fontWeight: item.isLiked ? "700" : "500",
+                        },
+                      ]}
+                    >
+                      {item.likesCount}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Bookmark */}
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => handleToggleBookmark(item.id)}
+                    style={styles.tweetActionBtn}
+                  >
+                    <Ionicons
+                      name={item.isBookmarked ? "bookmark" : "bookmark-outline"}
+                      size={18}
+                      color={item.isBookmarked ? PRIMARY : mutedColor}
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           );
         }}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons
-              name="chatbubbles-outline"
-              size={56}
-              color={isDark ? "#475569" : "#cbd5e1"}
-            />
-            <Text
-              style={[
-                styles.emptyTitle,
-                { color: isDark ? "#f8fafc" : "#0f172a" },
-              ]}
-            >
-              No posts found
-            </Text>
-            <Text
-              style={[
-                styles.emptySubtitle,
-                { color: isDark ? "#94a3b8" : "#64748b" },
-              ]}
-            >
-              Be the first to share an encouragement or prayer request!
-            </Text>
-          </View>
-        }
       />
 
-      {/* Floating Action Button */}
+      {/* Floating Action Button (+) — Fellowship Primary Orange Circle */}
       <TouchableOpacity
         activeOpacity={0.88}
-        onPress={() => setComposeModalVisible(true)}
-        style={[styles.fab, { bottom: bottom + 76 }]}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+          router.push("/community/compose");
+        }}
+        style={[
+          styles.fabBtn,
+          {
+            backgroundColor: PRIMARY,
+            bottom: Math.max(insets.bottom, 12) + 50,
+          },
+        ]}
       >
-        <Ionicons name="pencil" size={22} color="#ffffff" />
+        <Ionicons name="add" size={32} color="#ffffff" />
       </TouchableOpacity>
 
-      {/* Compose Post Modal */}
-      <Modal
-        visible={composeModalVisible}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setComposeModalVisible(false)}
+      {/* Three-dots Actions Native Bottom Sheet */}
+      <AppBottomSheet
+        visible={sheetVisible}
+        onClose={() => setSheetVisible(false)}
+        isDark={isDark}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={styles.modalBackdrop}
-        >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View
-              style={[
-                styles.composeCard,
-                {
-                  backgroundColor: isDark ? "#1e293b" : "#ffffff",
-                  paddingBottom: Math.max(bottom + 16, 24),
-                },
-              ]}
-            >
-              {/* Modal Header */}
-              <View style={styles.composeHeader}>
-                <Text
-                  style={[
-                    styles.composeTitle,
-                    { color: isDark ? "#ffffff" : "#0f172a" },
-                  ]}
-                >
-                  Share with Fellowship
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setComposeModalVisible(false)}
-                  style={styles.closeBtn}
-                >
-                  <Ionicons
-                    name="close"
-                    size={22}
-                    color={isDark ? "#cbd5e1" : "#64748b"}
-                  />
-                </TouchableOpacity>
-              </View>
+        <View style={styles.sheetContainer}>
+          <View style={styles.sheetHandle} />
 
-              {/* Category Selector */}
-              <Text
-                style={[
-                  styles.composeFieldLabel,
-                  { color: isDark ? "#94a3b8" : "#64748b" },
-                ]}
-              >
-                SELECT TYPE
+          {activePostForSheet && (
+            <View style={styles.sheetHeader}>
+              <Text numberOfLines={1} style={[styles.sheetPostAuthor, { color: textColor }]}>
+                {activePostForSheet.authorName}’s Post
               </Text>
-              <View style={styles.composeCategoryRow}>
-                {(
-                  [
-                    "Testimony",
-                    "Prayer Request",
-                    "Announcement",
-                    "Encouragement",
-                  ] as const
-                ).map((cat) => {
-                  const isCatSelected = newCategory === cat;
-                  return (
-                    <TouchableOpacity
-                      key={cat}
-                      activeOpacity={0.8}
-                      onPress={() => setNewCategory(cat)}
-                      style={[
-                        styles.composeCategoryBtn,
-                        {
-                          backgroundColor: isCatSelected
-                            ? PRIMARY
-                            : isDark
-                              ? "#334155"
-                              : "#f1f5f9",
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.composeCategoryText,
-                          {
-                            color: isCatSelected
-                              ? "#ffffff"
-                              : isDark
-                                ? "#cbd5e1"
-                                : "#475569",
-                            fontWeight: isCatSelected ? "700" : "500",
-                          },
-                        ]}
-                      >
-                        {cat}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              {/* Inputs */}
-              <TextInput
-                placeholder="Title or headline..."
-                placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
-                value={newTitle}
-                onChangeText={setNewTitle}
-                style={[
-                  styles.titleInput,
-                  {
-                    color: isDark ? "#ffffff" : "#0f172a",
-                    backgroundColor: isDark ? "#0f172a" : "#f8fafc",
-                    borderColor: isDark ? "#334155" : "#e2e8f0",
-                  },
-                ]}
-              />
-
-              <TextInput
-                placeholder="Share your story, prayer request, or encouragement..."
-                placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
-                value={newContent}
-                onChangeText={setNewContent}
-                multiline
-                numberOfLines={5}
-                textAlignVertical="top"
-                style={[
-                  styles.contentInput,
-                  {
-                    color: isDark ? "#ffffff" : "#0f172a",
-                    backgroundColor: isDark ? "#0f172a" : "#f8fafc",
-                    borderColor: isDark ? "#334155" : "#e2e8f0",
-                  },
-                ]}
-              />
-
-              {/* Submit Button */}
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={handleCreatePost}
-                disabled={!newTitle.trim() || !newContent.trim()}
-                style={[
-                  styles.publishBtn,
-                  {
-                    opacity:
-                      !newTitle.trim() || !newContent.trim() ? 0.5 : 1,
-                  },
-                ]}
-              >
-                <Text style={styles.publishBtnText}>Publish to Community</Text>
-              </TouchableOpacity>
+              <Text numberOfLines={1} style={[styles.sheetSnippet, { color: mutedColor }]}>
+                {activePostForSheet.content}
+              </Text>
             </View>
-          </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
-      </Modal>
+          )}
+
+          {/* Sheet Actions List */}
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => {
+              setSheetVisible(false);
+              if (activePostForSheet) handleShare(activePostForSheet);
+            }}
+            style={styles.sheetActionItem}
+          >
+            <View style={[styles.sheetActionIcon, { backgroundColor: isDark ? "#27272a" : "#f1f5f9" }]}>
+              <Ionicons name="share-social-outline" size={20} color={PRIMARY} />
+            </View>
+            <Text style={[styles.sheetActionLabel, { color: textColor }]}>Share post via...</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => {
+              setSheetVisible(false);
+              if (activePostForSheet) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+                Alert.alert("Link Copied", "Post link copied to clipboard!");
+              }
+            }}
+            style={styles.sheetActionItem}
+          >
+            <View style={[styles.sheetActionIcon, { backgroundColor: isDark ? "#27272a" : "#f1f5f9" }]}>
+              <Ionicons name="link-outline" size={20} color={PRIMARY} />
+            </View>
+            <Text style={[styles.sheetActionLabel, { color: textColor }]}>Copy link to post</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => {
+              setSheetVisible(false);
+              if (activePostForSheet) {
+                router.push(`/community/user/${activePostForSheet.authorId || "user-fellowship"}` as any);
+              }
+            }}
+            style={styles.sheetActionItem}
+          >
+            <View style={[styles.sheetActionIcon, { backgroundColor: isDark ? "#27272a" : "#f1f5f9" }]}>
+              <Ionicons name="person-circle-outline" size={20} color={PRIMARY} />
+            </View>
+            <Text style={[styles.sheetActionLabel, { color: textColor }]}>View author profile</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => {
+              if (activePostForSheet) {
+                handleToggleBookmark(activePostForSheet.id);
+                setSheetVisible(false);
+              }
+            }}
+            style={styles.sheetActionItem}
+          >
+            <View style={[styles.sheetActionIcon, { backgroundColor: isDark ? "#27272a" : "#f1f5f9" }]}>
+              <Ionicons
+                name={activePostForSheet?.isBookmarked ? "bookmark" : "bookmark-outline"}
+                size={20}
+                color={PRIMARY}
+              />
+            </View>
+            <Text style={[styles.sheetActionLabel, { color: textColor }]}>
+              {activePostForSheet?.isBookmarked ? "Remove from Bookmarks" : "Save to Bookmarks"}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => {
+              setSheetVisible(false);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+              Alert.alert(
+                "Report Submitted",
+                "Thank you for notifying fellowship leaders. Our ministry team will review this shortly."
+              );
+            }}
+            style={styles.sheetActionItem}
+          >
+            <View style={[styles.sheetActionIcon, { backgroundColor: isDark ? "#27272a" : "#fef2f2" }]}>
+              <Ionicons name="flag-outline" size={20} color="#ef4444" />
+            </View>
+            <Text style={[styles.sheetActionLabel, { color: "#ef4444" }]}>Report post to leaders</Text>
+          </TouchableOpacity>
+        </View>
+      </AppBottomSheet>
+
+      {/* Fullscreen Image Lightbox */}
+      <ImageViewerModal
+        visible={!!lightboxImage}
+        imageUri={lightboxImage?.uri}
+        caption={lightboxImage?.caption}
+        authorName={lightboxImage?.author}
+        onClose={() => setLightboxImage(null)}
+      />
     </View>
   );
 }
@@ -717,267 +586,191 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
-  headerContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 14,
+  searchBarContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 8,
+  },
+  searchPillWrapper: {
+    height: 40,
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  searchPressableInner: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  searchCenterContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  searchIcon: {
+    marginRight: 8,
+    marginTop: Platform.OS === "android" ? 1 : 0,
+  },
+  searchCenteredText: {
+    fontSize: 15,
+    fontWeight: "400",
+    letterSpacing: -0.2,
+    includeFontPadding: false,
+    textAlignVertical: "center",
+  },
+  tweetRow: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerRow: {
+  tweetAvatarWrap: {
+    marginRight: 12,
+  },
+  tweetAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#e2e8f0",
+  },
+  tweetBodyCol: {
+    flex: 1,
+  },
+  tweetHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 14,
   },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
-    fontWeight: "500",
-  },
-  composeHeaderBtn: {
+  tweetAuthorInfo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: PRIMARY,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+    flex: 1,
+    flexWrap: "nowrap",
   },
-  composeHeaderBtnText: {
-    color: "#ffffff",
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  categoriesList: {
-    gap: 8,
-    paddingRight: 20,
-  },
-  categoryPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 18,
-  },
-  categoryPillText: {
-    fontSize: 13,
-  },
-  feedContainer: {
-    padding: 16,
-    gap: 14,
-  },
-  postCard: {
-    borderRadius: 18,
-    borderWidth: 1,
-    padding: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
-  },
-  authorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 12,
-  },
-  avatarCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  avatarImg: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  avatarInitial: {
-    color: "#ffffff",
-    fontSize: 18,
-    fontWeight: "800",
-  },
-  authorName: {
+  tweetAuthorName: {
     fontSize: 15,
     fontWeight: "700",
+    letterSpacing: -0.2,
+    maxWidth: 125,
   },
-  authorMetaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 2,
-  },
-  authorTeam: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  metaDot: {
-    marginHorizontal: 6,
-    color: "#94a3b8",
-    fontSize: 12,
-  },
-  timestamp: {
-    fontSize: 12,
-  },
-  categoryBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  categoryBadgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.2,
-  },
-  postTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    lineHeight: 22,
-    marginBottom: 8,
-  },
-  postContent: {
+  tweetHandle: {
     fontSize: 14,
-    lineHeight: 21,
-    fontWeight: "400",
-    marginBottom: 14,
+    marginLeft: 4,
+    maxWidth: 90,
   },
-  engagementBar: {
+  tweetMiddot: {
+    marginHorizontal: 4,
+    fontSize: 14,
+  },
+  tweetTime: {
+    fontSize: 14,
+  },
+  tweetMoreBtn: {
+    paddingLeft: 6,
+    paddingVertical: 2,
+  },
+  tweetContentWrap: {
+    marginTop: 3,
+  },
+  postText: {
+    fontSize: 15,
+    lineHeight: 21,
+    letterSpacing: -0.1,
+  },
+  tweetMediaCard: {
+    marginTop: 10,
+    width: "100%",
+    aspectRatio: 16 / 9,
+    borderRadius: 16,
+    overflow: "hidden",
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  tweetMediaImg: {
+    width: "100%",
+    height: "100%",
+  },
+  tweetActionBar: {
     flexDirection: "row",
     alignItems: "center",
-    paddingTop: 12,
-    borderTopWidth: 1,
-    gap: 18,
+    justifyContent: "space-between",
+    marginTop: 12,
+    paddingRight: 12,
   },
-  actionBtn: {
+  tweetActionBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     paddingVertical: 4,
+    paddingHorizontal: 6,
   },
-  actionText: {
+  tweetActionCount: {
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "500",
   },
-  emptyContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 80,
-    gap: 12,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    textAlign: "center",
-    maxWidth: 260,
-  },
-  fab: {
+  fabBtn: {
     position: "absolute",
-    right: 20,
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: PRIMARY,
+    right: 18,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
     ...Platform.select({
       ios: {
-        shadowColor: PRIMARY,
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.35,
-        shadowRadius: 10,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
       },
       android: {
         elevation: 6,
       },
     }),
+    zIndex: 50,
   },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
+  sheetContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 28,
+    paddingTop: 8,
   },
-  composeCard: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    padding: 22,
-  },
-  composeHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 18,
-  },
-  composeTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  composeFieldLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.6,
-    marginBottom: 8,
-  },
-  composeCategoryRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
+  sheetHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#cbd5e1",
+    alignSelf: "center",
     marginBottom: 16,
   },
-  composeCategoryBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 12,
+  sheetHeader: {
+    paddingBottom: 14,
+    marginBottom: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#e2e8f0",
   },
-  composeCategoryText: {
-    fontSize: 12,
+  sheetPostAuthor: {
+    fontSize: 16,
+    fontWeight: "700",
   },
-  titleInput: {
-    height: 48,
-    borderRadius: 14,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    fontSize: 15,
-    fontWeight: "600",
-    marginBottom: 12,
+  sheetSnippet: {
+    fontSize: 13,
+    marginTop: 4,
   },
-  contentInput: {
-    height: 120,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 14,
-    fontSize: 14,
-    marginBottom: 18,
+  sheetActionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    gap: 14,
   },
-  publishBtn: {
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: PRIMARY,
+  sheetActionIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
   },
-  publishBtnText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "700",
+  sheetActionLabel: {
+    fontSize: 15,
+    fontWeight: "600",
   },
 });
