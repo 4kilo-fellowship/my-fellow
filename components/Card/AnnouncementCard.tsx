@@ -1,7 +1,7 @@
 import { PRIMARY } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
 import * as FileSystem from "expo-file-system/legacy";
+import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Linking from "expo-linking";
 import * as Sharing from "expo-sharing";
@@ -15,10 +15,10 @@ import { Image as ExpoImage } from "expo-image";
 import { useRouter } from "expo-router";
 import {
   ActivityIndicator,
+  Pressable,
   Share,
   StyleSheet,
   Text,
-  TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -65,6 +65,8 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     registeredEvents,
     checkingRegistrationMap,
     checkRegistrationStatus,
+    likedEvents,
+    toggleLikeEvent,
   } = useEventsStore((s: any) => ({
     registerForEvent: s.registerForEvent,
     unregisterFromEvent: s.unregisterFromEvent,
@@ -73,6 +75,8 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     registeredEvents: s.registeredEvents,
     checkingRegistrationMap: s.checkingRegistration,
     checkRegistrationStatus: s.checkRegistrationStatus,
+    likedEvents: s.likedEvents || {},
+    toggleLikeEvent: s.toggleLikeEvent,
   }));
 
   const isRegisteredForThisEvent = eventId
@@ -81,6 +85,17 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
   const isCheckingThisEvent = eventId
     ? !!checkingRegistrationMap[eventId]
     : false;
+  const isLiked = eventId ? !!likedEvents[eventId] : false;
+
+  const handleLike = () => {
+    if (!eventId) return;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    } catch {}
+    if (toggleLikeEvent) {
+      toggleLikeEvent(eventId);
+    }
+  };
 
   const { addAlert } = useAlerts();
 
@@ -205,7 +220,17 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     try {
       const eventId = (item as any)._id || (item as any).id;
       const eventLink = Linking.createURL(`events/${eventId}`);
-      const shareMessage = `${item.title}\n\n${subtitleText}\n\nView more: ${eventLink}\n\nShared via My Fellow`;
+      const rawDate = (item as any).startDate;
+      const formattedDate = rawDate
+        ? new Date(rawDate).toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          })
+        : "";
+      const location = (item as any).location || (item as any).venue || "AAU 4 Kilo Campus";
+      
+      const shareMessage = `🔥 ${item.title}${formattedDate ? `\n📅 ${formattedDate}` : ""}\n📍 ${location}\n\n${subtitleText || ""}\n\n👉 View event: ${eventLink}\n\n#MyFellow #AAUECSF`;
 
       if (!imageUri) {
         await Share.share({
@@ -247,9 +272,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
   };
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.92}
-      onPress={onPress}
+    <View
       style={[
         styles.card,
         {
@@ -259,70 +282,41 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         },
       ]}
     >
-      <ExpoImage
-        source={
-          imageUri && typeof imageUri === "string"
-            ? imageUri
-            : require("@/assets/images/header.png")
-        }
+      <Pressable
+        onPress={onPress}
+        android_ripple={{
+          color: "rgba(255, 255, 255, 0.22)",
+          borderless: false,
+          foreground: true,
+        }}
         style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        transition={200}
-        cachePolicy="memory-disk"
-      />
-
-      <LinearGradient
-        colors={[
-          "transparent",
-          "rgba(0,0,0,0.01)",
-          "rgba(0,0,0,0.2)",
-          "rgba(0,0,0,0.55)",
-          "rgba(0,0,0,0.8)",
-        ]}
-        locations={[0, 0.4, 0.6, 0.8, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-
-      <View
-        className="absolute top-4 right-4 flex-row items-center gap-3"
-        style={{ zIndex: 10 }}
       >
-        <TouchableOpacity
-          onPress={handleShare}
-          activeOpacity={0.7}
-          disabled={isSharing}
-          className="w-10 h-10 rounded-full overflow-hidden items-center justify-center"
-        >
-          <BlurView
-            intensity={40}
-            tint="dark"
-            style={StyleSheet.absoluteFill}
-          />
-          {isSharing ? (
-            <ActivityIndicator size="small" color="white" />
-          ) : (
-            <Ionicons name="share-social-outline" size={18} color="white" />
-          )}
-        </TouchableOpacity>
+        <ExpoImage
+          source={
+            imageUri && typeof imageUri === "string"
+              ? imageUri
+              : require("@/assets/images/header.png")
+          }
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={200}
+          cachePolicy="memory-disk"
+        />
 
-        <TouchableOpacity
-          onPress={onPress}
-          activeOpacity={0.7}
-          className="px-3 h-10 rounded-full overflow-hidden flex-row items-center justify-center"
-        >
-          <BlurView
-            intensity={40}
-            tint="dark"
-            style={StyleSheet.absoluteFill}
-          />
-          <Text className="text-white text-[10px] font-bold mr-1 tracking-widest">
-            DETAILS
-          </Text>
-          <Ionicons name="chevron-forward" size={16} color="white" />
-        </TouchableOpacity>
-      </View>
+        <LinearGradient
+          colors={[
+            "transparent",
+            "rgba(0,0,0,0.01)",
+            "rgba(0,0,0,0.2)",
+            "rgba(0,0,0,0.55)",
+            "rgba(0,0,0,0.8)",
+          ]}
+          locations={[0, 0.4, 0.6, 0.8, 1]}
+          style={StyleSheet.absoluteFill}
+        />
+      </Pressable>
 
-      <View style={styles.content}>
+      <View style={styles.content} pointerEvents="box-none">
         <Text
           numberOfLines={2}
           style={[styles.title, { fontSize: titleFontSize }]}
@@ -331,62 +325,124 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         </Text>
 
         <Text
-          numberOfLines={3}
+          numberOfLines={2}
           style={[styles.subtitle, { fontSize: subtitleFontSize }]}
         >
           {subtitleText}
         </Text>
 
-        <View
-          style={styles.actionsRow}
-          className="w-full mt-4 items-center justify-center"
-        >
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={handlePrimary}
-            disabled={
-              registering ||
-              unregistering ||
-              (isRegisterCta && isCheckingThisEvent)
-            }
-            accessibilityLabel={`Primary action for ${item.title}`}
-            style={{
-              backgroundColor:
-                isRegisterCta && isRegisteredForThisEvent
-                  ? isDark
-                    ? "#27272a"
-                    : "#d1d5db"
-                  : PRIMARY,
-            }}
-            className="w-full py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/40"
+        <View style={styles.actionsRow}>
+          {/* Primary CTA button from backend */}
+          <View
+            style={[
+              styles.primaryBtnWrap,
+              {
+                backgroundColor:
+                  isRegisterCta && isRegisteredForThisEvent
+                    ? isDark
+                      ? "#27272a"
+                      : "#d1d5db"
+                    : PRIMARY,
+              },
+            ]}
           >
-            {registering ||
-            unregistering ||
-            (isRegisterCta && isCheckingThisEvent) ? (
-              <ActivityIndicator color="white" size="small" />
-            ) : (
-              <>
-                <Text
-                  className={`${isRegisterCta && isRegisteredForThisEvent ? (isDark ? "text-gray-400" : "text-gray-500") : "text-white"} text-base font-bold mr-2`}
-                >
-                  {isRegisterCta && isRegisteredForThisEvent
-                    ? "Registered"
-                    : ctaText}
-                </Text>
-                {isRegisterCta && isRegisteredForThisEvent ? (
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={18}
-                    color={isDark ? "#4ade80" : "#16a34a"}
-                  />
-                ) : ctaText?.toLowerCase()?.includes("notify") ? (
-                  <Ionicons name="notifications" size={18} color="white" />
-                ) : (
-                  <Ionicons name="arrow-forward" size={18} color="white" />
-                )}
-              </>
-            )}
-          </TouchableOpacity>
+            <Pressable
+              onPress={handlePrimary}
+              disabled={
+                registering ||
+                unregistering ||
+                (isRegisterCta && isCheckingThisEvent)
+              }
+              accessibilityRole="button"
+              accessibilityLabel={`Primary action for ${item.title}`}
+              android_ripple={{
+                color: "rgba(255, 255, 255, 0.28)",
+                borderless: false,
+                foreground: true,
+              }}
+              style={styles.primaryBtnInner}
+            >
+              {registering ||
+              unregistering ||
+              (isRegisterCta && isCheckingThisEvent) ? (
+                <ActivityIndicator color="white" size="small" />
+              ) : (
+                <View style={styles.primaryBtnContent}>
+                  <Text
+                    style={[
+                      styles.primaryBtnText,
+                      {
+                        color:
+                          isRegisterCta && isRegisteredForThisEvent
+                            ? isDark
+                              ? "#9ca3af"
+                              : "#6b7280"
+                            : "#ffffff",
+                      },
+                    ]}
+                  >
+                    {isRegisterCta && isRegisteredForThisEvent
+                      ? "Registered"
+                      : ctaText}
+                  </Text>
+                  {isRegisterCta && isRegisteredForThisEvent ? (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={18}
+                      color={isDark ? "#4ade80" : "#16a34a"}
+                    />
+                  ) : ctaText?.toLowerCase()?.includes("notify") ? (
+                    <Ionicons name="notifications" size={18} color="white" />
+                  ) : (
+                    <Ionicons name="arrow-forward" size={18} color="white" />
+                  )}
+                </View>
+              )}
+            </Pressable>
+          </View>
+
+          {/* Like Button */}
+          <View style={styles.actionIconBtnWrap}>
+            <Pressable
+              onPress={handleLike}
+              accessibilityRole="button"
+              accessibilityLabel={isLiked ? "Unlike event" : "Like event"}
+              android_ripple={{
+                color: "rgba(239, 68, 68, 0.35)",
+                borderless: false,
+                foreground: true,
+              }}
+              style={styles.actionIconBtnInner}
+            >
+              <Ionicons
+                name={isLiked ? "heart" : "heart-outline"}
+                size={22}
+                color={isLiked ? "#ef4444" : "#ffffff"}
+              />
+            </Pressable>
+          </View>
+
+          {/* Share Button */}
+          <View style={styles.actionIconBtnWrap}>
+            <Pressable
+              onPress={handleShare}
+              disabled={isSharing}
+              accessibilityRole="button"
+              accessibilityLabel={`Share ${item.title}`}
+              android_ripple={{
+                color: "rgba(255, 255, 255, 0.28)",
+                borderless: false,
+                foreground: true,
+              }}
+              style={styles.actionIconBtnInner}
+            >
+              {isSharing ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Ionicons name="share-social-outline" size={20} color="white" />
+              )}
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -460,7 +516,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         type={infoModal.type}
         isDark={!!isDark}
       />
-    </TouchableOpacity>
+    </View>
   );
 };
 
@@ -473,6 +529,63 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 10,
     elevation: 5,
+  },
+  actionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    gap: 10,
+    marginTop: 14,
+  },
+  primaryBtnWrap: {
+    flex: 1,
+    height: 52,
+    borderRadius: 26,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#ff6719",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  primaryBtnInner: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+  primaryBtnContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  primaryBtnText: {
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.2,
+    includeFontPadding: false,
+    textAlignVertical: "center",
+  },
+  actionIconBtnWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionIconBtnInner: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
   content: {
     flex: 1,
@@ -500,22 +613,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 2,
     fontFamily: "Poppins_400Regular",
   },
-  detailsText: {
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: "600",
-    letterSpacing: 2,
-    opacity: 0.9,
-    textShadowColor: "rgba(0, 0, 0, 0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-    fontFamily: "Poppins_600SemiBold",
-  },
-  actionsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
-  },
+
 
   secondaryButton: {
     backgroundColor: "rgba(255,255,255,0.9)",
