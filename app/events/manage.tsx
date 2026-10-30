@@ -17,9 +17,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image as ExpoImage } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
-import DateTimePicker, {
-  DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
+import { DateTimePicker } from "@expo/ui/community/datetime-picker";
+import { Host, Switch } from "@expo/ui";
 import { Ionicons } from "@expo/vector-icons";
 
 import { ScreenHeader } from "@/components/ScreenHeader";
@@ -59,6 +58,9 @@ export default function ManageEventScreen() {
   const [deleting, setDeleting] = useState<boolean>(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState<boolean>(false);
 
+  // Focus tracking for input border colors
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+
   // Form states
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [isLocalImage, setIsLocalImage] = useState<boolean>(false);
@@ -81,7 +83,7 @@ export default function ManageEventScreen() {
   const [enableScheduling, setEnableScheduling] = useState<boolean>(false);
   const [scheduledAt, setScheduledAt] = useState<Date>(new Date());
 
-  // Date picker modals
+  // Android Material 3 Date/Time picker state
   const [activePicker, setActivePicker] = useState<{
     target: "start" | "end" | "schedule";
     mode: "date" | "time";
@@ -123,7 +125,10 @@ export default function ManageEventScreen() {
         if (existing.buttonText) {
           setButtonText(existing.buttonText);
         }
-        if (existing.registrationLimit !== undefined && existing.registrationLimit !== null) {
+        if (
+          existing.registrationLimit !== undefined &&
+          existing.registrationLimit !== null
+        ) {
           setRegistrationLimit(String(existing.registrationLimit));
         }
         if (existing.scheduledAt) {
@@ -132,7 +137,6 @@ export default function ManageEventScreen() {
         }
         setLoadingInitial(false);
       } else {
-        // Fetch fresh if not found in cache
         fetchEvents().finally(() => setLoadingInitial(false));
       }
     }
@@ -157,15 +161,7 @@ export default function ManageEventScreen() {
     }
   };
 
-  const handleDateChange = (
-    event: DateTimePickerEvent,
-    selectedDate?: Date,
-  ) => {
-    if (event.type === "dismissed") {
-      setActivePicker(null);
-      return;
-    }
-
+  const handleDateChange = (selectedDate?: Date) => {
     if (!selectedDate || !activePicker) {
       setActivePicker(null);
       return;
@@ -183,10 +179,10 @@ export default function ManageEventScreen() {
         );
         setStartDate(updated);
         // Automatically open time picker on Android
-        if (Platform.OS === "android") {
+        setTimeout(() => {
           setActivePicker({ target: "start", mode: "time" });
-          return;
-        }
+        }, 50);
+        return;
       } else {
         updated.setHours(selectedDate.getHours(), selectedDate.getMinutes(), 0);
         setStartDate(updated);
@@ -205,10 +201,10 @@ export default function ManageEventScreen() {
           selectedDate.getDate(),
         );
         setEndDate(updated);
-        if (Platform.OS === "android") {
+        setTimeout(() => {
           setActivePicker({ target: "end", mode: "time" });
-          return;
-        }
+        }, 50);
+        return;
       } else {
         updated.setHours(selectedDate.getHours(), selectedDate.getMinutes(), 0);
         setEndDate(updated);
@@ -222,10 +218,10 @@ export default function ManageEventScreen() {
           selectedDate.getDate(),
         );
         setScheduledAt(updated);
-        if (Platform.OS === "android") {
+        setTimeout(() => {
           setActivePicker({ target: "schedule", mode: "time" });
-          return;
-        }
+        }, 50);
+        return;
       } else {
         updated.setHours(selectedDate.getHours(), selectedDate.getMinutes(), 0);
         setScheduledAt(updated);
@@ -254,7 +250,9 @@ export default function ManageEventScreen() {
   const handleSubmit = async () => {
     const errorMsg = validate();
     if (errorMsg) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
+        () => {},
+      );
       setInfoModal({
         visible: true,
         title: "Validation Error",
@@ -324,7 +322,9 @@ export default function ManageEventScreen() {
         }
       }
 
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+        () => {},
+      );
       await fetchEvents();
       router.back();
     } catch (err: any) {
@@ -348,7 +348,9 @@ export default function ManageEventScreen() {
       setDeleting(true);
       const success = await deleteEvent(id);
       if (success) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        ).catch(() => {});
         await fetchEvents();
         router.back();
       } else {
@@ -383,7 +385,12 @@ export default function ManageEventScreen() {
 
   if (!isAdmin) {
     return (
-      <View style={[styles.screen, { backgroundColor: isDark ? "#0A0A0A" : "#f8fafc" }]}>
+      <View
+        style={[
+          styles.screen,
+          { backgroundColor: isDark ? "#0A0A0A" : "#f8fafc" },
+        ]}
+      >
         <StatusBar style={isDark ? "light" : "dark"} />
         <ScreenHeader title="Manage Event" />
         <View style={styles.centerBox}>
@@ -392,11 +399,22 @@ export default function ManageEventScreen() {
             size={56}
             color={isDark ? "#52525b" : "#94a3b8"}
           />
-          <Text style={[styles.unauthorizedTitle, { color: isDark ? "#fff" : "#0f172a" }]}>
+          <Text
+            style={[
+              styles.unauthorizedTitle,
+              { color: isDark ? "#fff" : "#0f172a" },
+            ]}
+          >
             Admin Access Required
           </Text>
-          <Text style={[styles.unauthorizedDesc, { color: isDark ? "#a1a1aa" : "#64748b" }]}>
-            You must be signed in with an authorized fellowship administrator account to manage events.
+          <Text
+            style={[
+              styles.unauthorizedDesc,
+              { color: isDark ? "#a1a1aa" : "#64748b" },
+            ]}
+          >
+            You must be signed in with an authorized fellowship administrator
+            account to manage events.
           </Text>
         </View>
       </View>
@@ -405,12 +423,22 @@ export default function ManageEventScreen() {
 
   if (loadingInitial) {
     return (
-      <View style={[styles.screen, { backgroundColor: isDark ? "#0A0A0A" : "#f8fafc" }]}>
+      <View
+        style={[
+          styles.screen,
+          { backgroundColor: isDark ? "#0A0A0A" : "#f8fafc" },
+        ]}
+      >
         <StatusBar style={isDark ? "light" : "dark"} />
         <ScreenHeader title={isEditing ? "Edit Event" : "Create Event"} />
         <View style={styles.centerBox}>
           <ActivityIndicator size="large" color={PRIMARY} />
-          <Text style={[styles.loadingText, { color: isDark ? "#a1a1aa" : "#64748b" }]}>
+          <Text
+            style={[
+              styles.loadingText,
+              { color: isDark ? "#a1a1aa" : "#64748b" },
+            ]}
+          >
             Loading event details...
           </Text>
         </View>
@@ -418,8 +446,17 @@ export default function ManageEventScreen() {
     );
   }
 
+  const rippleColor = isDark
+    ? "rgba(255, 255, 255, 0.12)"
+    : "rgba(0, 0, 0, 0.08)";
+
   return (
-    <View style={[styles.screen, { backgroundColor: isDark ? "#0A0A0A" : "#f8fafc" }]}>
+    <View
+      style={[
+        styles.screen,
+        { backgroundColor: isDark ? "#0A0A0A" : "#f8fafc" },
+      ]}
+    >
       <StatusBar style={isDark ? "light" : "dark"} />
       <ScreenHeader
         title={isEditing ? "Edit Event" : "Create Event"}
@@ -443,7 +480,12 @@ export default function ManageEventScreen() {
         >
           {/* Banner Image Picker */}
           <View style={styles.section}>
-            <Text style={[styles.label, { color: isDark ? "#e4e4e7" : "#0f172a" }]}>
+            <Text
+              style={[
+                styles.label,
+                { color: isDark ? "#e4e4e7" : "#0f172a" },
+              ]}
+            >
               Banner Poster <Text style={styles.required}>*</Text>
             </Text>
             {imageUri ? (
@@ -454,70 +496,116 @@ export default function ManageEventScreen() {
                   contentFit="cover"
                 />
                 <View style={styles.imageOverlayRow}>
-                  <Pressable
-                    onPress={handlePickImage}
-                    android_ripple={{ color: "rgba(0,0,0,0.15)", borderless: false, foreground: true }}
-                    style={styles.changeImageBtn}
-                  >
-                    <Ionicons name="camera-outline" size={16} color="#ffffff" />
-                    <Text style={styles.changeImageText}>Change</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => {
-                      setImageUri(null);
-                      setIsLocalImage(false);
-                    }}
-                    android_ripple={{ color: "rgba(239,68,68,0.2)", borderless: false, foreground: true }}
-                    style={styles.removeImageBtn}
-                  >
-                    <Ionicons name="trash-outline" size={16} color="#ef4444" />
-                  </Pressable>
+                  <View style={styles.changeImageBtnWrap}>
+                    <Pressable
+                      onPress={handlePickImage}
+                      android_ripple={{
+                        color: "rgba(255, 255, 255, 0.25)",
+                        borderless: false,
+                        foreground: true,
+                      }}
+                      style={styles.changeImageBtnInner}
+                    >
+                      <Ionicons
+                        name="camera-outline"
+                        size={16}
+                        color="#ffffff"
+                      />
+                      <Text style={styles.changeImageText}>Change</Text>
+                    </Pressable>
+                  </View>
+                  <View style={styles.removeImageBtnWrap}>
+                    <Pressable
+                      onPress={() => {
+                        setImageUri(null);
+                        setIsLocalImage(false);
+                      }}
+                      android_ripple={{
+                        color: "rgba(239, 68, 68, 0.3)",
+                        borderless: false,
+                        foreground: true,
+                      }}
+                      style={styles.removeImageBtnInner}
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={16}
+                        color="#ef4444"
+                      />
+                    </Pressable>
+                  </View>
                 </View>
               </View>
             ) : (
-              <Pressable
-                onPress={handlePickImage}
-                android_ripple={{
-                  color: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)",
-                  borderless: false,
-                  foreground: true,
-                }}
+              <View
                 style={[
-                  styles.uploadPlaceholder,
+                  styles.uploadPlaceholderContainer,
                   {
                     borderColor: isDark ? "#3f3f46" : "#cbd5e1",
                     backgroundColor: isDark ? "#18181b" : "#f1f5f9",
                   },
                 ]}
               >
-                <View style={styles.uploadIconCircle}>
-                  <Ionicons name="image-outline" size={28} color={PRIMARY} />
-                </View>
-                <Text style={[styles.uploadTitle, { color: isDark ? "#ffffff" : "#0f172a" }]}>
-                  Upload Event Banner
-                </Text>
-                <Text style={[styles.uploadSubtitle, { color: isDark ? "#a1a1aa" : "#64748b" }]}>
-                  Recommended aspect ratio 16:9 • High resolution
-                </Text>
-              </Pressable>
+                <Pressable
+                  onPress={handlePickImage}
+                  android_ripple={{
+                    color: rippleColor,
+                    borderless: false,
+                    foreground: true,
+                  }}
+                  style={styles.uploadPlaceholderInner}
+                >
+                  <View style={styles.uploadIconCircle}>
+                    <Ionicons name="image-outline" size={28} color={PRIMARY} />
+                  </View>
+                  <Text
+                    style={[
+                      styles.uploadTitle,
+                      { color: isDark ? "#ffffff" : "#0f172a" },
+                    ]}
+                  >
+                    Upload Event Banner
+                  </Text>
+                  <Text
+                    style={[
+                      styles.uploadSubtitle,
+                      { color: isDark ? "#a1a1aa" : "#64748b" },
+                    ]}
+                  >
+                    Recommended aspect ratio 16:9 • High resolution
+                  </Text>
+                </Pressable>
+              </View>
             )}
           </View>
 
           {/* Title */}
           <View style={styles.section}>
-            <Text style={[styles.label, { color: isDark ? "#e4e4e7" : "#0f172a" }]}>
+            <Text
+              style={[
+                styles.label,
+                { color: isDark ? "#e4e4e7" : "#0f172a" },
+              ]}
+            >
               Event Title <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
               value={title}
               onChangeText={setTitle}
+              onFocus={() => setFocusedField("title")}
+              onBlur={() => setFocusedField(null)}
               placeholder="e.g. Monday Fellowship Service"
               placeholderTextColor={isDark ? "#52525b" : "#94a3b8"}
               style={[
                 styles.input,
                 {
                   color: isDark ? "#ffffff" : "#0f172a",
-                  borderColor: isDark ? "#27272a" : "#cbd5e1",
+                  borderColor:
+                    focusedField === "title"
+                      ? PRIMARY
+                      : isDark
+                        ? "#27272a"
+                        : "#cbd5e1",
                   backgroundColor: isDark ? "#18181b" : "#ffffff",
                 },
               ]}
@@ -526,12 +614,19 @@ export default function ManageEventScreen() {
 
           {/* Short Description */}
           <View style={styles.section}>
-            <Text style={[styles.label, { color: isDark ? "#e4e4e7" : "#0f172a" }]}>
+            <Text
+              style={[
+                styles.label,
+                { color: isDark ? "#e4e4e7" : "#0f172a" },
+              ]}
+            >
               Short Summary <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
               value={shortDescription}
               onChangeText={setShortDescription}
+              onFocus={() => setFocusedField("shortDescription")}
+              onBlur={() => setFocusedField(null)}
               placeholder="Brief 1-2 sentence description for preview cards..."
               placeholderTextColor={isDark ? "#52525b" : "#94a3b8"}
               multiline
@@ -541,7 +636,12 @@ export default function ManageEventScreen() {
                 styles.multilineShort,
                 {
                   color: isDark ? "#ffffff" : "#0f172a",
-                  borderColor: isDark ? "#27272a" : "#cbd5e1",
+                  borderColor:
+                    focusedField === "shortDescription"
+                      ? PRIMARY
+                      : isDark
+                        ? "#27272a"
+                        : "#cbd5e1",
                   backgroundColor: isDark ? "#18181b" : "#ffffff",
                 },
               ]}
@@ -550,12 +650,19 @@ export default function ManageEventScreen() {
 
           {/* Full Description */}
           <View style={styles.section}>
-            <Text style={[styles.label, { color: isDark ? "#e4e4e7" : "#0f172a" }]}>
+            <Text
+              style={[
+                styles.label,
+                { color: isDark ? "#e4e4e7" : "#0f172a" },
+              ]}
+            >
               Full Details
             </Text>
             <TextInput
               value={fullDescription}
               onChangeText={setFullDescription}
+              onFocus={() => setFocusedField("fullDescription")}
+              onBlur={() => setFocusedField(null)}
               placeholder="Full event schedule, guest speakers, location highlights..."
               placeholderTextColor={isDark ? "#52525b" : "#94a3b8"}
               multiline
@@ -565,7 +672,12 @@ export default function ManageEventScreen() {
                 styles.multilineTall,
                 {
                   color: isDark ? "#ffffff" : "#0f172a",
-                  borderColor: isDark ? "#27272a" : "#cbd5e1",
+                  borderColor:
+                    focusedField === "fullDescription"
+                      ? PRIMARY
+                      : isDark
+                        ? "#27272a"
+                        : "#cbd5e1",
                   backgroundColor: isDark ? "#18181b" : "#ffffff",
                 },
               ]}
@@ -574,105 +686,180 @@ export default function ManageEventScreen() {
 
           {/* Dates Section */}
           <View style={styles.section}>
-            <Text style={[styles.label, { color: isDark ? "#e4e4e7" : "#0f172a" }]}>
+            <Text
+              style={[
+                styles.label,
+                { color: isDark ? "#e4e4e7" : "#0f172a" },
+              ]}
+            >
               Event Schedule <Text style={styles.required}>*</Text>
             </Text>
 
             {/* Start Date */}
             <View style={styles.datePickerRow}>
-              <Text style={[styles.dateSubLabel, { color: isDark ? "#a1a1aa" : "#64748b" }]}>
-                Starts
-              </Text>
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                  setActivePicker({ target: "start", mode: "date" });
-                }}
-                android_ripple={{
-                  color: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
-                  borderless: false,
-                  foreground: true,
-                }}
+              <Text
                 style={[
-                  styles.dateChip,
-                  {
-                    backgroundColor: isDark ? "#18181b" : "#ffffff",
-                    borderColor: isDark ? "#27272a" : "#cbd5e1",
-                  },
+                  styles.dateSubLabel,
+                  { color: isDark ? "#a1a1aa" : "#64748b" },
                 ]}
               >
-                <Ionicons name="calendar-outline" size={18} color={PRIMARY} />
-                <Text style={[styles.dateChipText, { color: isDark ? "#ffffff" : "#0f172a" }]}>
-                  {formatDateTime(startDate)}
-                </Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={14}
-                  color={isDark ? "#71717a" : "#94a3b8"}
-                />
-              </Pressable>
+                Starts
+              </Text>
+              {Platform.OS === "ios" ? (
+                <View style={styles.iosDatePickerWrap}>
+                  <DateTimePicker
+                    value={startDate}
+                    mode="datetime"
+                    display="compact"
+                    accentColor={PRIMARY}
+                    onValueChange={(_, selectedDate) => {
+                      if (selectedDate) {
+                        setStartDate(selectedDate);
+                        if (selectedDate >= endDate) {
+                          const autoEnd = new Date(selectedDate);
+                          autoEnd.setHours(autoEnd.getHours() + 2);
+                          setEndDate(autoEnd);
+                        }
+                      }
+                    }}
+                  />
+                </View>
+              ) : (
+                <View
+                  style={[
+                    styles.dateChipWrap,
+                    {
+                      backgroundColor: isDark ? "#18181b" : "#ffffff",
+                      borderColor: isDark ? "#27272a" : "#cbd5e1",
+                    },
+                  ]}
+                >
+                  <Pressable
+                    onPress={() => {
+                      Haptics.impactAsync(
+                        Haptics.ImpactFeedbackStyle.Light,
+                      ).catch(() => {});
+                      setActivePicker({ target: "start", mode: "date" });
+                    }}
+                    android_ripple={{
+                      color: rippleColor,
+                      borderless: false,
+                      foreground: true,
+                    }}
+                    style={styles.dateChipInner}
+                  >
+                    <Ionicons
+                      name="calendar-outline"
+                      size={18}
+                      color={PRIMARY}
+                    />
+                    <Text
+                      style={[
+                        styles.dateChipText,
+                        { color: isDark ? "#ffffff" : "#0f172a" },
+                      ]}
+                    >
+                      {formatDateTime(startDate)}
+                    </Text>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={14}
+                      color={isDark ? "#71717a" : "#94a3b8"}
+                    />
+                  </Pressable>
+                </View>
+              )}
             </View>
 
             {/* End Date */}
             <View style={[styles.datePickerRow, { marginTop: 10 }]}>
-              <Text style={[styles.dateSubLabel, { color: isDark ? "#a1a1aa" : "#64748b" }]}>
-                Ends
-              </Text>
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                  setActivePicker({ target: "end", mode: "date" });
-                }}
-                android_ripple={{
-                  color: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
-                  borderless: false,
-                  foreground: true,
-                }}
+              <Text
                 style={[
-                  styles.dateChip,
-                  {
-                    backgroundColor: isDark ? "#18181b" : "#ffffff",
-                    borderColor: isDark ? "#27272a" : "#cbd5e1",
-                  },
+                  styles.dateSubLabel,
+                  { color: isDark ? "#a1a1aa" : "#64748b" },
                 ]}
               >
-                <Ionicons name="time-outline" size={18} color={PRIMARY} />
-                <Text style={[styles.dateChipText, { color: isDark ? "#ffffff" : "#0f172a" }]}>
-                  {formatDateTime(endDate)}
-                </Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={14}
-                  color={isDark ? "#71717a" : "#94a3b8"}
-                />
-              </Pressable>
+                Ends
+              </Text>
+              {Platform.OS === "ios" ? (
+                <View style={styles.iosDatePickerWrap}>
+                  <DateTimePicker
+                    value={endDate}
+                    mode="datetime"
+                    display="compact"
+                    accentColor={PRIMARY}
+                    minimumDate={startDate}
+                    onValueChange={(_, selectedDate) => {
+                      if (selectedDate) setEndDate(selectedDate);
+                    }}
+                  />
+                </View>
+              ) : (
+                <View
+                  style={[
+                    styles.dateChipWrap,
+                    {
+                      backgroundColor: isDark ? "#18181b" : "#ffffff",
+                      borderColor: isDark ? "#27272a" : "#cbd5e1",
+                    },
+                  ]}
+                >
+                  <Pressable
+                    onPress={() => {
+                      Haptics.impactAsync(
+                        Haptics.ImpactFeedbackStyle.Light,
+                      ).catch(() => {});
+                      setActivePicker({ target: "end", mode: "date" });
+                    }}
+                    android_ripple={{
+                      color: rippleColor,
+                      borderless: false,
+                      foreground: true,
+                    }}
+                    style={styles.dateChipInner}
+                  >
+                    <Ionicons
+                      name="time-outline"
+                      size={18}
+                      color={PRIMARY}
+                    />
+                    <Text
+                      style={[
+                        styles.dateChipText,
+                        { color: isDark ? "#ffffff" : "#0f172a" },
+                      ]}
+                    >
+                      {formatDateTime(endDate)}
+                    </Text>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={14}
+                      color={isDark ? "#71717a" : "#94a3b8"}
+                    />
+                  </Pressable>
+                </View>
+              )}
             </View>
           </View>
 
           {/* CTA Button Text Presets */}
           <View style={styles.section}>
-            <Text style={[styles.label, { color: isDark ? "#e4e4e7" : "#0f172a" }]}>
+            <Text
+              style={[
+                styles.label,
+                { color: isDark ? "#e4e4e7" : "#0f172a" },
+              ]}
+            >
               Action Button (CTA)
             </Text>
             <View style={styles.chipsRow}>
               {PRESET_CTA_OPTIONS.map((opt) => {
                 const isSelected = buttonText === opt;
                 return (
-                  <Pressable
+                  <View
                     key={opt}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                      setButtonText(opt);
-                    }}
-                    android_ripple={{
-                      color: isSelected
-                        ? "rgba(255,255,255,0.2)"
-                        : "rgba(0,0,0,0.08)",
-                      borderless: false,
-                      foreground: true,
-                    }}
                     style={[
-                      styles.ctaChip,
+                      styles.ctaChipWrap,
                       isSelected
                         ? { backgroundColor: PRIMARY, borderColor: PRIMARY }
                         : {
@@ -681,17 +868,34 @@ export default function ManageEventScreen() {
                           },
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.ctaChipText,
-                        isSelected
-                          ? { color: "#ffffff", fontWeight: "700" }
-                          : { color: isDark ? "#a1a1aa" : "#475569" },
-                      ]}
+                    <Pressable
+                      onPress={() => {
+                        Haptics.impactAsync(
+                          Haptics.ImpactFeedbackStyle.Light,
+                        ).catch(() => {});
+                        setButtonText(opt);
+                      }}
+                      android_ripple={{
+                        color: isSelected
+                          ? "rgba(255,255,255,0.25)"
+                          : rippleColor,
+                        borderless: false,
+                        foreground: true,
+                      }}
+                      style={styles.ctaChipInner}
                     >
-                      {opt}
-                    </Text>
-                  </Pressable>
+                      <Text
+                        style={[
+                          styles.ctaChipText,
+                          isSelected
+                            ? { color: "#ffffff", fontWeight: "700" }
+                            : { color: isDark ? "#a1a1aa" : "#475569" },
+                        ]}
+                      >
+                        {opt}
+                      </Text>
+                    </Pressable>
+                  </View>
                 );
               })}
             </View>
@@ -699,6 +903,8 @@ export default function ManageEventScreen() {
             <TextInput
               value={buttonText}
               onChangeText={setButtonText}
+              onFocus={() => setFocusedField("buttonText")}
+              onBlur={() => setFocusedField(null)}
               placeholder="Or enter custom button text..."
               placeholderTextColor={isDark ? "#52525b" : "#94a3b8"}
               style={[
@@ -706,7 +912,12 @@ export default function ManageEventScreen() {
                 {
                   marginTop: 10,
                   color: isDark ? "#ffffff" : "#0f172a",
-                  borderColor: isDark ? "#27272a" : "#cbd5e1",
+                  borderColor:
+                    focusedField === "buttonText"
+                      ? PRIMARY
+                      : isDark
+                        ? "#27272a"
+                        : "#cbd5e1",
                   backgroundColor: isDark ? "#18181b" : "#ffffff",
                 },
               ]}
@@ -715,12 +926,19 @@ export default function ManageEventScreen() {
 
           {/* Registration Limit */}
           <View style={styles.section}>
-            <Text style={[styles.label, { color: isDark ? "#e4e4e7" : "#0f172a" }]}>
+            <Text
+              style={[
+                styles.label,
+                { color: isDark ? "#e4e4e7" : "#0f172a" },
+              ]}
+            >
               Attendee Limit (Optional)
             </Text>
             <TextInput
               value={registrationLimit}
               onChangeText={setRegistrationLimit}
+              onFocus={() => setFocusedField("registrationLimit")}
+              onBlur={() => setFocusedField(null)}
               keyboardType="numeric"
               placeholder="Leave blank for unlimited attendees"
               placeholderTextColor={isDark ? "#52525b" : "#94a3b8"}
@@ -728,135 +946,174 @@ export default function ManageEventScreen() {
                 styles.input,
                 {
                   color: isDark ? "#ffffff" : "#0f172a",
-                  borderColor: isDark ? "#27272a" : "#cbd5e1",
+                  borderColor:
+                    focusedField === "registrationLimit"
+                      ? PRIMARY
+                      : isDark
+                        ? "#27272a"
+                        : "#cbd5e1",
                   backgroundColor: isDark ? "#18181b" : "#ffffff",
                 },
               ]}
             />
           </View>
 
-          {/* Scheduled Posting */}
+          {/* Scheduled Posting with Expo UI Native Switch */}
           <View style={styles.section}>
             <View style={styles.switchRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.label, { color: isDark ? "#e4e4e7" : "#0f172a", marginBottom: 2 }]}>
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text
+                  style={[
+                    styles.label,
+                    { color: isDark ? "#e4e4e7" : "#0f172a", marginBottom: 2 },
+                  ]}
+                >
                   Schedule Announcement
                 </Text>
-                <Text style={[styles.switchDesc, { color: isDark ? "#a1a1aa" : "#64748b" }]}>
+                <Text
+                  style={[
+                    styles.switchDesc,
+                    { color: isDark ? "#a1a1aa" : "#64748b" },
+                  ]}
+                >
                   Hide from members until a specific future date
                 </Text>
               </View>
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                  setEnableScheduling(!enableScheduling);
-                }}
-                style={[
-                  styles.toggleBtn,
-                  { backgroundColor: enableScheduling ? PRIMARY : isDark ? "#27272a" : "#e2e8f0" },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.toggleCircle,
-                    { transform: [{ translateX: enableScheduling ? 20 : 2 }] },
-                  ]}
+
+              <Host matchContents>
+                <Switch
+                  value={enableScheduling}
+                  onValueChange={(val) => {
+                    Haptics.impactAsync(
+                      Haptics.ImpactFeedbackStyle.Light,
+                    ).catch(() => {});
+                    setEnableScheduling(val);
+                  }}
                 />
-              </Pressable>
+              </Host>
             </View>
 
             {enableScheduling && (
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                  setActivePicker({ target: "schedule", mode: "date" });
-                }}
-                android_ripple={{
-                  color: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
-                  borderless: false,
-                  foreground: true,
-                }}
+              <View
                 style={[
-                  styles.dateChip,
+                  styles.scheduleChipWrap,
                   {
-                    marginTop: 10,
                     backgroundColor: isDark ? "#18181b" : "#ffffff",
                     borderColor: isDark ? "#27272a" : "#cbd5e1",
                   },
                 ]}
               >
-                <Ionicons name="time-outline" size={18} color={PRIMARY} />
-                <Text style={[styles.dateChipText, { color: isDark ? "#ffffff" : "#0f172a" }]}>
-                  Publish at: {formatDateTime(scheduledAt)}
-                </Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={14}
-                  color={isDark ? "#71717a" : "#94a3b8"}
-                />
-              </Pressable>
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(
+                      Haptics.ImpactFeedbackStyle.Light,
+                    ).catch(() => {});
+                    setActivePicker({ target: "schedule", mode: "date" });
+                  }}
+                  android_ripple={{
+                    color: rippleColor,
+                    borderless: false,
+                    foreground: true,
+                  }}
+                  style={styles.dateChipInner}
+                >
+                  <Ionicons name="time-outline" size={18} color={PRIMARY} />
+                  <Text
+                    style={[
+                      styles.dateChipText,
+                      { color: isDark ? "#ffffff" : "#0f172a" },
+                    ]}
+                  >
+                    Publish at: {formatDateTime(scheduledAt)}
+                  </Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={14}
+                    color={isDark ? "#71717a" : "#94a3b8"}
+                  />
+                </Pressable>
+              </View>
             )}
           </View>
 
-          {/* Submit Action */}
+          {/* Submit Action - Fully rounded pill matching prime buttons */}
           <View style={styles.submitSection}>
-            <Pressable
-              onPress={handleSubmit}
-              disabled={submitting || deleting}
-              android_ripple={{
-                color: "rgba(0,0,0,0.2)",
-                borderless: false,
-                foreground: true,
-              }}
-              style={[styles.submitButton, { backgroundColor: PRIMARY }]}
+            <View
+              style={[
+                styles.submitBtnWrap,
+                { backgroundColor: PRIMARY },
+              ]}
             >
-              {submitting ? (
-                <ActivityIndicator color="#ffffff" size="small" />
-              ) : (
-                <View style={styles.btnContent}>
-                  <Ionicons
-                    name={isEditing ? "checkmark-circle-outline" : "paper-plane-outline"}
-                    size={20}
-                    color="#ffffff"
-                  />
-                  <Text style={styles.submitButtonText}>
-                    {isEditing ? "Save Changes" : "Publish Event"}
-                  </Text>
-                </View>
-              )}
-            </Pressable>
-
-            {/* Delete Option (Editing Mode Only) */}
-            {isEditing && (
               <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-                  setDeleteModalVisible(true);
-                }}
+                onPress={handleSubmit}
                 disabled={submitting || deleting}
                 android_ripple={{
-                  color: "rgba(239,68,68,0.2)",
+                  color: "rgba(255, 255, 255, 0.3)",
                   borderless: false,
                   foreground: true,
                 }}
-                style={styles.deleteButton}
+                style={styles.submitBtnInner}
               >
-                {deleting ? (
-                  <ActivityIndicator color="#ef4444" size="small" />
+                {submitting ? (
+                  <ActivityIndicator color="#ffffff" size="small" />
                 ) : (
                   <View style={styles.btnContent}>
-                    <Ionicons name="trash-outline" size={18} color="#ef4444" />
-                    <Text style={styles.deleteButtonText}>Delete Event</Text>
+                    <Ionicons
+                      name={
+                        isEditing
+                          ? "checkmark-circle-outline"
+                          : "paper-plane-outline"
+                      }
+                      size={20}
+                      color="#ffffff"
+                    />
+                    <Text style={styles.submitButtonText}>
+                      {isEditing ? "Save Changes" : "Publish Event"}
+                    </Text>
                   </View>
                 )}
               </Pressable>
+            </View>
+
+            {/* Delete Option (Editing Mode Only) - Fully rounded pill */}
+            {isEditing && (
+              <View style={styles.deleteBtnWrap}>
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(
+                      Haptics.ImpactFeedbackStyle.Medium,
+                    ).catch(() => {});
+                    setDeleteModalVisible(true);
+                  }}
+                  disabled={submitting || deleting}
+                  android_ripple={{
+                    color: "rgba(239, 68, 68, 0.25)",
+                    borderless: false,
+                    foreground: true,
+                  }}
+                  style={styles.deleteBtnInner}
+                >
+                  {deleting ? (
+                    <ActivityIndicator color="#ef4444" size="small" />
+                  ) : (
+                    <View style={styles.btnContent}>
+                      <Ionicons
+                        name="trash-outline"
+                        size={18}
+                        color="#ef4444"
+                      />
+                      <Text style={styles.deleteButtonText}>Delete Event</Text>
+                    </View>
+                  )}
+                </Pressable>
+              </View>
             )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Date & Time Picker */}
-      {activePicker && (
+      {/* Android Native Jetpack Compose Material 3 Date/Time Dialog */}
+      {Platform.OS === "android" && activePicker && (
         <DateTimePicker
           value={
             activePicker.target === "start"
@@ -866,9 +1123,13 @@ export default function ManageEventScreen() {
                 : scheduledAt
           }
           mode={activePicker.mode}
-          display={Platform.OS === "android" ? "default" : "spinner"}
-          onChange={handleDateChange}
+          presentation="dialog"
+          accentColor={PRIMARY}
           minimumDate={activePicker.target === "end" ? startDate : undefined}
+          onValueChange={(_, selectedDate) => {
+            handleDateChange(selectedDate);
+          }}
+          onDismiss={() => setActivePicker(null)}
         />
       )}
 
@@ -959,34 +1220,47 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
-  changeImageBtn: {
+  changeImageBtnWrap: {
+    borderRadius: 20,
+    overflow: "hidden",
+    backgroundColor: "rgba(0,0,0,0.72)",
+  },
+  changeImageBtnInner: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(0,0,0,0.7)",
     paddingVertical: 8,
     paddingHorizontal: 14,
-    borderRadius: 20,
   },
   changeImageText: {
     color: "#ffffff",
     fontSize: 13,
     fontWeight: "700",
   },
-  removeImageBtn: {
+  removeImageBtnWrap: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "rgba(0,0,0,0.7)",
+    overflow: "hidden",
+    backgroundColor: "rgba(0,0,0,0.72)",
+  },
+  removeImageBtnInner: {
+    width: "100%",
+    height: "100%",
     alignItems: "center",
     justifyContent: "center",
   },
-  uploadPlaceholder: {
+  uploadPlaceholderContainer: {
     width: "100%",
     aspectRatio: 16 / 9,
     borderRadius: 16,
     borderWidth: 2,
     borderStyle: "dashed",
+    overflow: "hidden",
+  },
+  uploadPlaceholderInner: {
+    width: "100%",
+    height: "100%",
     alignItems: "center",
     justifyContent: "center",
     padding: 16,
@@ -1020,11 +1294,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
-  dateChip: {
+  iosDatePickerWrap: {
+    flex: 1,
+    alignItems: "flex-start",
+  },
+  dateChipWrap: {
     flex: 1,
     height: 48,
     borderRadius: 14,
     borderWidth: 1.5,
+    overflow: "hidden",
+  },
+  dateChipInner: {
+    width: "100%",
+    height: "100%",
     paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "center",
@@ -1040,11 +1323,14 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
   },
-  ctaChip: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+  ctaChipWrap: {
     borderRadius: 20,
     borderWidth: 1,
+    overflow: "hidden",
+  },
+  ctaChipInner: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
   },
   ctaChipText: {
     fontSize: 13,
@@ -1059,45 +1345,51 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
   },
-  toggleBtn: {
-    width: 46,
-    height: 28,
+  scheduleChipWrap: {
+    height: 48,
     borderRadius: 14,
-    justifyContent: "center",
-  },
-  toggleCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#ffffff",
-    elevation: 2,
+    borderWidth: 1.5,
+    overflow: "hidden",
+    marginTop: 10,
   },
   submitSection: {
-    marginTop: 10,
+    marginTop: 14,
     gap: 12,
   },
-  submitButton: {
-    height: 54,
-    borderRadius: 18,
+  submitBtnWrap: {
+    height: 52,
+    borderRadius: 26,
+    overflow: "hidden",
+    elevation: 3,
+    shadowColor: PRIMARY,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+  },
+  submitBtnInner: {
+    width: "100%",
+    height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    elevation: 3,
-    overflow: "hidden",
   },
   submitButtonText: {
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "700",
   },
-  deleteButton: {
+  deleteBtnWrap: {
     height: 50,
-    borderRadius: 16,
+    borderRadius: 25,
+    overflow: "hidden",
+    borderWidth: 1.5,
+    borderColor: "rgba(239,68,68,0.35)",
+    backgroundColor: "rgba(239,68,68,0.08)",
+  },
+  deleteBtnInner: {
+    width: "100%",
+    height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1.5,
-    borderColor: "rgba(239,68,68,0.3)",
-    backgroundColor: "rgba(239,68,68,0.08)",
-    overflow: "hidden",
   },
   deleteButtonText: {
     color: "#ef4444",
