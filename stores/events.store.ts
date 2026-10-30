@@ -18,6 +18,7 @@ type EventsState = {
   unregistering: boolean;
   registeredEvents: Record<string, boolean>;
   checkingRegistration: Record<string, boolean>;
+  likedEvents: Record<string, boolean>;
   error?: string | null;
 
   fetchEvents: (sort?: "asc" | "desc") => Promise<void>;
@@ -25,6 +26,7 @@ type EventsState = {
   registerForEvent: (data: EventRegistrationData) => Promise<void>;
   unregisterFromEvent: (data: { eventId: string }) => Promise<void>;
   checkRegistrationStatus: (eventId: string) => Promise<void>;
+  toggleLikeEvent: (eventId: string) => void;
   setEventsList: (events: AppEvent[]) => void;
   setError: (error: string | null) => void;
 };
@@ -39,7 +41,17 @@ export const useEventsStore = create<EventsState>()(
       unregistering: false,
       registeredEvents: {},
       checkingRegistration: {},
+      likedEvents: {},
       error: null,
+
+      toggleLikeEvent: (eventId: string) => {
+        set((state) => ({
+          likedEvents: {
+            ...state.likedEvents,
+            [eventId]: !state.likedEvents[eventId],
+          },
+        }));
+      },
 
       fetchEvents: async (sort = "asc") => {
         set({ loading: true, error: null });
