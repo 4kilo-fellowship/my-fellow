@@ -379,6 +379,10 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
               ) : (
                 <View style={styles.primaryBtnContent}>
                   <Text
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.78}
+                    ellipsizeMode="tail"
                     style={[
                       styles.primaryBtnText,
                       {
@@ -400,11 +404,22 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
                       name="checkmark-circle"
                       size={18}
                       color={isDark ? "#4ade80" : "#16a34a"}
+                      style={styles.primaryBtnIcon}
                     />
                   ) : ctaText?.toLowerCase()?.includes("notify") ? (
-                    <Ionicons name="notifications" size={18} color="white" />
+                    <Ionicons
+                      name="notifications"
+                      size={17}
+                      color="white"
+                      style={styles.primaryBtnIcon}
+                    />
                   ) : (
-                    <Ionicons name="arrow-forward" size={18} color="white" />
+                    <Ionicons
+                      name="arrow-forward"
+                      size={17}
+                      color="white"
+                      style={styles.primaryBtnIcon}
+                    />
                   )}
                 </View>
               )}
@@ -563,7 +578,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     width: "100%",
-    gap: 10,
+    gap: 8,
     marginTop: 14,
   },
   primaryBtnWrap: {
@@ -584,20 +599,25 @@ const styles = StyleSheet.create({
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   primaryBtnContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 6,
+    width: "100%",
   },
   primaryBtnText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
     includeFontPadding: false,
     textAlignVertical: "center",
+    flexShrink: 1,
+  },
+  primaryBtnIcon: {
+    flexShrink: 0,
   },
   actionIconBtnWrap: {
     width: 52,
