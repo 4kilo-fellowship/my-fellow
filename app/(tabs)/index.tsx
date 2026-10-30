@@ -1,10 +1,13 @@
+import { AppBottomSheet } from "@/components/AppBottomSheet";
+import { MainTabHeader } from "@/components/MainTabHeader";
+import NotificationCard from "@/components/NotificationCard";
 import {
   AnnouncementCard,
   DevotionCard,
+  NativeViewAllButton,
   NoInternetScreen,
   Placeholder,
   QuickAction,
-  StreakBadge,
   StreakModal,
   VideoItem,
 } from "@/components";
@@ -28,6 +31,8 @@ import {
   Animated,
   Image,
   Linking,
+  Platform,
+  Pressable,
   RefreshControl,
   ScrollView,
   Text,
@@ -44,6 +49,7 @@ const Home = () => {
   const isDark = theme === "dark";
   const [activeIndex, setActiveIndex] = useState(0);
   const [showStreakModal, setShowStreakModal] = useState(false);
+  const [showNotificationsSheet, setShowNotificationsSheet] = useState(false);
   const scrollX = useRef(new Animated.Value(0)).current;
   const { width } = useWindowDimensions();
   const cardWidth = width - 48;
@@ -55,7 +61,14 @@ const Home = () => {
   const { devotionsList, setDevotionsList } = useDevotionsStore();
   const { isConnected } = useNetwork();
   const { user } = useUserStore();
-  const unreadCount = useNotificationsStore((s) => s.getUnreadCount());
+  const {
+    notifications,
+    markAsRead,
+    markAllAsRead,
+    removeNotification,
+    getUnreadCount,
+  } = useNotificationsStore();
+  const unreadCount = getUnreadCount();
 
   const devotions = (devotionsList || []).map((d) => ({
     id: d._id,
@@ -161,139 +174,16 @@ const Home = () => {
         className={`${isDark ? "bg-dark" : "bg-background"} absolute inset-0`}
       />
 
-      <View className="flex-1" style={{ paddingTop: top * 0.95 }}>
+      <View className="flex-1">
         <StatusBar style={isDark ? "light" : "dark"} />
 
-        <View
-          style={{
-            paddingHorizontal: 20,
-            paddingTop: 4,
-            paddingBottom: 10,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          {/* Left: Profile Picture then Name */}
-          <TouchableOpacity
-            onPress={() => router.push("/(tabs)/profile")}
-            activeOpacity={0.75}
-            accessibilityRole="button"
-            accessibilityLabel="View Profile"
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 10,
-              flex: 1,
-              paddingRight: 12,
-            }}
-          >
-            <View
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                overflow: "hidden",
-                borderWidth: 1.5,
-                borderColor: isDark ? "#3c3c3e" : "#e5e7eb",
-                backgroundColor: isDark ? "#2c2c2e" : "#f3f4f6",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              {user?.profileImage ? (
-                <Image
-                  source={{ uri: user.profileImage }}
-                  style={{ width: "100%", height: "100%" }}
-                  resizeMode="cover"
-                />
-              ) : (
-                <Ionicons
-                  name="person"
-                  size={20}
-                  color={isDark ? "#9ca3af" : "#64748b"}
-                />
-              )}
-            </View>
-
-            <Text
-              numberOfLines={1}
-              style={{
-                fontSize: 17,
-                fontWeight: "800",
-                letterSpacing: -0.3,
-                color: isDark ? "#ffffff" : "#0f172a",
-                flexShrink: 1,
-              }}
-            >
-              {user?.fullName || "Guest User"}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Right: Devotion Streak Pill + Notification Bell */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            <StreakBadge onPress={() => setShowStreakModal(true)} />
-
-            <TouchableOpacity
-              onPress={() => router.push("/notifications")}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Notifications"
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                borderWidth: 1.5,
-                borderColor: isDark ? "#3c3c3e" : "#e5e7eb",
-                backgroundColor: isDark ? "#2c2c2e" : "#ffffff",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Ionicons
-                name={
-                  unreadCount > 0 ? "notifications" : "notifications-outline"
-                }
-                size={21}
-                color={isDark ? "#fff" : "#374151"}
-              />
-              {unreadCount > 0 && (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: -2,
-                    right: -2,
-                    backgroundColor: "#ff6619",
-                    borderRadius: 9,
-                    minWidth: 18,
-                    height: 18,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    paddingHorizontal: 4,
-                    borderWidth: 1.5,
-                    borderColor: isDark ? "#2c2c2e" : "#ffffff",
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: "#fff",
-                      fontSize: 10,
-                      fontWeight: "800",
-                    }}
-                  >
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
+        <MainTabHeader
+          showStreak={true}
+          showNotification={true}
+          onNotificationPress={() => setShowNotificationsSheet(true)}
+          onStreakPress={() => setShowStreakModal(true)}
+          borderBottom={false}
+        />
 
         <ScrollView
           contentContainerStyle={{ paddingBottom: 140 }}
@@ -308,18 +198,37 @@ const Home = () => {
           }
         >
           <View className="mb-2">
-            <View className="px-5 mb-2">
+            <View
+              style={{
+                paddingHorizontal: 20,
+                paddingTop: 16,
+                paddingBottom: 12,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
               {!hasSeenFeatures ||
               ((loading || refreshing) && events.length === 0) ? (
                 <Placeholder width={150} height={24} borderRadius={4} />
               ) : (
                 <Text
+                  numberOfLines={1}
                   className={`text-lg font-extrabold ${
                     isDark ? "text-white" : "text-gray-900"
                   }`}
+                  style={{ includeFontPadding: false, flexShrink: 1, marginRight: 8 }}
                 >
                   Upcoming Events
                 </Text>
+              )}
+
+              {events.length > 0 && (
+                <NativeViewAllButton
+                  onPress={() => router.push("/events")}
+                  isDark={isDark}
+                  accessibilityLabel="View all upcoming events"
+                />
               )}
             </View>
 
@@ -529,15 +438,25 @@ const Home = () => {
 
           {/* Recent Devotions */}
           <View className="mt-7">
-            <View className="px-5 flex-row justify-between items-center mb-3">
+            <View
+              style={{
+                paddingHorizontal: 20,
+                marginBottom: 12,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
               {!hasSeenFeatures ||
               ((loading || refreshing) && devotions.length === 0) ? (
                 <Placeholder width={150} height={24} borderRadius={4} />
               ) : (
                 <Text
+                  numberOfLines={1}
                   className={`text-lg font-extrabold ${
                     isDark ? "text-white" : "text-gray-900"
                   }`}
+                  style={{ includeFontPadding: false, flexShrink: 1, marginRight: 8 }}
                 >
                   Recent Devotions
                 </Text>
@@ -546,16 +465,11 @@ const Home = () => {
               ((loading || refreshing) && devotions.length === 0) ? (
                 <Placeholder width={60} height={20} borderRadius={4} />
               ) : (
-                <TouchableOpacity
+                <NativeViewAllButton
                   onPress={() => router.push("/devotions")}
-                  activeOpacity={0.6}
-                  className="flex-row items-center"
-                >
-                  <Text className="text-primary font-semibold mr-2">
-                    View All
-                  </Text>
-                  <Ionicons name="arrow-forward" size={16} color={PRIMARY} />
-                </TouchableOpacity>
+                  isDark={isDark}
+                  accessibilityLabel="View all devotions"
+                />
               )}
             </View>
 
@@ -641,6 +555,149 @@ const Home = () => {
         visible={showStreakModal}
         onClose={() => setShowStreakModal(false)}
       />
+
+      {/* Native Notifications BottomSheet */}
+      <AppBottomSheet
+        visible={showNotificationsSheet}
+        onClose={() => setShowNotificationsSheet(false)}
+        isDark={isDark}
+        snapPoints={["half", "full"]}
+      >
+        <View style={{ paddingBottom: 20 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 12,
+              paddingBottom: 14,
+              borderBottomWidth: 1,
+              borderBottomColor: isDark ? "#27272a" : "#f1f5f9",
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "800",
+                  color: isDark ? "#ffffff" : "#0f172a",
+                }}
+              >
+                Notifications
+              </Text>
+              {unreadCount > 0 && (
+                <View
+                  style={{
+                    backgroundColor: PRIMARY,
+                    paddingHorizontal: 8,
+                    paddingVertical: 2,
+                    borderRadius: 10,
+                  }}
+                >
+                  <Text style={{ color: "#ffffff", fontSize: 11, fontWeight: "700" }}>
+                    {unreadCount} new
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {unreadCount > 0 && (
+              <Pressable
+                onPress={() => markAllAsRead()}
+                style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+              >
+                <Text style={{ fontSize: 13, color: PRIMARY, fontWeight: "700" }}>
+                  Mark all read
+                </Text>
+              </Pressable>
+            )}
+          </View>
+
+          <ScrollView
+            style={{ maxHeight: 380 }}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, gap: 10 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {notifications.slice(0, 5).map((item) => (
+              <NotificationCard
+                key={item.id}
+                notification={item}
+                isDark={isDark}
+                onPress={() => {
+                  markAsRead(item.id);
+                  setShowNotificationsSheet(false);
+                  if (item.targetRoute) {
+                    router.push(item.targetRoute as any);
+                  }
+                }}
+                onDismiss={() => removeNotification(item.id)}
+              />
+            ))}
+
+            {notifications.length === 0 && (
+              <View style={{ paddingVertical: 32, alignItems: "center" }}>
+                <Ionicons
+                  name="notifications-off-outline"
+                  size={36}
+                  color={isDark ? "#52525b" : "#a1a1aa"}
+                />
+                <Text
+                  style={{
+                    marginTop: 8,
+                    fontSize: 14,
+                    color: isDark ? "#71717a" : "#71717a",
+                    fontWeight: "600",
+                  }}
+                >
+                  No notifications right now
+                </Text>
+              </View>
+            )}
+          </ScrollView>
+
+          <View style={{ paddingHorizontal: 20, paddingTop: 14 }}>
+            <View
+              style={{
+                borderRadius: 14,
+                overflow: "hidden",
+                borderWidth: 1.5,
+                borderColor: isDark ? "#27272a" : "#e2e8f0",
+                backgroundColor: isDark ? "#18181b" : "#f8fafc",
+              }}
+            >
+              <Pressable
+                onPress={() => {
+                  setShowNotificationsSheet(false);
+                  router.push("/notifications");
+                }}
+                android_ripple={{
+                  color: isDark ? "rgba(255, 102, 25, 0.2)" : "rgba(255, 102, 25, 0.12)",
+                  borderless: false,
+                }}
+                style={({ pressed }) => [
+                  {
+                    paddingVertical: 12,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  },
+                  pressed && Platform.OS === "ios" && { opacity: 0.75 },
+                ]}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: isDark ? "#ffffff" : "#0f172a",
+                  }}
+                >
+                  View All Notifications
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </AppBottomSheet>
     </View>
   );
 };
