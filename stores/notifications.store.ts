@@ -1,3 +1,4 @@
+import { socialApi } from "@/services/socialApi";
 import { AppNotification } from "@/types/notification.types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
@@ -5,6 +6,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 interface NotificationsState {
   notifications: AppNotification[];
+  serverUnreadCount: number | null;
   /** IDs of events / products the user has already been notified about */
   seenEventIds: string[];
   seenProductIds: string[];
@@ -18,6 +20,8 @@ interface NotificationsState {
   removeNotification: (id: string) => void;
   clearAll: () => void;
   getUnreadCount: () => number;
+  setServerUnreadCount: (count: number) => void;
+  syncServerUnreadCount: () => Promise<void>;
 
   /** Track which items have been notified */
   addSeenEventIds: (ids: string[]) => void;
@@ -30,6 +34,7 @@ export const useNotificationsStore = create<NotificationsState>()(
   persist(
     (set, get) => ({
       notifications: [],
+      serverUnreadCount: null,
       seenEventIds: [],
       seenProductIds: [],
       seenDevotionIds: [],
@@ -53,6 +58,10 @@ export const useNotificationsStore = create<NotificationsState>()(
           notifications: state.notifications.map((n) =>
             n.id === id ? { ...n, read: true } : n,
           ),
+          serverUnreadCount:
+            state.serverUnreadCount !== null
+              ? Math.max(0, state.serverUnreadCount - 1)
+              : null,
         }));
       },
 
@@ -62,6 +71,7 @@ export const useNotificationsStore = create<NotificationsState>()(
             ...n,
             read: true,
           })),
+          serverUnreadCount: 0,
         }));
       },
 
@@ -71,9 +81,24 @@ export const useNotificationsStore = create<NotificationsState>()(
         }));
       },
 
-      clearAll: () => set({ notifications: [] }),
+      clearAll: () => set({ notifications: [], serverUnreadCount: 0 }),
 
-      getUnreadCount: () => get().notifications.filter((n) => !n.read).length,
+      getUnreadCount: () =>
+        get().serverUnreadCount ??
+        get().notifications.filter((n) => !n.read).length,
+
+      setServerUnreadCount: (count) => set({ serverUnreadCount: count }),
+
+      syncServerUnreadCount: async () => {
+        try {
+          const res = await socialApi.getUnreadNotificationsCount();
+          if (res && typeof res.count === "number") {
+            set({ serverUnreadCount: res.count });
+          }
+        } catch {
+          // Keep offline state
+        }
+      },
 
       addSeenEventIds: (ids) => {
         set((state) => ({

@@ -1,3 +1,4 @@
+import { socialApi } from "@/services/socialApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
@@ -13,6 +14,14 @@ export interface StreakState {
   recordDevotionRead: () => { streakUpdated: boolean; newStreak: number };
   checkStreak: () => void;
   isCompletedToday: () => boolean;
+  syncServerStreak: () => Promise<void>;
+  setServerStreak: (data: {
+    currentStreak: number;
+    bestStreak?: number;
+    lastActiveDate?: string | null;
+    activeDates?: string[];
+    totalDevotionsCompleted?: number;
+  }) => void;
 }
 
 const getLocalDateString = (d = new Date()): string => {
@@ -94,6 +103,29 @@ export const useStreakStore = create<StreakState>()(
         });
 
         return { streakUpdated: true, newStreak };
+      },
+
+      setServerStreak: (data) => {
+        set((state) => ({
+          currentStreak: data.currentStreak,
+          bestStreak:
+            data.bestStreak ?? Math.max(state.bestStreak, data.currentStreak),
+          lastActiveDate: data.lastActiveDate ?? state.lastActiveDate,
+          activeDates: data.activeDates ?? state.activeDates,
+          totalDevotionsCompleted:
+            data.totalDevotionsCompleted ?? state.totalDevotionsCompleted,
+        }));
+      },
+
+      syncServerStreak: async () => {
+        try {
+          const data = await socialApi.getStreakMe();
+          if (data && typeof data.currentStreak === "number") {
+            get().setServerStreak(data);
+          }
+        } catch {
+          // Keep offline state
+        }
       },
     }),
     {
