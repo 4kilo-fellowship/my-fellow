@@ -118,7 +118,6 @@ export default function EventDetails() {
     registering,
     unregistering,
     registeredEvents,
-    checkingRegistrationMap,
     checkRegistrationStatus,
   } = useEventsStore((s: any) => ({
     registerForEvent: s.registerForEvent,
@@ -126,12 +125,10 @@ export default function EventDetails() {
     registering: s.registering,
     unregistering: s.unregistering,
     registeredEvents: s.registeredEvents,
-    checkingRegistrationMap: s.checkingRegistration,
     checkRegistrationStatus: s.checkRegistrationStatus,
   }));
 
   const isRegisteredForThisEvent = id ? !!registeredEvents[id] : false;
-  const isCheckingThisEvent = id ? !!checkingRegistrationMap[id] : false;
 
   const { addAlert } = useAlerts();
 
@@ -574,11 +571,21 @@ export default function EventDetails() {
         </ScrollView>
       </View>
 
+      {/* Solid Bottom Bar matching Auth AppButton */}
       <View
-        className={`absolute bottom-0 left-0 right-0 px-6 pt-4 border-t ${
-          isDark ? "bg-[#1A1A1B] border-gray-800" : "bg-white border-gray-100"
-        }`}
-        style={{ paddingBottom: bottom > 0 ? bottom + 4 : 20 }}
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: isDark ? "#1A1A1B" : "#ffffff",
+          borderTopWidth: 1,
+          borderTopColor: isDark ? "#27272a" : "#f1f5f9",
+          paddingHorizontal: 20,
+          paddingTop: 12,
+          paddingBottom: Math.max(bottom + 8, 20),
+          zIndex: 50,
+        }}
       >
         <View
           style={{
@@ -588,11 +595,11 @@ export default function EventDetails() {
               isRegisterCta && isRegisteredForThisEvent
                 ? isDark
                   ? "#27272a"
-                  : "#d1d5db"
+                  : "#e2e8f0"
                 : PRIMARY,
-            shadowColor: PRIMARY,
+            shadowColor: isRegisterCta && isRegisteredForThisEvent ? "transparent" : "#ff6719",
             shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: isRegisterCta && isRegisteredForThisEvent ? 0 : 0.28,
+            shadowOpacity: isRegisterCta && isRegisteredForThisEvent ? 0 : 0.35,
             shadowRadius: 8,
             elevation: isRegisterCta && isRegisteredForThisEvent ? 0 : 4,
           }}
@@ -613,7 +620,7 @@ export default function EventDetails() {
             style={({ pressed }) => [
               {
                 width: "100%",
-                height: 54,
+                height: 52,
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "center",
@@ -626,9 +633,7 @@ export default function EventDetails() {
               },
             ]}
           >
-            {registering ||
-            unregistering ||
-            (isRegisterCta && isCheckingThisEvent) ? (
+            {registering || unregistering ? (
               <ActivityIndicator color="white" />
             ) : (
               <View
@@ -641,7 +646,7 @@ export default function EventDetails() {
               >
                 <Text
                   style={{
-                    fontSize: 16.5,
+                    fontSize: 16,
                     fontWeight: "700",
                     letterSpacing: -0.2,
                     color:

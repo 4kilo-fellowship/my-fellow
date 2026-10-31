@@ -432,7 +432,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
             >
               <Ionicons
                 name={isLiked ? "heart" : "heart-outline"}
-                size={22}
+                size={19}
                 color={isLiked ? "#ef4444" : "#ffffff"}
               />
             </Pressable>
@@ -455,7 +455,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
               {isSharing ? (
                 <ActivityIndicator size="small" color="white" />
               ) : (
-                <Ionicons name="share-social-outline" size={20} color="white" />
+                <Ionicons name="share-social-outline" size={18} color="white" />
               )}
             </Pressable>
           </View>
@@ -474,7 +474,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
                 }}
                 style={styles.actionIconBtnInner}
               >
-                <Ionicons name="pencil" size={20} color="#ff6719" />
+                <Ionicons name="pencil" size={18} color="#ff6719" />
               </Pressable>
             </View>
           )}
@@ -574,16 +574,16 @@ const styles = StyleSheet.create({
   },
   primaryBtnWrap: {
     flex: 1,
-    height: 52,
-    borderRadius: 26,
+    height: 44,
+    borderRadius: 22,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#ff6719",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
   },
   primaryBtnInner: {
     width: "100%",
@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   primaryBtnText: {
-    fontSize: 15,
+    fontSize: 14.5,
     fontWeight: "700",
     letterSpacing: 0.1,
     includeFontPadding: false,
@@ -611,9 +611,9 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   actionIconBtnWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: "rgba(0, 0, 0, 0.45)",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.2)",
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 26,
     fontWeight: "900",
-    marginBottom: 6,
+    marginBottom: 4,
     textShadowColor: "rgba(0, 0, 0, 0.6)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
@@ -651,7 +651,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "400",
     lineHeight: 18,
-    marginBottom: 16,
+    marginTop: 6,
+    marginBottom: 14,
     textShadowColor: "rgba(0, 0, 0, 0.4)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
