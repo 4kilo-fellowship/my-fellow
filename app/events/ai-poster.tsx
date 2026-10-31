@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  Dimensions,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -24,8 +23,6 @@ import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { eventsService } from "@/services/eventsService";
 import { useEventsStore } from "@/stores/events.store";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const STYLES = [
   "Modern",
@@ -110,10 +107,16 @@ export default function AIPosterScreen() {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Selected history poster
-  const [selectedHistoryUrl, setSelectedHistoryUrl] = useState<string | null>(
-    null,
-  );
+  const activeTabColor = isDark ? "#ffffff" : "#000000";
+
+  const handleTabChange = (tab: "create" | "history") => {
+    if (activeTab !== tab) {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      } catch {}
+      setActiveTab(tab);
+    }
+  };
 
   const nativeRipple = {
     color: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
@@ -255,22 +258,27 @@ export default function AIPosterScreen() {
           ]}
         >
           <Pressable
-            onPress={() => setActiveTab("create")}
+            onPress={() => handleTabChange("create")}
             android_ripple={nativeRipple}
             style={[
               styles.tabBtn,
-              activeTab === "create" && { borderBottomColor: PRIMARY },
+              activeTab === "create" && {
+                borderBottomColor: activeTabColor,
+                borderBottomWidth: 2.5,
+              },
             ]}
           >
-            <Ionicons
-              name="sparkles-outline"
-              size={16}
-              color={activeTab === "create" ? PRIMARY : subTextColor}
-            />
+            {activeTab === "create" && (
+              <Ionicons
+                name="sparkles"
+                size={16}
+                color={activeTabColor}
+              />
+            )}
             <Text
               style={[
                 styles.tabBtnText,
-                { color: activeTab === "create" ? PRIMARY : subTextColor },
+                { color: activeTab === "create" ? activeTabColor : subTextColor },
                 activeTab === "create" && styles.tabBtnActiveText,
               ]}
             >
@@ -279,22 +287,27 @@ export default function AIPosterScreen() {
           </Pressable>
 
           <Pressable
-            onPress={() => setActiveTab("history")}
+            onPress={() => handleTabChange("history")}
             android_ripple={nativeRipple}
             style={[
               styles.tabBtn,
-              activeTab === "history" && { borderBottomColor: PRIMARY },
+              activeTab === "history" && {
+                borderBottomColor: activeTabColor,
+                borderBottomWidth: 2.5,
+              },
             ]}
           >
-            <Ionicons
-              name="time-outline"
-              size={16}
-              color={activeTab === "history" ? PRIMARY : subTextColor}
-            />
+            {activeTab === "history" && (
+              <Ionicons
+                name="time"
+                size={16}
+                color={activeTabColor}
+              />
+            )}
             <Text
               style={[
                 styles.tabBtnText,
-                { color: activeTab === "history" ? PRIMARY : subTextColor },
+                { color: activeTab === "history" ? activeTabColor : subTextColor },
                 activeTab === "history" && styles.tabBtnActiveText,
               ]}
             >
@@ -746,7 +759,7 @@ export default function AIPosterScreen() {
                     ]}
                   >
                     <Pressable
-                      onPress={() => setSelectedHistoryUrl(item.url)}
+                      onPress={() => handleApplyPoster(item.url)}
                       android_ripple={nativeRipple}
                       style={styles.historyImageWrap}
                     >
