@@ -23,6 +23,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { AppBottomSheet } from "@/components/AppBottomSheet";
+import { NativeColorPicker } from "@/components/NativeColorPicker";
 import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { eventsService } from "@/services/eventsService";
@@ -98,12 +99,22 @@ export default function AIPosterScreen() {
   // Customization states (configured via the bottom sheet)
   const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
   const [selectedColorIdx, setSelectedColorIdx] = useState(0);
+  const [customColor, setCustomColor] = useState<string | null>(null);
   const [selectedStyle, setSelectedStyle] = useState("Modern");
   const [selectedMood, setSelectedMood] = useState("Uplifting & Radiant");
   const [selectedOrganizer, setSelectedOrganizer] = useState(
     "AAU 4 Kilo Fellowship",
   );
   const [eventDateText, setEventDateText] = useState("");
+
+  const activePrimaryColor =
+    customColor || COLOR_PRESETS[selectedColorIdx].primary;
+  const activeSecondaryColor = customColor
+    ? "#0F172A"
+    : COLOR_PRESETS[selectedColorIdx].secondary;
+  const activeColorName = customColor
+    ? `Custom (${customColor.toUpperCase()})`
+    : COLOR_PRESETS[selectedColorIdx].name;
 
   // Output states
   const [loading, setLoading] = useState(false);
@@ -173,12 +184,11 @@ export default function AIPosterScreen() {
       formData.append("prompt", combinedPrompt);
       formData.append("style", selectedStyle);
 
-      const color = COLOR_PRESETS[selectedColorIdx];
       formData.append(
         "colors",
         JSON.stringify({
-          primary: color.primary,
-          secondary: color.secondary,
+          primary: activePrimaryColor,
+          secondary: activeSecondaryColor,
         }),
       );
 
@@ -430,13 +440,13 @@ export default function AIPosterScreen() {
               <View
                 style={[
                   styles.detailsIconWrap,
-                  { backgroundColor: `${currentColor.primary}20` },
+                  { backgroundColor: `${activePrimaryColor}25` },
                 ]}
               >
                 <View
                   style={[
                     styles.detailsColorDot,
-                    { backgroundColor: currentColor.primary },
+                    { backgroundColor: activePrimaryColor },
                   ]}
                 />
               </View>
@@ -449,7 +459,7 @@ export default function AIPosterScreen() {
                   style={[styles.detailsTriggerSummary, { color: subTextColor }]}
                   numberOfLines={1}
                 >
-                  {currentColor.name} · {selectedStyle} · {selectedOrganizer}
+                  {activeColorName} · {selectedStyle} · {selectedOrganizer}
                 </Text>
               </View>
             </View>
@@ -547,7 +557,6 @@ export default function AIPosterScreen() {
               </View>
             ) : (
               <View style={styles.generateBtnContent}>
-                <Ionicons name="sparkles" size={18} color="#FFFFFF" />
                 <Text style={styles.generateButtonText}>
                   {generatedImage ? "Generate Variation" : "Generate Poster"}
                 </Text>
@@ -769,7 +778,7 @@ export default function AIPosterScreen() {
             </Text>
             <View style={styles.colorPaletteGrid}>
               {COLOR_PRESETS.map((c, idx) => {
-                const isSelected = selectedColorIdx === idx;
+                const isSelected = !customColor && selectedColorIdx === idx;
                 return (
                   <Pressable
                     key={c.name}
@@ -778,6 +787,7 @@ export default function AIPosterScreen() {
                         Haptics.ImpactFeedbackStyle.Light,
                       ).catch(() => {});
                       setSelectedColorIdx(idx);
+                      setCustomColor(null);
                     }}
                     style={[
                       styles.colorCircleItem,
@@ -812,6 +822,27 @@ export default function AIPosterScreen() {
                   </Pressable>
                 );
               })}
+            </View>
+
+            {/* Native Recommended Color Picker */}
+            <View
+              style={[
+                styles.nativeColorPickerBox,
+                {
+                  backgroundColor: isDark ? "#141416" : "#F8FAFC",
+                  borderColor: customColor ? activePrimaryColor : borderColor,
+                  borderWidth: customColor ? 1.5 : 1,
+                },
+              ]}
+            >
+              <NativeColorPicker
+                label="Custom Color Picker"
+                color={activePrimaryColor}
+                onColorChange={(newColor) => {
+                  setCustomColor(newColor);
+                }}
+                isDark={isDark}
+              />
             </View>
           </View>
 
@@ -1240,6 +1271,7 @@ const styles = StyleSheet.create({
   applyButton: {
     height: 48,
     borderRadius: 24,
+    overflow: "hidden",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -1253,10 +1285,13 @@ const styles = StyleSheet.create({
   // Generate Main Button
   generateButtonWrap: {
     marginTop: 8,
+    borderRadius: 26,
+    overflow: "hidden",
   },
   generateMainButton: {
     height: 52,
     borderRadius: 26,
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#FF6719",
@@ -1276,7 +1311,7 @@ const styles = StyleSheet.create({
   generateBtnContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    justifyContent: "center",
   },
   generateButtonText: {
     fontSize: 16,
@@ -1320,6 +1355,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 14,
     borderWidth: 1,
+    overflow: "hidden",
   },
   historyUseText: {
     fontSize: 12,
@@ -1385,6 +1421,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 4,
     borderRadius: 12,
+    overflow: "hidden",
   },
   colorSwatchCircle: {
     width: 40,
@@ -1399,6 +1436,13 @@ const styles = StyleSheet.create({
     maxWidth: 60,
     textAlign: "center",
   },
+  nativeColorPickerBox: {
+    marginTop: 14,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    overflow: "hidden",
+  },
   pillsWrapRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1408,6 +1452,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
+    overflow: "hidden",
   },
   sheetPillText: {
     fontSize: 13,
@@ -1428,6 +1473,7 @@ const styles = StyleSheet.create({
   sheetApplyBtn: {
     height: 50,
     borderRadius: 25,
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,
