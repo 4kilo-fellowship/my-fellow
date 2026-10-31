@@ -1,6 +1,6 @@
 import { EventDetail, EventSummary } from "@/types/events.types";
 import { cache } from "@/utils/cache";
-import { fetchEventByIdApi, fetchEventsApi } from "./events.api";
+import { fetchEventByIdApi, fetchEventsApi, generatePosterApi } from "./events.api";
 
 const CACHE_KEYS = {
   EVENTS_LIST: "events_list",
@@ -62,5 +62,11 @@ export const eventsService = {
 
       throw error;
     }
+  },
+
+  generatePoster: async (
+    formData: FormData,
+  ): Promise<{ success: boolean; imageUrl: string; message?: string }> => {
+    return generatePosterApi(formData);
   },
 };

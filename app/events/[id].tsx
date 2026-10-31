@@ -20,6 +20,7 @@ import {
   getEventDisplayLabel,
 } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { Image as ExpoImage } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Linking from "expo-linking";
@@ -30,6 +31,8 @@ import {
   ActivityIndicator,
   Dimensions,
   Image,
+  Platform,
+  Pressable,
   ScrollView,
   Share,
   StyleSheet,
@@ -57,15 +60,28 @@ export default function EventDetails() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
-  const [loadingDetail, setLoadingDetail] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isNetworkError, setIsNetworkError] = useState<boolean>(false);
-
   const pulse = useSharedValue(0);
   const fadeIn = useSharedValue(0);
   //
   const id = (params as any).id as string | undefined;
+
+  // Immediately initialize selectedEvent from cache/store for instant rendering
+  const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(() => {
+    if (!id) return null;
+    const fromStore = useEventsStore
+      .getState()
+      .eventsList.find((e: any) => e._id === id || e.id === id);
+    return (fromStore as any) || null;
+  });
+  const [loadingDetail, setLoadingDetail] = useState<boolean>(() => {
+    if (!id) return true;
+    const fromStore = useEventsStore
+      .getState()
+      .eventsList.find((e: any) => e._id === id || e.id === id);
+    return !fromStore;
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [isNetworkError, setIsNetworkError] = useState<boolean>(false);
 
   const {
     registerForEvent,
@@ -142,25 +158,29 @@ export default function EventDetails() {
 
   const fetchEventById = useCallback(
     async (eventId: string) => {
-      setLoadingDetail(true);
+      if (!selectedEvent) {
+        setLoadingDetail(true);
+      }
       setError(null);
       setIsNetworkError(false);
       try {
         const data = await eventsService.fetchEventById(eventId);
         setSelectedEvent(data);
       } catch (err: any) {
-        const isOffline =
-          err.message === "Network Error" ||
-          err.code === "ERR_NETWORK" ||
-          !err.response;
-        setIsNetworkError(isOffline);
-        setError(err.message || "Something went wrong.");
-        if (isOffline) startAnimations();
+        if (!selectedEvent) {
+          const isOffline =
+            err.message === "Network Error" ||
+            err.code === "ERR_NETWORK" ||
+            !err.response;
+          setIsNetworkError(isOffline);
+          setError(err.message || "Something went wrong.");
+          if (isOffline) startAnimations();
+        }
       } finally {
         setLoadingDetail(false);
       }
     },
-    [startAnimations],
+    [startAnimations, selectedEvent],
   );
 
   useEffect(() => {
@@ -247,14 +267,14 @@ export default function EventDetails() {
       isRegisteredForThisEvent,
     });
 
-  if (loadingDetail) {
+  if (loadingDetail && !selectedEvent) {
     return (
       <View
         className={`flex-1 items-center justify-center ${
           isDark ? "bg-[#1A1A1B]" : "bg-gray-50"
         }`}
       >
-        <ActivityIndicator size="large" color={isDark ? "#fff" : "#ff6619"} />
+        <ActivityIndicator size="large" color={PRIMARY} />
       </View>
     );
   }
@@ -400,7 +420,9 @@ export default function EventDetails() {
           source={imageSource}
           style={{ width: "100%", height: "100%" }}
           contentFit="cover"
-          transition={300}
+          cachePolicy="memory-disk"
+          priority="high"
+          transition={150}
         />
         <LinearGradient
           colors={["rgba(0,0,0,0.5)", "transparent", "rgba(0,0,0,0.8)"]}
@@ -436,7 +458,10 @@ export default function EventDetails() {
 
         <View className="absolute bottom-6 left-5 right-5">
           <View className="flex-row items-center mb-2">
-            <View className="bg-[#ff6619] px-2.5 py-1 rounded-md mr-2">
+            <View
+              className="px-2.5 py-1 rounded-md mr-2"
+              style={{ backgroundColor: PRIMARY }}
+            >
               <Text className="text-white text-xs font-bold uppercase tracking-wider">
                 Event
               </Text>
@@ -526,45 +551,84 @@ export default function EventDetails() {
         }`}
         style={{ paddingBottom: bottom > 0 ? bottom + 4 : 20 }}
       >
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={handleCta}
-          disabled={buttonDisabled}
-          className={`w-full py-4 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-500/30 ${buttonDisabled ? "opacity-60" : ""}`}
+        <View
           style={{
+            borderRadius: 9999,
+            overflow: "hidden",
             backgroundColor:
               isRegisterCta && isRegisteredForThisEvent
                 ? isDark
                   ? "#27272a"
                   : "#d1d5db"
-                : "#ff6619",
+                : PRIMARY,
+            shadowColor: PRIMARY,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: isRegisterCta && isRegisteredForThisEvent ? 0 : 0.28,
+            shadowRadius: 8,
+            elevation: isRegisterCta && isRegisteredForThisEvent ? 0 : 4,
           }}
         >
-          {registering ||
-          unregistering ||
-          (isRegisterCta && isCheckingThisEvent) ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <>
-              <Text
-                className={`text-lg font-bold mr-2 ${isRegisterCta && isRegisteredForThisEvent ? (isDark ? "text-gray-400" : "text-gray-500") : "text-white"}`}
-              >
-                {displayLabel}
-              </Text>
-              {isRegisterCta && isRegisteredForThisEvent ? (
-                <Ionicons
-                  name="checkmark-circle"
-                  size={20}
-                  color={isDark ? "#4ade80" : "#16a34a"}
-                />
-              ) : displayLabel.toLowerCase().includes("notify") ? (
-                <Ionicons name="notifications" size={20} color="white" />
-              ) : (
-                <Ionicons name="arrow-forward" size={20} color="white" />
-              )}
-            </>
-          )}
-        </TouchableOpacity>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+                () => {},
+              );
+              handleCta();
+            }}
+            disabled={buttonDisabled}
+            android_ripple={{
+              color: "rgba(255, 255, 255, 0.28)",
+              borderless: false,
+              foreground: true,
+            }}
+            style={({ pressed }) => [
+              {
+                width: "100%",
+                paddingVertical: 16,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                opacity:
+                  pressed && Platform.OS === "ios"
+                    ? 0.85
+                    : buttonDisabled
+                    ? 0.6
+                    : 1,
+              },
+            ]}
+          >
+            {registering ||
+            unregistering ||
+            (isRegisterCta && isCheckingThisEvent) ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <>
+                <Text
+                  className={`text-lg font-bold mr-2 ${
+                    isRegisterCta && isRegisteredForThisEvent
+                      ? isDark
+                        ? "text-gray-400"
+                        : "text-gray-500"
+                      : "text-white"
+                  }`}
+                >
+                  {displayLabel}
+                </Text>
+                {isRegisterCta && isRegisteredForThisEvent ? (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color={isDark ? "#4ade80" : "#16a34a"}
+                  />
+                ) : displayLabel.toLowerCase().includes("notify") ? (
+                  <Ionicons name="notifications" size={20} color="white" />
+                ) : (
+                  <Ionicons name="arrow-forward" size={20} color="white" />
+                )}
+              </>
+            )}
+          </Pressable>
+        </View>
       </View>
       <RegistrationModal
         visible={modalVisible}

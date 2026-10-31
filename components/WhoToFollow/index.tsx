@@ -1,5 +1,6 @@
 import { NativeViewAllButton } from "@/components/NativeViewAllButton";
 import { PRIMARY } from "@/constants/colors";
+import { useCommunityStore } from "@/stores/community.store";
 import { Ionicons } from "@expo/vector-icons";
 import { Image as ExpoImage } from "expo-image";
 import * as Haptics from "expo-haptics";
@@ -75,6 +76,8 @@ export const WhoToFollowSection: React.FC<WhoToFollowSectionProps> = ({ isDark =
   const router = useRouter();
   const [members, setMembers] = useState<SuggestedMember[]>(DEFAULT_MEMBERS);
   const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({});
+  const toggleFollowMember = useCommunityStore((s) => s.toggleFollowMember);
+  const communityMembers = useCommunityStore((s) => s.members);
 
   const toggleFollow = (id: string) => {
     if (Platform.OS !== "web") {
@@ -86,6 +89,7 @@ export const WhoToFollowSection: React.FC<WhoToFollowSectionProps> = ({ isDark =
       ...prev,
       [id]: !prev[id],
     }));
+    toggleFollowMember(id);
   };
 
   const dismissMember = (id: string) => {
@@ -100,8 +104,8 @@ export const WhoToFollowSection: React.FC<WhoToFollowSectionProps> = ({ isDark =
   if (members.length === 0) return null;
 
   const cardRippleColor = isDark
-    ? "rgba(255, 255, 255, 0.08)"
-    : "rgba(0, 0, 0, 0.06)";
+    ? "rgba(255, 255, 255, 0.12)"
+    : "rgba(0, 0, 0, 0.08)";
 
   return (
     <View style={styles.sectionContainer}>
@@ -136,13 +140,13 @@ export const WhoToFollowSection: React.FC<WhoToFollowSectionProps> = ({ isDark =
         snapToAlignment="start"
       >
         {members.map((member) => {
-          const isFollowing = !!followingMap[member.id];
+          const isFollowing = !!(communityMembers[member.id]?.isFollowing ?? followingMap[member.id]);
 
           return (
             <View
               key={member.id}
               style={[
-                styles.memberCardOuter,
+                styles.memberCardContainer,
                 {
                   backgroundColor: isDark ? "#18181b" : "#ffffff",
                   borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
@@ -156,6 +160,7 @@ export const WhoToFollowSection: React.FC<WhoToFollowSectionProps> = ({ isDark =
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     } catch {}
                   }
+                  router.push(`/community/user/${member.id}` as any);
                 }}
                 unstable_pressDelay={0}
                 android_ripple={{
@@ -164,8 +169,7 @@ export const WhoToFollowSection: React.FC<WhoToFollowSectionProps> = ({ isDark =
                   foreground: true,
                 }}
                 style={({ pressed }) => [
-                  styles.memberCardInner,
-                  { backgroundColor: isDark ? "#18181b" : "#ffffff" },
+                  styles.memberCardPressable,
                   Platform.OS === "ios" && pressed && { opacity: 0.9 },
                 ]}
               >
@@ -338,9 +342,9 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingBottom: 10,
   },
-  memberCardOuter: {
+  memberCardContainer: {
     width: 204,
-    minHeight: 255,
+    height: 240,
     borderRadius: 20,
     borderWidth: 1,
     overflow: "hidden",
@@ -350,34 +354,35 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 4,
   },
-  memberCardInner: {
-    width: "100%",
-    paddingTop: 18,
-    paddingBottom: 20,
-    paddingHorizontal: 16,
+  memberCardPressable: {
+    width: 204,
+    height: 240,
+    justifyContent: "center",
     alignItems: "center",
-    borderRadius: 20,
+    paddingHorizontal: 14,
   },
   dismissBtn: {
     position: "absolute",
     top: 10,
     right: 10,
-    padding: 4,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
     zIndex: 2,
   },
   avatarWrap: {
-    width: 66,
-    height: 66,
+    width: 64,
+    height: 64,
     position: "relative",
-    marginBottom: 12,
-    marginTop: 4,
+    marginBottom: 8,
     alignSelf: "center",
   },
   avatar: {
-    width: 66,
-    height: 66,
-    borderRadius: 33,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
   },
   onlineDot: {
     position: "absolute",
@@ -393,7 +398,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     textAlign: "center",
-    marginBottom: 3,
+    marginBottom: 2,
+    paddingHorizontal: 4,
     width: "100%",
   },
   memberRole: {
@@ -401,12 +407,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: PRIMARY,
     textAlign: "center",
-    marginBottom: 3,
+    marginBottom: 2,
   },
   memberDept: {
     fontSize: 12,
     textAlign: "center",
-    marginBottom: 10,
+    marginBottom: 8,
+    paddingHorizontal: 4,
     width: "100%",
   },
   socialProofWrap: {
@@ -414,19 +421,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 3.5,
     borderRadius: 9999,
-    gap: 6,
-    marginBottom: 16,
+    gap: 5,
+    marginBottom: 12,
   },
   socialProofText: {
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: "600",
   },
   followBtnContainer: {
-    width: 136,
-    height: 36,
+    width: 124,
+    height: 35,
     borderRadius: 9999,
     overflow: "hidden",
     alignSelf: "center",

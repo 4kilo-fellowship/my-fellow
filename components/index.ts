@@ -10,6 +10,7 @@ export { default as CartSheet } from "./Marketplace/CartSheet";
 export { default as OrderCard } from "./Marketplace/OrderCard";
 export { default as ProductCard } from "./Marketplace/ProductCard";
 export { default as ProductSkeleton } from "./Marketplace/ProductSkeleton";
+export { AIPosterModal } from "./Modals/AIPosterModal";
 export { ConfirmModal } from "./Modals/ConfirmModal";
 export { DeleteConfirmModal } from "./Modals/DeleteConfirmModal";
 export { InfoModal } from "./Modals/InfoModal";

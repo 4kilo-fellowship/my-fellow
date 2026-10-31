@@ -70,3 +70,16 @@ export const deleteEventApi = async (
   const res = await api.delete<ApiResponse<{ message: string }>>(`/events/${id}`);
   return res.data;
 };
+
+export const generatePosterApi = async (
+  data: FormData,
+): Promise<{ success: boolean; imageUrl: string; message?: string }> => {
+  const res = await api.post<{ success: boolean; imageUrl: string; message?: string }>(
+    "/events/generate-poster",
+    data,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+    },
+  );
+  return res.data;
+};

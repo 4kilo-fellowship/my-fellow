@@ -22,6 +22,7 @@ import { Host, Switch } from "@expo/ui";
 import { Ionicons } from "@expo/vector-icons";
 
 import { ScreenHeader } from "@/components/ScreenHeader";
+import { AIPosterModal } from "@/components/Modals/AIPosterModal";
 import { ConfirmModal } from "@/components/Modals/ConfirmModal";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { PRIMARY } from "@/constants";
@@ -57,6 +58,7 @@ export default function ManageEventScreen() {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [deleting, setDeleting] = useState<boolean>(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState<boolean>(false);
+  const [aiModalVisible, setAiModalVisible] = useState<boolean>(false);
 
   // Focus tracking for input border colors
   const [focusedField, setFocusedField] = useState<string | null>(null);
@@ -480,14 +482,36 @@ export default function ManageEventScreen() {
         >
           {/* Banner Image Picker */}
           <View style={styles.section}>
-            <Text
-              style={[
-                styles.label,
-                { color: isDark ? "#e4e4e7" : "#0f172a" },
-              ]}
-            >
-              Banner Poster <Text style={styles.required}>*</Text>
-            </Text>
+            <View style={styles.bannerHeaderRow}>
+              <Text
+                style={[
+                  styles.label,
+                  { color: isDark ? "#e4e4e7" : "#0f172a", marginBottom: 0 },
+                ]}
+              >
+                Banner Poster <Text style={styles.required}>*</Text>
+              </Text>
+
+              <View style={styles.aiButtonWrap}>
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+                      () => {},
+                    );
+                    setAiModalVisible(true);
+                  }}
+                  android_ripple={{
+                    color: "rgba(85, 183, 82, 0.2)",
+                    borderless: false,
+                    foreground: true,
+                  }}
+                  style={styles.aiButtonInner}
+                >
+                  <Ionicons name="sparkles" size={14} color={PRIMARY} />
+                  <Text style={styles.aiButtonText}>Generate with AI</Text>
+                </Pressable>
+              </View>
+            </View>
             {imageUri ? (
               <View style={styles.imagePreviewContainer}>
                 <ExpoImage
@@ -1153,6 +1177,28 @@ export default function ManageEventScreen() {
       />
 
       {/* Info / Error Modal */}
+      {/* AI Poster Generator Modal */}
+      <AIPosterModal
+        visible={aiModalVisible}
+        onClose={() => setAiModalVisible(false)}
+        onPosterGenerated={(imageUrl) => {
+          setImageUri(imageUrl);
+          setIsLocalImage(false);
+          setInfoModal({
+            visible: true,
+            title: "AI Poster Applied",
+            message: "The AI-generated poster has been applied to this event banner.",
+            type: "success",
+          });
+        }}
+        defaultEventDetails={{
+          title,
+          description: shortDescription || fullDescription,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+        }}
+      />
+
       <InfoModal
         visible={infoModal.visible}
         onClose={() => setInfoModal({ ...infoModal, visible: false })}
@@ -1174,6 +1220,30 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 20,
+  },
+  bannerHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  aiButtonWrap: {
+    borderRadius: 9999,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: PRIMARY,
+  },
+  aiButtonInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  aiButtonText: {
+    color: PRIMARY,
+    fontSize: 12,
+    fontWeight: "700",
   },
   label: {
     fontSize: 14,

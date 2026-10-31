@@ -135,6 +135,12 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     ctaText?.toLowerCase()?.includes("join");
 
   React.useEffect(() => {
+    if (imageUri && typeof imageUri === "string" && imageUri.startsWith("http")) {
+      ExpoImage.prefetch(imageUri, "memory-disk").catch(() => {});
+    }
+  }, [imageUri]);
+
+  React.useEffect(() => {
     if (eventId && authState.authenticated && isRegisterCta) {
       checkRegistrationStatus(eventId);
     }
@@ -293,8 +299,9 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
           }
           style={StyleSheet.absoluteFill}
           contentFit="cover"
-          transition={200}
+          transition={150}
           cachePolicy="memory-disk"
+          priority="high"
         />
 
         <LinearGradient
