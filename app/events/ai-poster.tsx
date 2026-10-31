@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -10,6 +10,11 @@ import {
   TextInput,
   View,
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,6 +28,14 @@ import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { eventsService } from "@/services/eventsService";
 import { useEventsStore } from "@/stores/events.store";
+
+// Physics-based spring configuration per Expo / Reanimated guidelines
+const TAB_SPRING_CONFIG = {
+  damping: 24,
+  stiffness: 260,
+  mass: 0.6,
+  overshootClamping: false,
+};
 
 const STYLES = [
   "Modern",
@@ -108,6 +121,24 @@ export default function AIPosterScreen() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const activeTabColor = isDark ? "#ffffff" : "#000000";
+
+  const [tabBarWidth, setTabBarWidth] = useState(0);
+  const tabProgress = useSharedValue(activeTab === "create" ? 0 : 1);
+
+  useEffect(() => {
+    tabProgress.value = withSpring(
+      activeTab === "create" ? 0 : 1,
+      TAB_SPRING_CONFIG,
+    );
+  }, [activeTab, tabProgress]);
+
+  const indicatorAnimatedStyle = useAnimatedStyle(() => {
+    const singleTabWidth = tabBarWidth > 0 ? tabBarWidth / 2 : 0;
+    return {
+      width: singleTabWidth,
+      transform: [{ translateX: tabProgress.value * singleTabWidth }],
+    };
+  });
 
   const handleTabChange = (tab: "create" | "history") => {
     if (activeTab !== tab) {
@@ -226,7 +257,7 @@ export default function AIPosterScreen() {
     router.back();
   };
 
-  const bgColor = isDark ? "#0A0A0A" : "#f8fafc";
+  const bgColor = isDark ? "#0A0A0A" : "#ffffff";
   const cardBg = isDark ? "#141416" : "#ffffff";
   const textColor = isDark ? "#ffffff" : "#0f172a";
   const subTextColor = isDark ? "#a1a1aa" : "#64748b";
@@ -245,7 +276,7 @@ export default function AIPosterScreen() {
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={{ flex: 1 }}
+        style={{ flex: 1, backgroundColor: bgColor }}
       >
         {/* Minimal Navigation Tabs */}
         <View
@@ -256,17 +287,31 @@ export default function AIPosterScreen() {
               borderBottomColor: borderColor,
             },
           ]}
+          onLayout={(e) => {
+            const w = e.nativeEvent.layout.width;
+            if (w > 0) {
+              setTabBarWidth(w);
+            }
+          }}
         >
+          {/* Animated Smooth Sliding Bottom Indicator Line */}
+          {tabBarWidth > 0 && (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.slidingIndicatorLine,
+                {
+                  backgroundColor: activeTabColor,
+                },
+                indicatorAnimatedStyle,
+              ]}
+            />
+          )}
+
           <Pressable
             onPress={() => handleTabChange("create")}
             android_ripple={nativeRipple}
-            style={[
-              styles.tabBtn,
-              activeTab === "create" && {
-                borderBottomColor: activeTabColor,
-                borderBottomWidth: 2.5,
-              },
-            ]}
+            style={styles.tabBtn}
           >
             {activeTab === "create" && (
               <Ionicons
@@ -289,13 +334,7 @@ export default function AIPosterScreen() {
           <Pressable
             onPress={() => handleTabChange("history")}
             android_ripple={nativeRipple}
-            style={[
-              styles.tabBtn,
-              activeTab === "history" && {
-                borderBottomColor: activeTabColor,
-                borderBottomWidth: 2.5,
-              },
-            ]}
+            style={styles.tabBtn}
           >
             {activeTab === "history" && (
               <Ionicons
@@ -318,9 +357,13 @@ export default function AIPosterScreen() {
 
         {activeTab === "create" ? (
           <ScrollView
+            style={{ flex: 1, backgroundColor: bgColor }}
             contentContainerStyle={[
               styles.scrollContent,
-              { paddingBottom: Math.max(insets.bottom + 28, 48) },
+              {
+                paddingBottom: Math.max(insets.bottom + 28, 48),
+                backgroundColor: bgColor,
+              },
             ]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
@@ -742,9 +785,13 @@ export default function AIPosterScreen() {
         ) : (
           /* History Tab */
           <ScrollView
+            style={{ flex: 1, backgroundColor: bgColor }}
             contentContainerStyle={[
               styles.scrollContent,
-              { paddingBottom: Math.max(insets.bottom + 28, 48) },
+              {
+                paddingBottom: Math.max(insets.bottom + 28, 48),
+                backgroundColor: bgColor,
+              },
             ]}
             showsVerticalScrollIndicator={false}
           >
@@ -823,6 +870,14 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: "row",
     borderBottomWidth: StyleSheet.hairlineWidth,
+    position: "relative",
+  },
+  slidingIndicatorLine: {
+    position: "absolute",
+    bottom: -StyleSheet.hairlineWidth,
+    left: 0,
+    height: 2.5,
+    zIndex: 2,
   },
   tabBtn: {
     flex: 1,
@@ -831,8 +886,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     paddingVertical: 14,
-    borderBottomWidth: 2,
-    borderBottomColor: "transparent",
   },
   tabBtnText: {
     fontSize: 14,
