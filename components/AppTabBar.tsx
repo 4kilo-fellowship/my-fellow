@@ -11,7 +11,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { router as expoRouter } from "expo-router";
 import { SFSymbol, SymbolView } from "expo-symbols";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Dimensions,
   Image,
@@ -19,9 +19,12 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  Text,
   View,
 } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -31,9 +34,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const INDICATOR_WIDTH = 60;
-const INDICATOR_HEIGHT = 42;
-const INDICATOR_RADIUS = 21;
-const ICON_SIZE = 28;
+const INDICATOR_HEIGHT = 40;
+const INDICATOR_RADIUS = 20;
+const ICON_SIZE = 24;
+
+// Optimal Expo / Reanimated physics for gesture-driven spring transitions
+const SPRING_CONFIG = {
+  damping: 22,
+  stiffness: 240,
+  mass: 0.6,
+  overshootClamping: false,
+};
 
 // Safe native haptic trigger
 const triggerTabHaptic = () => {
@@ -73,12 +84,10 @@ function TabIcon({
   avatarUri?: string | null;
 }) {
   const isIOS = Platform.OS === "ios";
-  // Home icon is just a tiny bit bigger (31 vs 28)
   const isHome = routeName === "index";
-  const iconSize = isHome ? 31 : ICON_SIZE;
+  const iconSize = isHome ? 26 : ICON_SIZE;
 
-  // Profile tab: if custom photo uploaded, render a clean single-ring circular avatar.
-  // Otherwise, render the native platform person glyph — 100% consistent with other tabs, NO double border!
+  // Profile tab: if custom photo uploaded, render clean circular avatar with border
   if (routeName === "profile" && avatarUri) {
     return (
       <Image
@@ -129,7 +138,7 @@ function TabIcon({
     );
   }
 
-  // 2. Material Design Icons on Android (Matched Filled/Outline Variants)
+  // 2. Material Design Icons on Android
   let materialName: keyof typeof MaterialCommunityIcons.glyphMap = "home-outline";
   switch (routeName) {
     case "index":
@@ -190,10 +199,10 @@ function TabBarButton({
           onPress();
         }}
         onLongPress={onLongPress}
-        hitSlop={{ top: 12, bottom: 12, left: 10, right: 10 }}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         android_ripple={{
           borderless: true,
-          radius: 26,
+          radius: 28,
           color: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
         }}
         style={({ pressed }) => [
@@ -230,15 +239,17 @@ export default function AppTabBar(props: any) {
   const { user } = useUserStore();
 
   const isIOS = Platform.OS === "ios";
-  // High-contrast, punchy active and inactive colors for maximum visibility
-  const activeColor = isDark ? "#ffffff" : "#0f172a";
-  const inactiveColor = isDark
-    ? "rgba(255, 255, 255, 0.70)"
-    : "rgba(15, 23, 42, 0.65)";
+  // Minimalist monochrome: NO primary color indicator.
+  // Active indicator is deep black (#000000) with white icon (#ffffff).
+  // In dark mode, clean white capsule (#ffffff) with black icon (#000000).
+  const activeIconColor = isDark ? "#000000" : "#ffffff";
+  const inactiveTextColor = isDark
+    ? "rgba(255, 255, 255, 0.50)"
+    : "rgba(0, 0, 0, 0.45)";
 
   const avatarUri = user?.profileImage;
 
-  const routes = state?.routes || [];
+  const routes = useMemo(() => state?.routes || [], [state?.routes]);
   const numTabs = routes.length || 5;
   const [containerWidth, setContainerWidth] = useState(SCREEN_WIDTH);
 
@@ -251,26 +262,105 @@ export default function AppTabBar(props: any) {
   }, []);
 
   const currentIndex = state?.index ?? 0;
+  const tabWidth = containerWidth > 0 && numTabs > 0 ? containerWidth / numTabs : SCREEN_WIDTH / numTabs;
 
   // Compute initial position for the sliding active indicator
   const initialTargetX =
-    (currentIndex + 0.5) * (SCREEN_WIDTH / numTabs) - INDICATOR_WIDTH / 2;
+    (currentIndex + 0.5) * tabWidth - INDICATOR_WIDTH / 2;
 
   const translateX = useSharedValue(initialTargetX);
+  const startX = useSharedValue(initialTargetX);
+  const isPanning = useSharedValue(false);
 
+  // Synchronize indicator with tab index changes
   useEffect(() => {
     if (containerWidth > 0 && numTabs > 0) {
       const currentTabWidth = containerWidth / numTabs;
       const targetX =
         (currentIndex + 0.5) * currentTabWidth - INDICATOR_WIDTH / 2;
 
-      translateX.value = withSpring(targetX, {
-        damping: 20,
-        stiffness: 220,
-        mass: 0.7,
-      });
+      translateX.value = withSpring(targetX, SPRING_CONFIG);
     }
   }, [currentIndex, containerWidth, numTabs, translateX]);
+
+  // Programmatically navigate to target tab index from gesture or tap
+  const navigateToIndex = useCallback(
+    (index: number) => {
+      const targetRoute = routes[index];
+      if (!targetRoute) return;
+      if (currentIndex === index) return;
+
+      triggerTabHaptic();
+
+      const event = emitter?.emit
+        ? emitter.emit({
+            type: "tabPress",
+            target: targetRoute.key,
+            canPreventDefault: true,
+          })
+        : navigation?.emit?.({
+            type: "tabPress",
+            target: targetRoute.key,
+            canPreventDefault: true,
+          });
+
+      if (!event?.defaultPrevented) {
+        if (typeof navigateToTab === "function") {
+          navigateToTab(targetRoute.key);
+        } else if (navigation?.dispatch) {
+          navigation.dispatch({
+            ...CommonActions.navigate(targetRoute),
+            target: state.key,
+          });
+        } else if (navigation?.navigate) {
+          navigation.navigate(targetRoute.name);
+        } else {
+          const targetPath =
+            targetRoute.name === "index" ? "/(tabs)" : `/(tabs)/${targetRoute.name}`;
+          expoRouter.navigate(targetPath as any);
+        }
+      }
+    },
+    [routes, currentIndex, emitter, navigation, navigateToTab, state]
+  );
+
+  // Pan gesture for smooth fluid gesture movement across tabs
+  const panGesture = Gesture.Pan()
+    .activeOffsetX([-10, 10])
+    .onStart(() => {
+      isPanning.value = true;
+      startX.value = translateX.value;
+    })
+    .onUpdate((e) => {
+      if (tabWidth <= 0) return;
+      const minX = 0.5 * tabWidth - INDICATOR_WIDTH / 2;
+      const maxX = (numTabs - 0.5) * tabWidth - INDICATOR_WIDTH / 2;
+      const nextX = startX.value + e.translationX;
+      // Fluid movement with slight edge resistance
+      if (nextX < minX) {
+        translateX.value = minX + (nextX - minX) * 0.2;
+      } else if (nextX > maxX) {
+        translateX.value = maxX + (nextX - maxX) * 0.2;
+      } else {
+        translateX.value = nextX;
+      }
+    })
+    .onEnd((e) => {
+      isPanning.value = false;
+      if (tabWidth <= 0) return;
+      // Account for flick velocity for responsive swipe switching
+      const projectedX = translateX.value + e.velocityX * 0.08;
+      const targetIndex = Math.min(
+        Math.max(
+          Math.round((projectedX + INDICATOR_WIDTH / 2 - tabWidth * 0.5) / tabWidth),
+          0
+        ),
+        numTabs - 1
+      );
+      const targetX = (targetIndex + 0.5) * tabWidth - INDICATOR_WIDTH / 2;
+      translateX.value = withSpring(targetX, SPRING_CONFIG);
+      runOnJS(navigateToIndex)(targetIndex);
+    });
 
   const indicatorAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
@@ -293,6 +383,7 @@ export default function AppTabBar(props: any) {
                 borderTopColor: isDark
                   ? "rgba(255, 255, 255, 0.12)"
                   : "rgba(0, 0, 0, 0.08)",
+                borderBottomColor: isDark ? "#27272a" : "#000000",
               },
             ]
           : [
@@ -302,6 +393,7 @@ export default function AppTabBar(props: any) {
                 height: 62 + Math.max(insets.bottom, 6),
                 backgroundColor: isDark ? "#121212" : "#ffffff",
                 borderTopColor: isDark ? "#262626" : "#e5e7eb",
+                borderBottomColor: isDark ? "#27272a" : "#000000",
               },
             ],
       ]}
@@ -324,99 +416,108 @@ export default function AppTabBar(props: any) {
         )
       ) : null}
 
-      {/* Tabs Content Row */}
-      <View style={styles.tabsRow} onLayout={handleTabsLayout}>
-        {/* Animated Sliding Rounded Indicator Capsule */}
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.slidingIndicator,
-            {
-              backgroundColor: isDark
-                ? isIOS
-                  ? "rgba(255, 255, 255, 0.16)"
-                  : "rgba(255, 255, 255, 0.12)"
-                : isIOS
-                ? "rgba(0, 0, 0, 0.08)"
-                : "rgba(0, 0, 0, 0.06)",
-              borderColor: isDark
-                ? "rgba(255, 255, 255, 0.22)"
-                : "rgba(0, 0, 0, 0.06)",
-            },
-            indicatorAnimatedStyle,
-          ]}
-        />
+      {/* Gesture-driven Tabs Row */}
+      <GestureDetector gesture={panGesture}>
+        <View style={styles.tabsRow} onLayout={handleTabsLayout}>
+          {/* Animated Sliding Minimalist Black Indicator Capsule */}
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.slidingIndicator,
+              {
+                backgroundColor: isDark ? "#ffffff" : "#000000",
+                borderColor: isDark ? "#ffffff" : "#000000",
+              },
+              indicatorAnimatedStyle,
+            ]}
+          />
 
-        {/* Tab Buttons */}
-        {routes.map((route: any, index: number) => {
-          const descriptor = descriptors?.[route.key];
-          const options = descriptor?.options || {};
-          const isFocused = currentIndex === index;
+          {/* Tab Buttons */}
+          {routes.map((route: any, index: number) => {
+            const descriptor = descriptors?.[route.key];
+            const options = descriptor?.options || {};
+            const isFocused = currentIndex === index;
 
-          const onPress = () => {
-            const event = emitter?.emit
-              ? emitter.emit({
-                  type: "tabPress",
-                  target: route.key,
-                  canPreventDefault: true,
-                })
-              : navigation?.emit?.({
-                  type: "tabPress",
-                  target: route.key,
-                  canPreventDefault: true,
-                });
+            // Resolve tab label text for inactive presentation
+            const label =
+              options.tabBarLabel !== undefined
+                ? typeof options.tabBarLabel === "function"
+                  ? options.tabBarLabel({
+                      focused: isFocused,
+                      color: isFocused ? activeIconColor : inactiveTextColor,
+                      position: "below-icon",
+                      children: route.name,
+                    })
+                  : options.tabBarLabel
+                : options.title !== undefined
+                ? options.title
+                : route.name;
 
-            if (!isFocused && !event?.defaultPrevented) {
-              if (typeof navigateToTab === "function") {
-                navigateToTab(route.key);
-              } else if (navigation?.dispatch) {
-                navigation.dispatch({
-                  ...CommonActions.navigate(route),
-                  target: state.key,
-                });
-              } else if (navigation?.navigate) {
-                navigation.navigate(route.name);
-              } else {
-                const targetPath =
-                  route.name === "index" ? "/(tabs)" : `/(tabs)/${route.name}`;
-                expoRouter.navigate(targetPath as any);
+            const onPress = () => {
+              if (!isFocused) {
+                navigateToIndex(index);
               }
-            }
-          };
+            };
 
-          const onLongPress = () => {
-            if (emitter?.emit) {
-              emitter.emit({
-                type: "tabLongPress",
-                target: route.key,
-              });
-            } else if (navigation?.emit) {
-              navigation.emit({
-                type: "tabLongPress",
-                target: route.key,
-              });
-            }
-          };
+            const onLongPress = () => {
+              if (emitter?.emit) {
+                emitter.emit({
+                  type: "tabLongPress",
+                  target: route.key,
+                });
+              } else if (navigation?.emit) {
+                navigation.emit({
+                  type: "tabLongPress",
+                  target: route.key,
+                });
+              }
+            };
 
-          return (
-            <TabBarButton
-              key={route.key}
-              focused={isFocused}
-              onPress={onPress}
-              onLongPress={onLongPress}
-              accessibilityLabel={options.title || route.name}
-              isDark={isDark}
-            >
-              <TabIcon
-                routeName={route.name}
+            return (
+              <TabBarButton
+                key={route.key}
                 focused={isFocused}
-                color={isFocused ? activeColor : inactiveColor}
-                avatarUri={avatarUri}
-              />
-            </TabBarButton>
-          );
-        })}
-      </View>
+                onPress={onPress}
+                onLongPress={onLongPress}
+                accessibilityLabel={typeof label === "string" ? label : route.name}
+                isDark={isDark}
+              >
+                {/* For inactive tabs: DO NOT show icon, display only minimal text label.
+                    For active tab: show native icon inside the minimalist black indicator capsule */}
+                {isFocused ? (
+                  <TabIcon
+                    routeName={route.name}
+                    focused={isFocused}
+                    color={activeIconColor}
+                    avatarUri={avatarUri}
+                  />
+                ) : (
+                  <Text
+                    style={[
+                      styles.inactiveLabel,
+                      { color: inactiveTextColor },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {label}
+                  </Text>
+                )}
+              </TabBarButton>
+            );
+          })}
+        </View>
+      </GestureDetector>
+
+      {/* Minimalist Black Bottom Line */}
+      <View
+        pointerEvents="none"
+        style={[
+          styles.bottomLine,
+          {
+            backgroundColor: isDark ? "#27272a" : "#000000",
+          },
+        ]}
+      />
     </View>
   );
 }
@@ -432,6 +533,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1.5,
     overflow: "hidden",
     zIndex: 100,
     shadowColor: "#000",
@@ -441,6 +543,7 @@ const styles = StyleSheet.create({
   },
   androidContainer: {
     borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1.5,
     elevation: 8,
     zIndex: 100,
   },
@@ -474,6 +577,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  inactiveLabel: {
+    fontSize: 12,
+    fontWeight: "500",
+    textAlign: "center",
+    letterSpacing: -0.1,
+  },
   slidingIndicator: {
     position: "absolute",
     top: "50%",
@@ -488,14 +597,25 @@ const styles = StyleSheet.create({
       ios: {
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
+        shadowOpacity: 0.12,
         shadowRadius: 6,
+      },
+      android: {
+        elevation: 3,
       },
     }),
   },
   profileAvatarImg: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  bottomLine: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 1.5,
+    zIndex: 101,
   },
 });
