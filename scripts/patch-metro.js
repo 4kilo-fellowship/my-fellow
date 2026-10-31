@@ -22,3 +22,24 @@ if (fs.existsSync(targetFile)) {
     console.log('[patch-metro] Successfully patched react-native-css-interop for Metro watcher compatibility.');
   }
 }
+
+const notificationsModuleFile = path.join(
+  __dirname,
+  '..',
+  'node_modules',
+  'expo-notifications',
+  'build',
+  'TopicSubscriptionModule.android.js'
+);
+
+if (fs.existsSync(notificationsModuleFile)) {
+  let content = fs.readFileSync(notificationsModuleFile, 'utf8');
+  if (content.includes("requireNativeModule('ExpoTopicSubscriptionModule')")) {
+    content = content.replace(
+      "import { requireNativeModule } from 'expo';\nexport default requireNativeModule('ExpoTopicSubscriptionModule');",
+      "import { requireOptionalNativeModule } from 'expo';\nconst fallback = {\n  addListener: () => {},\n  removeListeners: () => {},\n  subscribeToTopicAsync: () => Promise.resolve(null),\n  unsubscribeFromTopicAsync: () => Promise.resolve(null),\n};\nconst nativeModule = requireOptionalNativeModule('ExpoTopicSubscriptionModule');\nexport default nativeModule ?? fallback;"
+    );
+    fs.writeFileSync(notificationsModuleFile, content, 'utf8');
+    console.log('[patch-metro] Successfully patched expo-notifications TopicSubscriptionModule for Expo Go / dev client fallback.');
+  }
+}

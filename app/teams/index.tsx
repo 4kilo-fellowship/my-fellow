@@ -124,7 +124,7 @@ const GridCard = ({
   </TouchableOpacity>
 );
 
-const Teams = () => {
+export default function TeamsScreen() {
   const { top } = useSafeAreaInsets();
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -358,6 +358,4 @@ const Teams = () => {
       />
     </View>
   );
-};
-
-export default Teams;
+}

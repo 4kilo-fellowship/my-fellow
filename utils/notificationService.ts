@@ -43,7 +43,6 @@ export const registerForPushNotificationsAsync = async () => {
       importance: notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: "#FF231F7C",
-      sound: "default",
       enableVibrate: true,
     });
   }
@@ -77,7 +76,6 @@ export const scheduleNotification = async (
     await notifications.setNotificationChannelAsync("default", {
       name: "default",
       importance: notifications.AndroidImportance.MAX,
-      sound: "default",
       enableVibrate: true,
       vibrationPattern: [0, 250, 250, 250],
     });
@@ -147,7 +145,6 @@ export const sendImmediateNotification = async (
     await notifications.setNotificationChannelAsync("default", {
       name: "default",
       importance: notifications.AndroidImportance.MAX,
-      sound: "default",
       enableVibrate: true,
       vibrationPattern: [0, 250, 250, 250],
     });
