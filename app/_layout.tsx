@@ -12,9 +12,10 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
+import { AvatarPreviewHost } from "@/components/avatar-preview";
 import { useNotificationObserver } from "@/notifications";
 import "./global.css";
 
@@ -144,6 +145,20 @@ function RootNavigator() {
       <Stack.Screen name="(tabs)" options={{ title: "Home" }} />
       <Stack.Screen name="(auth)" options={{ title: "Auth" }} />
       <Stack.Screen name="events/[id]" options={{ title: "Events" }} />
+      <Stack.Screen
+        name="community/user/[id]"
+        options={{
+          headerShown: false,
+          animation: "default",
+        }}
+      />
+      <Stack.Screen
+        name="community/user/connections"
+        options={{
+          headerShown: false,
+          animation: "default",
+        }}
+      />
       <Stack.Screen name="events/manage" options={{ title: "Manage Event", headerShown: false }} />
       <Stack.Screen name="events/ai-poster" options={{ title: "AI Poster", headerShown: false }} />
       <Stack.Screen name="teams/index" options={{ title: "Teams" }} />
@@ -252,6 +267,7 @@ export default function RootLayout() {
       <AuthProvider>
         <ThemeProvider>
           <RootNavigator />
+          <AvatarPreviewHost />
           <Toast
             position="bottom"
             bottomOffset={40}
