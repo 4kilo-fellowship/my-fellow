@@ -136,7 +136,7 @@ export const WhoToFollowSection: React.FC<WhoToFollowSectionProps> = ({ isDark =
         overScrollMode="never"
         contentContainerStyle={styles.scrollContent}
         decelerationRate="fast"
-        snapToInterval={196}
+        snapToInterval={198}
         snapToAlignment="start"
       >
         {members.map((member) => {
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   memberCardContainer: {
-    width: 184,
+    width: 186,
     borderRadius: 18,
     borderWidth: 1,
     overflow: "hidden",
@@ -355,16 +355,15 @@ const styles = StyleSheet.create({
   },
   memberCardPressable: {
     width: "100%",
-    paddingTop: 14,
-    paddingBottom: 14,
+    paddingTop: 16,
     paddingHorizontal: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   dismissBtn: {
     position: "absolute",
-    top: 6,
-    right: 6,
+    top: 8,
+    right: 8,
     width: 24,
     height: 24,
     borderRadius: 12,
@@ -373,16 +372,16 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   avatarWrap: {
-    width: 56,
-    height: 56,
+    width: 58,
+    height: 58,
     position: "relative",
     marginBottom: 6,
     alignSelf: "center",
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
   },
   onlineDot: {
     position: "absolute",
@@ -395,7 +394,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   memberName: {
-    fontSize: 14,
+    fontSize: 14.5,
     fontWeight: "700",
     textAlign: "center",
     marginBottom: 1,
@@ -432,11 +431,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   followBtnContainer: {
-    width: 116,
-    height: 32,
+    width: 118,
+    height: 33,
     borderRadius: 9999,
     overflow: "hidden",
     alignSelf: "center",
+    marginBottom: 16,
   },
   followBtnShadow: Platform.select({
     ios: {

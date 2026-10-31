@@ -508,47 +508,35 @@ export default function ManageEventScreen() {
                 Banner Poster <Text style={styles.required}>*</Text>
               </Text>
 
-              <View
-                style={[
-                  styles.aiButtonWrap,
-                  { borderColor: isDark ? "#3f3f46" : "#cbd5e1" },
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+                    () => {},
+                  );
+                  router.push({
+                    pathname: "/events/ai-poster",
+                    params: {
+                      initialTitle: title,
+                      initialDescription:
+                        shortDescription || fullDescription,
+                    },
+                  } as any);
+                }}
+                hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
+                android_ripple={{
+                  color: rippleColor,
+                  borderless: true,
+                  radius: 54,
+                }}
+                style={({ pressed }) => [
+                  styles.aiTextButton,
+                  pressed && Platform.OS === "ios" && { opacity: 0.6 },
                 ]}
               >
-                <Pressable
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
-                      () => {},
-                    );
-                    router.push({
-                      pathname: "/events/ai-poster",
-                      params: {
-                        initialTitle: title,
-                        initialDescription:
-                          shortDescription || fullDescription,
-                      },
-                    } as any);
-                  }}
-                  android_ripple={{
-                    color: rippleColor,
-                    borderless: false,
-                    foreground: true,
-                  }}
-                  style={({ pressed }) => [
-                    styles.aiButtonInner,
-                    pressed && Platform.OS === "ios" && { opacity: 0.75 },
-                  ]}
-                >
-                  <Ionicons name="sparkles" size={14} color={PRIMARY} />
-                  <Text
-                    style={[
-                      styles.aiButtonText,
-                      { color: isDark ? "#e4e4e7" : "#334155" },
-                    ]}
-                  >
-                    Generate with AI
-                  </Text>
-                </Pressable>
-              </View>
+                <Text style={styles.aiButtonText}>
+                  Generate with AI
+                </Text>
+              </Pressable>
             </View>
             {imageUri ? (
               <View style={styles.imagePreviewContainer}>
@@ -1245,23 +1233,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 8,
   },
-  aiButtonWrap: {
-    borderRadius: 9999,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: PRIMARY,
-  },
-  aiButtonInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  aiTextButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 6,
   },
   aiButtonText: {
     color: PRIMARY,
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: 13.5,
+    fontWeight: "600",
+    letterSpacing: -0.1,
   },
   label: {
     fontSize: 14,

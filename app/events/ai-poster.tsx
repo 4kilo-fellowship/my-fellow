@@ -717,14 +717,11 @@ export default function AIPosterScreen() {
                     </Text>
                   </>
                 ) : (
-                  <>
-                    <Ionicons name="sparkles" size={18} color="#ffffff" />
-                    <Text style={styles.generateBtnText}>
-                      {generatedImage
-                        ? "Generate Another Variation"
-                        : "Generate Poster"}
-                    </Text>
-                  </>
+                  <Text style={styles.generateBtnText}>
+                    {generatedImage
+                      ? "Generate Another Variation"
+                      : "Generate Poster"}
+                  </Text>
                 )}
               </Pressable>
             </View>

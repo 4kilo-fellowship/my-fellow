@@ -160,14 +160,9 @@ export function AIPosterModal({
       >
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: borderColor }]}>
-          <View style={styles.headerTitleWrap}>
-            <View style={styles.sparkleBadge}>
-              <Ionicons name="sparkles" size={16} color="#ffffff" />
-            </View>
-            <Text style={[styles.headerTitle, { color: textColor }]}>
-              AI Poster Generator
-            </Text>
-          </View>
+          <Text style={[styles.headerTitle, { color: textColor }]}>
+            AI Poster Generator
+          </Text>
           <Pressable
             onPress={onClose}
             disabled={loading}
