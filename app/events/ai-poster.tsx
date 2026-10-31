@@ -395,7 +395,7 @@ export default function AIPosterScreen() {
               onChangeText={setPrompt}
               multiline
               numberOfLines={4}
-              placeholder="Describe the event theme, scriptures, tone, or visuals (e.g., Youth Revival night, radiant stage lighting, joyful fellowship community)..."
+              placeholder="Describe your poster..."
               placeholderTextColor={subTextColor}
               style={[
                 styles.promptInput,
