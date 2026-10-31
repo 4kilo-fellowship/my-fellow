@@ -36,7 +36,7 @@ export default function ComposePostScreen() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const { user } = useUserStore();
-  const addPost = useCommunityStore((s) => s.addPost);
+  const createPost = useCommunityStore((s) => s.createPost);
 
   const [content, setContent] = useState("");
   const [pickedImageUri, setPickedImageUri] = useState<string | null>(null);
@@ -104,33 +104,16 @@ export default function ComposePostScreen() {
         ? `${content.trim()}\n\n📍 4 Kilo Campus, AAU`
         : content.trim();
 
-      const newPost = {
-        id: `post-${Date.now()}`,
-        authorId: user?.id || "user-fellowship",
-        authorName: user?.fullName || "Fellowship Member",
-        authorHandle: user?.telegramUserName
-          ? `@${user.telegramUserName.replace(/^@/, "")}`
-          : `@${(user?.fullName || "member").toLowerCase().replace(/\s+/g, "")}`,
-        authorAvatar: userAvatar,
-        authorTeam: user?.team || "Fellowship Ministry",
-        isVerified: false,
-        timestamp: "Just now",
-        content: finalContent,
+      await createPost({
+        body: finalContent,
+        kind: "post",
         image: pickedImageUri ? { uri: pickedImageUri } : null,
-        category: "all" as const,
-        repliesCount: 0,
-        repostsCount: 0,
-        likesCount: 0,
-        isLiked: false,
-        isReposted: false,
-        isBookmarked: false,
-        comments: [],
-      };
+        author: user,
+      });
 
-      addPost(newPost);
       router.back();
     } catch {
-      Alert.alert("Error", "Could not publish post. Please try again.");
+      Alert.alert("Error", "Could not publish post. Please check your connection and try again.");
     } finally {
       setSubmitting(false);
     }

@@ -1,4 +1,5 @@
 import { ImageViewerModal } from "@/components/ImageViewerModal";
+import { ProfileLink } from "@/components/profile/ProfileLink";
 import { PRIMARY } from "@/constants/colors";
 import { useTheme } from "@/context/ThemeContext";
 import {
@@ -12,8 +13,9 @@ import * as Haptics from "expo-haptics";
 import { Image as ExpoImage } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -35,6 +37,7 @@ export default function PostDetailScreen() {
   const { user } = useUserStore();
 
   const post = useCommunityStore((s) => s.getPostById(id as string));
+  const fetchPostThread = useCommunityStore((s) => s.fetchPostThread);
   const toggleLike = useCommunityStore((s) => s.toggleLike);
   const toggleRepost = useCommunityStore((s) => s.toggleRepost);
   const toggleBookmark = useCommunityStore((s) => s.toggleBookmark);
@@ -43,6 +46,22 @@ export default function PostDetailScreen() {
 
   const [commentText, setCommentText] = useState("");
   const [lightboxVisible, setLightboxVisible] = useState(false);
+  const [loading, setLoading] = useState(!post);
+  const [ancestors, setAncestors] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (id) {
+      fetchPostThread(id)
+        .then((result) => {
+          if (result?.ancestors) {
+            setAncestors(result.ancestors);
+          }
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [id, fetchPostThread]);
 
   const textColor = isDark ? "#ffffff" : "#0f172a";
   const mutedColor = isDark ? "#94a3b8" : "#64748b";
@@ -53,6 +72,23 @@ export default function PostDetailScreen() {
   const userAvatar =
     user?.profileImage ||
     getPrefilledAvatar(user?.phoneNumber || user?.id);
+
+  if (loading && !post) {
+    return (
+      <SafeAreaView
+        style={[
+          styles.container,
+          {
+            backgroundColor: bg,
+            alignItems: "center",
+            justifyContent: "center",
+          },
+        ]}
+      >
+        <ActivityIndicator size="large" color={PRIMARY} />
+      </SafeAreaView>
+    );
+  }
 
   if (!post) {
     return (
@@ -141,43 +177,124 @@ export default function PostDetailScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
           ListHeaderComponent={
-            <View style={[styles.postDetailCard, { borderBottomColor: borderColor }]}>
+            <>
+              {ancestors.map((anc) => (
+                <View
+                  key={anc.id}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingTop: 14,
+                    borderBottomWidth: StyleSheet.hairlineWidth,
+                    borderBottomColor: borderColor,
+                  }}
+                >
+                  <View style={{ flexDirection: "row" }}>
+                    <ProfileLink
+                      user={{
+                        id: anc.authorId || "user-fellowship",
+                        name: anc.authorName,
+                        username: anc.authorHandle,
+                        avatarUrl: anc.authorAvatar,
+                      }}
+                      size={40}
+                    />
+                    <View style={{ flex: 1, marginLeft: 10 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        <Text
+                          style={{
+                            fontWeight: "700",
+                            color: textColor,
+                            fontSize: 15,
+                          }}
+                        >
+                          {anc.authorName}
+                        </Text>
+                        <Text
+                          style={{
+                            color: mutedColor,
+                            fontSize: 13,
+                            marginLeft: 6,
+                          }}
+                        >
+                          {anc.authorHandle}
+                        </Text>
+                        <Text
+                          style={{
+                            color: mutedColor,
+                            fontSize: 13,
+                            marginLeft: 6,
+                          }}
+                        >
+                          · {anc.timestamp}
+                        </Text>
+                      </View>
+                      <Text
+                        style={{
+                          color: textColor,
+                          fontSize: 15,
+                          marginTop: 4,
+                          lineHeight: 20,
+                        }}
+                      >
+                        {anc.content}
+                      </Text>
+                    </View>
+                  </View>
+                  <View
+                    style={{
+                      width: 2,
+                      height: 14,
+                      backgroundColor: borderColor,
+                      marginLeft: 20,
+                      marginTop: 6,
+                    }}
+                  />
+                </View>
+              ))}
+
+              <View style={[styles.postDetailCard, { borderBottomColor: borderColor }]}>
               {/* Author Row */}
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() =>
-                  router.push(`/community/user/${post.authorId || "user-fellowship"}` as any)
-                }
-                style={styles.authorRow}
-              >
-                <ExpoImage
-                  source={
-                    typeof post.authorAvatar === "string"
-                      ? { uri: post.authorAvatar }
-                      : post.authorAvatar || { uri: getPrefilledAvatar(post.authorHandle) }
-                  }
-                  style={styles.authorAvatar}
-                  contentFit="cover"
+              <View style={styles.authorRow}>
+                <ProfileLink
+                  user={{
+                    id: post.authorId || "user-fellowship",
+                    name: post.authorName,
+                    username: post.authorHandle,
+                    avatarUrl: post.authorAvatar,
+                    team: post.authorTeam,
+                  }}
+                  size={46}
                 />
                 <View style={styles.authorCol}>
-                  <View style={styles.authorNameRow}>
-                    <Text style={[styles.authorName, { color: textColor }]}>
-                      {post.authorName}
+                  <ProfileLink
+                    user={{
+                      id: post.authorId || "user-fellowship",
+                      name: post.authorName,
+                      username: post.authorHandle,
+                      avatarUrl: post.authorAvatar,
+                      team: post.authorTeam,
+                    }}
+                    showAvatar={false}
+                  >
+                    <View style={styles.authorNameRow}>
+                      <Text style={[styles.authorName, { color: textColor }]}>
+                        {post.authorName}
+                      </Text>
+                      {post.isVerified && (
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={16}
+                          color={PRIMARY}
+                          style={{ marginLeft: 4 }}
+                        />
+                      )}
+                    </View>
+                    <Text style={[styles.authorHandle, { color: mutedColor }]}>
+                      {post.authorHandle} · {post.authorTeam || "Fellowship Member"}
                     </Text>
-                    {post.isVerified && (
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={16}
-                        color={PRIMARY}
-                        style={{ marginLeft: 4 }}
-                      />
-                    )}
-                  </View>
-                  <Text style={[styles.authorHandle, { color: mutedColor }]}>
-                    {post.authorHandle} · {post.authorTeam || "Fellowship Member"}
-                  </Text>
+                  </ProfileLink>
                 </View>
-              </TouchableOpacity>
+              </View>
 
               {/* Main Content Body */}
               <Text style={[styles.postBodyText, { color: textColor }]}>
@@ -297,7 +414,8 @@ export default function PostDetailScreen() {
                 </Text>
               </View>
             </View>
-          }
+          </>
+        }
           ListEmptyComponent={
             <View style={styles.emptyCommentsWrap}>
               <Ionicons name="chatbubbles-outline" size={36} color={mutedColor} />
@@ -308,30 +426,34 @@ export default function PostDetailScreen() {
           }
           renderItem={({ item }) => (
             <View style={[styles.commentRow, { borderBottomColor: borderColor }]}>
-              <TouchableOpacity
-                onPress={() =>
-                  router.push(`/community/user/${item.authorId}` as any)
-                }
-              >
-                <ExpoImage
-                  source={
-                    typeof item.authorAvatar === "string"
-                      ? { uri: item.authorAvatar }
-                      : item.authorAvatar || { uri: getPrefilledAvatar(item.authorHandle) }
-                  }
-                  style={styles.commentAvatar}
-                  contentFit="cover"
-                />
-              </TouchableOpacity>
+              <ProfileLink
+                user={{
+                  id: item.authorId,
+                  name: item.authorName,
+                  username: item.authorHandle,
+                  avatarUrl: item.authorAvatar,
+                }}
+                size={36}
+              />
               <View style={styles.commentContentCol}>
-                <View style={styles.commentAuthorRow}>
-                  <Text style={[styles.commentAuthorName, { color: textColor }]}>
-                    {item.authorName}
-                  </Text>
-                  <Text style={[styles.commentHandle, { color: mutedColor }]}>
-                    {item.authorHandle} · {item.timestamp}
-                  </Text>
-                </View>
+                <ProfileLink
+                  user={{
+                    id: item.authorId,
+                    name: item.authorName,
+                    username: item.authorHandle,
+                    avatarUrl: item.authorAvatar,
+                  }}
+                  showAvatar={false}
+                >
+                  <View style={styles.commentAuthorRow}>
+                    <Text style={[styles.commentAuthorName, { color: textColor }]}>
+                      {item.authorName}
+                    </Text>
+                    <Text style={[styles.commentHandle, { color: mutedColor }]}>
+                      {item.authorHandle} · {item.timestamp}
+                    </Text>
+                  </View>
+                </ProfileLink>
                 <Text style={[styles.commentText, { color: textColor }]}>
                   {item.content}
                 </Text>
