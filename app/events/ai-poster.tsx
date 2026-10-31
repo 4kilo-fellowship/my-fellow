@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -120,6 +120,7 @@ export default function AIPosterScreen() {
   const [loading, setLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const scrollRef = useRef<any>(null);
 
   // Color tokens
   const bgColor = isDark ? "#0A0A0A" : "#FFFFFF";
@@ -236,6 +237,9 @@ export default function AIPosterScreen() {
           url: res.imageUrl,
           prompt: prompt.trim(),
         });
+        setTimeout(() => {
+          scrollRef.current?.scrollToEnd({ animated: true });
+        }, 200);
       } else {
         throw new Error(res?.message || "Failed to generate poster.");
       }
@@ -276,6 +280,7 @@ export default function AIPosterScreen() {
 
     return (
       <ScrollView
+        ref={scrollRef}
         style={{ flex: 1, backgroundColor: bgColor }}
         contentContainerStyle={[
           styles.scrollContent,
