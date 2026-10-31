@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image as ExpoImage } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React from "react";
 import {
   Platform,
   Pressable,
@@ -25,59 +25,21 @@ export interface SuggestedMember {
   avatar: string;
 }
 
-const DEFAULT_MEMBERS: SuggestedMember[] = [
-  {
-    id: "m1",
-    name: "Abenezer Bekele",
-    role: "Worship Leader",
-    department: "Software Eng. • 4th Yr",
-    mutualCount: 28,
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "m2",
-    name: "Hiwot Tadesse",
-    role: "Prayer Coordinator",
-    department: "Biomedical Eng. • 3rd Yr",
-    mutualCount: 34,
-    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "m3",
-    name: "Yohannes Hailu",
-    role: "Bible Study Lead",
-    department: "Electrical Eng. • 5th Yr",
-    mutualCount: 19,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "m4",
-    name: "Bethelhem Assefa",
-    role: "Freshman Mentor",
-    department: "Computer Eng. • 4th Yr",
-    mutualCount: 22,
-    avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "m5",
-    name: "Natnael Tamiru",
-    role: "Media & Tech Lead",
-    department: "Information Systems • 5th Yr",
-    mutualCount: 42,
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
-  },
-];
-
 interface WhoToFollowSectionProps {
   isDark?: boolean;
 }
 
 export const WhoToFollowSection: React.FC<WhoToFollowSectionProps> = ({ isDark = false }) => {
   const router = useRouter();
-  const [members, setMembers] = useState<SuggestedMember[]>(DEFAULT_MEMBERS);
-  const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({});
+  const members = useCommunityStore((s) => s.whoToFollow);
+  const fetchWhoToFollow = useCommunityStore((s) => s.fetchWhoToFollow);
   const toggleFollowMember = useCommunityStore((s) => s.toggleFollowMember);
+  const dismissSuggestedMember = useCommunityStore((s) => s.dismissSuggestedMember);
   const communityMembers = useCommunityStore((s) => s.members);
+
+  React.useEffect(() => {
+    fetchWhoToFollow();
+  }, [fetchWhoToFollow]);
 
   const toggleFollow = (id: string) => {
     if (Platform.OS !== "web") {
@@ -85,10 +47,6 @@ export const WhoToFollowSection: React.FC<WhoToFollowSectionProps> = ({ isDark =
         Haptics.selectionAsync();
       } catch {}
     }
-    setFollowingMap((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
     toggleFollowMember(id);
   };
 
@@ -98,7 +56,7 @@ export const WhoToFollowSection: React.FC<WhoToFollowSectionProps> = ({ isDark =
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       } catch {}
     }
-    setMembers((prev) => prev.filter((m) => m.id !== id));
+    dismissSuggestedMember(id);
   };
 
   if (members.length === 0) return null;
@@ -140,7 +98,7 @@ export const WhoToFollowSection: React.FC<WhoToFollowSectionProps> = ({ isDark =
         snapToAlignment="start"
       >
         {members.map((member) => {
-          const isFollowing = !!(communityMembers[member.id]?.isFollowing ?? followingMap[member.id]);
+          const isFollowing = !!(communityMembers[member.id]?.isFollowing ?? (member as any).isFollowing);
 
           return (
             <View

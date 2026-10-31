@@ -51,11 +51,17 @@ export function MainTabHeader({
   const [internalStreakModalVisible, setInternalStreakModalVisible] =
     useState(false);
   const unreadCount = useNotificationsStore((s) => s.getUnreadCount());
-  const { currentStreak, isCompletedToday, checkStreak } = useStreakStore();
+  const { currentStreak, isCompletedToday, checkStreak, syncServerStreak } =
+    useStreakStore();
+  const syncServerUnreadCount = useNotificationsStore(
+    (s) => s.syncServerUnreadCount,
+  );
 
   useEffect(() => {
     checkStreak();
-  }, [checkStreak]);
+    syncServerStreak();
+    syncServerUnreadCount();
+  }, [checkStreak, syncServerStreak, syncServerUnreadCount]);
 
   const completed = isCompletedToday();
 

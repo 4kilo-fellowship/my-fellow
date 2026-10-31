@@ -21,10 +21,12 @@ import { useNetwork } from "@/hooks/useNetwork";
 import { devotionsService } from "@/services/devotionsService";
 import { eventsService } from "@/services/eventsService";
 import { checkForNewNotifications } from "@/services/notificationService";
+import { socialApi } from "@/services/socialApi";
 import { useAppStore } from "@/stores/app.store";
 import { useDevotionsStore } from "@/stores/devotions.store";
 import { useEventsStore } from "@/stores/events.store";
 import { useNotificationsStore } from "@/stores/notifications.store";
+import { useStreakStore } from "@/stores/streak.store";
 import { useUserStore } from "@/stores/user.store";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -103,7 +105,21 @@ const Home = () => {
 
       setEventsList(eventsData);
       setDevotionsList(devotionsData.data || []);
-      setVideos(VIDEOS);
+
+      let liveVideos: any[] = [];
+      try {
+        const videosData = await socialApi.getContentVideos();
+        if (Array.isArray(videosData) && videosData.length > 0) {
+          liveVideos = videosData;
+        }
+      } catch {
+        // Fallback to cached VIDEOS
+      }
+      setVideos(liveVideos.length > 0 ? liveVideos : VIDEOS);
+
+      // Sync streak and notification badges in the background
+      useStreakStore.getState().syncServerStreak().catch(() => {});
+      useNotificationsStore.getState().syncServerUnreadCount().catch(() => {});
       setError(null);
 
       if (Array.isArray(eventsData) && eventsData.length > 0) {
