@@ -1,19 +1,20 @@
 import { AppBottomSheet } from "@/components/AppBottomSheet";
 import { ImageViewerModal } from "@/components/ImageViewerModal";
 import { MainTabHeader } from "@/components/MainTabHeader";
+import { ProfileLink } from "@/components/profile/ProfileLink";
 import { PRIMARY } from "@/constants/colors";
 import { useTheme } from "@/context/ThemeContext";
 import {
   CommunityPost,
   useCommunityStore,
 } from "@/stores/community.store";
-import { getPrefilledAvatar } from "@/utils/avatar";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Image,
@@ -35,12 +36,21 @@ export default function CommunityScreen() {
   const isDark = theme === "dark";
 
   const posts = useCommunityStore((s) => s.posts);
+  const feedType = useCommunityStore((s) => s.feedType);
+  const setFeedType = useCommunityStore((s) => s.setFeedType);
+  const fetchFeed = useCommunityStore((s) => s.fetchFeed);
+  const isFeedLoading = useCommunityStore((s) => s.isFeedLoading);
+  const hasMoreFeed = useCommunityStore((s) => s.hasMoreFeed);
   const toggleLike = useCommunityStore((s) => s.toggleLike);
   const toggleRepost = useCommunityStore((s) => s.toggleRepost);
   const toggleBookmark = useCommunityStore((s) => s.toggleBookmark);
 
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [expandedPostIds, setExpandedPostIds] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    fetchFeed(feedType, true);
+  }, [feedType, fetchFeed]);
 
   // Three-dots bottom sheet state
   const [activePostForSheet, setActivePostForSheet] = useState<CommunityPost | null>(null);
@@ -53,15 +63,29 @@ export default function CommunityScreen() {
     author?: string;
   } | null>(null);
 
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     } catch {}
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 700);
-  }, []);
+    await fetchFeed(feedType, true);
+    setRefreshing(false);
+  }, [feedType, fetchFeed]);
+
+  const handleEndReached = () => {
+    if (!isFeedLoading && hasMoreFeed) {
+      fetchFeed(feedType, false);
+    }
+  };
+
+  const handleTabChange = (type: "following" | "foryou") => {
+    if (feedType === type) return;
+    try {
+      Haptics.selectionAsync().catch(() => {});
+    } catch {}
+    setFeedType(type);
+    fetchFeed(type, true);
+  };
 
   const handleToggleLike = (id: string) => {
     try {
@@ -199,6 +223,53 @@ export default function CommunityScreen() {
         </View>
       </View>
 
+      {/* Feed Tabs: For you / Following */}
+      <View style={[styles.tabsHeader, { borderBottomColor: borderColor }]}>
+        <Pressable
+          onPress={() => handleTabChange("foryou")}
+          style={styles.feedTabBtn}
+        >
+          <Text
+            style={[
+              styles.feedTabText,
+              {
+                color: feedType === "foryou" ? textColor : mutedColor,
+                fontWeight: feedType === "foryou" ? "700" : "500",
+              },
+            ]}
+          >
+            For you
+          </Text>
+          {feedType === "foryou" && (
+            <View
+              style={[styles.activeTabIndicator, { backgroundColor: PRIMARY }]}
+            />
+          )}
+        </Pressable>
+
+        <Pressable
+          onPress={() => handleTabChange("following")}
+          style={styles.feedTabBtn}
+        >
+          <Text
+            style={[
+              styles.feedTabText,
+              {
+                color: feedType === "following" ? textColor : mutedColor,
+                fontWeight: feedType === "following" ? "700" : "500",
+              },
+            ]}
+          >
+            Following
+          </Text>
+          {feedType === "following" && (
+            <View
+              style={[styles.activeTabIndicator, { backgroundColor: PRIMARY }]}
+            />
+          )}
+        </Pressable>
+      </View>
+
       {/* FlatList Fellowship Feed */}
       <FlatList
         data={posts}
@@ -206,7 +277,60 @@ export default function CommunityScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingBottom: insets.bottom + 100,
+          flexGrow: 1,
         }}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.4}
+        ListFooterComponent={
+          isFeedLoading && posts.length > 0 ? (
+            <View style={{ paddingVertical: 20, alignItems: "center" }}>
+              <ActivityIndicator color={PRIMARY} size="small" />
+            </View>
+          ) : undefined
+        }
+        ListEmptyComponent={
+          !isFeedLoading ? (
+            <View
+              style={{
+                paddingVertical: 60,
+                alignItems: "center",
+                paddingHorizontal: 32,
+              }}
+            >
+              <Ionicons
+                name="chatbubbles-outline"
+                size={44}
+                color={mutedColor}
+              />
+              <Text
+                style={{
+                  color: textColor,
+                  fontSize: 16,
+                  fontWeight: "600",
+                  marginTop: 12,
+                  textAlign: "center",
+                }}
+              >
+                {feedType === "following"
+                  ? "No reflections from connects yet"
+                  : "No reflections yet"}
+              </Text>
+              <Text
+                style={{
+                  color: mutedColor,
+                  fontSize: 13,
+                  textAlign: "center",
+                  marginTop: 6,
+                  lineHeight: 18,
+                }}
+              >
+                {feedType === "following"
+                  ? "Follow fellow students to see their campus prayers and reflections here."
+                  : "Be the first to share an encouragement or prayer with the fellowship!"}
+              </Text>
+            </View>
+          ) : undefined
+        }
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -217,12 +341,6 @@ export default function CommunityScreen() {
         }
         renderItem={({ item }) => {
           const isExpanded = !!expandedPostIds[item.id];
-          const avatarSource =
-            typeof item.authorAvatar === "string"
-              ? { uri: item.authorAvatar }
-              : item.authorAvatar || {
-                  uri: getPrefilledAvatar(item.authorHandle),
-                };
 
           return (
             <View
@@ -234,27 +352,30 @@ export default function CommunityScreen() {
               ]}
             >
               {/* Left Column: Author Avatar -> Navigates to Member Profile */}
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => {
-                  Haptics.selectionAsync().catch(() => {});
-                  router.push(`/community/user/${item.authorId || "user-fellowship"}` as any);
-                }}
-                style={styles.tweetAvatarWrap}
-              >
-                <Image source={avatarSource} style={styles.tweetAvatar} />
-              </TouchableOpacity>
+              <View style={styles.tweetAvatarWrap}>
+                <ProfileLink
+                  user={{
+                    id: item.authorId || "user-fellowship",
+                    name: item.authorName,
+                    username: item.authorHandle,
+                    avatarUrl: item.authorAvatar,
+                  }}
+                  size={42}
+                />
+              </View>
 
               {/* Right Column: Tweet Content & Actions */}
               <View style={styles.tweetBodyCol}>
                 {/* Header: Author Name, Verified Badge, Handle, Middot, Time, More */}
                 <View style={styles.tweetHeaderRow}>
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    onPress={() => {
-                      Haptics.selectionAsync().catch(() => {});
-                      router.push(`/community/user/${item.authorId || "user-fellowship"}` as any);
+                  <ProfileLink
+                    user={{
+                      id: item.authorId || "user-fellowship",
+                      name: item.authorName,
+                      username: item.authorHandle,
+                      avatarUrl: item.authorAvatar,
                     }}
+                    showAvatar={false}
                     style={styles.tweetAuthorInfo}
                   >
                     <Text
@@ -290,7 +411,7 @@ export default function CommunityScreen() {
                     <Text style={[styles.tweetTime, { color: mutedColor }]}>
                       {item.timestamp}
                     </Text>
-                  </TouchableOpacity>
+                  </ProfileLink>
 
                   {/* Three-dots Menu Trigger */}
                   <TouchableOpacity
@@ -517,7 +638,18 @@ export default function CommunityScreen() {
             onPress={() => {
               setSheetVisible(false);
               if (activePostForSheet) {
-                router.push(`/community/user/${activePostForSheet.authorId || "user-fellowship"}` as any);
+                router.push({
+                  pathname: "/community/user/[id]",
+                  params: {
+                    id: activePostForSheet.authorId || "user-fellowship",
+                    name: activePostForSheet.authorName,
+                    username: activePostForSheet.authorHandle,
+                    avatar:
+                      typeof activePostForSheet.authorAvatar === "string"
+                        ? activePostForSheet.authorAvatar
+                        : "",
+                  },
+                } as any);
               }
             }}
             style={styles.sheetActionItem}
@@ -606,6 +738,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+  },
+  tabsHeader: {
+    flexDirection: "row",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+  },
+  feedTabBtn: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    position: "relative",
+  },
+  feedTabText: {
+    fontSize: 15,
+  },
+  activeTabIndicator: {
+    position: "absolute",
+    bottom: 0,
+    height: 3,
+    width: 48,
+    borderRadius: 1.5,
   },
   searchIcon: {
     marginRight: 8,
