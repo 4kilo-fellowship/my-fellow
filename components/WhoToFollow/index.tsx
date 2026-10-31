@@ -136,7 +136,7 @@ export const WhoToFollowSection: React.FC<WhoToFollowSectionProps> = ({ isDark =
         overScrollMode="never"
         contentContainerStyle={styles.scrollContent}
         decelerationRate="fast"
-        snapToInterval={200}
+        snapToInterval={230}
         snapToAlignment="start"
       >
         {members.map((member) => {
@@ -149,7 +149,7 @@ export const WhoToFollowSection: React.FC<WhoToFollowSectionProps> = ({ isDark =
                 styles.memberCardContainer,
                 {
                   backgroundColor: isDark ? "#18181b" : "#ffffff",
-                  borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+                  borderColor: isDark ? "#27272a" : "#e2e8f0",
                 },
               ]}
             >
@@ -339,24 +339,24 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    gap: 12,
-    paddingBottom: 10,
+    gap: 14,
+    paddingBottom: 12,
   },
   memberCardContainer: {
-    width: 186,
-    borderRadius: 18,
+    width: 216,
+    borderRadius: 20,
     borderWidth: 1,
     overflow: "hidden",
-    elevation: 2,
+    elevation: 1,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1.5 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
   },
   memberCardPressable: {
     width: "100%",
-    paddingTop: 18,
-    paddingHorizontal: 12,
+    paddingTop: 22,
+    paddingHorizontal: 14,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -372,17 +372,17 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   avatarWrap: {
-    width: 58,
-    height: 58,
+    width: 60,
+    height: 60,
     position: "relative",
     marginTop: 14,
-    marginBottom: 8,
+    marginBottom: 10,
     alignSelf: "center",
   },
   avatar: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
   },
   onlineDot: {
     position: "absolute",
@@ -395,24 +395,24 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   memberName: {
-    fontSize: 14.5,
+    fontSize: 15,
     fontWeight: "700",
     textAlign: "center",
-    marginBottom: 2,
+    marginBottom: 3,
     paddingHorizontal: 4,
     width: "100%",
   },
   memberRole: {
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: "700",
     color: PRIMARY,
     textAlign: "center",
-    marginBottom: 2,
+    marginBottom: 3,
   },
   memberDept: {
-    fontSize: 11,
+    fontSize: 11.5,
     textAlign: "center",
-    marginBottom: 7,
+    marginBottom: 10,
     paddingHorizontal: 4,
     width: "100%",
   },
@@ -421,30 +421,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 2.5,
+    paddingHorizontal: 10,
+    paddingVertical: 3.5,
     borderRadius: 9999,
-    gap: 4,
-    marginBottom: 14,
+    gap: 5,
+    marginBottom: 16,
   },
   socialProofText: {
     fontSize: 11,
     fontWeight: "600",
   },
   followBtnContainer: {
-    width: 152,
-    height: 36,
+    width: 180,
+    height: 38,
     borderRadius: 9999,
     overflow: "hidden",
     alignSelf: "center",
-    marginBottom: 16,
+    marginBottom: 22,
   },
   followBtnShadow: Platform.select({
     ios: {
       shadowColor: "#ff6719",
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.35,
-      shadowRadius: 5,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 3,
     },
     default: {},
   }) as any,
@@ -459,10 +459,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 5,
+    gap: 6,
   },
   followBtnText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700",
     letterSpacing: 0.2,
   },

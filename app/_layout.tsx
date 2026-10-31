@@ -15,6 +15,7 @@ import React, { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
+import { useNotificationObserver } from "@/notifications";
 import "./global.css";
 
 SplashScreen.preventAutoHideAsync();
@@ -123,6 +124,8 @@ const renderCustomToast = (
 function RootNavigator() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
+
+  useNotificationObserver();
 
   return (
     <Stack

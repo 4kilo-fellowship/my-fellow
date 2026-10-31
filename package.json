@@ -51,6 +51,7 @@
     "expo-status-bar": "~58.0.4",
     "expo-symbols": "~58.0.4",
     "expo-system-ui": "~58.0.6",
+    "expo-task-manager": "~58.0.12",
     "expo-video": "~58.0.13",
     "expo-web-browser": "~58.0.7",
     "nativewind": "^4.2.1",
@@ -72,6 +73,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.3.0",
+    "bun-types": "^1.4.4",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~58.0.4",
     "prettier-plugin-tailwindcss": "^0.7.2",

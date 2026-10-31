@@ -3,10 +3,12 @@ import {
   ConnectionToaster,
   InfoModal,
   RegistrationModal,
+  ReminderSheet,
 } from "@/components";
 import { PRIMARY } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useReminder, ReminderTarget } from "@/notifications";
 import { useAlerts } from "@/hooks/useAlerts";
 import { eventsService } from "@/services/eventsService";
 import { useEventsStore } from "@/stores/events.store";
@@ -26,7 +28,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Linking from "expo-linking";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -244,6 +246,38 @@ export default function EventDetails() {
     isRegisterCta,
     isRegisteredForThisEvent,
   });
+
+  const isNotifyCta =
+    ctaLabel.toLowerCase().trim().includes("notify") ||
+    displayLabel.toLowerCase().trim().includes("notify");
+
+  const reminderTarget: ReminderTarget = useMemo(
+    () => ({
+      eventId: String(ev?._id || ev?.id || id || ""),
+      title: ev?.title || "Fellowship Event",
+      startsAt: new Date(ev?.startDate || ev?.time || Date.now()).getTime(),
+      url: `events/${ev?._id || ev?.id || id}`,
+      shortDescription: ev?.shortDescription,
+    }),
+    [ev, id],
+  );
+
+  const reminder = useReminder(reminderTarget);
+
+  const isButtonDisabled =
+    buttonDisabled ||
+    (isNotifyCta &&
+      (reminder.status === "unavailable" || reminder.status === "loading"));
+
+  const resolvedDisplayLabel = isNotifyCta
+    ? reminder.status === "active"
+      ? "Reminder on"
+      : reminder.status === "permission"
+      ? "Enable notifications"
+      : reminder.status === "unavailable"
+      ? "Event started"
+      : displayLabel
+    : displayLabel;
 
   const handleShare = async () => {
     if (!ev || isSharing) return;
@@ -609,9 +643,19 @@ export default function EventDetails() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
                 () => {},
               );
-              handleCta();
+              if (isNotifyCta) {
+                if (reminder.status === "active") {
+                  reminder.openSheet();
+                } else if (reminder.status === "permission") {
+                  reminder.openNotificationSettings();
+                } else {
+                  reminder.enable();
+                }
+              } else {
+                handleCta();
+              }
             }}
-            disabled={buttonDisabled}
+            disabled={isButtonDisabled}
             android_ripple={{
               color: "rgba(255, 255, 255, 0.28)",
               borderless: false,
@@ -627,13 +671,13 @@ export default function EventDetails() {
                 opacity:
                   pressed && Platform.OS === "ios"
                     ? 0.85
-                    : buttonDisabled
+                    : isButtonDisabled
                     ? 0.6
                     : 1,
               },
             ]}
           >
-            {registering || unregistering ? (
+            {registering || unregistering || (isNotifyCta && reminder.status === "loading") ? (
               <ActivityIndicator color="white" />
             ) : (
               <View
@@ -659,7 +703,7 @@ export default function EventDetails() {
                     textAlignVertical: "center",
                   }}
                 >
-                  {displayLabel}
+                  {resolvedDisplayLabel}
                 </Text>
                 {isRegisterCta && isRegisteredForThisEvent ? (
                   <Ionicons
@@ -668,9 +712,15 @@ export default function EventDetails() {
                     color={isDark ? "#4ade80" : "#16a34a"}
                     style={{ marginTop: Platform.OS === "android" ? 1 : 0 }}
                   />
-                ) : displayLabel.toLowerCase().includes("notify") ? (
+                ) : isNotifyCta ? (
                   <Ionicons
-                    name="notifications"
+                    name={
+                      reminder.status === "active"
+                        ? "notifications"
+                        : reminder.status === "permission"
+                        ? "notifications-off-outline"
+                        : "notifications-outline"
+                    }
                     size={18}
                     color="white"
                     style={{ marginTop: Platform.OS === "android" ? 1 : 0 }}
@@ -695,6 +745,18 @@ export default function EventDetails() {
         loading={registering}
         eventTitle={ev.title}
       />
+
+      {isNotifyCta && (
+        <ReminderSheet
+          visible={reminder.isSheetOpen}
+          target={reminderTarget}
+          activeOffsets={reminder.offsets}
+          onToggleOffset={reminder.toggleOffset}
+          onDisableAll={reminder.disable}
+          onClose={reminder.closeSheet}
+          isDark={isDark}
+        />
+      )}
 
       <ConfirmModal
         visible={signInModalVisible}

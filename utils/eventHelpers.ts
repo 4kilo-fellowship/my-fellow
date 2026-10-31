@@ -1,5 +1,12 @@
 import { API_URL } from "@/constants";
 import { Linking } from "react-native";
+import {
+  ensurePermission,
+  scheduleReminders,
+  sendConfirmationNotification,
+  buildConfirmationCopy,
+  type ReminderTarget,
+} from "@/notifications";
 
 export const formatEventDate = (
   startDate?: string | null,
@@ -128,7 +135,8 @@ export const createEventActions = (args: {
     }
 
     if (text.includes("notify")) {
-      if (!ev?.startDate) {
+      const eventTime = ev?.startDate || ev?.time;
+      if (!eventTime) {
         showInfoModalFn(
           "Warning",
           "Program time not available for notification.",
@@ -136,14 +144,47 @@ export const createEventActions = (args: {
         );
         return;
       }
-      await addAlert({
-        title: ev.title,
-        description: ev.shortDescription || "Event notification",
-        time: ev.startDate,
-        repeats: "none",
-        remindBefore: 15,
-      });
-      setShowSuccessModal(true);
+
+      const startsAt = new Date(eventTime).getTime();
+      if (isNaN(startsAt) || startsAt <= Date.now()) {
+        showInfoModalFn(
+          "Event Started",
+          "This event has already started or ended. Reminders cannot be set.",
+          "info",
+        );
+        return;
+      }
+
+      const perm = await ensurePermission();
+      if (perm !== "granted") {
+        showInfoModalFn(
+          "Notifications Disabled",
+          "Please enable notifications in device settings to receive event reminders.",
+          "info",
+        );
+        return;
+      }
+
+      const eventId = String(ev?._id || ev?.id || "");
+      const title = ev?.title || "Fellowship Event";
+      const target: ReminderTarget = {
+        eventId,
+        title,
+        startsAt,
+        url: `events/${eventId}`,
+        shortDescription: ev?.shortDescription,
+      };
+
+      const scheduledOffsets = await scheduleReminders(target);
+
+      if (scheduledOffsets.length > 0) {
+        await sendConfirmationNotification(target, scheduledOffsets);
+        showInfoModalFn(
+          "Reminder Set 🔔",
+          buildConfirmationCopy(scheduledOffsets).body,
+          "success",
+        );
+      }
       return;
     }
 

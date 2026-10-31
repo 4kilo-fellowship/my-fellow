@@ -77,7 +77,15 @@
       "expo-secure-store",
       "expo-sharing",
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/app-icon.png",
+          "color": "#FF6719",
+          "defaultChannel": "reminders"
+        }
+      ]
     ],
     "owner": "arat-kilo-fellowship",
     "runtimeVersion": {

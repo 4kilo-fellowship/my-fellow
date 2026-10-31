@@ -2,18 +2,17 @@ import { ImageViewerModal } from "@/components/ImageViewerModal";
 import { PRIMARY } from "@/constants/colors";
 import { useTheme } from "@/context/ThemeContext";
 import { useCommunityStore, MemberProfile } from "@/stores/community.store";
-import { useUserStore } from "@/stores/user.store";
 import { getPrefilledAvatar } from "@/utils/avatar";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image as ExpoImage } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
+  Animated,
   Dimensions,
-  FlatList,
   KeyboardAvoidingView,
   Linking,
   Modal,
@@ -80,10 +79,53 @@ export default function MemberProfileScreen() {
   const toggleRepost = useCommunityStore((s) => s.toggleRepost);
   const toggleBookmark = useCommunityStore((s) => s.toggleBookmark);
 
-  const currentUser = useUserStore((s) => s.user);
-
   const [activeTab, setActiveTab] = useState<"posts" | "media" | "ministry" | "likes">("posts");
   const [lightboxImage, setLightboxImage] = useState<any | null>(null);
+
+  // Scroll tracking for sticky header & dynamic status bar
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const listenerId = scrollY.addListener(({ value }) => {
+      const scrolled = value > 70;
+      setIsScrolled((prev) => (prev !== scrolled ? scrolled : prev));
+    });
+    return () => {
+      scrollY.removeListener(listenerId);
+    };
+  }, [scrollY]);
+
+  // Interpolations for sticky header elements
+  const headerBgOpacity = scrollY.interpolate({
+    inputRange: [40, 90],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
+
+  const headerTitleOpacity = scrollY.interpolate({
+    inputRange: [65, 105],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
+
+  const headerTitleTranslateY = scrollY.interpolate({
+    inputRange: [65, 105],
+    outputRange: [8, 0],
+    extrapolate: "clamp",
+  });
+
+  const bannerBtnOpacity = scrollY.interpolate({
+    inputRange: [30, 80],
+    outputRange: [1, 0],
+    extrapolate: "clamp",
+  });
+
+  const scrolledBtnOpacity = scrollY.interpolate({
+    inputRange: [30, 80],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
 
   // Profile Customizer State
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
@@ -465,11 +507,16 @@ export default function MemberProfileScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: bg }]}>
-      <StatusBar style="light" />
+      <StatusBar style={isDark ? "light" : isScrolled ? "dark" : "light"} />
 
-      <ScrollView
+      <Animated.ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16}
       >
         {/* Cover Hero Banner with Scrim Gradient */}
         <View style={styles.bannerWrap}>
@@ -484,53 +531,69 @@ export default function MemberProfileScreen() {
           />
           <View style={styles.bannerOverlay} />
 
-          {/* Floating Navigation Controls */}
+          {/* Floating Navigation Controls over Banner (Back + Share) */}
           <View style={[styles.navButtonsRow, { top: Math.max(insets.top, 14) }]}>
-            <TouchableOpacity
-              activeOpacity={0.8}
+            <Pressable
               onPress={() => router.back()}
-              style={styles.floatingNavBtn}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              android_ripple={{
+                color: "rgba(255, 255, 255, 0.3)",
+                borderless: true,
+                radius: 20,
+              }}
+              style={({ pressed }) => [
+                styles.floatingNavBtn,
+                pressed && Platform.OS === "ios" && { opacity: 0.8 },
+              ]}
               accessibilityLabel="Back"
             >
-              <Ionicons name="arrow-back" size={20} color="#ffffff" />
-            </TouchableOpacity>
+              <Ionicons name="arrow-back" size={22} color="#ffffff" />
+            </Pressable>
 
             <View style={styles.topNavRightGroup}>
-              {/* Customize Profile Button */}
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={openCustomizeModal}
-                style={[styles.floatingNavBtn, styles.customizeTopBtn]}
-                accessibilityLabel="Customize Profile"
-              >
-                <Ionicons name="sparkles" size={16} color="#ffffff" />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                activeOpacity={0.8}
+              <Pressable
                 onPress={handleShareProfile}
-                style={styles.floatingNavBtn}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                android_ripple={{
+                  color: "rgba(255, 255, 255, 0.3)",
+                  borderless: true,
+                  radius: 20,
+                }}
+                style={({ pressed }) => [
+                  styles.floatingNavBtn,
+                  pressed && Platform.OS === "ios" && { opacity: 0.8 },
+                ]}
                 accessibilityLabel="Share Profile"
               >
-                <Ionicons name="share-social-outline" size={19} color="#ffffff" />
-              </TouchableOpacity>
+                <Ionicons name="share-social-outline" size={20} color="#ffffff" />
+              </Pressable>
             </View>
           </View>
         </View>
 
         {/* Profile Avatar & Inline Action Pill Controls */}
         <View style={styles.profileActionRow}>
-          {/* Story Ring Avatar (IG Style) */}
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={() =>
+          {/* Story Ring Avatar (IG Style with smooth image viewer tap) */}
+          <Pressable
+            onPress={() => {
+              if (Platform.OS !== "web") {
+                try {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                } catch {}
+              }
               setLightboxImage({
                 uri: typeof currentMember.avatar === "string" ? currentMember.avatar : undefined,
                 caption: `${currentMember.fullName}'s profile photo`,
                 author: currentMember.fullName,
-              })
-            }
-            style={[styles.avatarStoryRing, { borderColor: PRIMARY }]}
+              });
+            }}
+            style={({ pressed }) => [
+              styles.avatarStoryRing,
+              { borderColor: PRIMARY },
+              pressed && Platform.OS === "ios" && { opacity: 0.9 },
+            ]}
+            accessibilityRole="imagebutton"
+            accessibilityLabel={`View ${currentMember.fullName}'s profile photo`}
           >
             <View style={[styles.avatarInnerRing, { borderColor: bg }]}>
               <ExpoImage
@@ -544,40 +607,50 @@ export default function MemberProfileScreen() {
               />
               <View style={[styles.onlineDot, { borderColor: bg }]} />
             </View>
-          </TouchableOpacity>
+          </Pressable>
 
-          {/* Action Row: Message + Follow Pill + Customize Button */}
+          {/* Action Row: Message + Edit/Customize + Follow Pill with Native Ripples */}
           <View style={styles.actionButtonsCol}>
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handleTelegramMessage}
-              style={[styles.iconActionBtn, { borderColor, backgroundColor: cardBg }]}
-              accessibilityLabel="Message on Telegram"
-            >
-              <Ionicons name="paper-plane-outline" size={18} color={textColor} />
-            </TouchableOpacity>
+            {/* Telegram Message */}
+            <View style={[styles.iconActionWrap, { borderColor, backgroundColor: cardBg }]}>
+              <Pressable
+                onPress={handleTelegramMessage}
+                android_ripple={{
+                  color: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
+                  borderless: false,
+                }}
+                style={({ pressed }) => [
+                  styles.iconActionPressable,
+                  pressed && Platform.OS === "ios" && { opacity: 0.7 },
+                ]}
+                accessibilityLabel="Message on Telegram"
+              >
+                <Ionicons name="paper-plane-outline" size={17} color={textColor} />
+              </Pressable>
+            </View>
 
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={openCustomizeModal}
-              style={[styles.iconActionBtn, { borderColor, backgroundColor: cardBg }]}
-              accessibilityLabel="Customize Profile"
-            >
-              <Ionicons name="create-outline" size={18} color={textColor} />
-            </TouchableOpacity>
+            {/* Edit / Customize Profile */}
+            <View style={[styles.iconActionWrap, { borderColor, backgroundColor: cardBg }]}>
+              <Pressable
+                onPress={openCustomizeModal}
+                android_ripple={{
+                  color: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
+                  borderless: false,
+                }}
+                style={({ pressed }) => [
+                  styles.iconActionPressable,
+                  pressed && Platform.OS === "ios" && { opacity: 0.7 },
+                ]}
+                accessibilityLabel="Customize Profile"
+              >
+                <Ionicons name="create-outline" size={17} color={textColor} />
+              </Pressable>
+            </View>
 
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => {
-                if (Platform.OS !== "web") {
-                  try {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  } catch {}
-                }
-                toggleFollowMember(currentMember.id);
-              }}
+            {/* Follow Pill Button */}
+            <View
               style={[
-                styles.followPillBtn,
+                styles.followPillContainer,
                 {
                   backgroundColor: currentMember.isFollowing
                     ? (isDark ? "#27272a" : "#f1f5f9")
@@ -587,21 +660,43 @@ export default function MemberProfileScreen() {
                 },
               ]}
             >
-              <Ionicons
-                name={currentMember.isFollowing ? "checkmark" : "person-add"}
-                size={14}
-                color={currentMember.isFollowing ? textColor : "#ffffff"}
-                style={{ marginRight: 5 }}
-              />
-              <Text
-                style={[
-                  styles.followPillText,
-                  { color: currentMember.isFollowing ? textColor : "#ffffff" },
+              <Pressable
+                onPress={() => {
+                  if (Platform.OS !== "web") {
+                    try {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    } catch {}
+                  }
+                  toggleFollowMember(currentMember.id);
+                }}
+                android_ripple={{
+                  color: currentMember.isFollowing
+                    ? (isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)")
+                    : "rgba(255,255,255,0.3)",
+                  borderless: false,
+                }}
+                style={({ pressed }) => [
+                  styles.followPillPressable,
+                  pressed && Platform.OS === "ios" && { opacity: 0.8 },
                 ]}
+                accessibilityLabel={currentMember.isFollowing ? "Unfollow" : "Follow"}
               >
-                {currentMember.isFollowing ? "Following" : "Follow"}
-              </Text>
-            </TouchableOpacity>
+                <Ionicons
+                  name={currentMember.isFollowing ? "checkmark" : "person-add"}
+                  size={14}
+                  color={currentMember.isFollowing ? textColor : "#ffffff"}
+                  style={{ marginRight: 5 }}
+                />
+                <Text
+                  style={[
+                    styles.followPillText,
+                    { color: currentMember.isFollowing ? textColor : "#ffffff" },
+                  ]}
+                >
+                  {currentMember.isFollowing ? "Following" : "Follow"}
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </View>
 
@@ -800,7 +895,77 @@ export default function MemberProfileScreen() {
 
         {/* Tab Content Display */}
         {renderActiveTabContent()}
-      </ScrollView>
+      </Animated.ScrollView>
+
+      {/* Sticky Header Bar — Fades in smoothly when scrolled past banner */}
+      <Animated.View
+        style={[
+          styles.stickyHeaderBar,
+          {
+            paddingTop: insets.top,
+            backgroundColor: bg,
+            borderBottomColor: borderColor,
+            opacity: headerBgOpacity,
+          },
+        ]}
+        pointerEvents={isScrolled ? "auto" : "none"}
+      >
+        <View style={styles.stickyHeaderRow}>
+          {/* Back Button */}
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            android_ripple={{
+              color: isDark ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.12)",
+              borderless: true,
+              radius: 20,
+            }}
+            style={({ pressed }) => [
+              styles.scrolledNavBtn,
+              {
+                backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)",
+                borderColor,
+              },
+              pressed && Platform.OS === "ios" && { opacity: 0.8 },
+            ]}
+            accessibilityLabel="Back"
+          >
+            <Ionicons name="arrow-back" size={22} color={textColor} />
+          </Pressable>
+
+          {/* Centered Member Title */}
+          <View style={styles.stickyHeaderCenter}>
+            <Text style={[styles.stickyTitle, { color: textColor }]} numberOfLines={1}>
+              {currentMember.fullName}
+            </Text>
+            <Text style={[styles.stickySubtitle, { color: mutedColor }]} numberOfLines={1}>
+              {(currentMember as any).role || currentMember.team || currentMember.handle}
+            </Text>
+          </View>
+
+          {/* Share Button (Right) */}
+          <Pressable
+            onPress={handleShareProfile}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            android_ripple={{
+              color: isDark ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.12)",
+              borderless: true,
+              radius: 20,
+            }}
+            style={({ pressed }) => [
+              styles.scrolledNavBtn,
+              {
+                backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)",
+                borderColor,
+              },
+              pressed && Platform.OS === "ios" && { opacity: 0.8 },
+            ]}
+            accessibilityLabel="Share Profile"
+          >
+            <Ionicons name="share-social-outline" size={20} color={textColor} />
+          </Pressable>
+        </View>
+      </Animated.View>
 
       {/* Lightbox Modal */}
       <ImageViewerModal
@@ -1036,7 +1201,11 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   bannerOverlay: {
-    ...StyleSheet.absoluteFill,
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
     backgroundColor: "rgba(0, 0, 0, 0.28)",
   },
   navButtonsRow: {
@@ -1051,18 +1220,57 @@ const styles = StyleSheet.create({
   topNavRightGroup: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
   },
   floatingNavBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
     backgroundColor: "rgba(0, 0, 0, 0.55)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
     alignItems: "center",
     justifyContent: "center",
   },
-  customizeTopBtn: {
-    backgroundColor: "rgba(255, 103, 25, 0.8)",
+  stickyHeaderBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    elevation: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  stickyHeaderRow: {
+    height: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+  },
+  stickyHeaderCenter: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  stickyTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  stickySubtitle: {
+    fontSize: 11,
+    fontWeight: "500",
+    textAlign: "center",
+    marginTop: 1,
+  },
+  scrolledNavBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    justifyContent: "center",
   },
   profileActionRow: {
     flexDirection: "row",
@@ -1108,21 +1316,32 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 4,
   },
-  iconActionBtn: {
+  iconActionWrap: {
     width: 38,
     height: 38,
     borderRadius: 19,
     borderWidth: 1,
+    overflow: "hidden",
+  },
+  iconActionPressable: {
+    width: "100%",
+    height: "100%",
     alignItems: "center",
     justifyContent: "center",
   },
-  followPillBtn: {
+  followPillContainer: {
+    height: 38,
+    borderRadius: 9999,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  followPillPressable: {
+    height: "100%",
+    paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 18,
-    height: 38,
-    borderRadius: 19,
   },
   followPillText: {
     fontSize: 13,

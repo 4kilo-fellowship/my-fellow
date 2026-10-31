@@ -4,6 +4,13 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Linking from "expo-linking";
 import React, { useCallback, useState } from "react";
+import {
+  ensurePermission,
+  scheduleReminders,
+  sendConfirmationNotification,
+  buildConfirmationCopy,
+  type ReminderTarget,
+} from "@/notifications";
 
 import { useAuth } from "@/context/AuthContext";
 import { useAlerts } from "@/hooks/useAlerts";
@@ -173,14 +180,46 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         return;
       }
 
-      await addAlert({
-        title: item.title,
-        description: item.subtitle || "Event notification",
-        time: startTime,
-        repeats: "none",
-        remindBefore: 15,
-      });
-      setShowSuccessModal(true);
+      const startsAt = new Date(startTime).getTime();
+      if (isNaN(startsAt) || startsAt <= Date.now()) {
+        showInfoModal(
+          "Event Started",
+          "This event has already started or ended. Reminders cannot be set.",
+          "info",
+        );
+        return;
+      }
+
+      const perm = await ensurePermission();
+      if (perm !== "granted") {
+        showInfoModal(
+          "Notifications Disabled",
+          "Please enable notifications in device settings to receive event reminders.",
+          "info",
+        );
+        return;
+      }
+
+      const eventId = String((item as any)._id || (item as any).id || "");
+      const title = item.title || "Fellowship Event";
+      const target: ReminderTarget = {
+        eventId,
+        title,
+        startsAt,
+        url: `events/${eventId}`,
+        shortDescription: item.subtitle,
+      };
+
+      const scheduledOffsets = await scheduleReminders(target);
+
+      if (scheduledOffsets.length > 0) {
+        await sendConfirmationNotification(target, scheduledOffsets);
+        showInfoModal(
+          "Reminder Set 🔔",
+          buildConfirmationCopy(scheduledOffsets).body,
+          "success",
+        );
+      }
       return;
     }
 
