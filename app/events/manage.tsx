@@ -407,7 +407,7 @@ export default function ManageEventScreen() {
       <View
         style={[
           styles.screen,
-          { backgroundColor: isDark ? "#0A0A0A" : "#f8fafc" },
+          { backgroundColor: isDark ? "#0A0A0A" : "#ffffff" },
         ]}
       >
         <StatusBar style={isDark ? "light" : "dark"} />
@@ -445,7 +445,7 @@ export default function ManageEventScreen() {
       <View
         style={[
           styles.screen,
-          { backgroundColor: isDark ? "#0A0A0A" : "#f8fafc" },
+          { backgroundColor: isDark ? "#0A0A0A" : "#ffffff" },
         ]}
       >
         <StatusBar style={isDark ? "light" : "dark"} />
@@ -473,7 +473,7 @@ export default function ManageEventScreen() {
     <View
       style={[
         styles.screen,
-        { backgroundColor: isDark ? "#0A0A0A" : "#f8fafc" },
+        { backgroundColor: isDark ? "#0A0A0A" : "#ffffff" },
       ]}
     >
       <StatusBar style={isDark ? "light" : "dark"} />

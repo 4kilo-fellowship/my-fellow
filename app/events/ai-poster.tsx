@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -8,45 +8,36 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
+import { TabView, TabBar, Route } from "react-native-tab-view";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image as ExpoImage } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
+import * as Sharing from "expo-sharing";
 import { Ionicons } from "@expo/vector-icons";
 
 import { ScreenHeader } from "@/components/ScreenHeader";
+import { AppBottomSheet } from "@/components/AppBottomSheet";
 import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { eventsService } from "@/services/eventsService";
 import { useEventsStore } from "@/stores/events.store";
 
-// Physics-based spring configuration per Expo / Reanimated guidelines
-const TAB_SPRING_CONFIG = {
-  damping: 24,
-  stiffness: 260,
-  mass: 0.6,
-  overshootClamping: false,
-};
-
-const STYLES = [
-  "Modern",
-  "Minimal",
-  "Cinematic",
-  "Corporate",
-  "Social Media Poster",
-  "Vintage",
-  "Abstract",
-  "Neon/Cyberpunk",
+// Curated presets for styling and mood
+const COLOR_PRESETS = [
+  { name: "Fellowship Green", primary: "#55B752", secondary: "#0F172A" },
+  { name: "Royal Purple", primary: "#7C3AED", secondary: "#1E1B4B" },
+  { name: "Ocean Blue", primary: "#0284C7", secondary: "#082F49" },
+  { name: "Sunset Orange", primary: "#F97316", secondary: "#431407" },
+  { name: "Midnight Noir", primary: "#18181B", secondary: "#55B752" },
 ];
+
+const STYLES = ["Minimal", "Modern", "Cinematic", "Vintage", "Bold", "Abstract"];
 
 const MOODS = [
   "Uplifting & Radiant",
@@ -63,25 +54,10 @@ const ORGANIZERS = [
   "Bible Study Team",
 ];
 
-const COLOR_PRESETS = [
-  { name: "Fellowship Green", primary: "#55B752", secondary: "#0F172A" },
-  { name: "Royal Purple", primary: "#7C3AED", secondary: "#1E1B4B" },
-  { name: "Ocean Blue", primary: "#0284C7", secondary: "#082F49" },
-  { name: "Sunset Orange", primary: "#F97316", secondary: "#431407" },
-  { name: "Midnight Noir", primary: "#18181B", secondary: "#55B752" },
-];
-
-const INSPIRATION_CHIPS = [
-  "🔥 Youth Revival Night",
-  "⛪ Sunday Fellowship Service",
-  "🙏 Campus Prayer & Fasting",
-  "🌱 Freshman Welcome & Mentorship",
-  "🎵 Acoustic Worship Evening",
-];
-
 export default function AIPosterScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const layout = useWindowDimensions();
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -96,58 +72,52 @@ export default function AIPosterScreen() {
     setPendingGeneratedPoster,
   } = useEventsStore();
 
-  const [activeTab, setActiveTab] = useState<"create" | "history">("create");
+  // Tab View state (Approach B: react-native-tab-view + native pager-view)
+  const [tabIndex, setTabIndex] = useState<number>(0);
+  const routes = useMemo(
+    () => [
+      { key: "create", title: "Create Poster" },
+      { key: "history", title: `History (${aiPostersHistory?.length || 0})` },
+    ],
+    [aiPostersHistory?.length],
+  );
 
   // Form states
   const [prompt, setPrompt] = useState(
     params.initialTitle
-      ? `A vibrant and inspiring campus fellowship event: ${params.initialTitle}. ${
+      ? `${params.initialTitle}. ${
           params.initialDescription ||
-          "Joyful community, modern lighting, and an uplifting atmosphere."
+          "Joyful community, modern lighting, and an uplifting fellowship atmosphere."
         }`
       : "",
   );
-  const [style, setStyle] = useState("Modern");
-  const [mood, setMood] = useState("Uplifting & Radiant");
-  const [organizer, setOrganizer] = useState("AAU 4 Kilo Fellowship");
-  const [selectedColorIdx, setSelectedColorIdx] = useState(0);
 
-  // Reference image
-  const [referenceUri, setReferenceUri] = useState<string | null>(null);
+  // References: up to 2 images
+  const [referenceUris, setReferenceUris] = useState<string[]>([]);
+
+  // Customization states (configured via the bottom sheet)
+  const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
+  const [selectedColorIdx, setSelectedColorIdx] = useState(0);
+  const [selectedStyle, setSelectedStyle] = useState("Modern");
+  const [selectedMood, setSelectedMood] = useState("Uplifting & Radiant");
+  const [selectedOrganizer, setSelectedOrganizer] = useState(
+    "AAU 4 Kilo Fellowship",
+  );
+  const [eventDateText, setEventDateText] = useState("");
 
   // Output states
   const [loading, setLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const activeTabColor = isDark ? "#ffffff" : "#000000";
-
-  const [tabBarWidth, setTabBarWidth] = useState(0);
-  const tabProgress = useSharedValue(activeTab === "create" ? 0 : 1);
-
-  useEffect(() => {
-    tabProgress.value = withSpring(
-      activeTab === "create" ? 0 : 1,
-      TAB_SPRING_CONFIG,
-    );
-  }, [activeTab, tabProgress]);
-
-  const indicatorAnimatedStyle = useAnimatedStyle(() => {
-    const singleTabWidth = tabBarWidth > 0 ? tabBarWidth / 2 : 0;
-    return {
-      width: singleTabWidth,
-      transform: [{ translateX: tabProgress.value * singleTabWidth }],
-    };
-  });
-
-  const handleTabChange = (tab: "create" | "history") => {
-    if (activeTab !== tab) {
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-      } catch {}
-      setActiveTab(tab);
-    }
-  };
+  // Color tokens
+  const bgColor = isDark ? "#0A0A0A" : "#FFFFFF";
+  const cardBg = isDark ? "#141416" : "#FFFFFF";
+  const textColor = isDark ? "#FFFFFF" : "#0F172A";
+  const subTextColor = isDark ? "#A1A1AA" : "#64748B";
+  const borderColor = isDark ? "#27272A" : "#E2E8F0";
+  const inputBg = isDark ? "#121214" : "#F8FAFC";
+  const activeTabColor = isDark ? "#FFFFFF" : "#000000";
 
   const nativeRipple = {
     color: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
@@ -155,27 +125,37 @@ export default function AIPosterScreen() {
     foreground: true,
   };
 
+  // Image picker for reference designs (max 2)
   const handlePickReference = async () => {
+    if (referenceUris.length >= 2) return;
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      const remainingSlots = 2 - referenceUris.length;
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 5],
+        allowsMultipleSelection: remainingSlots > 1,
+        selectionLimit: remainingSlots,
         quality: 0.8,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setReferenceUri(result.assets[0].uri);
+        const picked = result.assets.map((a) => a.uri).slice(0, remainingSlots);
+        setReferenceUris((prev) => [...prev, ...picked].slice(0, 2));
       }
-    } catch {
-      // Ignored
+    } catch (err) {
+      console.warn("[ai-poster] Could not pick reference:", err);
     }
   };
 
+  const handleRemoveReference = (indexToRemove: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setReferenceUris((prev) => prev.filter((_, i) => i !== indexToRemove));
+  };
+
+  // Poster Generation
   const handleGenerate = async () => {
     if (!prompt.trim()) {
-      setErrorMsg("Please provide a prompt or theme description.");
+      setErrorMsg("Please enter a theme or prompt for the poster.");
       return;
     }
 
@@ -186,11 +166,12 @@ export default function AIPosterScreen() {
 
     try {
       const formData = new FormData();
-      formData.append(
-        "prompt",
-        `${prompt.trim()}. Atmosphere: ${mood}. Style: ${style}. Organized by ${organizer}.`,
-      );
-      formData.append("style", style);
+      const combinedPrompt = `${prompt.trim()}. Style: ${selectedStyle}. Atmosphere: ${selectedMood}. Organized by ${selectedOrganizer}.${
+        eventDateText.trim() ? ` Event Time: ${eventDateText.trim()}.` : ""
+      }`;
+
+      formData.append("prompt", combinedPrompt);
+      formData.append("style", selectedStyle);
 
       const color = COLOR_PRESETS[selectedColorIdx];
       formData.append(
@@ -204,21 +185,34 @@ export default function AIPosterScreen() {
       formData.append(
         "eventDetails",
         JSON.stringify({
-          title: params.initialTitle || organizer,
+          title: params.initialTitle || selectedOrganizer,
           description: prompt.trim(),
-          organizer,
+          organizer: selectedOrganizer,
+          dateTime: eventDateText.trim() || undefined,
         }),
       );
 
-      if (referenceUri) {
-        const filename = referenceUri.split("/").pop() || "reference.jpg";
-        const match = /\.(\w+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : "image/jpeg";
+      // Attach reference images if present
+      if (referenceUris.length > 0) {
+        const first = referenceUris[0];
+        const filename1 = first.split("/").pop() || "reference_1.jpg";
+        const match1 = /\.(\w+)$/.exec(filename1);
         formData.append("image", {
-          uri: referenceUri,
-          name: filename,
-          type,
+          uri: first,
+          name: filename1,
+          type: match1 ? `image/${match1[1]}` : "image/jpeg",
         } as any);
+
+        if (referenceUris.length > 1) {
+          const second = referenceUris[1];
+          const filename2 = second.split("/").pop() || "reference_2.jpg";
+          const match2 = /\.(\w+)$/.exec(filename2);
+          formData.append("reference2", {
+            uri: second,
+            name: filename2,
+            type: match2 ? `image/${match2[1]}` : "image/jpeg",
+          } as any);
+        }
       }
 
       const res = await eventsService.generatePoster(formData);
@@ -242,7 +236,7 @@ export default function AIPosterScreen() {
       setErrorMsg(
         err?.response?.data?.message ||
           err?.message ||
-          "Could not generate poster. Please try again.",
+          "Could not generate poster. Please check your connection and try again.",
       );
     } finally {
       setLoading(false);
@@ -257,11 +251,428 @@ export default function AIPosterScreen() {
     router.back();
   };
 
-  const bgColor = isDark ? "#0A0A0A" : "#ffffff";
-  const cardBg = isDark ? "#141416" : "#ffffff";
-  const textColor = isDark ? "#ffffff" : "#0f172a";
-  const subTextColor = isDark ? "#a1a1aa" : "#64748b";
-  const borderColor = isDark ? "#27272a" : "#e2e8f0";
+  const handleSharePoster = async (url: string) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(url);
+      }
+    } catch {}
+  };
+
+  // Render Scene: "create"
+  const renderCreateScene = () => {
+    const currentColor = COLOR_PRESETS[selectedColorIdx];
+
+    return (
+      <ScrollView
+        style={{ flex: 1, backgroundColor: bgColor }}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom + 32, 56) },
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* 1. Reference Upload (Max 2 images) */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.sectionHeaderTitle, { color: textColor }]}>
+              Reference Designs
+            </Text>
+            <Text style={[styles.sectionHeaderBadge, { color: subTextColor }]}>
+              {referenceUris.length}/2 Uploaded
+            </Text>
+          </View>
+
+          <View style={styles.referenceGridRow}>
+            {referenceUris.map((uri, idx) => (
+              <View
+                key={uri + idx}
+                style={[
+                  styles.referenceThumbBox,
+                  { borderColor: borderColor, backgroundColor: cardBg },
+                ]}
+              >
+                <ExpoImage
+                  source={{ uri }}
+                  style={styles.referenceThumbImage}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                />
+                <Pressable
+                  onPress={() => handleRemoveReference(idx)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={styles.removeReferenceBadge}
+                  accessibilityLabel="Remove reference"
+                >
+                  <Ionicons name="close" size={14} color="#FFFFFF" />
+                </Pressable>
+                <View style={styles.refIndexPill}>
+                  <Text style={styles.refIndexText}>Ref {idx + 1}</Text>
+                </View>
+              </View>
+            ))}
+
+            {referenceUris.length < 2 && (
+              <Pressable
+                onPress={handlePickReference}
+                android_ripple={nativeRipple}
+                style={[
+                  styles.addReferenceSlot,
+                  {
+                    backgroundColor: inputBg,
+                    borderColor: borderColor,
+                    flex: referenceUris.length === 0 ? 1 : undefined,
+                    width: referenceUris.length === 0 ? "100%" : 120,
+                  },
+                ]}
+              >
+                <View style={styles.addReferenceInner}>
+                  <View
+                    style={[
+                      styles.addIconCircle,
+                      {
+                        backgroundColor: isDark
+                          ? "rgba(255, 255, 255, 0.08)"
+                          : "rgba(0, 0, 0, 0.04)",
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name="image-outline"
+                      size={20}
+                      color={textColor}
+                    />
+                  </View>
+                  <Text style={[styles.addSlotTitle, { color: textColor }]}>
+                    {referenceUris.length === 0
+                      ? "Add Reference Design"
+                      : "Add 2nd Reference"}
+                  </Text>
+                  <Text
+                    style={[styles.addSlotSubtitle, { color: subTextColor }]}
+                  >
+                    Optional layout / palette guidance
+                  </Text>
+                </View>
+              </Pressable>
+            )}
+          </View>
+        </View>
+
+        {/* 2. Prompt Box */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.sectionHeaderTitle, { color: textColor }]}>
+              Poster Prompt & Theme
+            </Text>
+            {prompt.length > 0 && (
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+                    () => {},
+                  );
+                  setPrompt("");
+                }}
+              >
+                <Text style={styles.clearTextBtn}>Clear</Text>
+              </Pressable>
+            )}
+          </View>
+
+          <View
+            style={[
+              styles.promptBoxWrapper,
+              {
+                backgroundColor: inputBg,
+                borderColor: borderColor,
+              },
+            ]}
+          >
+            <TextInput
+              value={prompt}
+              onChangeText={setPrompt}
+              multiline
+              numberOfLines={4}
+              placeholder="Describe the event theme, scriptures, tone, or visuals (e.g., Youth Revival night, radiant stage lighting, joyful fellowship community)..."
+              placeholderTextColor={subTextColor}
+              style={[
+                styles.promptInput,
+                {
+                  color: textColor,
+                },
+              ]}
+              textAlignVertical="top"
+            />
+          </View>
+        </View>
+
+        {/* 3. Detail Customizer Trigger Button (Opens Bottom Sheet) */}
+        <View style={styles.sectionContainer}>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+                () => {},
+              );
+              setIsDetailsSheetOpen(true);
+            }}
+            android_ripple={nativeRipple}
+            style={[
+              styles.detailsTriggerCard,
+              {
+                backgroundColor: cardBg,
+                borderColor: borderColor,
+              },
+            ]}
+          >
+            <View style={styles.detailsTriggerLeft}>
+              <View
+                style={[
+                  styles.detailsIconWrap,
+                  { backgroundColor: `${currentColor.primary}20` },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.detailsColorDot,
+                    { backgroundColor: currentColor.primary },
+                  ]}
+                />
+              </View>
+
+              <View style={styles.detailsTextWrap}>
+                <Text style={[styles.detailsTriggerTitle, { color: textColor }]}>
+                  Event & Style Details
+                </Text>
+                <Text
+                  style={[styles.detailsTriggerSummary, { color: subTextColor }]}
+                  numberOfLines={1}
+                >
+                  {currentColor.name} · {selectedStyle} · {selectedOrganizer}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.detailsTriggerRight}>
+              <Text style={[styles.tuneText, { color: subTextColor }]}>Edit</Text>
+              <Ionicons name="chevron-forward" size={16} color={subTextColor} />
+            </View>
+          </Pressable>
+        </View>
+
+        {/* Error Notification */}
+        {errorMsg && (
+          <View style={styles.errorBanner}>
+            <Ionicons name="alert-circle" size={18} color="#EF4444" />
+            <Text style={styles.errorBannerText}>{errorMsg}</Text>
+          </View>
+        )}
+
+        {/* 4. Generated Poster Result */}
+        {generatedImage && (
+          <View
+            style={[
+              styles.resultCard,
+              { backgroundColor: cardBg, borderColor: borderColor },
+            ]}
+          >
+            <View style={styles.resultHeader}>
+              <Text style={[styles.resultTitle, { color: textColor }]}>
+                Generated Poster
+              </Text>
+              <Pressable
+                onPress={() => handleSharePoster(generatedImage)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={styles.shareIconBtn}
+              >
+                <Ionicons
+                  name="share-outline"
+                  size={19}
+                  color={textColor}
+                />
+              </Pressable>
+            </View>
+
+            <View style={styles.resultImageWrapper}>
+              <ExpoImage
+                source={{ uri: generatedImage }}
+                style={styles.resultImage}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                priority="high"
+                transition={200}
+              />
+            </View>
+
+            <Pressable
+              onPress={() => handleApplyPoster(generatedImage)}
+              android_ripple={{
+                color: "rgba(255, 255, 255, 0.25)",
+                borderless: false,
+                foreground: true,
+              }}
+              style={[styles.applyButton, { backgroundColor: PRIMARY }]}
+            >
+              <Ionicons name="checkmark-circle" size={19} color="#FFFFFF" />
+              <Text style={styles.applyButtonText}>
+                Use as Event Banner
+              </Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* 5. Generate Poster Action Button */}
+        <View style={styles.generateButtonWrap}>
+          <Pressable
+            onPress={handleGenerate}
+            disabled={loading || !prompt.trim()}
+            android_ripple={{
+              color: "rgba(255, 255, 255, 0.25)",
+              borderless: false,
+              foreground: true,
+            }}
+            style={[
+              styles.generateMainButton,
+              { backgroundColor: PRIMARY },
+              (loading || !prompt.trim()) && styles.generateDisabled,
+            ]}
+          >
+            {loading ? (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator color="#FFFFFF" size="small" />
+                <Text style={styles.generateButtonText}>
+                  Designing Poster (~10s)...
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.generateBtnContent}>
+                <Ionicons name="sparkles" size={18} color="#FFFFFF" />
+                <Text style={styles.generateButtonText}>
+                  {generatedImage ? "Generate Variation" : "Generate Poster"}
+                </Text>
+              </View>
+            )}
+          </Pressable>
+        </View>
+      </ScrollView>
+    );
+  };
+
+  // Render Scene: "history"
+  const renderHistoryScene = () => {
+    return (
+      <ScrollView
+        style={{ flex: 1, backgroundColor: bgColor }}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom + 32, 56) },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {aiPostersHistory && aiPostersHistory.length > 0 ? (
+          <View style={styles.historyGrid}>
+            {aiPostersHistory.map((item, idx) => (
+              <View
+                key={item.url + idx}
+                style={[
+                  styles.historyCard,
+                  { backgroundColor: cardBg, borderColor: borderColor },
+                ]}
+              >
+                <Pressable
+                  onPress={() => handleApplyPoster(item.url)}
+                  android_ripple={nativeRipple}
+                  style={styles.historyImageWrap}
+                >
+                  <ExpoImage
+                    source={{ uri: item.url }}
+                    style={styles.historyImage}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                  />
+                </Pressable>
+
+                <View style={styles.historyCardBody}>
+                  <Text
+                    numberOfLines={2}
+                    style={[styles.historyPromptText, { color: textColor }]}
+                  >
+                    {item.prompt}
+                  </Text>
+                  <Pressable
+                    onPress={() => handleApplyPoster(item.url)}
+                    android_ripple={nativeRipple}
+                    style={[styles.historyUseButton, { borderColor: PRIMARY }]}
+                  >
+                    <Text style={[styles.historyUseText, { color: PRIMARY }]}>
+                      Use Poster
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyState}>
+            <View
+              style={[
+                styles.emptyIconCircle,
+                {
+                  backgroundColor: isDark
+                    ? "rgba(255, 255, 255, 0.06)"
+                    : "rgba(0, 0, 0, 0.04)",
+                },
+              ]}
+            >
+              <Ionicons
+                name="images-outline"
+                size={40}
+                color={subTextColor}
+              />
+            </View>
+            <Text style={[styles.emptyTitle, { color: textColor }]}>
+              No Generated Posters Yet
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: subTextColor }]}>
+              Posters you generate will automatically be saved here so you can
+              re-use or apply them anytime.
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+    );
+  };
+
+  const renderScene = useCallback(
+    ({ route }: { route: Route }) => {
+      switch (route.key) {
+        case "create":
+          return renderCreateScene();
+        case "history":
+          return renderHistoryScene();
+        default:
+          return null;
+      }
+    },
+    [
+      bgColor,
+      cardBg,
+      textColor,
+      subTextColor,
+      borderColor,
+      inputBg,
+      prompt,
+      referenceUris,
+      selectedColorIdx,
+      selectedStyle,
+      selectedOrganizer,
+      loading,
+      generatedImage,
+      errorMsg,
+      aiPostersHistory,
+    ],
+  );
 
   return (
     <View style={[styles.screen, { backgroundColor: bgColor }]}>
@@ -269,7 +680,7 @@ export default function AIPosterScreen() {
       <ScreenHeader
         title="AI Poster Studio"
         containerStyle={{
-          backgroundColor: isDark ? "#0A0A0A" : "#ffffff",
+          backgroundColor: isDark ? "#0A0A0A" : "#FFFFFF",
           borderBottomColor: borderColor,
         }}
       />
@@ -278,587 +689,334 @@ export default function AIPosterScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1, backgroundColor: bgColor }}
       >
-        {/* Minimal Navigation Tabs */}
-        <View
-          style={[
-            styles.tabBar,
-            {
-              backgroundColor: isDark ? "#0A0A0A" : "#ffffff",
-              borderBottomColor: borderColor,
-            },
-          ]}
-          onLayout={(e) => {
-            const w = e.nativeEvent.layout.width;
-            if (w > 0) {
-              setTabBarWidth(w);
-            }
+        {/* Native Finger-Tracking TabView per Expo SDK 58 Guide */}
+        <TabView
+          navigationState={{ index: tabIndex, routes }}
+          onIndexChange={(newIndex) => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+              () => {},
+            );
+            setTabIndex(newIndex);
           }}
-        >
-          {/* Animated Smooth Sliding Bottom Indicator Line */}
-          {tabBarWidth > 0 && (
-            <Animated.View
-              pointerEvents="none"
-              style={[
-                styles.slidingIndicatorLine,
-                {
-                  backgroundColor: activeTabColor,
-                },
-                indicatorAnimatedStyle,
-              ]}
+          renderScene={renderScene}
+          initialLayout={{ width: layout.width }}
+          lazy
+          lazyPreloadDistance={1}
+          commonOptions={{
+            labelStyle: {
+              fontSize: 14,
+              fontWeight: "700",
+              textTransform: "none",
+            },
+          }}
+          renderTabBar={(tabBarProps) => (
+            <TabBar
+              {...tabBarProps}
+              indicatorStyle={{
+                backgroundColor: activeTabColor,
+                height: 2.5,
+              }}
+              style={{
+                backgroundColor: isDark ? "#0A0A0A" : "#FFFFFF",
+                borderBottomWidth: StyleSheet.hairlineWidth,
+                borderBottomColor: borderColor,
+                elevation: 0,
+                shadowOpacity: 0,
+              }}
+              activeColor={activeTabColor}
+              inactiveColor={subTextColor}
+              pressColor={
+                isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)"
+              }
             />
           )}
+        />
+      </KeyboardAvoidingView>
 
-          <Pressable
-            onPress={() => handleTabChange("create")}
-            android_ripple={nativeRipple}
-            style={styles.tabBtn}
-          >
-            {activeTab === "create" && (
-              <Ionicons
-                name="sparkles"
-                size={16}
-                color={activeTabColor}
-              />
-            )}
-            <Text
-              style={[
-                styles.tabBtnText,
-                { color: activeTab === "create" ? activeTabColor : subTextColor },
-                activeTab === "create" && styles.tabBtnActiveText,
-              ]}
-            >
-              Create Poster
+      {/* Expo UI Bottom Sheet for Event & Style Details */}
+      <AppBottomSheet
+        visible={isDetailsSheetOpen}
+        onClose={() => setIsDetailsSheetOpen(false)}
+        isDark={isDark}
+        snapPoints={["half", "full"]}
+      >
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 24 }}
+        >
+          {/* Header */}
+          <View style={styles.sheetHeaderRow}>
+            <Text style={[styles.sheetTitle, { color: textColor }]}>
+              Poster Customization
             </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => handleTabChange("history")}
-            android_ripple={nativeRipple}
-            style={styles.tabBtn}
-          >
-            {activeTab === "history" && (
-              <Ionicons
-                name="time"
-                size={16}
-                color={activeTabColor}
-              />
-            )}
-            <Text
-              style={[
-                styles.tabBtnText,
-                { color: activeTab === "history" ? activeTabColor : subTextColor },
-                activeTab === "history" && styles.tabBtnActiveText,
-              ]}
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+                  () => {},
+                );
+                setIsDetailsSheetOpen(false);
+              }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              History ({aiPostersHistory?.length || 0})
-            </Text>
-          </Pressable>
-        </View>
+              <Text style={[styles.sheetDoneText, { color: PRIMARY }]}>Done</Text>
+            </Pressable>
+          </View>
 
-        {activeTab === "create" ? (
-          <ScrollView
-            style={{ flex: 1, backgroundColor: bgColor }}
-            contentContainerStyle={[
-              styles.scrollContent,
-              {
-                paddingBottom: Math.max(insets.bottom + 28, 48),
-                backgroundColor: bgColor,
-              },
-            ]}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            {/* Quick Inspiration Chips */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionLabel, { color: subTextColor }]}>
-                QUICK INSPIRATION
-              </Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.chipsRow}
-              >
-                {INSPIRATION_CHIPS.map((chip) => (
+          {/* Primary Color Swatches */}
+          <View style={styles.sheetSection}>
+            <Text style={[styles.sheetSectionLabel, { color: subTextColor }]}>
+              PRIMARY ACCENT COLOR
+            </Text>
+            <View style={styles.colorPaletteGrid}>
+              {COLOR_PRESETS.map((c, idx) => {
+                const isSelected = selectedColorIdx === idx;
+                return (
                   <Pressable
-                    key={chip}
+                    key={c.name}
                     onPress={() => {
                       Haptics.impactAsync(
                         Haptics.ImpactFeedbackStyle.Light,
                       ).catch(() => {});
-                      setPrompt(
-                        `${chip.replace(/^[^\w\s]+/, "").trim()} on campus with uplifting fellowship worship atmosphere.`,
-                      );
+                      setSelectedColorIdx(idx);
                     }}
-                    android_ripple={nativeRipple}
                     style={[
-                      styles.inspirationChip,
+                      styles.colorCircleItem,
+                      isSelected && {
+                        borderColor: textColor,
+                        borderWidth: 2,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.colorSwatchCircle,
+                        { backgroundColor: c.primary },
+                      ]}
+                    >
+                      {isSelected && (
+                        <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                      )}
+                    </View>
+                    <Text
+                      style={[
+                        styles.colorSwatchName,
+                        {
+                          color: isSelected ? textColor : subTextColor,
+                          fontWeight: isSelected ? "700" : "500",
+                        },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {c.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Style Pills */}
+          <View style={styles.sheetSection}>
+            <Text style={[styles.sheetSectionLabel, { color: subTextColor }]}>
+              ARTISTIC STYLE
+            </Text>
+            <View style={styles.pillsWrapRow}>
+              {STYLES.map((s) => {
+                const isSelected = selectedStyle === s;
+                return (
+                  <Pressable
+                    key={s}
+                    onPress={() => {
+                      Haptics.impactAsync(
+                        Haptics.ImpactFeedbackStyle.Light,
+                      ).catch(() => {});
+                      setSelectedStyle(s);
+                    }}
+                    style={[
+                      styles.sheetPill,
                       {
-                        backgroundColor: cardBg,
-                        borderColor: borderColor,
+                        backgroundColor: isSelected
+                          ? isDark
+                            ? "#FFFFFF"
+                            : "#000000"
+                          : isDark
+                          ? "#1E1E22"
+                          : "#F1F5F9",
                       },
                     ]}
                   >
                     <Text
-                      style={[styles.inspirationChipText, { color: textColor }]}
+                      style={[
+                        styles.sheetPillText,
+                        {
+                          color: isSelected
+                            ? isDark
+                              ? "#000000"
+                              : "#FFFFFF"
+                            : textColor,
+                          fontWeight: isSelected ? "700" : "500",
+                        },
+                      ]}
                     >
-                      {chip}
+                      {s}
                     </Text>
                   </Pressable>
-                ))}
-              </ScrollView>
+                );
+              })}
             </View>
+          </View>
 
-            {/* Prompt Input */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionLabel, { color: subTextColor }]}>
-                EVENT THEME & ATMOSPHERE
-              </Text>
-              <TextInput
-                value={prompt}
-                onChangeText={setPrompt}
-                multiline
-                numberOfLines={3}
-                placeholder="e.g. A vibrant worship night with glowing green and dark stage lighting, passionate youth choir, and modern aesthetic..."
-                placeholderTextColor={subTextColor}
-                style={[
-                  styles.textArea,
-                  {
-                    backgroundColor: cardBg,
-                    borderColor: borderColor,
-                    color: textColor,
-                  },
-                ]}
-              />
-            </View>
-
-            {/* In-depth Questions: Style & Mood */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionLabel, { color: subTextColor }]}>
-                ARTISTIC STYLE
-              </Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.chipsRow}
-              >
-                {STYLES.map((s) => {
-                  const isSelected = style === s;
-                  return (
-                    <Pressable
-                      key={s}
-                      onPress={() => {
-                        Haptics.impactAsync(
-                          Haptics.ImpactFeedbackStyle.Light,
-                        ).catch(() => {});
-                        setStyle(s);
-                      }}
-                      android_ripple={nativeRipple}
-                      style={[
-                        styles.chip,
-                        {
-                          backgroundColor: isSelected
-                            ? PRIMARY
-                            : cardBg,
-                          borderColor: isSelected ? PRIMARY : borderColor,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          {
-                            color: isSelected ? "#ffffff" : textColor,
-                            fontWeight: isSelected ? "700" : "500",
-                          },
-                        ]}
-                      >
-                        {s}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-            </View>
-
-            {/* Atmosphere / Mood */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionLabel, { color: subTextColor }]}>
-                ATMOSPHERE & MOOD
-              </Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.chipsRow}
-              >
-                {MOODS.map((m) => {
-                  const isSelected = mood === m;
-                  return (
-                    <Pressable
-                      key={m}
-                      onPress={() => {
-                        Haptics.impactAsync(
-                          Haptics.ImpactFeedbackStyle.Light,
-                        ).catch(() => {});
-                        setMood(m);
-                      }}
-                      android_ripple={nativeRipple}
-                      style={[
-                        styles.chip,
-                        {
-                          backgroundColor: isSelected
-                            ? PRIMARY
-                            : cardBg,
-                          borderColor: isSelected ? PRIMARY : borderColor,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          {
-                            color: isSelected ? "#ffffff" : textColor,
-                            fontWeight: isSelected ? "700" : "500",
-                          },
-                        ]}
-                      >
-                        {m}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-            </View>
-
-            {/* Ministry / Organizer */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionLabel, { color: subTextColor }]}>
-                MINISTRY TEAM / ORGANIZER
-              </Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.chipsRow}
-              >
-                {ORGANIZERS.map((o) => {
-                  const isSelected = organizer === o;
-                  return (
-                    <Pressable
-                      key={o}
-                      onPress={() => {
-                        Haptics.impactAsync(
-                          Haptics.ImpactFeedbackStyle.Light,
-                        ).catch(() => {});
-                        setOrganizer(o);
-                      }}
-                      android_ripple={nativeRipple}
-                      style={[
-                        styles.chip,
-                        {
-                          backgroundColor: isSelected
-                            ? PRIMARY
-                            : cardBg,
-                          borderColor: isSelected ? PRIMARY : borderColor,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          {
-                            color: isSelected ? "#ffffff" : textColor,
-                            fontWeight: isSelected ? "700" : "500",
-                          },
-                        ]}
-                      >
-                        {o}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-            </View>
-
-            {/* Color Palette */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionLabel, { color: subTextColor }]}>
-                COLOR PALETTE
-              </Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.chipsRow}
-              >
-                {COLOR_PRESETS.map((c, idx) => {
-                  const isSelected = selectedColorIdx === idx;
-                  return (
-                    <Pressable
-                      key={c.name}
-                      onPress={() => {
-                        Haptics.impactAsync(
-                          Haptics.ImpactFeedbackStyle.Light,
-                        ).catch(() => {});
-                        setSelectedColorIdx(idx);
-                      }}
-                      android_ripple={nativeRipple}
-                      style={[
-                        styles.colorChip,
-                        {
-                          backgroundColor: cardBg,
-                          borderColor: isSelected ? PRIMARY : borderColor,
-                          borderWidth: isSelected ? 2 : 1,
-                        },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.colorDot,
-                          { backgroundColor: c.primary },
-                        ]}
-                      />
-                      <Text
-                        style={[
-                          styles.colorChipText,
-                          {
-                            color: isSelected ? PRIMARY : textColor,
-                            fontWeight: isSelected ? "700" : "500",
-                          },
-                        ]}
-                      >
-                        {c.name}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-            </View>
-
-            {/* Reference Image Option */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionLabel, { color: subTextColor }]}>
-                REFERENCE POSTER / IMAGE (OPTIONAL)
-              </Text>
-              {referenceUri ? (
-                <View
-                  style={[
-                    styles.referencePreviewBox,
-                    { backgroundColor: cardBg, borderColor: borderColor },
-                  ]}
-                >
-                  <ExpoImage
-                    source={{ uri: referenceUri }}
-                    style={styles.referenceImage}
-                    contentFit="cover"
-                  />
-                  <View style={styles.referenceInfo}>
-                    <Text
-                      style={[styles.referenceTitle, { color: textColor }]}
-                    >
-                      Reference attached
-                    </Text>
-                    <Text style={styles.referenceSubtitle}>
-                      Provides layout & composition guidance for the AI.
-                    </Text>
-                    <Pressable
-                      onPress={() => setReferenceUri(null)}
-                      android_ripple={nativeRipple}
-                      style={styles.removeReferenceBtn}
-                    >
-                      <Ionicons
-                        name="trash-outline"
-                        size={14}
-                        color="#ef4444"
-                      />
-                      <Text style={styles.removeReferenceText}>
-                        Remove Reference
-                      </Text>
-                    </Pressable>
-                  </View>
-                </View>
-              ) : (
-                <Pressable
-                  onPress={handlePickReference}
-                  android_ripple={nativeRipple}
-                  style={[
-                    styles.uploadReferenceBox,
-                    { backgroundColor: cardBg, borderColor: borderColor },
-                  ]}
-                >
-                  <Ionicons
-                    name="cloud-upload-outline"
-                    size={22}
-                    color={PRIMARY}
-                  />
-                  <Text
-                    style={[styles.uploadReferenceText, { color: textColor }]}
-                  >
-                    Select reference poster from gallery
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-
-            {/* Error Message */}
-            {errorMsg && (
-              <View style={styles.errorBox}>
-                <Ionicons name="alert-circle" size={18} color="#ef4444" />
-                <Text style={styles.errorText}>{errorMsg}</Text>
-              </View>
-            )}
-
-            {/* Generated Poster Result */}
-            {generatedImage && (
-              <View
-                style={[
-                  styles.resultCard,
-                  { backgroundColor: cardBg, borderColor: borderColor },
-                ]}
-              >
-                <Text style={[styles.resultTitle, { color: textColor }]}>
-                  Generated Poster Preview
-                </Text>
-                <View style={styles.resultImageWrapper}>
-                  <ExpoImage
-                    source={{ uri: generatedImage }}
-                    style={styles.resultImage}
-                    contentFit="cover"
-                    cachePolicy="memory-disk"
-                    priority="high"
-                    transition={200}
-                  />
-                </View>
-
-                <View style={styles.usePosterBtnWrap}>
+          {/* Atmosphere & Mood */}
+          <View style={styles.sheetSection}>
+            <Text style={[styles.sheetSectionLabel, { color: subTextColor }]}>
+              ATMOSPHERE & MOOD
+            </Text>
+            <View style={styles.pillsWrapRow}>
+              {MOODS.map((m) => {
+                const isSelected = selectedMood === m;
+                return (
                   <Pressable
-                    onPress={() => handleApplyPoster(generatedImage)}
-                    android_ripple={{
-                      color: "rgba(255, 255, 255, 0.25)",
-                      borderless: false,
-                      foreground: true,
+                    key={m}
+                    onPress={() => {
+                      Haptics.impactAsync(
+                        Haptics.ImpactFeedbackStyle.Light,
+                      ).catch(() => {});
+                      setSelectedMood(m);
                     }}
-                    style={styles.usePosterBtnInner}
-                  >
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={20}
-                      color="#ffffff"
-                    />
-                    <Text style={styles.usePosterBtnText}>
-                      Apply to Event Banner
-                    </Text>
-                  </Pressable>
-                </View>
-              </View>
-            )}
-
-            {/* Generate Action Button */}
-            <View style={styles.generateBtnWrap}>
-              <Pressable
-                onPress={handleGenerate}
-                disabled={loading || !prompt.trim()}
-                android_ripple={{
-                  color: "rgba(255, 255, 255, 0.25)",
-                  borderless: false,
-                  foreground: true,
-                }}
-                style={[
-                  styles.generateBtnInner,
-                  (loading || !prompt.trim()) && styles.btnDisabled,
-                ]}
-              >
-                {loading ? (
-                  <>
-                    <ActivityIndicator color="#ffffff" size="small" />
-                    <Text style={styles.generateBtnText}>
-                      Generating with AI... (~10s)
-                    </Text>
-                  </>
-                ) : (
-                  <Text style={styles.generateBtnText}>
-                    {generatedImage
-                      ? "Generate Another Variation"
-                      : "Generate Poster"}
-                  </Text>
-                )}
-              </Pressable>
-            </View>
-          </ScrollView>
-        ) : (
-          /* History Tab */
-          <ScrollView
-            style={{ flex: 1, backgroundColor: bgColor }}
-            contentContainerStyle={[
-              styles.scrollContent,
-              {
-                paddingBottom: Math.max(insets.bottom + 28, 48),
-                backgroundColor: bgColor,
-              },
-            ]}
-            showsVerticalScrollIndicator={false}
-          >
-            {aiPostersHistory && aiPostersHistory.length > 0 ? (
-              <View style={styles.historyGrid}>
-                {aiPostersHistory.map((item, idx) => (
-                  <View
-                    key={item.url + idx}
                     style={[
-                      styles.historyCard,
-                      { backgroundColor: cardBg, borderColor: borderColor },
+                      styles.sheetPill,
+                      {
+                        backgroundColor: isSelected
+                          ? isDark
+                            ? "#FFFFFF"
+                            : "#000000"
+                          : isDark
+                          ? "#1E1E22"
+                          : "#F1F5F9",
+                      },
                     ]}
                   >
-                    <Pressable
-                      onPress={() => handleApplyPoster(item.url)}
-                      android_ripple={nativeRipple}
-                      style={styles.historyImageWrap}
+                    <Text
+                      style={[
+                        styles.sheetPillText,
+                        {
+                          color: isSelected
+                            ? isDark
+                              ? "#000000"
+                              : "#FFFFFF"
+                            : textColor,
+                          fontWeight: isSelected ? "700" : "500",
+                        },
+                      ]}
                     >
-                      <ExpoImage
-                        source={{ uri: item.url }}
-                        style={styles.historyImage}
-                        contentFit="cover"
-                        cachePolicy="memory-disk"
-                      />
-                    </Pressable>
-                    <View style={styles.historyCardBottom}>
-                      <Text
-                        numberOfLines={2}
-                        style={[styles.historyPromptText, { color: textColor }]}
-                      >
-                        {item.prompt}
-                      </Text>
-                      <Pressable
-                        onPress={() => handleApplyPoster(item.url)}
-                        android_ripple={nativeRipple}
-                        style={[
-                          styles.applyHistoryBtn,
-                          { borderColor: PRIMARY },
-                        ]}
-                      >
-                        <Text style={styles.applyHistoryBtnText}>
-                          Use Poster
-                        </Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <View style={styles.emptyHistoryBox}>
-                <Ionicons
-                  name="images-outline"
-                  size={52}
-                  color={subTextColor}
-                />
-                <Text style={[styles.emptyHistoryTitle, { color: textColor }]}>
-                  No posters generated yet
-                </Text>
-                <Text style={styles.emptyHistorySubtitle}>
-                  Posters generated with AI will be saved here automatically so
-                  you can re-use them anytime.
-                </Text>
-              </View>
-            )}
-          </ScrollView>
-        )}
-      </KeyboardAvoidingView>
+                      {m}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Ministry / Organizer */}
+          <View style={styles.sheetSection}>
+            <Text style={[styles.sheetSectionLabel, { color: subTextColor }]}>
+              MINISTRY TEAM / ORGANIZER
+            </Text>
+            <View style={styles.pillsWrapRow}>
+              {ORGANIZERS.map((o) => {
+                const isSelected = selectedOrganizer === o;
+                return (
+                  <Pressable
+                    key={o}
+                    onPress={() => {
+                      Haptics.impactAsync(
+                        Haptics.ImpactFeedbackStyle.Light,
+                      ).catch(() => {});
+                      setSelectedOrganizer(o);
+                    }}
+                    style={[
+                      styles.sheetPill,
+                      {
+                        backgroundColor: isSelected
+                          ? isDark
+                            ? "#FFFFFF"
+                            : "#000000"
+                          : isDark
+                          ? "#1E1E22"
+                          : "#F1F5F9",
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.sheetPillText,
+                        {
+                          color: isSelected
+                            ? isDark
+                              ? "#000000"
+                              : "#FFFFFF"
+                            : textColor,
+                          fontWeight: isSelected ? "700" : "500",
+                        },
+                      ]}
+                    >
+                      {o}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Optional Date / Time text */}
+          <View style={styles.sheetSection}>
+            <Text style={[styles.sheetSectionLabel, { color: subTextColor }]}>
+              EVENT TIME / SCHEDULE (OPTIONAL)
+            </Text>
+            <View
+              style={[
+                styles.sheetInputWrap,
+                {
+                  backgroundColor: isDark ? "#141416" : "#F8FAFC",
+                  borderColor: borderColor,
+                },
+              ]}
+            >
+              <Ionicons
+                name="calendar-outline"
+                size={17}
+                color={subTextColor}
+                style={{ marginRight: 8 }}
+              />
+              <TextInput
+                value={eventDateText}
+                onChangeText={setEventDateText}
+                placeholder="e.g. Sunday · 9:00 AM"
+                placeholderTextColor={subTextColor}
+                style={[styles.sheetTextInput, { color: textColor }]}
+              />
+            </View>
+          </View>
+
+          {/* Save / Apply Button */}
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(
+                () => {},
+              );
+              setIsDetailsSheetOpen(false);
+            }}
+            android_ripple={{
+              color: "rgba(255, 255, 255, 0.25)",
+              borderless: false,
+              foreground: true,
+            }}
+            style={[styles.sheetApplyBtn, { backgroundColor: PRIMARY }]}
+          >
+            <Text style={styles.sheetApplyBtnText}>Apply Details</Text>
+          </Pressable>
+        </ScrollView>
+      </AppBottomSheet>
     </View>
   );
 }
@@ -867,246 +1025,284 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
-  tabBar: {
-    flexDirection: "row",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    position: "relative",
-  },
-  slidingIndicatorLine: {
-    position: "absolute",
-    bottom: -StyleSheet.hairlineWidth,
-    left: 0,
-    height: 2.5,
-    zIndex: 2,
-  },
-  tabBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 14,
-  },
-  tabBtnText: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  tabBtnActiveText: {
-    fontWeight: "700",
-  },
   scrollContent: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 18,
   },
-  section: {
+  sectionContainer: {
     marginBottom: 20,
   },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.8,
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
-  chipsRow: {
-    flexDirection: "row",
-    gap: 8,
-    paddingVertical: 2,
+  sectionHeaderTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    letterSpacing: -0.2,
   },
-  inspirationChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  inspirationChipText: {
-    fontSize: 13,
+  sectionHeaderBadge: {
+    fontSize: 12,
     fontWeight: "500",
   },
-  textArea: {
+  clearTextBtn: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#EF4444",
+  },
+  // Reference images
+  referenceGridRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  referenceThumbBox: {
+    width: 110,
+    height: 120,
     borderRadius: 14,
     borderWidth: 1,
-    padding: 14,
-    fontSize: 15,
-    minHeight: 88,
-    textAlignVertical: "top",
+    overflow: "hidden",
+    position: "relative",
   },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
+  referenceThumbImage: {
+    width: "100%",
+    height: "100%",
   },
-  chipText: {
-    fontSize: 13,
-  },
-  colorChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  colorDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-  },
-  colorChipText: {
-    fontSize: 13,
-  },
-  uploadReferenceBox: {
-    flexDirection: "row",
+  removeReferenceBadge: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "rgba(0, 0, 0, 0.65)",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+  },
+  refIndexPill: {
+    position: "absolute",
+    bottom: 6,
+    left: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+  },
+  refIndexText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  addReferenceSlot: {
+    height: 120,
+    borderRadius: 14,
     borderWidth: 1,
     borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
   },
-  uploadReferenceText: {
+  addReferenceInner: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 6,
+  },
+  addSlotTitle: {
     fontSize: 13,
-    fontWeight: "500",
+    fontWeight: "600",
+    textAlign: "center",
   },
-  referencePreviewBox: {
+  addSlotSubtitle: {
+    fontSize: 11,
+    fontWeight: "400",
+    marginTop: 2,
+    textAlign: "center",
+  },
+  // Prompt Input
+  promptBoxWrapper: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+  },
+  promptInput: {
+    fontSize: 14,
+    fontWeight: "400",
+    lineHeight: 20,
+    minHeight: 88,
+  },
+  // Details trigger card
+  detailsTriggerCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  detailsTriggerLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  referenceImage: {
-    width: 64,
-    height: 80,
-    borderRadius: 8,
-  },
-  referenceInfo: {
     flex: 1,
+  },
+  detailsIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
     justifyContent: "center",
   },
-  referenceTitle: {
-    fontSize: 13,
+  detailsColorDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+  },
+  detailsTextWrap: {
+    flex: 1,
+  },
+  detailsTriggerTitle: {
+    fontSize: 14,
     fontWeight: "600",
+    letterSpacing: -0.1,
   },
-  referenceSubtitle: {
-    fontSize: 11,
-    color: "#94a3b8",
+  detailsTriggerSummary: {
+    fontSize: 12,
+    fontWeight: "400",
     marginTop: 2,
-    marginBottom: 6,
   },
-  removeReferenceBtn: {
+  detailsTriggerRight: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    alignSelf: "flex-start",
   },
-  removeReferenceText: {
-    color: "#ef4444",
+  tuneText: {
     fontSize: 12,
     fontWeight: "600",
   },
-  errorBox: {
+  // Error Banner
+  errorBanner: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#fef2f2",
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    borderColor: "#EF4444",
+    borderWidth: 1,
+    borderRadius: 12,
     padding: 12,
-    borderRadius: 10,
     marginBottom: 16,
   },
-  errorText: {
-    color: "#b91c1c",
+  errorBannerText: {
     fontSize: 13,
+    color: "#EF4444",
     flex: 1,
+    fontWeight: "500",
   },
+  // Result card
   resultCard: {
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
-    padding: 14,
+    padding: 16,
     marginBottom: 20,
   },
-  resultTitle: {
-    fontSize: 14,
-    fontWeight: "700",
+  resultHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 12,
+  },
+  resultTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  shareIconBtn: {
+    padding: 4,
   },
   resultImageWrapper: {
     width: "100%",
     aspectRatio: 4 / 5,
-    borderRadius: 14,
+    borderRadius: 12,
     overflow: "hidden",
+    backgroundColor: "#18181B",
     marginBottom: 14,
   },
   resultImage: {
     width: "100%",
     height: "100%",
   },
-  usePosterBtnWrap: {
-    borderRadius: 9999,
-    overflow: "hidden",
-    backgroundColor: PRIMARY,
-    elevation: 3,
-    shadowColor: PRIMARY,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-  },
-  usePosterBtnInner: {
+  applyButton: {
+    height: 48,
+    borderRadius: 24,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    paddingVertical: 14,
   },
-  usePosterBtnText: {
-    color: "#ffffff",
-    fontSize: 16,
+  applyButtonText: {
+    fontSize: 15,
     fontWeight: "700",
+    color: "#FFFFFF",
   },
-  generateBtnWrap: {
-    borderRadius: 9999,
-    overflow: "hidden",
-    backgroundColor: PRIMARY,
-    elevation: 2,
-    shadowColor: PRIMARY,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+  // Generate Main Button
+  generateButtonWrap: {
+    marginTop: 8,
   },
-  generateBtnInner: {
-    flexDirection: "row",
+  generateMainButton: {
+    height: 52,
+    borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    paddingVertical: 16,
+    shadowColor: "#FF6719",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  generateBtnText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  btnDisabled: {
+  generateDisabled: {
     opacity: 0.5,
   },
+  loadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  generateBtnContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  generateButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    letterSpacing: -0.2,
+  },
+  // History Grid
   historyGrid: {
     gap: 16,
   },
   historyCard: {
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
     overflow: "hidden",
   },
   historyImageWrap: {
     width: "100%",
     aspectRatio: 16 / 9,
+    backgroundColor: "#18181B",
   },
   historyImage: {
     width: "100%",
     height: "100%",
   },
-  historyCardBottom: {
+  historyCardBody: {
     padding: 14,
     flexDirection: "row",
     alignItems: "center",
@@ -1115,35 +1311,130 @@ const styles = StyleSheet.create({
   },
   historyPromptText: {
     fontSize: 13,
+    fontWeight: "500",
+    lineHeight: 18,
     flex: 1,
   },
-  applyHistoryBtn: {
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 14,
+  historyUseButton: {
+    paddingHorizontal: 12,
     paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
   },
-  applyHistoryBtnText: {
-    color: PRIMARY,
+  historyUseText: {
     fontSize: 12,
     fontWeight: "700",
   },
-  emptyHistoryBox: {
+  emptyState: {
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 60,
     paddingHorizontal: 24,
   },
-  emptyHistoryTitle: {
+  emptyIconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  emptyTitle: {
     fontSize: 16,
     fontWeight: "700",
-    marginTop: 12,
-  },
-  emptyHistorySubtitle: {
-    fontSize: 13,
-    color: "#94a3b8",
+    marginBottom: 6,
     textAlign: "center",
-    marginTop: 6,
-    lineHeight: 18,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: "center",
+  },
+  // Sheet Styles
+  sheetHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 20,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(150, 150, 150, 0.2)",
+  },
+  sheetTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+  },
+  sheetDoneText: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  sheetSection: {
+    marginBottom: 20,
+  },
+  sheetSectionLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    marginBottom: 10,
+  },
+  colorPaletteGrid: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  colorCircleItem: {
+    alignItems: "center",
+    padding: 4,
+    borderRadius: 12,
+  },
+  colorSwatchCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  colorSwatchName: {
+    fontSize: 10,
+    maxWidth: 60,
+    textAlign: "center",
+  },
+  pillsWrapRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  sheetPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  sheetPillText: {
+    fontSize: 13,
+  },
+  sheetInputWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+  },
+  sheetTextInput: {
+    flex: 1,
+    fontSize: 14,
+    height: "100%",
+  },
+  sheetApplyBtn: {
+    height: 50,
+    borderRadius: 25,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+  },
+  sheetApplyBtnText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
 });
