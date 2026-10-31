@@ -54,7 +54,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function EventDetails() {
-  const params = useLocalSearchParams();
+  const params = useLocalSearchParams<{
+    id?: string;
+    initialImage?: string;
+    initialTitle?: string;
+    initialStartDate?: string;
+    initialEndDate?: string;
+    initialLocation?: string;
+    initialDescription?: string;
+    initialButtonText?: string;
+  }>();
   const router = useRouter();
   const { top, bottom } = useSafeAreaInsets();
   const { theme } = useTheme();
@@ -62,23 +71,43 @@ export default function EventDetails() {
 
   const pulse = useSharedValue(0);
   const fadeIn = useSharedValue(0);
-  //
-  const id = (params as any).id as string | undefined;
 
-  // Immediately initialize selectedEvent from cache/store for instant rendering
+  const id = params.id as string | undefined;
+
+  // Immediately initialize selectedEvent from cache/store or params for instant 0-delay display
   const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(() => {
-    if (!id) return null;
-    const fromStore = useEventsStore
-      .getState()
-      .eventsList.find((e: any) => e._id === id || e.id === id);
-    return (fromStore as any) || null;
+    if (id) {
+      const fromStore = useEventsStore
+        .getState()
+        .eventsList.find((e: any) => e._id === id || e.id === id);
+      if (fromStore) return fromStore as any;
+    }
+    if (params.initialTitle || params.initialImage) {
+      return {
+        _id: id || "",
+        id: id || "",
+        title: params.initialTitle || "",
+        image: params.initialImage || "",
+        imageUrl: params.initialImage || "",
+        startDate: params.initialStartDate || "",
+        endDate: params.initialEndDate || "",
+        location: params.initialLocation || "",
+        description: params.initialDescription || "",
+        shortDescription: params.initialDescription || "",
+        buttonText: params.initialButtonText || "Register Now",
+      } as any;
+    }
+    return null;
   });
   const [loadingDetail, setLoadingDetail] = useState<boolean>(() => {
-    if (!id) return true;
-    const fromStore = useEventsStore
-      .getState()
-      .eventsList.find((e: any) => e._id === id || e.id === id);
-    return !fromStore;
+    if (id) {
+      const fromStore = useEventsStore
+        .getState()
+        .eventsList.find((e: any) => e._id === id || e.id === id);
+      if (fromStore) return false;
+    }
+    if (params.initialTitle || params.initialImage) return false;
+    return true;
   });
   const [error, setError] = useState<string | null>(null);
   const [isNetworkError, setIsNetworkError] = useState<boolean>(false);
@@ -197,7 +226,7 @@ export default function EventDetails() {
   }, [selectedEvent, authState?.authenticated, checkRegistrationStatus]);
 
   const ev: any = selectedEvent;
-  const imgPath = ev?.image || ev?.imageUrl;
+  const imgPath = ev?.image || ev?.imageUrl || params.initialImage;
   const imageSource = buildEventImageSource(imgPath);
 
   const handleBack = () => {
@@ -584,7 +613,7 @@ export default function EventDetails() {
             style={({ pressed }) => [
               {
                 width: "100%",
-                paddingVertical: 16,
+                height: 54,
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "center",
@@ -602,30 +631,54 @@ export default function EventDetails() {
             (isRegisterCta && isCheckingThisEvent) ? (
               <ActivityIndicator color="white" />
             ) : (
-              <>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                }}
+              >
                 <Text
-                  className={`text-lg font-bold mr-2 ${
-                    isRegisterCta && isRegisteredForThisEvent
-                      ? isDark
-                        ? "text-gray-400"
-                        : "text-gray-500"
-                      : "text-white"
-                  }`}
+                  style={{
+                    fontSize: 16.5,
+                    fontWeight: "700",
+                    letterSpacing: -0.2,
+                    color:
+                      isRegisterCta && isRegisteredForThisEvent
+                        ? isDark
+                          ? "#a1a1aa"
+                          : "#64748b"
+                        : "#ffffff",
+                    includeFontPadding: false,
+                    textAlignVertical: "center",
+                  }}
                 >
                   {displayLabel}
                 </Text>
                 {isRegisterCta && isRegisteredForThisEvent ? (
                   <Ionicons
                     name="checkmark-circle"
-                    size={20}
+                    size={19}
                     color={isDark ? "#4ade80" : "#16a34a"}
+                    style={{ marginTop: Platform.OS === "android" ? 1 : 0 }}
                   />
                 ) : displayLabel.toLowerCase().includes("notify") ? (
-                  <Ionicons name="notifications" size={20} color="white" />
+                  <Ionicons
+                    name="notifications"
+                    size={18}
+                    color="white"
+                    style={{ marginTop: Platform.OS === "android" ? 1 : 0 }}
+                  />
                 ) : (
-                  <Ionicons name="arrow-forward" size={20} color="white" />
+                  <Ionicons
+                    name="arrow-forward"
+                    size={18}
+                    color="white"
+                    style={{ marginTop: Platform.OS === "android" ? 1 : 0 }}
+                  />
                 )}
-              </>
+              </View>
             )}
           </Pressable>
         </View>

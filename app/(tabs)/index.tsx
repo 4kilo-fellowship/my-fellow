@@ -423,14 +423,31 @@ const Home = () => {
               >
                 {Array.isArray(events) &&
                   events.map((item: any, index) => {
-                    const eventId = item._id;
+                    const eventId = item._id || item.id;
+                    const eventImg =
+                      item.imageUrl || item.image || item.bannerUrl || "";
                     return (
                       <AnnouncementCard
                         key={eventId ?? index}
                         item={item}
                         isDark={isDark}
                         onPress={() => {
-                          router.push(`/events/${eventId}` as any);
+                          router.push({
+                            pathname: `/events/${eventId}`,
+                            params: {
+                              initialImage: eventImg,
+                              initialTitle: item.title || "",
+                              initialStartDate: item.startDate || "",
+                              initialEndDate: item.endDate || "",
+                              initialLocation:
+                                item.location || item.venue || "",
+                              initialDescription:
+                                item.shortDescription ||
+                                item.description ||
+                                "",
+                              initialButtonText: item.buttonText || "",
+                            },
+                          } as any);
                         }}
                       />
                     );

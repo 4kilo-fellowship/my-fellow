@@ -425,19 +425,19 @@ const styles = StyleSheet.create({
     paddingVertical: 2.5,
     borderRadius: 9999,
     gap: 4,
-    marginBottom: 10,
+    marginBottom: 14,
   },
   socialProofText: {
     fontSize: 11,
     fontWeight: "600",
   },
   followBtnContainer: {
-    width: 118,
-    height: 33,
+    width: 152,
+    height: 36,
     borderRadius: 9999,
     overflow: "hidden",
     alignSelf: "center",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   followBtnShadow: Platform.select({
     ios: {
