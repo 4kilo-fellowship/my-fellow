@@ -1,14 +1,19 @@
 import { ImageViewerModal } from "@/components/ImageViewerModal";
+import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
+import { LongPressAvatar, closeAvatarPreview } from "@/components/avatar-preview";
 import { PRIMARY } from "@/constants/colors";
 import { useTheme } from "@/context/ThemeContext";
-import { useCommunityStore, MemberProfile } from "@/stores/community.store";
+import { useAfterTransition } from "@/hooks/useAfterTransition";
+import { ProfileSeed, useProfile } from "@/hooks/useProfile";
+import { socialApi } from "@/services/socialApi";
+import { useCommunityStore } from "@/stores/community.store";
 import { getPrefilledAvatar } from "@/utils/avatar";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image as ExpoImage } from "expo-image";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Animated,
@@ -27,8 +32,9 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { TabView, TabBar } from "react-native-tab-view";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const AVATAR_PRESETS = [
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
@@ -57,30 +63,138 @@ const FELLOWSHIP_TEAMS = [
 ];
 
 const STORY_HIGHLIGHTS = [
-  { id: "h1", title: "Sunday ⛪", icon: "sparkles", quote: "Praise & Word Sunday Service highlights" },
-  { id: "h2", title: "Worship 🎸", icon: "musical-notes", quote: "Acoustic nights & campus choir rehearsals" },
-  { id: "h3", title: "Camp '25 ⛺", icon: "bonfire", quote: "Annual spiritual retreat & mountain prayer" },
-  { id: "h4", title: "Outreach 🌱", icon: "people", quote: "Freshman welcome, dorm visits, & charity" },
-  { id: "h5", title: "Testimony ✨", icon: "heart", quote: "God's goodness through finals & campus life" },
+  {
+    id: "h1",
+    title: "Sunday ⛪",
+    icon: "sparkles",
+    image: "https://images.unsplash.com/photo-1544427920-c49ccfb85579?auto=format&fit=crop&w=400&q=80",
+    quote: "Praise & Word Sunday Service highlights",
+  },
+  {
+    id: "h2",
+    title: "Worship 🎸",
+    icon: "musical-notes",
+    image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80",
+    quote: "Acoustic nights & campus choir rehearsals",
+  },
+  {
+    id: "h3",
+    title: "Camp '25 ⛺",
+    icon: "bonfire",
+    image: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=400&q=80",
+    quote: "Annual spiritual retreat & mountain prayer",
+  },
+  {
+    id: "h4",
+    title: "Outreach 🌱",
+    icon: "people",
+    image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=400&q=80",
+    quote: "Freshman welcome, dorm visits, & charity",
+  },
+  {
+    id: "h5",
+    title: "Testimony ✨",
+    icon: "heart",
+    image: "https://images.unsplash.com/photo-1499209974431-9dddcece7f88?auto=format&fit=crop&w=400&q=80",
+    quote: "God's goodness through finals & campus life",
+  },
+];
+
+const TAB_ROUTES = [
+  { key: "posts", title: "Reflections" },
+  { key: "media", title: "Media" },
+  { key: "ministry", title: "Ministry" },
+  { key: "likes", title: "Likes" },
 ];
 
 export default function MemberProfileScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const rawParams = useLocalSearchParams();
+  const params = rawParams as unknown as ProfileSeed & { id: string };
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const member = useCommunityStore((s) => s.getMemberById(id as string));
+  const { data: currentMember } = useProfile(params);
+  const ready = useAfterTransition();
+
+  // Close any open avatar preview when navigating away or losing focus
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        closeAvatarPreview();
+      };
+    }, [])
+  );
+
   const posts = useCommunityStore((s) => s.posts);
   const toggleFollowMember = useCommunityStore((s) => s.toggleFollowMember);
   const updateMemberProfile = useCommunityStore((s) => s.updateMemberProfile);
+  const fetchUserProfile = useCommunityStore((s) => s.fetchUserProfile);
   const toggleLike = useCommunityStore((s) => s.toggleLike);
   const toggleRepost = useCommunityStore((s) => s.toggleRepost);
   const toggleBookmark = useCommunityStore((s) => s.toggleBookmark);
 
-  const [activeTab, setActiveTab] = useState<"posts" | "media" | "ministry" | "likes">("posts");
+  const [tabIndex, setTabIndex] = useState(0);
   const [lightboxImage, setLightboxImage] = useState<any | null>(null);
+  const [highlights, setHighlights] = useState<any[]>(STORY_HIGHLIGHTS);
+  const [ministries, setMinistries] = useState<any[]>([]);
+
+  useEffect(() => {
+    const memberId = params.id;
+    if (memberId) {
+      fetchUserProfile(memberId);
+
+      socialApi
+        .getUserHighlights(memberId)
+        .then((res) => {
+          if (Array.isArray(res) && res.length > 0) {
+            setHighlights(
+              res.map((h) => ({
+                id: h.id,
+                title: h.title,
+                image:
+                  typeof h.cover === "string"
+                    ? h.cover
+                    : h.cover?.urls?.md ||
+                      h.image ||
+                      "https://images.unsplash.com/photo-1544427920-c49ccfb85579?auto=format&fit=crop&w=400&q=80",
+                quote: h.quote || h.title,
+              })),
+            );
+          }
+        })
+        .catch(() => {});
+
+      socialApi
+        .getUserMinistries(memberId)
+        .then((res) => {
+          if (Array.isArray(res) && res.length > 0) {
+            setMinistries(res);
+          }
+        })
+        .catch(() => {});
+
+      socialApi
+        .getUserMutuals(memberId)
+        .then((res) => {
+          if (res && res.users && res.users.length > 0) {
+            updateMemberProfile(memberId, {
+              mutualFollowers: {
+                names: res.users.map((u) => u.displayName || u.username),
+                count: res.total,
+                avatars: res.users.map((u) =>
+                  typeof u.avatar === "string"
+                    ? u.avatar
+                    : u.avatar?.urls?.sm || getPrefilledAvatar(u.id),
+                ),
+              },
+            });
+          }
+        })
+        .catch(() => {});
+    }
+  }, [params.id, fetchUserProfile, updateMemberProfile]);
 
   // Scroll tracking for sticky header & dynamic status bar
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -103,29 +217,6 @@ export default function MemberProfileScreen() {
     extrapolate: "clamp",
   });
 
-  const headerTitleOpacity = scrollY.interpolate({
-    inputRange: [65, 105],
-    outputRange: [0, 1],
-    extrapolate: "clamp",
-  });
-
-  const headerTitleTranslateY = scrollY.interpolate({
-    inputRange: [65, 105],
-    outputRange: [8, 0],
-    extrapolate: "clamp",
-  });
-
-  const bannerBtnOpacity = scrollY.interpolate({
-    inputRange: [30, 80],
-    outputRange: [1, 0],
-    extrapolate: "clamp",
-  });
-
-  const scrolledBtnOpacity = scrollY.interpolate({
-    inputRange: [30, 80],
-    outputRange: [0, 1],
-    extrapolate: "clamp",
-  });
 
   // Profile Customizer State
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
@@ -146,38 +237,6 @@ export default function MemberProfileScreen() {
   const bg = isDark ? "#09090b" : "#ffffff";
   const cardBg = isDark ? "#18181b" : "#f8fafc";
   const inputBg = isDark ? "#27272a" : "#f1f5f9";
-
-  // Fallback member object if user ID is not found in initial registry
-  const currentMember: MemberProfile = useMemo(() => {
-    if (member) return member;
-    return {
-      id: (id as string) || "user-unknown",
-      fullName: "Fellowship Member",
-      handle: "@fellowship_student",
-      avatar: getPrefilledAvatar(id || "fellow"),
-      banner: "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=1200&q=80",
-      team: "Campus Ministry",
-      department: "Addis Ababa University",
-      academicYear: "4 Kilo Campus",
-      bio: "Rooted in Christ, walking in faith together with 4 Kilo Fellowship brothers and sisters. ✨",
-      streakDays: 12,
-      followersCount: 140,
-      followingCount: 88,
-      postsCount: 5,
-      isFollowing: false,
-      location: "AAU 4 Kilo Campus, Addis Ababa",
-      joinedDate: "September 2023",
-      mutualFollowers: {
-        names: ["Abenezer", "Bethelhem", "Natnael"],
-        count: 24,
-        avatars: [
-          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-1.2.1&auto=format&fit=crop&w=120&q=80",
-          "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=120&q=80",
-          "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=120&q=80",
-        ],
-      },
-    };
-  }, [member, id]);
 
   const authorPosts = useMemo(() => {
     return posts.filter(
@@ -266,115 +325,14 @@ export default function MemberProfileScreen() {
     }
   };
 
-  const renderActiveTabContent = () => {
-    if (activeTab === "media") {
-      if (mediaPosts.length === 0) {
-        return (
-          <View style={styles.emptyWrap}>
-            <Ionicons name="images-outline" size={44} color={mutedColor} />
-            <Text style={[styles.emptyTitle, { color: textColor }]}>No fellowship media</Text>
-            <Text style={[styles.emptySubtitle, { color: mutedColor }]}>
-              Photos and recordings shared in reflections will show up here.
-            </Text>
-          </View>
-        );
-      }
-
-      const gridItemSize = (SCREEN_WIDTH - 36) / 3;
-
-      return (
-        <View style={styles.mediaGrid}>
-          {mediaPosts.map((post) => (
-            <TouchableOpacity
-              key={post.id}
-              activeOpacity={0.88}
-              onPress={() =>
-                setLightboxImage({
-                  uri: post.image,
-                  caption: post.content,
-                  author: post.authorName,
-                })
-              }
-              style={[
-                styles.gridItem,
-                { width: gridItemSize, height: gridItemSize, backgroundColor: cardBg },
-              ]}
-            >
-              <ExpoImage
-                source={typeof post.image === "string" ? { uri: post.image } : post.image}
-                style={styles.gridImage}
-                contentFit="cover"
-              />
-              <View style={styles.gridOverlayBadge}>
-                <Ionicons name="heart" size={11} color="#ffffff" />
-                <Text style={styles.gridOverlayText}>{post.likesCount}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-      );
-    }
-
-    if (activeTab === "ministry") {
-      return (
-        <View style={styles.ministryContainer}>
-          {/* Fellowship Team Card */}
-          <View style={[styles.ministryCard, { backgroundColor: cardBg, borderColor }]}>
-            <View style={styles.ministryHeaderRow}>
-              <View style={[styles.ministryIconWrap, { backgroundColor: "rgba(255, 103, 25, 0.12)" }]}>
-                <Ionicons name="flame" size={20} color={PRIMARY} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.ministryTitle, { color: textColor }]}>{currentMember.team}</Text>
-                <Text style={[styles.ministrySub, { color: mutedColor }]}>Active Fellowship Ministry</Text>
-              </View>
-            </View>
-            <Text style={[styles.ministryDesc, { color: textColor }]}>
-              Serving Christ faithfully at Addis Ababa University, ministering to university peers, participating in prayer meetings, and uplifting the body of believers.
-            </Text>
-          </View>
-
-          {/* Schedule Card */}
-          <View style={[styles.ministryCard, { backgroundColor: cardBg, borderColor }]}>
-            <View style={styles.ministryHeaderRow}>
-              <View style={[styles.ministryIconWrap, { backgroundColor: isDark ? "#27272a" : "#e2e8f0" }]}>
-                <Ionicons name="time-outline" size={20} color={textColor} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.ministryTitle, { color: textColor }]}>Weekly Fellowship Schedule</Text>
-                <Text style={[styles.ministrySub, { color: mutedColor }]}>Campus Gathering Points</Text>
-              </View>
-            </View>
-            <View style={styles.scheduleRow}>
-              <Ionicons name="calendar-outline" size={14} color={PRIMARY} />
-              <Text style={[styles.scheduleText, { color: textColor }]}>Wednesday Midweek Prayer · 5:30 PM (Sidist Kilo Chapel)</Text>
-            </View>
-            <View style={styles.scheduleRow}>
-              <Ionicons name="musical-notes-outline" size={14} color={PRIMARY} />
-              <Text style={[styles.scheduleText, { color: textColor }]}>Friday Acoustic Worship & Bible Study · 6:00 PM (4 Kilo Hall)</Text>
-            </View>
-          </View>
-        </View>
-      );
-    }
-
-    const dataSource = activeTab === "likes" ? likedPosts : authorPosts;
-
-    if (dataSource.length === 0) {
+  const renderPostsTab = useCallback(() => {
+    if (authorPosts.length === 0) {
       return (
         <View style={styles.emptyWrap}>
-          <Ionicons
-            name={activeTab === "likes" ? "heart-dislike-outline" : "chatbubble-ellipses-outline"}
-            size={44}
-            color={mutedColor}
-          />
-          <Text style={[styles.emptyTitle, { color: textColor }]}>
-            {activeTab === "likes" ? "No liked reflections" : "No reflections yet"}
-          </Text>
+          <Ionicons name="chatbubble-ellipses-outline" size={44} color={mutedColor} />
+          <Text style={[styles.emptyTitle, { color: textColor }]}>No reflections yet</Text>
           <Text style={[styles.emptySubtitle, { color: mutedColor }]}>
-            {activeTab === "likes"
-              ? "Reflections liked by this member will appear here."
-              : `${currentMember.fullName} hasn't shared any fellowship reflections yet.`}
+            {`${currentMember.fullName} hasn't shared any fellowship reflections yet.`}
           </Text>
         </View>
       );
@@ -382,7 +340,7 @@ export default function MemberProfileScreen() {
 
     return (
       <View>
-        {dataSource.map((item) => (
+        {authorPosts.map((item) => (
           <View key={item.id} style={[styles.postRow, { borderBottomColor: borderColor }]}>
             <ExpoImage
               source={
@@ -428,9 +386,7 @@ export default function MemberProfileScreen() {
                   style={styles.postImageCard}
                 >
                   <ExpoImage
-                    source={
-                      typeof item.image === "string" ? { uri: item.image } : item.image
-                    }
+                    source={typeof item.image === "string" ? { uri: item.image } : item.image}
                     style={styles.postImage}
                     contentFit="cover"
                   />
@@ -503,7 +459,357 @@ export default function MemberProfileScreen() {
         ))}
       </View>
     );
-  };
+  }, [authorPosts, currentMember.fullName, textColor, mutedColor, borderColor, router, toggleRepost, toggleLike, toggleBookmark]);
+
+  const renderMediaTab = useCallback(() => {
+    if (mediaPosts.length === 0) {
+      return (
+        <View style={styles.emptyWrap}>
+          <Ionicons name="images-outline" size={44} color={mutedColor} />
+          <Text style={[styles.emptyTitle, { color: textColor }]}>No fellowship media</Text>
+          <Text style={[styles.emptySubtitle, { color: mutedColor }]}>
+            Photos and recordings shared in reflections will show up here.
+          </Text>
+        </View>
+      );
+    }
+
+    const gridItemSize = (SCREEN_WIDTH - 36) / 3;
+
+    return (
+      <View style={styles.mediaGrid}>
+        {mediaPosts.map((post) => (
+          <TouchableOpacity
+            key={post.id}
+            activeOpacity={0.88}
+            onPress={() =>
+              setLightboxImage({
+                uri: post.image,
+                caption: post.content,
+                author: post.authorName,
+              })
+            }
+            style={[
+              styles.gridItem,
+              { width: gridItemSize, height: gridItemSize, backgroundColor: cardBg },
+            ]}
+          >
+            <ExpoImage
+              source={typeof post.image === "string" ? { uri: post.image } : post.image}
+              style={styles.gridImage}
+              contentFit="cover"
+            />
+            <View style={styles.gridOverlayBadge}>
+              <Ionicons name="heart" size={11} color="#ffffff" />
+              <Text style={styles.gridOverlayText}>{post.likesCount}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  }, [mediaPosts, cardBg, textColor, mutedColor]);
+
+  const renderMinistryTab = useCallback(() => {
+    if (ministries.length > 0) {
+      return (
+        <View style={styles.ministryContainer}>
+          {ministries.map((m) => (
+            <View
+              key={m.id || m.name}
+              style={[
+                styles.ministryCard,
+                { backgroundColor: cardBg, borderColor },
+              ]}
+            >
+              <View style={styles.ministryHeaderRow}>
+                <View
+                  style={[
+                    styles.ministryIconWrap,
+                    { backgroundColor: "rgba(255, 103, 25, 0.12)" },
+                  ]}
+                >
+                  <Ionicons name="flame" size={20} color={PRIMARY} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.ministryTitle, { color: textColor }]}>
+                    {m.name}
+                  </Text>
+                  <Text style={[styles.ministrySub, { color: mutedColor }]}>
+                    {m.role || "Active Fellowship Ministry"}
+                  </Text>
+                </View>
+              </View>
+
+              {m.badge && (
+                <Text
+                  style={[
+                    styles.ministryDesc,
+                    { color: PRIMARY, fontWeight: "600", marginBottom: 6 },
+                  ]}
+                >
+                  {m.badge}
+                </Text>
+              )}
+
+              {/* Schedule items if present */}
+              {m.schedule &&
+                m.schedule.map((s: any, idx: number) => (
+                  <View key={idx} style={styles.scheduleRow}>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={14}
+                      color={PRIMARY}
+                    />
+                    <Text style={[styles.scheduleText, { color: textColor }]}>
+                      {s.day} · {s.time} ({s.location})
+                    </Text>
+                  </View>
+                ))}
+
+              {/* Upcoming events if present */}
+              {m.upcomingEvents &&
+                m.upcomingEvents.map((ev: any) => (
+                  <View key={ev.id} style={styles.scheduleRow}>
+                    <Ionicons
+                      name="sparkles-outline"
+                      size={14}
+                      color={PRIMARY}
+                    />
+                    <Text style={[styles.scheduleText, { color: textColor }]}>
+                      {ev.title} · {ev.date} ({ev.location})
+                    </Text>
+                  </View>
+                ))}
+            </View>
+          ))}
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.ministryContainer}>
+        {/* Fellowship Team Card */}
+        <View style={[styles.ministryCard, { backgroundColor: cardBg, borderColor }]}>
+          <View style={styles.ministryHeaderRow}>
+            <View style={[styles.ministryIconWrap, { backgroundColor: "rgba(255, 103, 25, 0.12)" }]}>
+              <Ionicons name="flame" size={20} color={PRIMARY} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.ministryTitle, { color: textColor }]}>{currentMember.team}</Text>
+              <Text style={[styles.ministrySub, { color: mutedColor }]}>Active Fellowship Ministry</Text>
+            </View>
+          </View>
+          <Text style={[styles.ministryDesc, { color: textColor }]}>
+            Serving Christ faithfully at Addis Ababa University, ministering to university peers, participating in prayer meetings, and uplifting the body of believers.
+          </Text>
+        </View>
+
+        {/* Schedule Card */}
+        <View style={[styles.ministryCard, { backgroundColor: cardBg, borderColor }]}>
+          <View style={styles.ministryHeaderRow}>
+            <View style={[styles.ministryIconWrap, { backgroundColor: isDark ? "#27272a" : "#e2e8f0" }]}>
+              <Ionicons name="time-outline" size={20} color={textColor} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.ministryTitle, { color: textColor }]}>Weekly Fellowship Schedule</Text>
+              <Text style={[styles.ministrySub, { color: mutedColor }]}>Campus Gathering Points</Text>
+            </View>
+          </View>
+          <View style={styles.scheduleRow}>
+            <Ionicons name="calendar-outline" size={14} color={PRIMARY} />
+            <Text style={[styles.scheduleText, { color: textColor }]}>Wednesday Midweek Prayer · 5:30 PM (Sidist Kilo Chapel)</Text>
+          </View>
+          <View style={styles.scheduleRow}>
+            <Ionicons name="musical-notes-outline" size={14} color={PRIMARY} />
+            <Text style={[styles.scheduleText, { color: textColor }]}>Friday Acoustic Worship & Bible Study · 6:00 PM (4 Kilo Hall)</Text>
+          </View>
+        </View>
+      </View>
+    );
+  }, [ministries, cardBg, borderColor, currentMember.team, textColor, mutedColor, isDark]);
+
+  const renderLikesTab = useCallback(() => {
+    if (likedPosts.length === 0) {
+      return (
+        <View style={styles.emptyWrap}>
+          <Ionicons name="heart-dislike-outline" size={44} color={mutedColor} />
+          <Text style={[styles.emptyTitle, { color: textColor }]}>No liked reflections</Text>
+          <Text style={[styles.emptySubtitle, { color: mutedColor }]}>
+            Reflections liked by this member will appear here.
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <View>
+        {likedPosts.map((item) => (
+          <View key={item.id} style={[styles.postRow, { borderBottomColor: borderColor }]}>
+            <ExpoImage
+              source={
+                typeof item.authorAvatar === "string"
+                  ? { uri: item.authorAvatar }
+                  : item.authorAvatar || { uri: getPrefilledAvatar(item.authorHandle) }
+              }
+              style={styles.feedAvatar}
+              contentFit="cover"
+            />
+            <View style={styles.postBody}>
+              <View style={styles.postAuthorLine}>
+                <Text style={[styles.postAuthorName, { color: textColor }]}>
+                  {item.authorName}
+                </Text>
+                {item.isVerified && (
+                  <Ionicons name="checkmark-circle" size={14} color={PRIMARY} style={{ marginHorizontal: 2 }} />
+                )}
+                <Text style={[styles.postTime, { color: mutedColor }]}>
+                  · {item.timestamp}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() => router.push(`/community/${item.id}` as any)}
+              >
+                <Text style={[styles.postContentText, { color: textColor }]}>
+                  {item.content}
+                </Text>
+              </TouchableOpacity>
+
+              {item.image && (
+                <TouchableOpacity
+                  activeOpacity={0.92}
+                  onPress={() =>
+                    setLightboxImage({
+                      uri: item.image,
+                      caption: item.content,
+                      author: item.authorName,
+                    })
+                  }
+                  style={styles.postImageCard}
+                >
+                  <ExpoImage
+                    source={typeof item.image === "string" ? { uri: item.image } : item.image}
+                    style={styles.postImage}
+                    contentFit="cover"
+                  />
+                </TouchableOpacity>
+              )}
+
+              {/* Feed Actions Row */}
+              <View style={styles.feedActionsRow}>
+                <TouchableOpacity
+                  onPress={() => router.push(`/community/${item.id}` as any)}
+                  style={styles.feedActionBtn}
+                >
+                  <Ionicons name="chatbubble-outline" size={16} color={mutedColor} />
+                  <Text style={[styles.feedActionCount, { color: mutedColor }]}>
+                    {item.repliesCount}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => toggleRepost(item.id)}
+                  style={styles.feedActionBtn}
+                >
+                  <Ionicons
+                    name="repeat-outline"
+                    size={18}
+                    color={item.isReposted ? "#00ba7c" : mutedColor}
+                  />
+                  <Text
+                    style={[
+                      styles.feedActionCount,
+                      { color: item.isReposted ? "#00ba7c" : mutedColor },
+                    ]}
+                  >
+                    {item.repostsCount}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => toggleLike(item.id)}
+                  style={styles.feedActionBtn}
+                >
+                  <Ionicons
+                    name={item.isLiked ? "heart" : "heart-outline"}
+                    size={17}
+                    color={item.isLiked ? "#f91880" : mutedColor}
+                  />
+                  <Text
+                    style={[
+                      styles.feedActionCount,
+                      { color: item.isLiked ? "#f91880" : mutedColor },
+                    ]}
+                  >
+                    {item.likesCount}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => toggleBookmark(item.id)}
+                  style={styles.feedActionBtn}
+                >
+                  <Ionicons
+                    name={item.isBookmarked ? "bookmark" : "bookmark-outline"}
+                    size={17}
+                    color={item.isBookmarked ? PRIMARY : mutedColor}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  }, [likedPosts, textColor, mutedColor, borderColor, router, toggleRepost, toggleLike, toggleBookmark]);
+
+  const renderScene = useCallback(
+    ({ route }: { route: { key: string } }) => {
+      switch (route.key) {
+        case "posts":
+          return renderPostsTab();
+        case "media":
+          return renderMediaTab();
+        case "ministry":
+          return renderMinistryTab();
+        case "likes":
+          return renderLikesTab();
+        default:
+          return null;
+      }
+    },
+    [renderPostsTab, renderMediaTab, renderMinistryTab, renderLikesTab]
+  );
+
+  const renderTabBar = useCallback(
+    (props: any) => (
+      <TabBar
+        {...props}
+        indicatorStyle={{
+          backgroundColor: PRIMARY,
+          height: 3,
+          borderRadius: 1.5,
+        }}
+        style={{
+          backgroundColor: bg,
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: borderColor,
+          elevation: 0,
+          shadowOpacity: 0,
+        }}
+        activeColor={textColor}
+        inactiveColor={mutedColor}
+        labelStyle={{
+          fontSize: 14,
+          fontWeight: "700",
+          textTransform: "capitalize",
+        }}
+        pressColor={isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"}
+      />
+    ),
+    [bg, borderColor, textColor, mutedColor, isDark]
+  );
 
   return (
     <View style={[styles.screen, { backgroundColor: bg }]}>
@@ -573,84 +879,70 @@ export default function MemberProfileScreen() {
 
         {/* Profile Avatar & Inline Action Pill Controls */}
         <View style={styles.profileActionRow}>
-          {/* Story Ring Avatar (IG Style with smooth image viewer tap) */}
-          <Pressable
-            onPress={() => {
-              if (Platform.OS !== "web") {
-                try {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                } catch {}
-              }
-              setLightboxImage({
-                uri: typeof currentMember.avatar === "string" ? currentMember.avatar : undefined,
-                caption: `${currentMember.fullName}'s profile photo`,
-                author: currentMember.fullName,
-              });
-            }}
-            style={({ pressed }) => [
+          {/* Story Ring Avatar (IG Style with smooth image viewer tap + Long-Press Instagram preview) */}
+          <View
+            style={[
               styles.avatarStoryRing,
               { borderColor: PRIMARY },
-              pressed && Platform.OS === "ios" && { opacity: 0.9 },
             ]}
-            accessibilityRole="imagebutton"
-            accessibilityLabel={`View ${currentMember.fullName}'s profile photo`}
           >
             <View style={[styles.avatarInnerRing, { borderColor: bg }]}>
-              <ExpoImage
-                source={
-                  typeof currentMember.avatar === "string"
-                    ? { uri: currentMember.avatar }
-                    : currentMember.avatar
-                }
-                style={styles.profileAvatar}
-                contentFit="cover"
+              <LongPressAvatar
+                size={72}
+                uri={typeof currentMember.avatar === "string" ? currentMember.avatar : undefined}
+                name={currentMember.fullName}
+                onPress={() => {
+                  if (Platform.OS !== "web") {
+                    try {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    } catch {}
+                  }
+                  setLightboxImage({
+                    uri: typeof currentMember.avatar === "string" ? currentMember.avatar : undefined,
+                    caption: `${currentMember.fullName}'s profile photo`,
+                    author: currentMember.fullName,
+                  });
+                }}
               />
-              <View style={[styles.onlineDot, { borderColor: bg }]} />
+              <View style={[styles.onlineDot, { borderColor: bg }]} pointerEvents="none" />
             </View>
-          </Pressable>
+          </View>
 
-          {/* Action Row: Message + Edit/Customize + Follow Pill with Native Ripples */}
+          {/* Action Row: Message + Edit/Customize + Follow Pill */}
           <View style={styles.actionButtonsCol}>
             {/* Telegram Message */}
-            <View style={[styles.iconActionWrap, { borderColor, backgroundColor: cardBg }]}>
-              <Pressable
-                onPress={handleTelegramMessage}
-                android_ripple={{
-                  color: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
-                  borderless: false,
-                }}
-                style={({ pressed }) => [
-                  styles.iconActionPressable,
-                  pressed && Platform.OS === "ios" && { opacity: 0.7 },
-                ]}
-                accessibilityLabel="Message on Telegram"
-              >
-                <Ionicons name="paper-plane-outline" size={17} color={textColor} />
-              </Pressable>
-            </View>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={handleTelegramMessage}
+              style={[styles.iconActionBtn, { borderColor, backgroundColor: cardBg }]}
+              accessibilityLabel="Message on Telegram"
+            >
+              <Ionicons name="paper-plane-outline" size={18} color={textColor} />
+            </TouchableOpacity>
 
             {/* Edit / Customize Profile */}
-            <View style={[styles.iconActionWrap, { borderColor, backgroundColor: cardBg }]}>
-              <Pressable
-                onPress={openCustomizeModal}
-                android_ripple={{
-                  color: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
-                  borderless: false,
-                }}
-                style={({ pressed }) => [
-                  styles.iconActionPressable,
-                  pressed && Platform.OS === "ios" && { opacity: 0.7 },
-                ]}
-                accessibilityLabel="Customize Profile"
-              >
-                <Ionicons name="create-outline" size={17} color={textColor} />
-              </Pressable>
-            </View>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={openCustomizeModal}
+              style={[styles.iconActionBtn, { borderColor, backgroundColor: cardBg }]}
+              accessibilityLabel="Customize Profile"
+            >
+              <Ionicons name="create-outline" size={18} color={textColor} />
+            </TouchableOpacity>
 
             {/* Follow Pill Button */}
-            <View
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                if (Platform.OS !== "web") {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  } catch {}
+                }
+                toggleFollowMember(currentMember.id);
+              }}
               style={[
-                styles.followPillContainer,
+                styles.followPillBtn,
                 {
                   backgroundColor: currentMember.isFollowing
                     ? (isDark ? "#27272a" : "#f1f5f9")
@@ -659,44 +951,23 @@ export default function MemberProfileScreen() {
                   borderWidth: currentMember.isFollowing ? 1 : 0,
                 },
               ]}
+              accessibilityLabel={currentMember.isFollowing ? "Unfollow" : "Follow"}
             >
-              <Pressable
-                onPress={() => {
-                  if (Platform.OS !== "web") {
-                    try {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    } catch {}
-                  }
-                  toggleFollowMember(currentMember.id);
-                }}
-                android_ripple={{
-                  color: currentMember.isFollowing
-                    ? (isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)")
-                    : "rgba(255,255,255,0.3)",
-                  borderless: false,
-                }}
-                style={({ pressed }) => [
-                  styles.followPillPressable,
-                  pressed && Platform.OS === "ios" && { opacity: 0.8 },
+              <Ionicons
+                name={currentMember.isFollowing ? "checkmark" : "person-add"}
+                size={14}
+                color={currentMember.isFollowing ? textColor : "#ffffff"}
+                style={{ marginRight: 6 }}
+              />
+              <Text
+                style={[
+                  styles.followPillText,
+                  { color: currentMember.isFollowing ? textColor : "#ffffff" },
                 ]}
-                accessibilityLabel={currentMember.isFollowing ? "Unfollow" : "Follow"}
               >
-                <Ionicons
-                  name={currentMember.isFollowing ? "checkmark" : "person-add"}
-                  size={14}
-                  color={currentMember.isFollowing ? textColor : "#ffffff"}
-                  style={{ marginRight: 5 }}
-                />
-                <Text
-                  style={[
-                    styles.followPillText,
-                    { color: currentMember.isFollowing ? textColor : "#ffffff" },
-                  ]}
-                >
-                  {currentMember.isFollowing ? "Following" : "Follow"}
-                </Text>
-              </Pressable>
-            </View>
+                {currentMember.isFollowing ? "Following" : "Follow"}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -782,16 +1053,52 @@ export default function MemberProfileScreen() {
             )}
           </View>
 
-          {/* Stats Counters: Following, Connects, Reflections */}
+          {/* Stats Counters: Following, Followers, Reflections */}
           <View style={styles.statsRow}>
-            <TouchableOpacity activeOpacity={0.8} style={styles.statItem}>
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={() => {
+                if (Platform.OS !== "web") {
+                  try {
+                    Haptics.selectionAsync();
+                  } catch {}
+                }
+                router.push({
+                  pathname: "/community/user/connections",
+                  params: {
+                    id: currentMember.id,
+                    initialTab: "following",
+                    name: currentMember.fullName,
+                  },
+                } as any);
+              }}
+              style={styles.statItem}
+            >
               <Text style={[styles.statBold, { color: textColor }]}>{currentMember.followingCount}</Text>
               <Text style={[styles.statLabel, { color: mutedColor }]}>Following</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity activeOpacity={0.8} style={styles.statItem}>
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={() => {
+                if (Platform.OS !== "web") {
+                  try {
+                    Haptics.selectionAsync();
+                  } catch {}
+                }
+                router.push({
+                  pathname: "/community/user/connections",
+                  params: {
+                    id: currentMember.id,
+                    initialTab: "followers",
+                    name: currentMember.fullName,
+                  },
+                } as any);
+              }}
+              style={styles.statItem}
+            >
               <Text style={[styles.statBold, { color: textColor }]}>{currentMember.followersCount}</Text>
-              <Text style={[styles.statLabel, { color: mutedColor }]}>Connects</Text>
+              <Text style={[styles.statLabel, { color: mutedColor }]}>Followers</Text>
             </TouchableOpacity>
 
             <View style={styles.statItem}>
@@ -829,21 +1136,43 @@ export default function MemberProfileScreen() {
             </View>
           )}
 
-          {/* Instagram-Inspired Highlights Carousel (Ministry Stories) */}
+          {/* Instagram-Inspired Highlights Carousel (Ministry Stories with Real Photos) */}
           <View style={styles.highlightsContainer}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.highlightsScroll}>
-              {STORY_HIGHLIGHTS.map((item) => (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.highlightsScroll}
+            >
+              {highlights.map((item) => (
                 <TouchableOpacity
                   key={item.id}
                   activeOpacity={0.8}
                   onPress={() => {
-                    Haptics.selectionAsync().catch(() => {});
-                    Alert.alert(item.title, item.quote);
+                    if (Platform.OS !== "web") {
+                      try {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      } catch {}
+                    }
+                    setLightboxImage({
+                      uri: item.image,
+                      caption: `${item.title} — ${item.quote}`,
+                      author: currentMember.fullName,
+                    });
                   }}
                   style={styles.highlightItem}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.title}
                 >
-                  <View style={[styles.highlightCircle, { borderColor, backgroundColor: cardBg }]}>
-                    <Ionicons name={item.icon as any} size={20} color={PRIMARY} />
+                  <View style={[styles.highlightStoryRing, { borderColor: PRIMARY }]}>
+                    <View style={[styles.highlightInnerRing, { borderColor: bg }]}>
+                      <ExpoImage
+                        source={{ uri: item.image }}
+                        style={styles.highlightImage}
+                        contentFit="cover"
+                        transition={150}
+                        cachePolicy="memory-disk"
+                      />
+                    </View>
                   </View>
                   <Text style={[styles.highlightLabel, { color: textColor }]} numberOfLines={1}>
                     {item.title}
@@ -854,47 +1183,23 @@ export default function MemberProfileScreen() {
           </View>
         </View>
 
-        {/* Tab Selection Bar */}
-        <View style={[styles.tabsRow, { borderBottomColor: borderColor }]}>
-          {(["posts", "media", "ministry", "likes"] as const).map((tab) => {
-            const isSelected = activeTab === tab;
-            const label =
-              tab === "posts"
-                ? "Reflections"
-                : tab === "media"
-                  ? "Media"
-                  : tab === "ministry"
-                    ? "Ministry"
-                    : "Likes";
-            return (
-              <TouchableOpacity
-                key={tab}
-                activeOpacity={0.8}
-                onPress={() => {
-                  Haptics.selectionAsync().catch(() => {});
-                  setActiveTab(tab);
-                }}
-                style={styles.tabItem}
-              >
-                <Text
-                  style={[
-                    styles.tabLabel,
-                    {
-                      color: isSelected ? textColor : mutedColor,
-                      fontWeight: isSelected ? "700" : "500",
-                    },
-                  ]}
-                >
-                  {label}
-                </Text>
-                {isSelected && <View style={[styles.tabUnderline, { backgroundColor: PRIMARY }]} />}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Tab Content Display */}
-        {renderActiveTabContent()}
+        {/* Swipeable Native Pager Tabs: Reflections, Media, Ministry, Likes */}
+        {ready ? (
+          <TabView
+            navigationState={{ index: tabIndex, routes: TAB_ROUTES }}
+            renderScene={renderScene}
+            onIndexChange={setTabIndex}
+            initialLayout={{ width: SCREEN_WIDTH }}
+            renderTabBar={renderTabBar}
+            lazy
+            lazyPreloadDistance={1}
+            style={{ minHeight: Math.max(SCREEN_HEIGHT - insets.top - 80, 500) }}
+          />
+        ) : (
+          <View style={{ paddingTop: 12 }}>
+            <ProfileSkeleton variant="posts" isDark={isDark} />
+          </View>
+        )}
       </Animated.ScrollView>
 
       {/* Sticky Header Bar — Fades in smoothly when scrolled past banner */}
@@ -1316,32 +1621,21 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 4,
   },
-  iconActionWrap: {
+  iconActionBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
     borderWidth: 1,
-    overflow: "hidden",
-  },
-  iconActionPressable: {
-    width: "100%",
-    height: "100%",
     alignItems: "center",
     justifyContent: "center",
   },
-  followPillContainer: {
-    height: 38,
-    borderRadius: 9999,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  followPillPressable: {
-    height: "100%",
-    paddingHorizontal: 16,
+  followPillBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    height: 38,
+    borderRadius: 19,
+    paddingHorizontal: 18,
   },
   followPillText: {
     fontSize: 13,
@@ -1448,20 +1742,33 @@ const styles = StyleSheet.create({
   },
   highlightsScroll: {
     gap: 14,
+    paddingHorizontal: 16,
     paddingVertical: 4,
   },
   highlightItem: {
     alignItems: "center",
-    width: 64,
+    width: 68,
   },
-  highlightCircle: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    borderWidth: 1,
+  highlightStoryRing: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 2,
+    padding: 2,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 5,
+  },
+  highlightInnerRing: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 2,
+    overflow: "hidden",
+  },
+  highlightImage: {
+    width: "100%",
+    height: "100%",
   },
   highlightLabel: {
     fontSize: 11,

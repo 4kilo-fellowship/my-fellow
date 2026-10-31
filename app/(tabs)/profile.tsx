@@ -1,13 +1,14 @@
 import { MainTabHeader } from "@/components/MainTabHeader";
 import { ConfirmModal } from "@/components/Modals/ConfirmModal";
+import { LongPressAvatar, closeAvatarPreview } from "@/components/avatar-preview";
 import { PRIMARY } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useUserStore } from "@/stores/user.store";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Dimensions,
   Image,
@@ -33,6 +34,15 @@ export default function ProfileScreen() {
   const router = useRouter();
 
   const [signOutConfirm, setSignOutConfirm] = useState(false);
+
+  // Close avatar preview if tab unfocuses or changes
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        closeAvatarPreview();
+      };
+    }, [])
+  );
 
   useEffect(() => {
     if (authState.authenticated) {
@@ -113,9 +123,11 @@ export default function ProfileScreen() {
             {/* Avatar */}
             <View style={styles.avatarWrap}>
               {user?.profileImage ? (
-                <Image
-                  source={{ uri: user.profileImage }}
-                  style={styles.avatarImage}
+                <LongPressAvatar
+                  size={72}
+                  uri={user.profileImage}
+                  name={user?.fullName || "My"}
+                  imageStyle={styles.avatarImage}
                 />
               ) : (
                 <View style={styles.avatarFallback}>
