@@ -1,6 +1,9 @@
+import { ProfileLink } from "@/components/profile/ProfileLink";
 import { PRIMARY } from "@/constants/colors";
 import { useTheme } from "@/context/ThemeContext";
+import { socialApi } from "@/services/socialApi";
 import {
+  apiPostToCommunityPost,
   CommunityPost,
   MemberProfile,
   useCommunityStore,
@@ -11,8 +14,9 @@ import * as Haptics from "expo-haptics";
 import { Image as ExpoImage } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -49,6 +53,89 @@ export default function CommunitySearchScreen() {
     "Bethlehem Haile",
     "Prayer",
   ]);
+  const [trendingTags, setTrendingTags] = useState(TRENDING_TAGS);
+  const [apiPosts, setApiPosts] = useState<CommunityPost[]>([]);
+  const [apiMembers, setApiMembers] = useState<MemberProfile[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    socialApi
+      .getTrendingTags()
+      .then((tags) => {
+        if (Array.isArray(tags) && tags.length > 0) {
+          setTrendingTags(
+            tags.map((t) => ({
+              tag: t.tag.startsWith("#") ? t.tag : `#${t.tag}`,
+              category: t.category || "Fellowship",
+              count:
+                typeof t.count === "number"
+                  ? `${t.count} posts`
+                  : String(t.count || "Trending"),
+            })),
+          );
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) {
+      setApiPosts([]);
+      setApiMembers([]);
+      setIsSearching(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setIsSearching(true);
+      const searchType =
+        activeTab === "people"
+          ? "people"
+          : activeTab === "posts"
+            ? "posts"
+            : "all";
+      socialApi
+        .searchSocial(q, searchType)
+        .then((result) => {
+          if (result.posts && result.posts.length > 0) {
+            setApiPosts(result.posts.map(apiPostToCommunityPost));
+          }
+          if (result.people && result.people.length > 0) {
+            setApiMembers(
+              result.people.map((u) => ({
+                id: u.id,
+                fullName: u.displayName || u.username,
+                handle: u.username?.startsWith("@")
+                  ? u.username
+                  : `@${u.username}`,
+                avatar:
+                  typeof u.avatar === "string"
+                    ? u.avatar
+                    : u.avatar?.urls?.md || getPrefilledAvatar(u.id),
+                banner:
+                  "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=1200&q=80",
+                team: u.fellowshipRole || "Campus Ministry",
+                department: u.department || "Addis Ababa University",
+                academicYear: u.academicYear || "AAU 4 Kilo",
+                bio: "Rooted in Christ.",
+                streakDays: 1,
+                followersCount: 1,
+                followingCount: 1,
+                postsCount: 0,
+                isFollowing: !!u.isFollowing,
+              })),
+            );
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          setIsSearching(false);
+        });
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [query, activeTab]);
 
   const textColor = isDark ? "#ffffff" : "#0f172a";
   const mutedColor = isDark ? "#94a3b8" : "#64748b";
@@ -62,6 +149,7 @@ export default function CommunitySearchScreen() {
 
   const matchingPosts = useMemo(() => {
     if (!query.trim()) return [];
+    if (apiPosts.length > 0) return apiPosts;
     const q = query.toLowerCase().trim();
     return posts.filter(
       (p) =>
@@ -69,10 +157,11 @@ export default function CommunitySearchScreen() {
         p.authorName.toLowerCase().includes(q) ||
         p.authorHandle.toLowerCase().includes(q)
     );
-  }, [posts, query]);
+  }, [apiPosts, posts, query]);
 
   const matchingMembers = useMemo(() => {
     if (!query.trim()) return [];
+    if (apiMembers.length > 0) return apiMembers;
     const q = query.toLowerCase().trim();
     return memberList.filter(
       (m) =>
@@ -81,7 +170,7 @@ export default function CommunitySearchScreen() {
         m.department.toLowerCase().includes(q) ||
         m.team.toLowerCase().includes(q)
     );
-  }, [memberList, query]);
+  }, [apiMembers, memberList, query]);
 
   const handleSelectTag = (tag: string) => {
     Haptics.selectionAsync().catch(() => {});
@@ -122,14 +211,20 @@ export default function CommunitySearchScreen() {
             returnKeyType="search"
             style={[styles.searchInput, { color: textColor }]}
           />
-          {query.length > 0 && (
+          {isSearching ? (
+            <ActivityIndicator
+              size="small"
+              color={PRIMARY}
+              style={{ marginRight: 4 }}
+            />
+          ) : query.length > 0 ? (
             <TouchableOpacity
               onPress={() => setQuery("")}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Ionicons name="close-circle" size={18} color={mutedColor} />
             </TouchableOpacity>
-          )}
+          ) : null}
         </View>
       </View>
 
@@ -214,7 +309,7 @@ export default function CommunitySearchScreen() {
                 Trending in 4 Kilo Fellowship
               </Text>
               <View style={styles.trendingList}>
-                {TRENDING_TAGS.map((t, idx) => (
+                {trendingTags.map((t, idx) => (
                   <TouchableOpacity
                     key={idx}
                     activeOpacity={0.75}
@@ -241,33 +336,35 @@ export default function CommunitySearchScreen() {
               </Text>
               <View style={styles.membersList}>
                 {memberList.slice(0, 4).map((member) => (
-                  <TouchableOpacity
+                  <View
                     key={member.id}
-                    activeOpacity={0.8}
-                    onPress={() => router.push(`/community/user/${member.id}` as any)}
                     style={[styles.memberCard, { backgroundColor: cardBg, borderColor }]}
                   >
-                    <ExpoImage
-                      source={
-                        typeof member.avatar === "string"
-                          ? { uri: member.avatar }
-                          : member.avatar
-                      }
-                      style={styles.memberAvatar}
-                      contentFit="cover"
-                    />
-                    <View style={styles.memberInfo}>
-                      <Text numberOfLines={1} style={[styles.memberName, { color: textColor }]}>
-                        {member.fullName}
-                      </Text>
-                      <Text numberOfLines={1} style={[styles.memberHandle, { color: mutedColor }]}>
-                        {member.handle} · {member.department}
-                      </Text>
-                      <View style={styles.streakBadge}>
-                        <Ionicons name="flame" size={13} color="#f97316" />
-                        <Text style={styles.streakText}>{member.streakDays}d Streak</Text>
+                    <ProfileLink
+                      user={{
+                        id: member.id,
+                        name: member.fullName,
+                        username: member.handle,
+                        avatarUrl: member.avatar,
+                        team: member.team,
+                        department: member.department,
+                      }}
+                      size={52}
+                      style={{ flex: 1 }}
+                    >
+                      <View style={[styles.memberInfo, { flex: 1, marginLeft: 12 }]}>
+                        <Text numberOfLines={1} style={[styles.memberName, { color: textColor }]}>
+                          {member.fullName}
+                        </Text>
+                        <Text numberOfLines={1} style={[styles.memberHandle, { color: mutedColor }]}>
+                          {member.handle} · {member.department}
+                        </Text>
+                        <View style={styles.streakBadge}>
+                          <Ionicons name="flame" size={13} color="#f97316" />
+                          <Text style={styles.streakText}>{member.streakDays}d Streak</Text>
+                        </View>
                       </View>
-                    </View>
+                    </ProfileLink>
                     <TouchableOpacity
                       activeOpacity={0.8}
                       onPress={(e) => {
@@ -293,7 +390,7 @@ export default function CommunitySearchScreen() {
                         {member.isFollowing ? "Following" : "Connect"}
                       </Text>
                     </TouchableOpacity>
-                  </TouchableOpacity>
+                  </View>
                 ))}
               </View>
             </View>
@@ -322,32 +419,42 @@ export default function CommunitySearchScreen() {
               if (activeTab === "people" || "department" in item) {
                 const member = item as MemberProfile;
                 return (
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    onPress={() => router.push(`/community/user/${member.id}` as any)}
-                    style={[styles.memberCard, { backgroundColor: cardBg, borderColor, marginHorizontal: 16, marginBottom: 10 }]}
+                  <View
+                    style={[
+                      styles.memberCard,
+                      {
+                        backgroundColor: cardBg,
+                        borderColor,
+                        marginHorizontal: 16,
+                        marginBottom: 10,
+                      },
+                    ]}
                   >
-                    <ExpoImage
-                      source={
-                        typeof member.avatar === "string"
-                          ? { uri: member.avatar }
-                          : member.avatar
-                      }
-                      style={styles.memberAvatar}
-                      contentFit="cover"
-                    />
-                    <View style={styles.memberInfo}>
-                      <Text numberOfLines={1} style={[styles.memberName, { color: textColor }]}>
-                        {member.fullName}
-                      </Text>
-                      <Text numberOfLines={1} style={[styles.memberHandle, { color: mutedColor }]}>
-                        {member.handle} · {member.team}
-                      </Text>
-                      <Text numberOfLines={1} style={[styles.memberBio, { color: mutedColor }]}>
-                        {member.bio}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
+                    <ProfileLink
+                      user={{
+                        id: member.id,
+                        name: member.fullName,
+                        username: member.handle,
+                        avatarUrl: member.avatar,
+                        team: member.team,
+                        department: member.department,
+                      }}
+                      size={52}
+                      style={{ flex: 1 }}
+                    >
+                      <View style={[styles.memberInfo, { flex: 1, marginLeft: 12 }]}>
+                        <Text numberOfLines={1} style={[styles.memberName, { color: textColor }]}>
+                          {member.fullName}
+                        </Text>
+                        <Text numberOfLines={1} style={[styles.memberHandle, { color: mutedColor }]}>
+                          {member.handle} · {member.team}
+                        </Text>
+                        <Text numberOfLines={1} style={[styles.memberBio, { color: mutedColor }]}>
+                          {member.bio}
+                        </Text>
+                      </View>
+                    </ProfileLink>
+                  </View>
                 );
               }
 
@@ -359,23 +466,32 @@ export default function CommunitySearchScreen() {
                   style={[styles.resultPostCard, { borderBottomColor: borderColor }]}
                 >
                   <View style={styles.resultAuthorRow}>
-                    <ExpoImage
-                      source={
-                        typeof post.authorAvatar === "string"
-                          ? { uri: post.authorAvatar }
-                          : post.authorAvatar || { uri: getPrefilledAvatar(post.authorHandle) }
-                      }
-                      style={styles.resultAvatar}
-                      contentFit="cover"
+                    <ProfileLink
+                      user={{
+                        id: post.authorId || "user-fellowship",
+                        name: post.authorName,
+                        username: post.authorHandle,
+                        avatarUrl: post.authorAvatar,
+                      }}
+                      size={40}
                     />
-                    <View style={styles.resultAuthorTextCol}>
+                    <ProfileLink
+                      user={{
+                        id: post.authorId || "user-fellowship",
+                        name: post.authorName,
+                        username: post.authorHandle,
+                        avatarUrl: post.authorAvatar,
+                      }}
+                      showAvatar={false}
+                      style={[styles.resultAuthorTextCol, { marginLeft: 10 }]}
+                    >
                       <Text style={[styles.resultAuthorName, { color: textColor }]}>
                         {post.authorName}
                       </Text>
                       <Text style={[styles.resultAuthorHandle, { color: mutedColor }]}>
                         {post.authorHandle} · {post.timestamp}
                       </Text>
-                    </View>
+                    </ProfileLink>
                   </View>
 
                   <Text numberOfLines={3} style={[styles.resultPostText, { color: textColor }]}>
