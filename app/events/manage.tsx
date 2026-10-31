@@ -22,6 +22,7 @@ import { Host, Switch } from "@expo/ui";
 import { Ionicons } from "@expo/vector-icons";
 
 import { ScreenHeader } from "@/components/ScreenHeader";
+import { NativeViewAllButton } from "@/components/NativeViewAllButton";
 import { ConfirmModal } from "@/components/Modals/ConfirmModal";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { PRIMARY } from "@/constants";
@@ -508,11 +509,9 @@ export default function ManageEventScreen() {
                 Banner Poster <Text style={styles.required}>*</Text>
               </Text>
 
-              <Pressable
+              <NativeViewAllButton
+                label="Generate with AI"
                 onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
-                    () => {},
-                  );
                   router.push({
                     pathname: "/events/ai-poster",
                     params: {
@@ -522,21 +521,9 @@ export default function ManageEventScreen() {
                     },
                   } as any);
                 }}
-                hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
-                android_ripple={{
-                  color: rippleColor,
-                  borderless: true,
-                  radius: 54,
-                }}
-                style={({ pressed }) => [
-                  styles.aiTextButton,
-                  pressed && Platform.OS === "ios" && { opacity: 0.6 },
-                ]}
-              >
-                <Text style={styles.aiButtonText}>
-                  Generate with AI
-                </Text>
-              </Pressable>
+                isDark={isDark}
+                accessibilityLabel="Generate banner poster with AI"
+              />
             </View>
             {imageUri ? (
               <View style={styles.imagePreviewContainer}>
@@ -1232,17 +1219,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 8,
-  },
-  aiTextButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 6,
-  },
-  aiButtonText: {
-    color: PRIMARY,
-    fontSize: 13.5,
-    fontWeight: "600",
-    letterSpacing: -0.1,
   },
   label: {
     fontSize: 14,
