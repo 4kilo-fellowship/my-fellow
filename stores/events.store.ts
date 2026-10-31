@@ -22,6 +22,8 @@ type EventsState = {
   registeredEvents: Record<string, boolean>;
   checkingRegistration: Record<string, boolean>;
   likedEvents: Record<string, boolean>;
+  aiPostersHistory: { url: string; prompt: string; createdAt: string }[];
+  pendingGeneratedPoster: string | null;
   error?: string | null;
 
   fetchEvents: (sort?: "asc" | "desc") => Promise<void>;
@@ -35,6 +37,8 @@ type EventsState = {
   deleteEvent: (id: string) => Promise<boolean>;
   setEventsList: (events: AppEvent[]) => void;
   setError: (error: string | null) => void;
+  addAIPosterToHistory: (poster: { url: string; prompt: string }) => void;
+  setPendingGeneratedPoster: (url: string | null) => void;
 };
 
 export const useEventsStore = create<EventsState>()(
@@ -48,7 +52,25 @@ export const useEventsStore = create<EventsState>()(
       registeredEvents: {},
       checkingRegistration: {},
       likedEvents: {},
+      aiPostersHistory: [],
+      pendingGeneratedPoster: null,
       error: null,
+
+      addAIPosterToHistory: (poster) => {
+        set((state) => ({
+          aiPostersHistory: [
+            {
+              ...poster,
+              createdAt: new Date().toISOString(),
+            },
+            ...(state.aiPostersHistory || []).filter((p) => p.url !== poster.url),
+          ].slice(0, 20),
+        }));
+      },
+
+      setPendingGeneratedPoster: (url) => {
+        set({ pendingGeneratedPoster: url });
+      },
 
       toggleLikeEvent: (eventId: string) => {
         set((state) => ({

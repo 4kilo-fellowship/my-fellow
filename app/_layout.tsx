@@ -141,6 +141,8 @@ function RootNavigator() {
       <Stack.Screen name="(tabs)" options={{ title: "Home" }} />
       <Stack.Screen name="(auth)" options={{ title: "Auth" }} />
       <Stack.Screen name="events/[id]" options={{ title: "Events" }} />
+      <Stack.Screen name="events/manage" options={{ title: "Manage Event", headerShown: false }} />
+      <Stack.Screen name="events/ai-poster" options={{ title: "AI Poster", headerShown: false }} />
       <Stack.Screen name="teams/index" options={{ title: "Teams" }} />
       <Stack.Screen name="teams/[id]" options={{ title: "Teams" }} />
       <Stack.Screen name="devotion/[id]" options={{ title: "Devotions" }} />
