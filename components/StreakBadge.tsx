@@ -79,9 +79,6 @@ export const StreakBadge = ({ onPress }: StreakBadgeProps) => {
           >
             {currentStreak}
           </Text>
-          {completed && (
-            <View style={styles.activeDot} />
-          )}
         </View>
       </Pressable>
     </View>
@@ -126,13 +123,6 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     letterSpacing: -0.2,
     includeFontPadding: false,
-  },
-  activeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#ff6619",
-    marginLeft: 1,
   },
 });
 

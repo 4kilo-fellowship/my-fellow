@@ -1,4 +1,5 @@
 import { StreakModal } from "@/components/StreakModal";
+import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { useNotificationsStore } from "@/stores/notifications.store";
 import { useStreakStore } from "@/stores/streak.store";
@@ -166,26 +167,26 @@ export function MainTabHeader({
                   {
                     backgroundColor: isDark
                       ? completed
-                        ? "rgba(255, 102, 25, 0.16)"
+                        ? "rgba(255, 103, 25, 0.16)"
                         : elementBg
                       : completed
                         ? "#fff7ed"
                         : elementBg,
-                    borderColor: completed ? "#ff6619" : elementBorder,
+                    borderColor: completed ? PRIMARY : elementBorder,
                   },
                 ]}
               >
                 <Ionicons
                   name="flame"
                   size={18}
-                  color={completed ? "#ff6619" : "#ff8533"}
+                  color={completed ? PRIMARY : "#ff8533"}
                 />
                 <Text
                   style={[
                     styles.streakCountText,
                     {
                       color: completed
-                        ? "#ff6619"
+                        ? PRIMARY
                         : isDark
                           ? "#ffffff"
                           : "#0f172a",
@@ -194,7 +195,6 @@ export function MainTabHeader({
                 >
                   {currentStreak}
                 </Text>
-                {completed && <View style={styles.streakDot} />}
               </TouchableOpacity>
             )}
 
@@ -227,12 +227,13 @@ export function MainTabHeader({
                   }
                 />
 
-                {/* Floating Notification Badge */}
+                {/* Floating Notification Badge sharing PRIMARY brand accent */}
                 {unreadCount > 0 && (
                   <View
                     style={[
                       styles.notificationBadge,
                       {
+                        backgroundColor: PRIMARY,
                         borderColor: headerBg,
                       },
                     ]}
@@ -326,13 +327,6 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     letterSpacing: -0.2,
     includeFontPadding: false,
-  },
-  streakDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: "#ff6619",
-    marginLeft: 3,
   },
   notificationBtn: {
     width: 36,

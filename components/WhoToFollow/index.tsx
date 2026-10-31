@@ -136,7 +136,7 @@ export const WhoToFollowSection: React.FC<WhoToFollowSectionProps> = ({ isDark =
         overScrollMode="never"
         contentContainerStyle={styles.scrollContent}
         decelerationRate="fast"
-        snapToInterval={198}
+        snapToInterval={200}
         snapToAlignment="start"
       >
         {members.map((member) => {
