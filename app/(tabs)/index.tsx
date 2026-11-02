@@ -448,6 +448,11 @@ const Home = () => {
                         item={item}
                         isDark={isDark}
                         onPress={() => {
+                          // Immediately cache the tapped event in the store for instant zero-latency loading
+                          useEventsStore.setState({ currentEvent: item });
+                          if (eventImg && eventImg.startsWith("http")) {
+                            ExpoImage.prefetch(eventImg).catch(() => {});
+                          }
                           router.push({
                             pathname: `/events/${eventId}`,
                             params: {

@@ -57,7 +57,13 @@ export const useStreakStore = create<StreakState>()(
 
       checkStreak: () => {
         const { lastActiveDate, currentStreak } = get();
-        if (!lastActiveDate) return;
+        if (!lastActiveDate) {
+          // Keep welcome baseline of 1 if user hasn't completed their first recorded cycle
+          if (currentStreak === 0) {
+            set({ currentStreak: 1 });
+          }
+          return;
+        }
 
         const today = getLocalDateString();
         const yesterday = getYesterdayDateString();

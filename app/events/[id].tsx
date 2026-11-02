@@ -78,12 +78,19 @@ export default function EventDetails() {
 
   // Immediately initialize selectedEvent from cache/store or params for instant 0-delay display
   const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(() => {
+    // 1. Check currentEvent in store (e.g. if set right on press)
+    const storeState = useEventsStore.getState();
+    if (storeState.currentEvent && (storeState.currentEvent._id === id || (storeState.currentEvent as any).id === id)) {
+      return storeState.currentEvent as any;
+    }
+    // 2. Check eventsList in store
     if (id) {
-      const fromStore = useEventsStore
-        .getState()
-        .eventsList.find((e: any) => e._id === id || e.id === id);
+      const fromStore = storeState.eventsList.find(
+        (e: any) => e._id === id || e.id === id,
+      );
       if (fromStore) return fromStore as any;
     }
+    // 3. Fallback to initial params passed via navigation
     if (params.initialTitle || params.initialImage) {
       return {
         _id: id || "",
@@ -102,10 +109,14 @@ export default function EventDetails() {
     return null;
   });
   const [loadingDetail, setLoadingDetail] = useState<boolean>(() => {
+    const storeState = useEventsStore.getState();
+    if (storeState.currentEvent && (storeState.currentEvent._id === id || (storeState.currentEvent as any).id === id)) {
+      return false;
+    }
     if (id) {
-      const fromStore = useEventsStore
-        .getState()
-        .eventsList.find((e: any) => e._id === id || e.id === id);
+      const fromStore = storeState.eventsList.find(
+        (e: any) => e._id === id || e.id === id,
+      );
       if (fromStore) return false;
     }
     if (params.initialTitle || params.initialImage) return false;
@@ -616,26 +627,43 @@ export default function EventDetails() {
           borderTopWidth: 1,
           borderTopColor: isDark ? "#27272a" : "#f1f5f9",
           paddingHorizontal: 20,
-          paddingTop: 12,
-          paddingBottom: Math.max(bottom + 8, 20),
+          paddingTop: 14,
+          paddingBottom: Math.max(bottom + 12, 24),
           zIndex: 50,
         }}
       >
         <View
           style={{
-            borderRadius: 9999,
+            height: 52,
+            borderRadius: 26,
             overflow: "hidden",
             backgroundColor:
               isRegisterCta && isRegisteredForThisEvent
                 ? isDark
                   ? "#27272a"
                   : "#e2e8f0"
+                : isNotifyCta && reminder.status === "unavailable"
+                ? isDark
+                  ? "#334155"
+                  : "#64748b"
                 : PRIMARY,
-            shadowColor: isRegisterCta && isRegisteredForThisEvent ? "transparent" : "#ff6719",
+            shadowColor:
+              (isRegisterCta && isRegisteredForThisEvent) ||
+              (isNotifyCta && reminder.status === "unavailable")
+                ? "transparent"
+                : "#ff6719",
             shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: isRegisterCta && isRegisteredForThisEvent ? 0 : 0.35,
+            shadowOpacity:
+              (isRegisterCta && isRegisteredForThisEvent) ||
+              (isNotifyCta && reminder.status === "unavailable")
+                ? 0
+                : 0.35,
             shadowRadius: 8,
-            elevation: isRegisterCta && isRegisteredForThisEvent ? 0 : 4,
+            elevation:
+              (isRegisterCta && isRegisteredForThisEvent) ||
+              (isNotifyCta && reminder.status === "unavailable")
+                ? 0
+                : 4,
           }}
         >
           <Pressable
@@ -648,7 +676,7 @@ export default function EventDetails() {
                   reminder.openSheet();
                 } else if (reminder.status === "permission") {
                   reminder.openNotificationSettings();
-                } else {
+                } else if (reminder.status !== "unavailable") {
                   reminder.enable();
                 }
               } else {
@@ -671,8 +699,10 @@ export default function EventDetails() {
                 opacity:
                   pressed && Platform.OS === "ios"
                     ? 0.85
+                    : isNotifyCta && reminder.status === "unavailable"
+                    ? 0.95
                     : isButtonDisabled
-                    ? 0.6
+                    ? 0.65
                     : 1,
               },
             ]}
@@ -708,7 +738,7 @@ export default function EventDetails() {
                 {isRegisterCta && isRegisteredForThisEvent ? (
                   <Ionicons
                     name="checkmark-circle"
-                    size={19}
+                    size={20}
                     color={isDark ? "#4ade80" : "#16a34a"}
                     style={{ marginTop: Platform.OS === "android" ? 1 : 0 }}
                   />
@@ -719,16 +749,18 @@ export default function EventDetails() {
                         ? "notifications"
                         : reminder.status === "permission"
                         ? "notifications-off-outline"
+                        : reminder.status === "unavailable"
+                        ? "time-outline"
                         : "notifications-outline"
                     }
-                    size={18}
+                    size={20}
                     color="white"
                     style={{ marginTop: Platform.OS === "android" ? 1 : 0 }}
                   />
                 ) : (
                   <Ionicons
                     name="arrow-forward"
-                    size={18}
+                    size={20}
                     color="white"
                     style={{ marginTop: Platform.OS === "android" ? 1 : 0 }}
                   />
