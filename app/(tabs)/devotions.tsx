@@ -1,76 +1,41 @@
 import { MainTabHeader, Placeholder } from "@/components";
 import { PRIMARY } from "@/constants";
-import { useTheme } from "@/context/ThemeContext";
 import { devotionsService } from "@/services/devotionsService";
 import { useDevotionsStore } from "@/stores/devotions.store";
-import { Devotion, DevotionType } from "@/types/devotion.types";
+import { Devotion } from "@/types/devotion.types";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Animated,
   FlatList,
   Image,
+  Platform,
+  Pressable,
   RefreshControl,
-  ScrollView,
   Share,
+  StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import PagerView from "react-native-pager-view";
 
-const CATEGORIES: {
-  label: string;
-  value: DevotionType | "all" | "new";
-  icon: any;
-}[] = [
-  { label: "All", value: "all", icon: "apps-outline" },
-  { label: "New", value: "new", icon: "sparkles-outline" },
-  { label: "Saved", value: "saved" as any, icon: "bookmark-outline" },
-  { label: "Text", value: "text", icon: "document-text-outline" },
-  { label: "Voice", value: "voice", icon: "mic-outline" },
-  { label: "PDF", value: "pdf", icon: "document-outline" },
-  { label: "Books", value: "book", icon: "book-outline" },
-];
+export default function Devotions() {
+  const [activeTab, setActiveTab] = useState<0 | 1>(0);
+  const pagerRef = useRef<PagerView>(null);
 
-const Devotions = () => {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
-  const [selectedCat, setSelectedCat] = useState<DevotionType | "all" | "new">(
-    "all",
-  );
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [devotions, setDevotions] = useState<Devotion[]>([]);
 
-  const [blinkAnim] = useState(() => new Animated.Value(1));
-
-  useEffect(() => {
-    let mounted = true;
-    const blink = () => {
-      if (!mounted) return;
-      Animated.sequence([
-        Animated.timing(blinkAnim, {
-          toValue: 0.3,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(blinkAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        if (mounted) blink();
-      });
-    };
-    blink();
-    return () => {
-      mounted = false;
-    };
-  }, [blinkAnim]);
+  const {
+    saveDevotion,
+    unsaveDevotion,
+    isDevotionSaved,
+    savedDevotions,
+    isDevotionRead,
+  } = useDevotionsStore();
 
   const fetchDevotions = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -97,46 +62,18 @@ const Devotions = () => {
     fetchDevotions(true);
   };
 
-  const isNew = (dateStr: string) => {
-    const postDate = new Date(dateStr);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - postDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 7;
+  const handleTabChange = (index: 0 | 1) => {
+    try {
+      Haptics.selectionAsync();
+    } catch {}
+    setActiveTab(index);
+    pagerRef.current?.setPage(index);
   };
 
-  const hasNew = devotions.some((item) => isNew(item.date));
-
-  const visibleCategories = CATEGORIES.filter((cat) => {
-    if (cat.value === "new") return hasNew;
-    return true;
-  });
-
-  const {
-    saveDevotion,
-    unsaveDevotion,
-    isDevotionSaved,
-    savedDevotions,
-    isDevotionRead,
-  } = useDevotionsStore();
-
-  const filteredDevotions = devotions.filter((item) => {
-    if (selectedCat === "all") return true;
-    if (selectedCat === "new") return isNew(item.date);
-    if (selectedCat === ("saved" as any)) return isDevotionSaved(item._id);
-    return item.type === selectedCat;
-  });
-
-  // If "Saved" is selected and we have no server devotions matching (or just to show all saved),
-  // we might want to prioritize the ones in the store.
-  const displayDevotions =
-    selectedCat === ("saved" as any)
-      ? savedDevotions.length > 0
-        ? savedDevotions
-        : []
-      : filteredDevotions;
-
   const handleToggleSave = (item: Devotion) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
     if (isDevotionSaved(item._id)) {
       unsaveDevotion(item._id);
     } else {
@@ -155,252 +92,283 @@ const Devotions = () => {
     }
   };
 
-  const DevotionCard = ({ item }: { item: Devotion }) => {
-    const recentlyPosted = isNew(item.date);
+  const formatDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return "";
+    }
+  };
+
+  // Ultra-minimalist Twitter/X-style feed card with native ripple
+  const MinimalDevotionCard = ({ item }: { item: Devotion }) => {
+    const isSaved = isDevotionSaved(item._id);
+    const isRead = isDevotionRead(item._id);
 
     return (
-      <TouchableOpacity
-        activeOpacity={0.9}
-        className={`mb-5 rounded-[24px] overflow-hidden border ${
-          isDark ? "bg-[#111] border-[#222]" : "bg-[#f9fafb] border-gray-200"
-        }`}
-        onPress={() => router.push(`/devotion/${item._id}`)}
-      >
-        <View className="relative h-48 w-full">
-          <Image
-            source={{ uri: item.image }}
-            className="w-full h-full"
-            resizeMode="cover"
-          />
-
-          <View className="absolute top-3 right-3 bg-black/50 px-2.5 py-1 rounded-lg flex-row items-center">
-            <Ionicons name="eye" size={12} color="white" />
-            <Text className="text-white text-[11px] ml-1.5 font-bold">
-              {item.views > 999
-                ? `${(item.views / 1000).toFixed(1)}k`
-                : item.views}
-            </Text>
-          </View>
-
-          {recentlyPosted && (
-            <View className="absolute top-3 left-3 bg-primary px-2.5 py-1 rounded-lg">
-              <Text className="text-white text-[10px] font-bold uppercase tracking-wide">
-                New
+      <View style={styles.tweetCardOuter}>
+        <Pressable
+          android_ripple={{ color: "rgba(0, 0, 0, 0.05)", foreground: true }}
+          style={({ pressed }) => [
+            styles.tweetCardPressable,
+            Platform.OS === "ios" && pressed && { opacity: 0.95, backgroundColor: "#fafafa" },
+          ]}
+          onPress={() => router.push(`/devotion/${item._id}`)}
+        >
+          {/* Top Row: Author avatar / icon, author name, handle/role, date, bookmark button */}
+          <View style={styles.tweetHeader}>
+            <View style={styles.authorAvatar}>
+              <Text style={styles.authorAvatarText}>
+                {item.author?.charAt(0)?.toUpperCase() || "F"}
               </Text>
             </View>
-          )}
-        </View>
 
-        <View className="p-5">
-          <View className="flex-row justify-between items-start">
-            <View className="flex-1 mr-3">
-              <Text
-                numberOfLines={2}
-                className={`text-[17px] font-bold leading-tight ${
-                  isDark ? "text-white" : "text-gray-900"
-                }`}
-              >
-                {item.title}
-              </Text>
-              <View className="flex-row items-center mt-2">
-                <Text
-                  className={`text-[12px] font-medium ${
-                    isDark ? "text-gray-500" : "text-gray-500"
-                  }`}
-                >
-                  By {item.author}
+            <View style={styles.authorMeta}>
+              <View style={styles.authorNameRow}>
+                <Text style={styles.authorName} numberOfLines={1}>
+                  {item.author}
                 </Text>
-                <View
-                  className={`mx-2 w-1 h-1 rounded-full ${isDark ? "bg-gray-700" : "bg-gray-300"}`}
-                />
-                <Text
-                  className={`text-[12px] font-medium ${
-                    isDark ? "text-gray-600" : "text-gray-400"
-                  }`}
-                >
-                  {new Date(item.date).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </Text>
+                <Text style={styles.authorDot}>·</Text>
+                <Text style={styles.authorDate}>{formatDate(item.date)}</Text>
               </View>
+              {isRead && (
+                <View style={styles.readBadge}>
+                  <Ionicons name="checkmark-done" size={12} color="#10b981" />
+                  <Text style={styles.readText}>Read</Text>
+                </View>
+              )}
             </View>
 
-            <TouchableOpacity
-              activeOpacity={0.7}
-              className={`p-2.5 rounded-xl border ${
-                isDark
-                  ? "bg-[#1a1a1a] border-[#333]"
-                  : "bg-white border-gray-200"
-              }`}
-              onPress={() => handleToggleSave(item)}
+            {/* Quick Bookmark action */}
+            <Pressable
+              hitSlop={12}
+              android_ripple={{
+                color: "rgba(0,0,0,0.1)",
+                borderless: true,
+                radius: 18,
+              }}
+              style={styles.actionIconButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                handleToggleSave(item);
+              }}
             >
               <Ionicons
-                name={
-                  isDevotionSaved(item._id) ? "bookmark" : "bookmark-outline"
-                }
-                size={18}
-                color={
-                  isDevotionSaved(item._id)
-                    ? PRIMARY
-                    : isDark
-                      ? "#6b7280"
-                      : "#9ca3af"
-                }
+                name={isSaved ? "bookmark" : "bookmark-outline"}
+                size={19}
+                color={isSaved ? PRIMARY : "#71717a"}
               />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
-          <View
-            className={`flex-row mt-4 pt-3.5 border-t items-center justify-between ${
-              isDark ? "border-[#222]" : "border-gray-100"
-            }`}
-          >
-            <View className="flex-row items-center">
-              <Ionicons name="heart" size={14} color={PRIMARY} />
-              <Text
-                className="ml-1.5 text-[11px] font-bold"
-                style={{ color: PRIMARY }}
-              >
-                {item.likes} Likes
+          {/* Main Title & Teaser */}
+          <Text style={styles.tweetTitle}>{item.title}</Text>
+          {item.caption ? (
+            <Text style={styles.tweetCaption} numberOfLines={2}>
+              {item.caption}
+            </Text>
+          ) : null}
+
+          {/* Minimalist 16:9 Image Preview */}
+          {item.image ? (
+            <View style={styles.imageWrapper}>
+              <Image
+                source={{ uri: item.image }}
+                style={styles.cardImage}
+                resizeMode="cover"
+              />
+              {item.type === "voice" && (
+                <View style={styles.typeBadge}>
+                  <Ionicons name="mic" size={11} color="#ffffff" />
+                  <Text style={styles.typeBadgeText}>
+                    {item.duration || "Audio"}
+                  </Text>
+                </View>
+              )}
+            </View>
+          ) : null}
+
+          {/* Twitter-style Bottom Stats / Action Bar */}
+          <View style={styles.tweetFooter}>
+            <View style={styles.footerItem}>
+              <Ionicons name="eye-outline" size={15} color="#71717a" />
+              <Text style={styles.footerItemText}>
+                {item.views > 999
+                  ? `${(item.views / 1000).toFixed(1)}k`
+                  : item.views || 0}
               </Text>
             </View>
 
-            {isDevotionRead(item._id) ? (
-              <View className="flex-row items-center">
-                <Ionicons name="checkmark-done" size={14} color="#10b981" />
-                <Text className="ml-1.5 text-[11px] font-bold text-emerald-500">
-                  Read
-                </Text>
-              </View>
-            ) : item.type === "voice" ? (
-              <View className="flex-row items-center">
-                <Ionicons
-                  name="mic-outline"
-                  size={14}
-                  color={isDark ? "#6b7280" : "#9ca3af"}
-                />
-                <Text
-                  className={`ml-1.5 text-[11px] font-bold ${isDark ? "text-gray-500" : "text-gray-400"}`}
-                >
-                  {item.duration}
-                </Text>
-              </View>
-            ) : (
-              <View className="flex-row items-center">
-                <Ionicons
-                  name="calendar-outline"
-                  size={13}
-                  color={isDark ? "#6b7280" : "#9ca3af"}
-                />
-                <Text
-                  className={`ml-1.5 text-[11px] font-medium ${isDark ? "text-gray-500" : "text-gray-400"}`}
-                >
-                  {new Date(item.date).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </Text>
-              </View>
-            )}
+            <View style={styles.footerItem}>
+              <Ionicons name="heart-outline" size={15} color="#71717a" />
+              <Text style={styles.footerItemText}>{item.likes || 0}</Text>
+            </View>
+
+            <Pressable
+              hitSlop={10}
+              android_ripple={{
+                color: "rgba(0,0,0,0.1)",
+                borderless: true,
+                radius: 16,
+              }}
+              style={styles.footerShareButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                handleShare(item);
+              }}
+            >
+              <Ionicons name="share-outline" size={15} color="#71717a" />
+            </Pressable>
           </View>
-        </View>
-      </TouchableOpacity>
+        </Pressable>
+      </View>
     );
   };
 
+  const renderEmptyState = (isBookmarkTab: boolean) => (
+    <View style={styles.emptyContainer}>
+      <View style={styles.emptyIconCircle}>
+        <Ionicons
+          name={isBookmarkTab ? "bookmark-outline" : "document-text-outline"}
+          size={36}
+          color="#a1a1aa"
+        />
+      </View>
+      <Text style={styles.emptyTitle}>
+        {isBookmarkTab ? "No saved devotions" : "No devotions found"}
+      </Text>
+      <Text style={styles.emptySubtitle}>
+        {isBookmarkTab
+          ? "Tap the bookmark icon on any devotion to save it here for later."
+          : "Check back later for newly published devotions."}
+      </Text>
+    </View>
+  );
+
   return (
-    <View className={`flex-1 ${isDark ? "bg-zinc-950" : "bg-gray-50"}`}>
-      <StatusBar style={isDark ? "light" : "dark"} />
+    <View style={styles.screenContainer}>
+      <StatusBar style="dark" />
 
-      <MainTabHeader borderBottom={true} />
+      {/* Main Tab Header with "Devotions" in the center and live Streak badge */}
+      <MainTabHeader borderBottom={true} title="Devotions" showStreak={true} />
 
-      <View className="flex-1 pt-3">
-        <View className="px-6 mb-4">
-          <Text
-            className={`text-2xl font-black tracking-tight ${isDark ? "text-white" : "text-zinc-900"}`}
+      {/* 50/50 Minimalistic Segmented Filter: All vs Bookmarks */}
+      <View style={styles.tabBarContainer}>
+        <View style={styles.tabTrack}>
+          {/* Tab 1: All */}
+          <Pressable
+            android_ripple={{ color: "rgba(0, 0, 0, 0.06)", foreground: true }}
+            style={[styles.tabButton, activeTab === 0 && styles.tabButtonActive]}
+            onPress={() => handleTabChange(0)}
           >
-            Devotions
-          </Text>
-        </View>
+            <Ionicons
+              name={activeTab === 0 ? "albums" : "albums-outline"}
+              size={15}
+              color={activeTab === 0 ? "#09090b" : "#71717a"}
+            />
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 0 && styles.tabTextActive,
+              ]}
+            >
+              All
+            </Text>
+          </Pressable>
 
-        <View className="mb-4">
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20 }}
+          {/* Tab 2: Half Bookmark Filter */}
+          <Pressable
+            android_ripple={{ color: "rgba(0, 0, 0, 0.06)", foreground: true }}
+            style={[styles.tabButton, activeTab === 1 && styles.tabButtonActive]}
+            onPress={() => handleTabChange(1)}
           >
-            {visibleCategories.map((cat) => (
-              <TouchableOpacity
-                activeOpacity={0.8}
-                key={cat.value}
-                onPress={() => setSelectedCat(cat.value)}
-                className={`mr-3 px-4 py-2 rounded-xl flex-row items-center border ${
-                  selectedCat === cat.value
-                    ? "bg-primary border-primary"
-                    : isDark
-                      ? "bg-zinc-900 border-zinc-800"
-                      : "bg-white border-zinc-200"
-                }`}
+            <Ionicons
+              name={activeTab === 1 ? "bookmark" : "bookmark-outline"}
+              size={15}
+              color={activeTab === 1 ? PRIMARY : "#71717a"}
+            />
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 1 && styles.tabTextActive,
+                activeTab === 1 && { color: PRIMARY },
+              ]}
+            >
+              Saved
+            </Text>
+            {savedDevotions.length > 0 && (
+              <View
+                style={[
+                  styles.tabBadge,
+                  activeTab === 1 && { backgroundColor: PRIMARY },
+                ]}
               >
-                {cat.value === "new" ? (
-                  <Animated.View style={{ opacity: blinkAnim }}>
-                    <Ionicons
-                      name={cat.icon}
-                      size={16}
-                      color={selectedCat === cat.value ? "white" : "#ef4444"}
-                    />
-                  </Animated.View>
-                ) : (
-                  <Ionicons
-                    name={cat.icon}
-                    size={16}
-                    color={
-                      selectedCat === cat.value
-                        ? "white"
-                        : isDark
-                          ? "#a1a1aa"
-                          : "#71717a"
-                    }
-                  />
-                )}
                 <Text
-                  className={`ml-2 font-bold text-sm ${
-                    selectedCat === cat.value
-                      ? "text-white"
-                      : isDark
-                        ? "text-zinc-400"
-                        : "text-zinc-600"
-                  }`}
+                  style={[
+                    styles.tabBadgeText,
+                    activeTab === 1 && { color: "#ffffff" },
+                  ]}
                 >
-                  {cat.label}
+                  {savedDevotions.length}
                 </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+              </View>
+            )}
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Gesture Movement Page View: swipe between All and Saved */}
+      <PagerView
+        ref={pagerRef}
+        style={styles.pagerView}
+        initialPage={0}
+        onPageSelected={(e) => setActiveTab(e.nativeEvent.position as 0 | 1)}
+      >
+        {/* Page 0: All Devotions */}
+        <View key="all" style={styles.page}>
+          {loading && devotions.length === 0 ? (
+            <View style={styles.skeletonContainer}>
+              {[1, 2, 3].map((_, i) => (
+                <Placeholder
+                  key={i}
+                  width="100%"
+                  height={190}
+                  borderRadius={14}
+                  style={{ marginBottom: 16 }}
+                />
+              ))}
+            </View>
+          ) : (
+            <FlatList
+              data={devotions}
+              keyExtractor={(item) => item._id}
+              renderItem={({ item }) => <MinimalDevotionCard item={item} />}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={PRIMARY}
+                  colors={[PRIMARY]}
+                />
+              }
+              ListEmptyComponent={() => renderEmptyState(false)}
+            />
+          )}
         </View>
 
-        {loading && devotions.length === 0 ? (
-          <View className="px-5">
-            {[1, 2, 3].map((_, i) => (
-              <Placeholder
-                key={i}
-                width="100%"
-                height={320}
-                borderRadius={32}
-                style={{ marginBottom: 20 }}
-              />
-            ))}
-          </View>
-        ) : (
+        {/* Page 1: Saved Bookmarks */}
+        <View key="saved" style={styles.page}>
           <FlatList
-            data={displayDevotions}
+            data={savedDevotions}
             keyExtractor={(item) => item._id}
-            renderItem={({ item }) => <DevotionCard item={item} />}
-            contentContainerStyle={{
-              paddingHorizontal: 20,
-              paddingBottom: 100,
-            }}
+            renderItem={({ item }) => <MinimalDevotionCard item={item} />}
+            contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
@@ -410,33 +378,251 @@ const Devotions = () => {
                 colors={[PRIMARY]}
               />
             }
-            ListEmptyComponent={
-              <View className="items-center justify-center mt-32 px-10">
-                <View
-                  className={`w-24 h-24 rounded-full ${isDark ? "bg-zinc-900" : "bg-zinc-100"} items-center justify-center mb-6`}
-                >
-                  <Ionicons
-                    name="document-text-outline"
-                    size={40}
-                    color={isDark ? "#3f3f46" : "#d1d5db"}
-                  />
-                </View>
-                <Text
-                  className={`text-xl font-bold text-center ${isDark ? "text-zinc-200" : "text-zinc-900"}`}
-                >
-                  No devotions found
-                </Text>
-                <Text className="text-zinc-500 mt-2 text-center">
-                  Try adjusting your filters or check back later for new
-                  content.
-                </Text>
-              </View>
-            }
+            ListEmptyComponent={() => renderEmptyState(true)}
           />
-        )}
-      </View>
+        </View>
+      </PagerView>
     </View>
   );
-};
+}
 
-export default Devotions;
+const styles = StyleSheet.create({
+  screenContainer: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+  },
+  // Tab Bar
+  tabBarContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: "#ffffff",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#f1f5f9",
+  },
+  tabTrack: {
+    flexDirection: "row",
+    backgroundColor: "#f4f4f5",
+    borderRadius: 12,
+    padding: 3,
+  },
+  tabButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    borderRadius: 9,
+  },
+  tabButtonActive: {
+    backgroundColor: "#ffffff",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1.5,
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#71717a",
+    marginLeft: 6,
+  },
+  tabTextActive: {
+    color: "#09090b",
+    fontWeight: "700",
+  },
+  tabBadge: {
+    marginLeft: 6,
+    backgroundColor: "#e4e4e7",
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 9999,
+  },
+  tabBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#71717a",
+  },
+  // Pager & List
+  pagerView: {
+    flex: 1,
+  },
+  page: {
+    flex: 1,
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 96,
+  },
+  skeletonContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  // Minimalist Twitter/X Feed Card
+  tweetCardOuter: {
+    marginBottom: 12,
+    borderRadius: 16,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#f1f5f9",
+    overflow: "hidden",
+  },
+  tweetCardPressable: {
+    padding: 14,
+  },
+  tweetHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  authorAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#f4f4f5",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: "#e4e4e7",
+  },
+  authorAvatarText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#3f3f46",
+  },
+  authorMeta: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  authorNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  authorName: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#09090b",
+    maxWidth: 160,
+  },
+  authorDot: {
+    fontSize: 13,
+    color: "#a1a1aa",
+    marginHorizontal: 4,
+  },
+  authorDate: {
+    fontSize: 12,
+    color: "#71717a",
+  },
+  readBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 1,
+  },
+  readText: {
+    fontSize: 11,
+    color: "#10b981",
+    fontWeight: "600",
+    marginLeft: 2,
+  },
+  actionIconButton: {
+    padding: 6,
+    borderRadius: 16,
+  },
+  tweetTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#09090b",
+    lineHeight: 21,
+    marginBottom: 4,
+  },
+  tweetCaption: {
+    fontSize: 13,
+    color: "#52525b",
+    lineHeight: 18,
+    marginBottom: 10,
+  },
+  imageWrapper: {
+    width: "100%",
+    height: 160,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "#f4f4f5",
+    marginTop: 6,
+    marginBottom: 10,
+    position: "relative",
+  },
+  cardImage: {
+    width: "100%",
+    height: "100%",
+  },
+  typeBadge: {
+    position: "absolute",
+    bottom: 8,
+    left: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.65)",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  typeBadgeText: {
+    color: "#ffffff",
+    fontSize: 10,
+    fontWeight: "600",
+    marginLeft: 3,
+  },
+  tweetFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 2,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#f4f4f5",
+  },
+  footerItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 20,
+  },
+  footerItemText: {
+    fontSize: 12,
+    color: "#71717a",
+    marginLeft: 5,
+    fontWeight: "500",
+  },
+  footerShareButton: {
+    marginLeft: "auto",
+    padding: 4,
+  },
+  // Empty State
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 64,
+    paddingHorizontal: 24,
+  },
+  emptyIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#f4f4f5",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#09090b",
+    marginBottom: 6,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: "#71717a",
+    textAlign: "center",
+    lineHeight: 18,
+  },
+});

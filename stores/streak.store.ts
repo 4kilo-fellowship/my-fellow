@@ -11,14 +11,18 @@ export interface StreakState {
   totalDevotionsCompleted: number;
 
   // Actions
-  recordDevotionRead: () => { streakUpdated: boolean; newStreak: number };
+  recordDevotionRead: () => Promise<{ streakUpdated: boolean; newStreak: number }>;
+  checkInStreak: () => Promise<{ current: number; longest: number; checkedInToday: boolean }>;
   checkStreak: () => void;
   isCompletedToday: () => boolean;
   syncServerStreak: () => Promise<void>;
   setServerStreak: (data: {
-    currentStreak: number;
+    currentStreak?: number;
+    current?: number;
     bestStreak?: number;
+    longest?: number;
     lastActiveDate?: string | null;
+    lastLocalDate?: string | null;
     activeDates?: string[];
     totalDevotionsCompleted?: number;
   }) => void;
@@ -66,7 +70,7 @@ export const useStreakStore = create<StreakState>()(
         }
       },
 
-      recordDevotionRead: () => {
+      recordDevotionRead: async () => {
         const {
           currentStreak,
           bestStreak,
@@ -77,8 +81,10 @@ export const useStreakStore = create<StreakState>()(
         const today = getLocalDateString();
         const yesterday = getYesterdayDateString();
 
-        // Already counted today
+        // Already counted today locally
         if (lastActiveDate === today) {
+          // Still ensure server is synced asynchronously
+          socialApi.checkInStreak().catch(() => {});
           return { streakUpdated: false, newStreak: currentStreak };
         }
 
@@ -102,25 +108,79 @@ export const useStreakStore = create<StreakState>()(
           totalDevotionsCompleted: totalDevotionsCompleted + 1,
         });
 
+        // Sync with backend API
+        try {
+          const serverResult = await socialApi.checkInStreak();
+          if (serverResult) {
+            get().setServerStreak(serverResult);
+            return {
+              streakUpdated: true,
+              newStreak: serverResult.currentStreak ?? serverResult.current ?? newStreak,
+            };
+          }
+        } catch {
+          // Server offline or unavailable: keep local optimistic progress
+        }
+
         return { streakUpdated: true, newStreak };
       },
 
+      checkInStreak: async () => {
+        try {
+          const serverResult = await socialApi.checkInStreak();
+          if (serverResult) {
+            get().setServerStreak(serverResult);
+            return {
+              current: serverResult.currentStreak ?? serverResult.current ?? 1,
+              longest: serverResult.bestStreak ?? serverResult.longest ?? 1,
+              checkedInToday: true,
+            };
+          }
+        } catch {
+          // Fallback to local checkin
+          const res = await get().recordDevotionRead();
+          return {
+            current: res.newStreak,
+            longest: get().bestStreak,
+            checkedInToday: true,
+          };
+        }
+        return {
+          current: get().currentStreak,
+          longest: get().bestStreak,
+          checkedInToday: get().isCompletedToday(),
+        };
+      },
+
       setServerStreak: (data) => {
-        set((state) => ({
-          currentStreak: data.currentStreak,
-          bestStreak:
-            data.bestStreak ?? Math.max(state.bestStreak, data.currentStreak),
-          lastActiveDate: data.lastActiveDate ?? state.lastActiveDate,
-          activeDates: data.activeDates ?? state.activeDates,
-          totalDevotionsCompleted:
-            data.totalDevotionsCompleted ?? state.totalDevotionsCompleted,
-        }));
+        const current = data.currentStreak ?? data.current;
+        const longest = data.bestStreak ?? data.longest;
+        const lastDate = data.lastActiveDate ?? data.lastLocalDate;
+
+        set((state) => {
+          const resolvedCurrent = typeof current === "number" ? current : state.currentStreak;
+          const resolvedBest = typeof longest === "number" ? Math.max(state.bestStreak, longest) : state.bestStreak;
+          const resolvedLastDate = lastDate ?? state.lastActiveDate;
+          const resolvedDates = Array.isArray(data.activeDates) && data.activeDates.length > 0
+            ? data.activeDates
+            : resolvedLastDate && !state.activeDates.includes(resolvedLastDate)
+              ? [...state.activeDates.slice(-60), resolvedLastDate]
+              : state.activeDates;
+
+          return {
+            currentStreak: resolvedCurrent,
+            bestStreak: resolvedBest,
+            lastActiveDate: resolvedLastDate,
+            activeDates: resolvedDates,
+            totalDevotionsCompleted: data.totalDevotionsCompleted ?? state.totalDevotionsCompleted,
+          };
+        });
       },
 
       syncServerStreak: async () => {
         try {
           const data = await socialApi.getStreakMe();
-          if (data && typeof data.currentStreak === "number") {
+          if (data) {
             get().setServerStreak(data);
           }
         } catch {

@@ -11,6 +11,7 @@ export interface ProfileSeedParams {
   team?: string;
   department?: string;
   srcSize?: string;
+  streakDays?: string | number;
 }
 
 export type ProfileSeed = ProfileSeedParams;
@@ -55,7 +56,12 @@ export function resolveProfileSeed(
     department: seed.department || "Addis Ababa University",
     academicYear: "4 Kilo Campus",
     bio: "Rooted in Christ, walking in faith together with 4 Kilo Fellowship brothers and sisters. ✨",
-    streakDays: 12,
+    streakDays:
+      typeof seed.streakDays === "number"
+        ? seed.streakDays
+        : typeof seed.streakDays === "string" && !isNaN(parseInt(seed.streakDays, 10))
+          ? parseInt(seed.streakDays, 10)
+          : 1,
     followersCount: 140,
     followingCount: 88,
     postsCount: 5,

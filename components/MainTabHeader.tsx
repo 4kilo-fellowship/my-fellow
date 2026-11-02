@@ -29,6 +29,8 @@ export interface MainTabHeaderProps {
   rightExtra?: React.ReactNode;
   showStreak?: boolean;
   borderBottom?: boolean;
+  title?: string;
+  centerComponent?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -40,6 +42,8 @@ export function MainTabHeader({
   rightExtra,
   showStreak = false,
   borderBottom = false,
+  title,
+  centerComponent,
   style,
 }: MainTabHeaderProps) {
   const insets = useSafeAreaInsets();
@@ -145,18 +149,32 @@ export function MainTabHeader({
             <View style={styles.avatarPlaceholder} />
           )}
 
-          {/* Center: Fellowship Logo (Optically balanced 32px height) */}
+          {/* Center: Title, custom component, or Fellowship Logo */}
           <View style={styles.centerLogoWrapper} pointerEvents="none">
-            <Image
-              source={require("@/assets/images/fellowship-logo.png")}
-              style={[
-                styles.centerLogo,
-                {
-                  tintColor: isDark ? "#ffffff" : "#09090b",
-                },
-              ]}
-              resizeMode="contain"
-            />
+            {centerComponent ? (
+              centerComponent
+            ) : title ? (
+              <Text
+                style={[
+                  styles.centerTitle,
+                  { color: isDark ? "#ffffff" : "#09090b" },
+                ]}
+                numberOfLines={1}
+              >
+                {title}
+              </Text>
+            ) : (
+              <Image
+                source={require("@/assets/images/fellowship-logo.png")}
+                style={[
+                  styles.centerLogo,
+                  {
+                    tintColor: isDark ? "#ffffff" : "#09090b",
+                  },
+                ]}
+                resizeMode="contain"
+              />
+            )}
           </View>
 
           {/* Right Actions: Matching 36px Height Streak & Notification */}
@@ -312,6 +330,11 @@ const styles = StyleSheet.create({
   centerLogo: {
     height: 32,
     width: 72,
+  },
+  centerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    letterSpacing: -0.3,
   },
   rightActionsRow: {
     flexDirection: "row",

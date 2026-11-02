@@ -1,9 +1,11 @@
 import { MainTabHeader } from "@/components/MainTabHeader";
 import { ConfirmModal } from "@/components/Modals/ConfirmModal";
+import { StreakModal } from "@/components/StreakModal";
 import { LongPressAvatar, closeAvatarPreview } from "@/components/avatar-preview";
 import { PRIMARY } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useStreakStore } from "@/stores/streak.store";
 import { useUserStore } from "@/stores/user.store";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -34,14 +36,18 @@ export default function ProfileScreen() {
   const router = useRouter();
 
   const [signOutConfirm, setSignOutConfirm] = useState(false);
+  const [streakModalVisible, setStreakModalVisible] = useState(false);
+  const currentStreak = useStreakStore((s) => s.currentStreak);
+  const syncServerStreak = useStreakStore((s) => s.syncServerStreak);
 
   // Close avatar preview if tab unfocuses or changes
   useFocusEffect(
     useCallback(() => {
+      syncServerStreak().catch(() => {});
       return () => {
         closeAvatarPreview();
       };
-    }, [])
+    }, [syncServerStreak])
   );
 
   useEffect(() => {
@@ -260,7 +266,9 @@ export default function ProfileScreen() {
             </Text>
           </View>
 
-          <View
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setStreakModalVisible(true)}
             style={[
               styles.statBox,
               {
@@ -269,14 +277,14 @@ export default function ProfileScreen() {
               },
             ]}
           >
-            <Ionicons name="flame-outline" size={22} color="#f59e0b" />
+            <Ionicons name="flame" size={22} color="#f97316" />
             <Text
               style={[
                 styles.statNumber,
                 { color: isDark ? "#ffffff" : "#0f172a" },
               ]}
             >
-              7
+              {currentStreak}
             </Text>
             <Text
               style={[
@@ -286,7 +294,7 @@ export default function ProfileScreen() {
             >
               Day Streak
             </Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Ministry Information Card */}
@@ -610,6 +618,12 @@ export default function ProfileScreen() {
           },
         ]}
         cancelButton={{ label: "Cancel" }}
+      />
+
+      {/* Streak Details Modal */}
+      <StreakModal
+        visible={streakModalVisible}
+        onClose={() => setStreakModalVisible(false)}
       />
     </View>
   );

@@ -170,11 +170,15 @@ export interface ContentVideo {
 }
 
 export interface StreakMe {
-  currentStreak: number;
-  bestStreak: number;
-  lastActiveDate: string | null;
+  currentStreak?: number;
+  current?: number;
+  bestStreak?: number;
+  longest?: number;
+  lastActiveDate?: string | null;
+  lastLocalDate?: string | null;
   activeDates?: string[];
   totalDevotionsCompleted?: number;
+  checkedInToday?: boolean;
 }
 
 export interface TrendingTag {
