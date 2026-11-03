@@ -23,8 +23,10 @@ import {
   Share,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import PagerView, {
   PagerViewOnPageScrollEventData,
 } from "react-native-pager-view";
@@ -347,6 +349,7 @@ const MinimalDevotionCard = React.memo<MinimalDevotionCardProps>(
 MinimalDevotionCard.displayName = "MinimalDevotionCard";
 
 export default function Devotions() {
+  const insets = useSafeAreaInsets();
   const isAdmin = useIsAdmin();
   const [activeTab, setActiveTab] = useState<0 | 1>(0);
   const pagerRef = useRef<PagerView>(null);
@@ -530,29 +533,6 @@ export default function Devotions() {
         borderBottom={true}
         title="Devotions"
         showStreak={true}
-        rightExtra={
-          isAdmin ? (
-            <Pressable
-              onPress={() => {
-                try {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                } catch {}
-                router.push("/devotion/manage");
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Create Devotion"
-              hitSlop={8}
-              android_ripple={{
-                color: "rgba(255, 103, 25, 0.25)",
-                borderless: true,
-                radius: 18,
-              }}
-              style={styles.headerAddBtn}
-            >
-              <Ionicons name="add" size={22} color={PRIMARY} />
-            </Pressable>
-          ) : null
-        }
       />
 
       {/* Minimalist Twitter/X Tab Filter: All & Bookmarks */}
@@ -864,6 +844,28 @@ export default function Devotions() {
         </View>
       </PagerView>
 
+      {/* Floating Action Button (+) — Admin Only for Devotion Creation (Like in Community Tab) */}
+      {isAdmin && (
+        <TouchableOpacity
+          activeOpacity={0.88}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+            router.push("/devotion/manage");
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Create Devotion"
+          style={[
+            styles.fabBtn,
+            {
+              backgroundColor: PRIMARY,
+              bottom: Math.max(insets.bottom, 12) + 28,
+            },
+          ]}
+        >
+          <Ionicons name="add" size={32} color="#ffffff" />
+        </TouchableOpacity>
+      )}
+
       {/* Devotion Writer Application Modal */}
       <DevotionWriterModal
         visible={writerModalVisible}
@@ -880,13 +882,26 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#ffffff",
   },
-  headerAddBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255, 103, 25, 0.12)",
+  fabBtn: {
+    position: "absolute",
+    right: 18,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+    zIndex: 50,
   },
   // Tab Bar (Twitter/X style with centered labels and full-half active underline indicator)
   tabBarContainer: {
