@@ -1,4 +1,4 @@
-import { AdminActionButton, MainTabHeader, Placeholder } from "@/components";
+import { MainTabHeader, Placeholder } from "@/components";
 import { DevotionWriterModal } from "@/components/DevotionWriterModal";
 import { PRIMARY } from "@/constants";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -10,7 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -32,147 +32,61 @@ import PagerView, {
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const TAB_WIDTH = SCREEN_WIDTH / 2;
 
-export default function Devotions() {
-  const isAdmin = useIsAdmin();
-  const [activeTab, setActiveTab] = useState<0 | 1>(0);
-  const pagerRef = useRef<PagerView>(null);
-  const scrollOffset = useRef(new Animated.Value(0)).current;
+const formatDate = (dateStr: string) => {
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return "";
+  }
+};
 
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [devotions, setDevotions] = useState<Devotion[]>([]);
-  const [writerModalVisible, setWriterModalVisible] = useState(false);
-  const [myWriterRequest, setMyWriterRequest] = useState<WriterRequest | null>(null);
+const formatViews = (views?: number, formatted?: string) => {
+  if (formatted) return formatted;
+  const count = views ?? 0;
+  if (count >= 1000000) {
+    return (count / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
+  }
+  if (count >= 1000) {
+    return (count / 1000).toFixed(1).replace(/\.0$/, "") + "k";
+  }
+  return count > 0 ? `${count}` : "5.5k";
+};
 
-  useEffect(() => {
-    devotionWriterService.getMyApplication().then((res) => {
-      if (res) setMyWriterRequest(res);
-    }).catch(() => {});
-  }, []);
+const formatDuration = (item: Devotion) => {
+  if (item.duration) return item.duration;
+  if (item.content) {
+    const words = item.content.trim().split(/\s+/).filter(Boolean).length;
+    const minutes = Math.max(1, Math.round(words / 150));
+    return `0${minutes}:00`.slice(-5);
+  }
+  return "01:40";
+};
 
-  const {
-    saveDevotion,
-    unsaveDevotion,
-    isDevotionSaved,
-    savedDevotions,
-    isDevotionRead,
-  } = useDevotionsStore();
+const isNewDevotion = (dateStr?: string) => {
+  if (!dateStr) return true;
+  try {
+    const diffMs = Date.now() - new Date(dateStr).getTime();
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    return isNaN(diffDays) || diffDays <= 30;
+  } catch {
+    return true;
+  }
+};
 
-  const fetchDevotions = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
+interface CompactArticleCardProps {
+  item: Devotion;
+  isSaved: boolean;
+  onPress: () => void;
+  onToggleSave: () => void;
+}
 
-    try {
-      const response = await devotionsService.getDevotions();
-      if (response.success) {
-        setDevotions(response.data);
-      }
-    } catch (error) {
-      console.error("Error fetching devotions:", error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchDevotions();
-  }, [fetchDevotions]);
-
-  const onRefresh = () => {
-    fetchDevotions(true);
-  };
-
-  const handleTabChange = (index: 0 | 1) => {
-    if (activeTab === index) return;
-    try {
-      Haptics.selectionAsync();
-    } catch {}
-    setActiveTab(index);
-    pagerRef.current?.setPage(index);
-  };
-
-  const handlePageScroll = (e: { nativeEvent: PagerViewOnPageScrollEventData }) => {
-    const { position, offset } = e.nativeEvent;
-    scrollOffset.setValue(position + offset);
-  };
-
-  const handleToggleSave = (item: Devotion) => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
-    if (isDevotionSaved(item._id)) {
-      unsaveDevotion(item._id);
-    } else {
-      saveDevotion(item);
-    }
-  };
-
-  const handleShare = async (item: Devotion) => {
-    try {
-      await Share.share({
-        message: `Check out this devotion: ${item.title} by ${item.author}\n\nRead more on My Fellow app!`,
-        url: item.image,
-      });
-    } catch (error) {
-      console.log("Error sharing:", error);
-    }
-  };
-
-  const formatDate = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return "";
-    }
-  };
-
-  const formatViews = (views?: number, formatted?: string) => {
-    if (formatted) return formatted;
-    const count = views ?? 0;
-    if (count >= 1000000) {
-      return (count / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
-    }
-    if (count >= 1000) {
-      return (count / 1000).toFixed(1).replace(/\.0$/, "") + "k";
-    }
-    return count > 0 ? `${count}` : "5.5k";
-  };
-
-  const formatDuration = (item: Devotion) => {
-    if (item.duration) return item.duration;
-    if (item.content) {
-      const words = item.content.trim().split(/\s+/).filter(Boolean).length;
-      const minutes = Math.max(1, Math.round(words / 150));
-      return `0${minutes}:00`.slice(-5);
-    }
-    return "01:40";
-  };
-
-  const isNewDevotion = (dateStr?: string) => {
-    if (!dateStr) return true;
-    try {
-      const diffMs = Date.now() - new Date(dateStr).getTime();
-      const diffDays = diffMs / (1000 * 60 * 60 * 24);
-      return isNaN(diffDays) || diffDays <= 30;
-    } catch {
-      return true;
-    }
-  };
-
-  const latestDevotion = devotions.length > 0 ? devotions[0] : null;
-  const recentDevotions = devotions.slice(1, 7);
-  const popularDevotions = [...devotions]
-    .sort((a, b) => (b.views || 0) + (b.likes || 0) * 2 - ((a.views || 0) + (a.likes || 0) * 2))
-    .slice(0, 6);
-
-  // Compact Video / Devotional Card (Matching user reference UI)
-  const CompactArticleCard = ({ item }: { item: Devotion }) => {
-    const isSaved = isDevotionSaved(item._id);
+// Compact Video / Devotional Card (Matching user reference UI, memoized)
+const CompactArticleCard = React.memo<CompactArticleCardProps>(
+  ({ item, isSaved, onPress, onToggleSave }) => {
     const isNew = isNewDevotion(item.date);
 
     return (
@@ -183,7 +97,7 @@ export default function Devotions() {
             styles.compactCardPressable,
             Platform.OS === "ios" && pressed && { opacity: 0.92, transform: [{ scale: 0.985 }] },
           ]}
-          onPress={() => router.push(`/devotion/${item._id}`)}
+          onPress={onPress}
         >
           {/* Card Thumbnail Image with Screenshot-accurate Overlays */}
           <View style={styles.compactImageWrapper}>
@@ -258,7 +172,7 @@ export default function Devotions() {
                 style={styles.compactBookmarkBtn}
                 onPress={(e) => {
                   e.stopPropagation();
-                  handleToggleSave(item);
+                  onToggleSave();
                 }}
                 accessibilityRole="button"
                 accessibilityLabel={isSaved ? "Remove from saved" : "Save devotion"}
@@ -274,13 +188,22 @@ export default function Devotions() {
         </Pressable>
       </View>
     );
-  };
+  },
+);
+CompactArticleCard.displayName = "CompactArticleCard";
 
-  // Elegant editorial article-style card for fellowship devotions
-  const MinimalDevotionCard = ({ item }: { item: Devotion }) => {
-    const isSaved = isDevotionSaved(item._id);
-    const isRead = isDevotionRead(item._id);
+interface MinimalDevotionCardProps {
+  item: Devotion;
+  isSaved: boolean;
+  isRead: boolean;
+  onPress: () => void;
+  onToggleSave: () => void;
+  onShare: () => void;
+}
 
+// Elegant editorial article-style card for fellowship devotions (memoized)
+const MinimalDevotionCard = React.memo<MinimalDevotionCardProps>(
+  ({ item, isSaved, isRead, onPress, onToggleSave, onShare }) => {
     return (
       <View style={styles.articleCardOuter}>
         <Pressable
@@ -289,7 +212,7 @@ export default function Devotions() {
             styles.articleCardPressable,
             Platform.OS === "ios" && pressed && { opacity: 0.96, backgroundColor: "#fafafa" },
           ]}
-          onPress={() => router.push(`/devotion/${item._id}`)}
+          onPress={onPress}
         >
           {/* Top Byline: Author monogram + name, fellowship role / badge, date, bookmark */}
           <View style={styles.articleHeader}>
@@ -337,7 +260,7 @@ export default function Devotions() {
               style={styles.actionIconButton}
               onPress={(e) => {
                 e.stopPropagation();
-                handleToggleSave(item);
+                onToggleSave();
               }}
             >
               <Ionicons
@@ -409,7 +332,7 @@ export default function Devotions() {
                 style={styles.footerShareButton}
                 onPress={(e) => {
                   e.stopPropagation();
-                  handleShare(item);
+                  onShare();
                 }}
               >
                 <Ionicons name="share-outline" size={16} color="#71717a" />
@@ -419,7 +342,164 @@ export default function Devotions() {
         </Pressable>
       </View>
     );
-  };
+  },
+);
+MinimalDevotionCard.displayName = "MinimalDevotionCard";
+
+export default function Devotions() {
+  const isAdmin = useIsAdmin();
+  const [activeTab, setActiveTab] = useState<0 | 1>(0);
+  const pagerRef = useRef<PagerView>(null);
+  const scrollOffset = useRef(new Animated.Value(0)).current;
+
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [devotions, setDevotions] = useState<Devotion[]>([]);
+  const [writerModalVisible, setWriterModalVisible] = useState(false);
+  const [myWriterRequest, setMyWriterRequest] = useState<WriterRequest | null>(null);
+
+  useEffect(() => {
+    devotionWriterService.getMyApplication().then((res) => {
+      if (res) setMyWriterRequest(res);
+    }).catch(() => {});
+  }, []);
+
+  const {
+    saveDevotion,
+    unsaveDevotion,
+    isDevotionSaved,
+    savedDevotions,
+    isDevotionRead,
+  } = useDevotionsStore();
+
+  const fetchDevotions = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+
+    try {
+      const response = await devotionsService.getDevotions();
+      if (response.success) {
+        setDevotions(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching devotions:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDevotions();
+  }, [fetchDevotions]);
+
+  const onRefresh = useCallback(() => {
+    fetchDevotions(true);
+  }, [fetchDevotions]);
+
+  const handleTabChange = useCallback(
+    (index: 0 | 1) => {
+      if (activeTab === index) return;
+      try {
+        Haptics.selectionAsync();
+      } catch {}
+      setActiveTab(index);
+      Animated.spring(scrollOffset, {
+        toValue: index,
+        useNativeDriver: false,
+        friction: 8,
+        tension: 70,
+      }).start();
+      pagerRef.current?.setPage(index);
+    },
+    [activeTab, scrollOffset],
+  );
+
+  const handlePageScroll = useCallback(
+    (e: { nativeEvent: PagerViewOnPageScrollEventData }) => {
+      const { position, offset } = e.nativeEvent;
+      const progress = position + offset;
+      scrollOffset.setValue(progress);
+
+      // Fast threshold: update tab highlights smoothly as soon as swipe crosses 50%
+      const targetTab = progress >= 0.5 ? 1 : 0;
+      setActiveTab((prev) => (prev !== targetTab ? targetTab : prev));
+    },
+    [scrollOffset],
+  );
+
+  const handlePageSelected = useCallback(
+    (e: { nativeEvent: { position: number } }) => {
+      const newIndex = (e.nativeEvent.position === 1 ? 1 : 0) as 0 | 1;
+      setActiveTab(newIndex);
+      scrollOffset.setValue(newIndex);
+    },
+    [scrollOffset],
+  );
+
+  const handleToggleSave = useCallback(
+    (item: Devotion) => {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {}
+      if (isDevotionSaved(item._id)) {
+        unsaveDevotion(item._id);
+      } else {
+        saveDevotion(item);
+      }
+    },
+    [isDevotionSaved, saveDevotion, unsaveDevotion],
+  );
+
+  const handleShare = useCallback(async (item: Devotion) => {
+    try {
+      await Share.share({
+        message: `Check out this devotion: ${item.title} by ${item.author}\n\nRead more on My Fellow app!`,
+        url: item.image,
+      });
+    } catch (error) {
+      console.log("Error sharing:", error);
+    }
+  }, []);
+
+  const latestDevotion = useMemo(() => (devotions.length > 0 ? devotions[0] : null), [devotions]);
+  const recentDevotions = useMemo(() => devotions.slice(1, 7), [devotions]);
+  const popularDevotions = useMemo(
+    () =>
+      [...devotions]
+        .sort((a, b) => (b.views || 0) + (b.likes || 0) * 2 - ((a.views || 0) + (a.likes || 0) * 2))
+        .slice(0, 6),
+    [devotions],
+  );
+
+  const renderSavedItem = useCallback(
+    ({ item }: { item: Devotion }) => (
+      <MinimalDevotionCard
+        item={item}
+        isSaved={isDevotionSaved(item._id)}
+        isRead={isDevotionRead(item._id)}
+        onPress={() => router.push(`/devotion/${item._id}`)}
+        onToggleSave={() => handleToggleSave(item)}
+        onShare={() => handleShare(item)}
+      />
+    ),
+    [isDevotionSaved, isDevotionRead, handleToggleSave, handleShare],
+  );
+
+  const savedEmptyComponent = useMemo(
+    () => (
+      <View style={styles.emptyContainer}>
+        <View style={styles.emptyIconCircle}>
+          <Ionicons name="bookmark-outline" size={36} color="#a1a1aa" />
+        </View>
+        <Text style={styles.emptyTitle}>No saved devotions</Text>
+        <Text style={styles.emptySubtitle}>
+          Tap the bookmark icon on any devotion to save it here for later.
+        </Text>
+      </View>
+    ),
+    [],
+  );
 
   const renderEmptyState = (isBookmarkTab: boolean) => (
     <View style={styles.emptyContainer}>
@@ -452,10 +532,25 @@ export default function Devotions() {
         showStreak={true}
         rightExtra={
           isAdmin ? (
-            <AdminActionButton
-              label="New"
-              onPress={() => router.push("/devotion/manage")}
-            />
+            <Pressable
+              onPress={() => {
+                try {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                } catch {}
+                router.push("/devotion/manage");
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Create Devotion"
+              hitSlop={8}
+              android_ripple={{
+                color: "rgba(255, 103, 25, 0.25)",
+                borderless: true,
+                radius: 18,
+              }}
+              style={styles.headerAddBtn}
+            >
+              <Ionicons name="add" size={22} color={PRIMARY} />
+            </Pressable>
           ) : null
         }
       />
@@ -527,6 +622,7 @@ export default function Devotions() {
                   translateX: scrollOffset.interpolate({
                     inputRange: [0, 1],
                     outputRange: [0, TAB_WIDTH],
+                    extrapolate: "clamp",
                   }),
                 },
               ],
@@ -541,11 +637,8 @@ export default function Devotions() {
         style={styles.pagerView}
         initialPage={0}
         onPageScroll={handlePageScroll}
-        onPageSelected={(e) => {
-          const newIndex = e.nativeEvent.position as 0 | 1;
-          setActiveTab(newIndex);
-          scrollOffset.setValue(newIndex);
-        }}
+        onPageSelected={handlePageSelected}
+        overScrollMode="never"
       >
         {/* Page 0: All Devotions (Editorial Magazine / Native Hub) */}
         <View key="all" style={styles.page}>
@@ -652,9 +745,17 @@ export default function Devotions() {
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.horizontalScrollContent}
+                    nestedScrollEnabled={true}
+                    overScrollMode="never"
                   >
-                    {recentDevotions.map((item) => (
-                      <CompactArticleCard key={`recent-${item._id}`} item={item} />
+                    {recentDevotions.map((item: Devotion) => (
+                      <CompactArticleCard
+                        key={`recent-${item._id}`}
+                        item={item}
+                        isSaved={isDevotionSaved(item._id)}
+                        onPress={() => router.push(`/devotion/${item._id}`)}
+                        onToggleSave={() => handleToggleSave(item)}
+                      />
                     ))}
                   </ScrollView>
                 </View>
@@ -670,9 +771,17 @@ export default function Devotions() {
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.horizontalScrollContent}
+                    nestedScrollEnabled={true}
+                    overScrollMode="never"
                   >
-                    {popularDevotions.map((item) => (
-                      <CompactArticleCard key={`popular-${item._id}`} item={item} />
+                    {popularDevotions.map((item: Devotion) => (
+                      <CompactArticleCard
+                        key={`popular-${item._id}`}
+                        item={item}
+                        isSaved={isDevotionSaved(item._id)}
+                        onPress={() => router.push(`/devotion/${item._id}`)}
+                        onToggleSave={() => handleToggleSave(item)}
+                      />
                     ))}
                   </ScrollView>
                 </View>
@@ -735,9 +844,13 @@ export default function Devotions() {
           <FlatList
             data={savedDevotions}
             keyExtractor={(item) => item._id}
-            renderItem={({ item }) => <MinimalDevotionCard item={item} />}
+            renderItem={renderSavedItem}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
+            removeClippedSubviews={false}
+            initialNumToRender={8}
+            maxToRenderPerBatch={8}
+            windowSize={5}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -746,7 +859,7 @@ export default function Devotions() {
                 colors={[PRIMARY]}
               />
             }
-            ListEmptyComponent={() => renderEmptyState(true)}
+            ListEmptyComponent={savedEmptyComponent}
           />
         </View>
       </PagerView>
@@ -766,6 +879,14 @@ const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
     backgroundColor: "#ffffff",
+  },
+  headerAddBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 103, 25, 0.12)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   // Tab Bar (Twitter/X style with centered labels and full-half active underline indicator)
   tabBarContainer: {
