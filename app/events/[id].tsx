@@ -289,13 +289,184 @@ export default function EventDetails() {
     });
 
   if (loadingDetail) {
+    const pulseOpacity = { opacity: 0.5 };
     return (
-      <View
-        className={`flex-1 items-center justify-center ${
-          isDark ? "bg-[#1A1A1B]" : "bg-gray-50"
-        }`}
-      >
-        <ActivityIndicator size="large" color={PRIMARY} />
+      <View className={`flex-1 ${isDark ? "bg-[#1A1A1B]" : "bg-white"}`}>
+        <StatusBar style="light" />
+
+        {/* Hero Header Skeleton */}
+        <View className="h-[45vh] w-full relative bg-gray-200 dark:bg-[#27272a] overflow-hidden">
+          <LinearGradient
+            colors={["rgba(0,0,0,0.4)", "transparent", isDark ? "rgba(26,26,27,0.9)" : "rgba(255,255,255,0.95)"]}
+            className="absolute inset-0 z-10"
+          />
+
+          {/* Back Button Header */}
+          <TouchableOpacity
+            onPress={handleBack}
+            activeOpacity={0.7}
+            className="absolute left-4 w-10 h-10 rounded-full bg-black/40 items-center justify-center z-20"
+            style={{ top: top + 10 }}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+
+          {/* Hero Bottom Information Placeholder */}
+          <View className="absolute bottom-6 left-5 right-5 z-20">
+            {/* Tag & Date Row */}
+            <View className="flex-row items-center mb-3">
+              <View
+                style={{
+                  width: 54,
+                  height: 22,
+                  borderRadius: 6,
+                  backgroundColor: isDark ? "rgba(255, 103, 25, 0.4)" : "#ff6719",
+                  opacity: 0.7,
+                }}
+              />
+              <View
+                style={{
+                  width: 90,
+                  height: 16,
+                  borderRadius: 4,
+                  marginLeft: 10,
+                  backgroundColor: isDark ? "#3f3f46" : "#cbd5e1",
+                }}
+              />
+            </View>
+
+            {/* Title Placeholder */}
+            <View
+              style={{
+                width: "75%",
+                height: 28,
+                borderRadius: 6,
+                backgroundColor: isDark ? "#3f3f46" : "#cbd5e1",
+                marginBottom: 10,
+              }}
+            />
+            {/* Time Placeholder */}
+            <View
+              style={{
+                width: "40%",
+                height: 16,
+                borderRadius: 4,
+                backgroundColor: isDark ? "#3f3f46" : "#cbd5e1",
+              }}
+            />
+          </View>
+        </View>
+
+        {/* Content Body Placeholder */}
+        <View
+          className={`flex-1 -mt-6 rounded-t-3xl px-6 pt-8 ${
+            isDark ? "bg-[#1A1A1B]" : "bg-white"
+          }`}
+        >
+          {/* Section title */}
+          <View
+            style={{
+              width: 140,
+              height: 20,
+              borderRadius: 6,
+              backgroundColor: isDark ? "#27272a" : "#e2e8f0",
+              marginBottom: 14,
+            }}
+          />
+
+          {/* Description lines */}
+          <View
+            style={{
+              width: "100%",
+              height: 14,
+              borderRadius: 4,
+              backgroundColor: isDark ? "#27272a" : "#f1f5f9",
+              marginBottom: 10,
+            }}
+          />
+          <View
+            style={{
+              width: "92%",
+              height: 14,
+              borderRadius: 4,
+              backgroundColor: isDark ? "#27272a" : "#f1f5f9",
+              marginBottom: 10,
+            }}
+          />
+          <View
+            style={{
+              width: "60%",
+              height: 14,
+              borderRadius: 4,
+              backgroundColor: isDark ? "#27272a" : "#f1f5f9",
+              marginBottom: 24,
+            }}
+          />
+
+          {/* Location box skeleton */}
+          <View
+            style={{
+              width: "100%",
+              height: 64,
+              borderRadius: 14,
+              backgroundColor: isDark ? "#27272a" : "#f8fafc",
+              borderWidth: 1,
+              borderColor: isDark ? "#3f3f46" : "#e2e8f0",
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: 16,
+              gap: 12,
+            }}
+          >
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: isDark ? "#3f3f46" : "#e2e8f0",
+              }}
+            />
+            <View style={{ flex: 1, gap: 6 }}>
+              <View
+                style={{
+                  width: 70,
+                  height: 12,
+                  borderRadius: 4,
+                  backgroundColor: isDark ? "#3f3f46" : "#cbd5e1",
+                }}
+              />
+              <View
+                style={{
+                  width: 130,
+                  height: 12,
+                  borderRadius: 4,
+                  backgroundColor: isDark ? "#3f3f46" : "#e2e8f0",
+                }}
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* Minimal Bottom Bar Skeleton */}
+        <View
+          style={{
+            backgroundColor: isDark ? "#1A1A1B" : "#ffffff",
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: isDark ? "#27272a" : "#e5e7eb",
+            paddingHorizontal: 16,
+            paddingTop: 12,
+            paddingBottom: Math.max(bottom, 12),
+          }}
+        >
+          <View
+            style={{
+              width: "100%",
+              height: 48,
+              borderRadius: 12,
+              backgroundColor: isDark ? "#27272a" : "#e2e8f0",
+            }}
+          />
+        </View>
       </View>
     );
   }
