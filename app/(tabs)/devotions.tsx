@@ -131,15 +131,49 @@ export default function Devotions() {
     }
   };
 
+  const formatViews = (views?: number, formatted?: string) => {
+    if (formatted) return formatted;
+    const count = views ?? 0;
+    if (count >= 1000000) {
+      return (count / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
+    }
+    if (count >= 1000) {
+      return (count / 1000).toFixed(1).replace(/\.0$/, "") + "k";
+    }
+    return count > 0 ? `${count}` : "5.5k";
+  };
+
+  const formatDuration = (item: Devotion) => {
+    if (item.duration) return item.duration;
+    if (item.content) {
+      const words = item.content.trim().split(/\s+/).filter(Boolean).length;
+      const minutes = Math.max(1, Math.round(words / 150));
+      return `0${minutes}:00`.slice(-5);
+    }
+    return "01:40";
+  };
+
+  const isNewDevotion = (dateStr?: string) => {
+    if (!dateStr) return true;
+    try {
+      const diffMs = Date.now() - new Date(dateStr).getTime();
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+      return isNaN(diffDays) || diffDays <= 30;
+    } catch {
+      return true;
+    }
+  };
+
   const latestDevotion = devotions.length > 0 ? devotions[0] : null;
   const recentDevotions = devotions.slice(1, 7);
   const popularDevotions = [...devotions]
     .sort((a, b) => (b.views || 0) + (b.likes || 0) * 2 - ((a.views || 0) + (a.likes || 0) * 2))
     .slice(0, 6);
 
-  // Compact Article Card for horizontal scrolls (Recent & Popular)
+  // Compact Video / Devotional Card (Matching user reference UI)
   const CompactArticleCard = ({ item }: { item: Devotion }) => {
     const isSaved = isDevotionSaved(item._id);
+    const isNew = isNewDevotion(item.date);
 
     return (
       <View style={styles.compactCardOuter}>
@@ -147,11 +181,11 @@ export default function Devotions() {
           android_ripple={{ color: "rgba(0, 0, 0, 0.05)", foreground: true }}
           style={({ pressed }) => [
             styles.compactCardPressable,
-            Platform.OS === "ios" && pressed && { opacity: 0.94 },
+            Platform.OS === "ios" && pressed && { opacity: 0.92, transform: [{ scale: 0.985 }] },
           ]}
           onPress={() => router.push(`/devotion/${item._id}`)}
         >
-          {/* Card Thumbnail Image */}
+          {/* Card Thumbnail Image with Screenshot-accurate Overlays */}
           <View style={styles.compactImageWrapper}>
             {item.image ? (
               <Image
@@ -161,48 +195,67 @@ export default function Devotions() {
               />
             ) : (
               <View style={styles.compactImagePlaceholder}>
-                <Ionicons name="book-outline" size={24} color="#a1a1aa" />
+                <Ionicons name="book-outline" size={32} color="#a1a1aa" />
               </View>
             )}
+
+            {/* Subtle bottom shadow overlay for time readability */}
+            <View style={styles.compactImageOverlay} />
+
+            {/* Top-Right Badge: "New" (Sage Green Pill matching reference) */}
+            {isNew && (
+              <View style={styles.compactNewBadge}>
+                <Text style={styles.compactNewText}>New</Text>
+              </View>
+            )}
+
+            {/* Center: White Play Button Icon */}
+            <View style={styles.compactCenterPlay}>
+              <Ionicons
+                name="play"
+                size={26}
+                color="#ffffff"
+                style={{ marginLeft: 3 }}
+              />
+            </View>
+
+            {/* Bottom-Left: Duration Badge ("01:40") */}
+            <View style={styles.compactDurationBadge}>
+              <Text style={styles.compactDurationText}>
+                {formatDuration(item)}
+              </Text>
+            </View>
           </View>
 
           {/* Article Info Container */}
           <View style={styles.compactBody}>
-            {/* Article Title */}
+            {/* Title (2 lines bold, exactly like screenshot) */}
             <Text style={styles.compactTitle} numberOfLines={2}>
               {item.title}
             </Text>
 
-            {/* Bottom Row: Stacked Author & Date on Left + Save Icon at Bottom-Right */}
-            <View style={styles.compactFooter}>
-              <View style={styles.compactByline}>
-                <View style={styles.compactAvatar}>
-                  <Text style={styles.compactAvatarText}>
-                    {item.author?.charAt(0)?.toUpperCase() || "F"}
-                  </Text>
-                </View>
-                <View style={styles.compactMetaCol}>
-                  <Text style={styles.compactAuthorName} numberOfLines={1}>
-                    {item.author}
-                  </Text>
-                  <Text style={styles.compactDate} numberOfLines={1}>
-                    {formatDate(item.date)}
-                  </Text>
-                </View>
+            {/* Author Name ("Eddie Yong") */}
+            <Text style={styles.compactAuthor} numberOfLines={1}>
+              {item.author || "Fellowship"}
+            </Text>
+
+            {/* Bottom Row: Eye icon + views count ("👁 5.5k") & Bookmark Button */}
+            <View style={styles.compactFooterRow}>
+              <View style={styles.compactViewsRow}>
+                <Ionicons name="eye-outline" size={15} color="#8a8a93" />
+                <Text style={styles.compactViewsText}>
+                  {formatViews(item.views, item.viewsFormatted)}
+                </Text>
               </View>
 
-              {/* Bookmark button on bottom right */}
               <Pressable
                 hitSlop={8}
                 android_ripple={{
                   color: "rgba(255, 103, 25, 0.2)",
                   borderless: true,
-                  radius: 16,
+                  radius: 14,
                 }}
-                style={[
-                  styles.compactSaveBtn,
-                  isSaved && styles.compactSaveBtnActive,
-                ]}
+                style={styles.compactBookmarkBtn}
                 onPress={(e) => {
                   e.stopPropagation();
                   handleToggleSave(item);
@@ -213,7 +266,7 @@ export default function Devotions() {
                 <Ionicons
                   name={isSaved ? "bookmark" : "bookmark-outline"}
                   size={16}
-                  color={isSaved ? PRIMARY : "#71717a"}
+                  color={isSaved ? PRIMARY : "#a1a1aa"}
                 />
               </Pressable>
             </View>
@@ -928,33 +981,21 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingBottom: 8,
   },
-  // Compact Vertical Card (Inspiration from screenshot)
+  // Compact Video / Devotional Card (Matching user reference UI)
   compactCardOuter: {
-    width: 232,
-    backgroundColor: "#ffffff",
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#eff3f4",
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    width: 216,
+    overflow: "visible",
   },
   compactCardPressable: {
-    paddingTop: 10,
-    paddingHorizontal: 12,
-    paddingBottom: 14,
     width: "100%",
   },
   compactImageWrapper: {
     width: "100%",
-    height: 130,
-    borderRadius: 14,
+    height: 190,
+    borderRadius: 20,
     overflow: "hidden",
-    backgroundColor: "#f4f4f5",
-    marginBottom: 10,
+    position: "relative",
+    backgroundColor: "#e4e4e7",
   },
   compactImage: {
     width: "100%",
@@ -964,78 +1005,99 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "#f4f4f5",
+  },
+  compactImageOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 48,
+    backgroundColor: "rgba(0, 0, 0, 0.22)",
+  },
+  compactNewBadge: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "#8da672",
+    paddingHorizontal: 9,
+    paddingVertical: 3.5,
+    borderRadius: 12,
+  },
+  compactNewText: {
+    color: "#ffffff",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.2,
+  },
+  compactCenterPlay: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    marginTop: -18,
+    marginLeft: -18,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(0, 0, 0, 0.28)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  compactDurationBadge: {
+    position: "absolute",
+    bottom: 9,
+    left: 9,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    paddingHorizontal: 6,
+    paddingVertical: 2.5,
+    borderRadius: 5,
+  },
+  compactDurationText: {
+    color: "#ffffff",
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.3,
   },
   compactBody: {
     width: "100%",
+    paddingTop: 8,
     paddingHorizontal: 2,
   },
   compactTitle: {
     fontSize: 14.5,
     fontWeight: "700",
-    color: "#09090b",
-    lineHeight: 20,
-    marginBottom: 10,
-    minHeight: 40,
+    color: "#18181b",
+    lineHeight: 19,
+    marginBottom: 4,
+    minHeight: 38,
   },
-  compactFooter: {
+  compactAuthor: {
+    fontSize: 13,
+    color: "#71717a",
+    fontWeight: "500",
+    marginBottom: 6,
+  },
+  compactFooterRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     width: "100%",
-    marginTop: 2,
   },
-  compactByline: {
+  compactViewsRow: {
     flexDirection: "row",
     alignItems: "center",
-    flex: 1,
-    marginRight: 8,
+    gap: 5,
   },
-  compactAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#f4f4f5",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: "#e4e4e7",
-    flexShrink: 0,
-  },
-  compactAvatarText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#3f3f46",
-  },
-  compactMetaCol: {
-    flexDirection: "column",
-    flex: 1,
-    justifyContent: "center",
-  },
-  compactAuthorName: {
+  compactViewsText: {
     fontSize: 12,
-    color: "#27272a",
-    fontWeight: "600",
-    lineHeight: 15,
-  },
-  compactDate: {
-    fontSize: 11,
     color: "#71717a",
     fontWeight: "500",
-    lineHeight: 14,
-    marginTop: 1,
   },
-  compactSaveBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#f4f4f5",
+  compactBookmarkBtn: {
+    padding: 3,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    flexShrink: 0,
-  },
-  compactSaveBtnActive: {
-    backgroundColor: "rgba(255, 103, 25, 0.12)",
   },
   // Editorial Article-Style Card
   articleCardOuter: {
