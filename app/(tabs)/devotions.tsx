@@ -192,7 +192,9 @@ export default function Devotions() {
                 {item.author}
               </Text>
             </View>
-            <Text style={styles.compactDate}>{formatDate(item.date)}</Text>
+            <Text style={styles.compactDate} numberOfLines={1}>
+              {formatDate(item.date)}
+            </Text>
           </View>
         </Pressable>
       </View>
@@ -521,7 +523,7 @@ export default function Devotions() {
                     <View style={styles.heroContent}>
                       <View style={styles.heroTagRow}>
                         <View style={styles.heroBadge}>
-                          <Text style={styles.heroBadgeText}>LATEST POST</Text>
+                          <Text style={styles.heroBadgeText}>LATEST</Text>
                         </View>
                         <Text style={styles.heroDate}>
                           {formatDate(latestDevotion.date)}
@@ -551,7 +553,6 @@ export default function Devotions() {
                 <View style={styles.sectionContainer}>
                   <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Recent Articles</Text>
-                    <Ionicons name="arrow-forward" size={18} color="#000000" />
                   </View>
                   <ScrollView
                     horizontal
@@ -570,7 +571,6 @@ export default function Devotions() {
                 <View style={styles.sectionContainer}>
                   <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Popular Devotions</Text>
-                    <Ionicons name="arrow-forward" size={18} color="#000000" />
                   </View>
                   <ScrollView
                     horizontal
@@ -711,7 +711,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   heroPressable: {
-    height: 180,
+    height: 220,
     position: "relative",
     justifyContent: "flex-end",
   },

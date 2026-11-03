@@ -450,19 +450,24 @@ export default function EventDetails() {
         {/* Minimal Bottom Bar Skeleton */}
         <View
           style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
             backgroundColor: isDark ? "#1A1A1B" : "#ffffff",
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: isDark ? "#27272a" : "#e5e7eb",
-            paddingHorizontal: 16,
-            paddingTop: 12,
-            paddingBottom: Math.max(bottom, 12),
+            borderTopWidth: 1,
+            borderTopColor: isDark ? "#27272a" : "#f1f5f9",
+            paddingHorizontal: 20,
+            paddingTop: 14,
+            paddingBottom: Math.max(bottom + 12, 24),
+            zIndex: 50,
           }}
         >
           <View
             style={{
               width: "100%",
-              height: 48,
-              borderRadius: 12,
+              height: 52,
+              borderRadius: 26,
               backgroundColor: isDark ? "#27272a" : "#e2e8f0",
             }}
           />
@@ -669,7 +674,7 @@ export default function EventDetails() {
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 24 }}
+          contentContainerStyle={{ paddingBottom: 110 }}
         >
           <View className="mb-6">
             <Text
@@ -715,123 +720,160 @@ export default function EventDetails() {
         </ScrollView>
       </View>
 
-      {/* Clean Android Solid Bottom Bar */}
+      {/* Bottom Bar CTA Button */}
       <View
         style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
           backgroundColor: isDark ? "#1A1A1B" : "#ffffff",
-          borderTopWidth: StyleSheet.hairlineWidth,
-          borderTopColor: isDark ? "#27272a" : "#e5e7eb",
-          paddingHorizontal: 16,
-          paddingTop: 12,
-          paddingBottom: Math.max(bottom, 12),
+          borderTopWidth: 1,
+          borderTopColor: isDark ? "#27272a" : "#f1f5f9",
+          paddingHorizontal: 20,
+          paddingTop: 14,
+          paddingBottom: Math.max(bottom + 12, 24),
+          zIndex: 50,
+          elevation: 10,
         }}
       >
-        <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
-              () => {},
-            );
-            if (isNotifyCta) {
-              if (reminder.status === "active") {
-                reminder.openSheet();
-              } else if (reminder.status === "permission") {
-                reminder.openNotificationSettings();
-              } else if (reminder.status !== "unavailable") {
-                reminder.enable();
-              }
-            } else {
-              handleCta();
-            }
+        <View
+          style={{
+            height: 52,
+            borderRadius: 26,
+            overflow: "hidden",
+            backgroundColor:
+              isRegisterCta && isRegisteredForThisEvent
+                ? isDark
+                  ? "#27272a"
+                  : "#e2e8f0"
+                : isNotifyCta && reminder.status === "unavailable"
+                ? isDark
+                  ? "#334155"
+                  : "#64748b"
+                : PRIMARY,
+            shadowColor:
+              (isRegisterCta && isRegisteredForThisEvent) ||
+              (isNotifyCta && reminder.status === "unavailable")
+                ? "transparent"
+                : "#ff6719",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity:
+              (isRegisterCta && isRegisteredForThisEvent) ||
+              (isNotifyCta && reminder.status === "unavailable")
+                ? 0
+                : 0.35,
+            shadowRadius: 8,
+            elevation:
+              (isRegisterCta && isRegisteredForThisEvent) ||
+              (isNotifyCta && reminder.status === "unavailable")
+                ? 0
+                : 4,
           }}
-          disabled={isButtonDisabled}
-          android_ripple={{
-            color: "rgba(255, 255, 255, 0.2)",
-            borderless: false,
-          }}
-          style={({ pressed }) => [
-            {
-              width: "100%",
-              height: 48,
-              borderRadius: 12,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor:
-                isRegisterCta && isRegisteredForThisEvent
-                  ? isDark
-                    ? "#27272a"
-                    : "#e2e8f0"
-                  : isNotifyCta && reminder.status === "unavailable"
-                  ? isDark
-                    ? "#334155"
-                    : "#64748b"
-                  : PRIMARY,
-              elevation:
-                (isRegisterCta && isRegisteredForThisEvent) ||
-                (isNotifyCta && reminder.status === "unavailable")
-                  ? 0
-                  : 2,
-              opacity: pressed ? 0.9 : isButtonDisabled ? 0.7 : 1,
-            },
-          ]}
         >
-          {registering || unregistering || (isNotifyCta && reminder.status === "loading") ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <View
-              style={{
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+                () => {},
+              );
+              if (isNotifyCta) {
+                if (reminder.status === "active") {
+                  reminder.openSheet();
+                } else if (reminder.status === "permission") {
+                  reminder.openNotificationSettings();
+                } else if (reminder.status !== "unavailable") {
+                  reminder.enable();
+                }
+              } else {
+                handleCta();
+              }
+            }}
+            disabled={isButtonDisabled}
+            android_ripple={{
+              color: "rgba(255, 255, 255, 0.28)",
+              borderless: false,
+              foreground: true,
+            }}
+            style={({ pressed }) => [
+              {
+                width: "100%",
+                height: 52,
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 8,
-              }}
-            >
-              <Text
+                opacity:
+                  pressed && Platform.OS === "ios"
+                    ? 0.85
+                    : isNotifyCta && reminder.status === "unavailable"
+                    ? 0.95
+                    : isButtonDisabled
+                    ? 0.65
+                    : 1,
+              },
+            ]}
+          >
+            {registering || unregistering || (isNotifyCta && reminder.status === "loading") ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <View
                 style={{
-                  fontSize: 15,
-                  fontWeight: "700",
-                  color:
-                    isRegisterCta && isRegisteredForThisEvent
-                      ? isDark
-                        ? "#a1a1aa"
-                        : "#64748b"
-                      : "#ffffff",
-                  includeFontPadding: false,
-                  textAlignVertical: "center",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
                 }}
               >
-                {resolvedDisplayLabel}
-              </Text>
-              {isRegisterCta && isRegisteredForThisEvent ? (
-                <Ionicons
-                  name="checkmark-circle"
-                  size={19}
-                  color={isDark ? "#4ade80" : "#16a34a"}
-                />
-              ) : isNotifyCta ? (
-                <Ionicons
-                  name={
-                    reminder.status === "active"
-                      ? "notifications"
-                      : reminder.status === "permission"
-                      ? "notifications-off-outline"
-                      : reminder.status === "unavailable"
-                      ? "time-outline"
-                      : "notifications-outline"
-                  }
-                  size={19}
-                  color="white"
-                />
-              ) : (
-                <Ionicons
-                  name="arrow-forward"
-                  size={19}
-                  color="white"
-                />
-              )}
-            </View>
-          )}
-        </Pressable>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "700",
+                    letterSpacing: -0.2,
+                    color:
+                      isRegisterCta && isRegisteredForThisEvent
+                        ? isDark
+                          ? "#a1a1aa"
+                          : "#64748b"
+                        : "#ffffff",
+                    includeFontPadding: false,
+                    textAlignVertical: "center",
+                  }}
+                >
+                  {resolvedDisplayLabel}
+                </Text>
+                {isRegisterCta && isRegisteredForThisEvent ? (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color={isDark ? "#4ade80" : "#16a34a"}
+                    style={{ marginTop: Platform.OS === "android" ? 1 : 0 }}
+                  />
+                ) : isNotifyCta ? (
+                  <Ionicons
+                    name={
+                      reminder.status === "active"
+                        ? "notifications"
+                        : reminder.status === "permission"
+                        ? "notifications-off-outline"
+                        : reminder.status === "unavailable"
+                        ? "time-outline"
+                        : "notifications-outline"
+                    }
+                    size={20}
+                    color="white"
+                    style={{ marginTop: Platform.OS === "android" ? 1 : 0 }}
+                  />
+                ) : (
+                  <Ionicons
+                    name="arrow-forward"
+                    size={20}
+                    color="white"
+                    style={{ marginTop: Platform.OS === "android" ? 1 : 0 }}
+                  />
+                )}
+              </View>
+            )}
+          </Pressable>
+        </View>
       </View>
       <RegistrationModal
         visible={modalVisible}
