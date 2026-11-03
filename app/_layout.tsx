@@ -199,10 +199,6 @@ function RootNavigator() {
       />
       <Stack.Screen name="givings" options={{ title: "My Givings" }} />
       <Stack.Screen
-        name="subscription"
-        options={{ title: "Membership & Plans" }}
-      />
-      <Stack.Screen
         name="change-password"
         options={{
           title: "Change Password",
