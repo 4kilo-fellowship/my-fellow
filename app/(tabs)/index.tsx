@@ -43,12 +43,12 @@ import {
   RefreshControl,
   ScrollView,
   Text,
+  ToastAndroid,
   TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Toast from "react-native-toast-message";
 
 const Home = () => {
   const { top } = useSafeAreaInsets();
@@ -540,23 +540,17 @@ const Home = () => {
                       } else if (action.id === "4") {
                         router.push("/teams");
                       } else if (action.id === "challenges") {
-                        Toast.show({
-                          type: "info",
-                          text1: "Fellowship Challenges",
-                          text2: "Daily challenges & scripture goals are coming soon!",
-                        });
+                        if (Platform.OS === "android") {
+                          ToastAndroid.show("Challenges coming soon!", ToastAndroid.SHORT);
+                        }
                       } else if (action.id === "alumni") {
-                        Toast.show({
-                          type: "info",
-                          text1: "Fellowship Alumni",
-                          text2: "Alumni network & mentorship hub is coming soon!",
-                        });
+                        if (Platform.OS === "android") {
+                          ToastAndroid.show("Alumni coming soon!", ToastAndroid.SHORT);
+                        }
                       } else if (action.id === "pcs") {
-                        Toast.show({
-                          type: "info",
-                          text1: "PCS (Prayer & Counseling)",
-                          text2: "Confidential prayer & counseling support is coming soon!",
-                        });
+                        if (Platform.OS === "android") {
+                          ToastAndroid.show("PCS coming soon!", ToastAndroid.SHORT);
+                        }
                       } else if (action.id === "5") {
                         Linking.openURL("https://t.me/AAU_4Killo_Fellowship");
                       } else if (action.id === "6") {
