@@ -12,12 +12,13 @@ import { getPrefilledAvatar } from "@/utils/avatar";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image as ExpoImage } from "expo-image";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -39,24 +40,32 @@ const TRENDING_TAGS = [
 
 export default function CommunitySearchScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ q?: string }>();
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
   const posts = useCommunityStore((s) => s.posts);
   const members = useCommunityStore((s) => s.members);
   const toggleFollowMember = useCommunityStore((s) => s.toggleFollowMember);
+  const searchHistory = useCommunityStore((s) => s.searchHistory);
+  const addSearchHistory = useCommunityStore((s) => s.addSearchHistory);
+  const removeSearchHistory = useCommunityStore((s) => s.removeSearchHistory);
+  const clearSearchHistory = useCommunityStore((s) => s.clearSearchHistory);
 
-  const [query, setQuery] = useState("");
+  const initialQuery = typeof params.q === "string" ? params.q : "";
+
+  const [query, setQuery] = useState(initialQuery);
   const [activeTab, setActiveTab] = useState<"all" | "posts" | "people" | "media">("all");
-  const [recentSearches, setRecentSearches] = useState<string[]>([
-    "#WorshipNight",
-    "Bethlehem Haile",
-    "Prayer",
-  ]);
   const [trendingTags, setTrendingTags] = useState(TRENDING_TAGS);
   const [apiPosts, setApiPosts] = useState<CommunityPost[]>([]);
   const [apiMembers, setApiMembers] = useState<MemberProfile[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  // A term arriving from the feed's inline search belongs in history too.
+  useEffect(() => {
+    const incoming = typeof params.q === "string" ? params.q.trim() : "";
+    if (incoming) addSearchHistory(incoming);
+  }, [addSearchHistory, params.q]);
 
   useEffect(() => {
     socialApi
@@ -98,35 +107,33 @@ export default function CommunitySearchScreen() {
       socialApi
         .searchSocial(q, searchType)
         .then((result) => {
-          if (result.posts && result.posts.length > 0) {
-            setApiPosts(result.posts.map(apiPostToCommunityPost));
-          }
-          if (result.people && result.people.length > 0) {
-            setApiMembers(
-              result.people.map((u) => ({
-                id: u.id,
-                fullName: u.displayName || u.username,
-                handle: u.username?.startsWith("@")
-                  ? u.username
-                  : `@${u.username}`,
-                avatar:
-                  typeof u.avatar === "string"
-                    ? u.avatar
-                    : u.avatar?.urls?.md || getPrefilledAvatar(u.id),
-                banner:
-                  "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=1200&q=80",
-                team: u.fellowshipRole || "Campus Ministry",
-                department: u.department || "Addis Ababa University",
-                academicYear: u.academicYear || "AAU 4 Kilo",
-                bio: "Rooted in Christ.",
-                streakDays: 1,
-                followersCount: 1,
-                followingCount: 1,
-                postsCount: 0,
-                isFollowing: !!u.isFollowing,
-              })),
-            );
-          }
+          // Always replace, never merge — otherwise results from a previous
+          // keystroke linger and the list looks stale while typing.
+          setApiPosts((result.posts || []).map(apiPostToCommunityPost));
+          setApiMembers(
+            (result.people || []).map((u) => ({
+              id: u.id,
+              fullName: u.displayName || u.username,
+              handle: u.username?.startsWith("@")
+                ? u.username
+                : `@${u.username}`,
+              avatar:
+                typeof u.avatar === "string"
+                  ? u.avatar
+                  : u.avatar?.urls?.md || getPrefilledAvatar(u.id),
+              banner:
+                "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=1200&q=80",
+              team: u.fellowshipRole || "Campus Ministry",
+              department: u.department || "Addis Ababa University",
+              academicYear: u.academicYear || "AAU 4 Kilo",
+              bio: "Rooted in Christ.",
+              streakDays: 1,
+              followersCount: 1,
+              followingCount: 1,
+              postsCount: 0,
+              isFollowing: !!u.isFollowing,
+            })),
+          );
         })
         .catch(() => {})
         .finally(() => {
@@ -175,14 +182,24 @@ export default function CommunitySearchScreen() {
   const handleSelectTag = (tag: string) => {
     Haptics.selectionAsync().catch(() => {});
     setQuery(tag);
-    if (!recentSearches.includes(tag)) {
-      setRecentSearches((prev) => [tag, ...prev.slice(0, 4)]);
-    }
+    addSearchHistory(tag);
+  };
+
+  const handleSubmitSearch = () => {
+    const term = query.trim();
+    if (!term) return;
+    addSearchHistory(term);
+    Keyboard.dismiss();
+  };
+
+  const handleRemoveRecent = (term: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    removeSearchHistory(term);
   };
 
   const handleClearRecent = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    setRecentSearches([]);
+    clearSearchHistory();
   };
 
   return (
@@ -205,10 +222,13 @@ export default function CommunitySearchScreen() {
           <TextInput
             value={query}
             onChangeText={setQuery}
+            onSubmitEditing={handleSubmitSearch}
             placeholder="Search posts, people, tags..."
             placeholderTextColor={mutedColor}
             autoFocus
             returnKeyType="search"
+            autoCorrect={false}
+            selectionColor={PRIMARY}
             style={[styles.searchInput, { color: textColor }]}
           />
           {isSearching ? (
@@ -277,8 +297,8 @@ export default function CommunitySearchScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.exploreContent}
           >
-            {/* Recent Searches */}
-            {recentSearches.length > 0 && (
+            {/* Recent Searches (persisted, like AI Poster Studio history) */}
+            {searchHistory.length > 0 && (
               <View style={styles.sectionBlock}>
                 <View style={styles.sectionHeaderRow}>
                   <Text style={[styles.sectionTitle, { color: textColor }]}>Recent Searches</Text>
@@ -288,16 +308,29 @@ export default function CommunitySearchScreen() {
                 </View>
 
                 <View style={styles.recentTagsWrap}>
-                  {recentSearches.map((item, idx) => (
-                    <TouchableOpacity
-                      key={idx}
-                      activeOpacity={0.7}
-                      onPress={() => handleSelectTag(item)}
+                  {searchHistory.map((item) => (
+                    <View
+                      key={item}
                       style={[styles.recentPill, { backgroundColor: cardBg, borderColor }]}
                     >
-                      <Ionicons name="time-outline" size={14} color={mutedColor} />
-                      <Text style={[styles.recentPillText, { color: textColor }]}>{item}</Text>
-                    </TouchableOpacity>
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() => handleSelectTag(item)}
+                        style={styles.recentPillMain}
+                      >
+                        <Ionicons name="time-outline" size={14} color={mutedColor} />
+                        <Text style={[styles.recentPillText, { color: textColor }]}>{item}</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={() => handleRemoveRecent(item)}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove ${item} from recent searches`}
+                      >
+                        <Ionicons name="close" size={13} color={mutedColor} />
+                      </TouchableOpacity>
+                    </View>
                   ))}
                 </View>
               </View>
@@ -405,6 +438,8 @@ export default function CommunitySearchScreen() {
             }
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             contentContainerStyle={styles.resultsListContent}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
@@ -462,7 +497,11 @@ export default function CommunitySearchScreen() {
               return (
                 <TouchableOpacity
                   activeOpacity={0.85}
-                  onPress={() => router.push(`/community/${post.id}` as any)}
+                  onPress={() => {
+                    const term = query.trim();
+                    if (term) addSearchHistory(term);
+                    router.push(`/community/${post.id}` as any);
+                  }}
                   style={[styles.resultPostCard, { borderBottomColor: borderColor }]}
                 >
                   <View style={styles.resultAuthorRow}>
@@ -584,8 +623,8 @@ const styles = StyleSheet.create({
   tabActiveBar: {
     position: "absolute",
     bottom: 0,
-    height: 3,
-    width: "48%",
+    height: 2.5,
+    width: "44%",
     borderRadius: 2,
   },
   exploreContent: {
@@ -619,11 +658,16 @@ const styles = StyleSheet.create({
   recentPill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 16,
     borderWidth: 1,
+  },
+  recentPillMain: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   recentPillText: {
     fontSize: 13,

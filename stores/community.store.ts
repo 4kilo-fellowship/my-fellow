@@ -597,6 +597,12 @@ interface CommunityStore {
   setSelectedCategory: (cat: CommunityCategory) => void;
   setFeedType: (type: "following" | "foryou") => void;
 
+  // Persisted search history (mirrors the AI Poster Studio history pattern)
+  searchHistory: string[];
+  addSearchHistory: (term: string) => void;
+  removeSearchHistory: (term: string) => void;
+  clearSearchHistory: () => void;
+
   // Real async API actions with optimistic updates & rollbacks
   fetchFeed: (
     type?: "following" | "foryou",
@@ -665,9 +671,31 @@ export const useCommunityStore = create<CommunityStore>()(
       isForYouLoading: false,
       isFollowingLoading: false,
       isRefreshing: false,
+      searchHistory: [],
 
       setSelectedCategory: (cat) => set({ selectedCategory: cat }),
       setFeedType: (type) => set({ feedType: type }),
+
+      addSearchHistory: (term) => {
+        const trimmed = term.trim();
+        if (!trimmed) return;
+        set((state) => {
+          const existing = state.searchHistory || [];
+          const deduped = existing.filter(
+            (item) => item.toLowerCase() !== trimmed.toLowerCase(),
+          );
+          return { searchHistory: [trimmed, ...deduped].slice(0, 10) };
+        });
+      },
+
+      removeSearchHistory: (term) =>
+        set((state) => ({
+          searchHistory: (state.searchHistory || []).filter(
+            (item) => item !== term,
+          ),
+        })),
+
+      clearSearchHistory: () => set({ searchHistory: [] }),
 
       fetchFeed: async (type = "foryou", refresh = false) => {
         const isForyou = type === "foryou";
@@ -1261,6 +1289,7 @@ export const useCommunityStore = create<CommunityStore>()(
         members: state.members,
         whoToFollow: state.whoToFollow,
         selectedCategory: state.selectedCategory,
+        searchHistory: state.searchHistory,
       }),
     },
   ),
