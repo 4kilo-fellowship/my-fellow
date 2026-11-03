@@ -13,10 +13,11 @@ import {
   VideoPlayerModal,
   WhoToFollowSection,
 } from "@/components";
-import { PRIMARY, QUICK_ACTIONS, VIDEOS } from "@/constants";
+import { PRIMARY, QUICK_ACTIONS } from "@/constants";
 import { Video } from "@/constants/videos";
 import { useTheme } from "@/context/ThemeContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useCanPublishVideos } from "@/hooks/useCanPublishVideos";
 import { useNetwork } from "@/hooks/useNetwork";
 import { devotionsService } from "@/services/devotionsService";
 import { eventsService } from "@/services/eventsService";
@@ -381,7 +382,6 @@ const Home = () => {
   const [showNotificationsSheet, setShowNotificationsSheet] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
-  const [showAllVideos, setShowAllVideos] = useState(false);
   const scrollX = useRef(new Animated.Value(0)).current;
   const { width } = useWindowDimensions();
   const cardWidth = width - 48;
@@ -394,6 +394,7 @@ const Home = () => {
   const { isConnected } = useNetwork();
   const { user } = useUserStore();
   const isAdmin = useIsAdmin();
+  const canPublishVideos = useCanPublishVideos();
   const {
     notifications,
     markAsRead,
@@ -429,16 +430,12 @@ const Home = () => {
       setEventsList(eventsData);
       setDevotionsList(devotionsData.data || []);
 
-      let liveVideos: any[] = [];
       try {
         const videosData = await socialApi.getContentVideos();
-        if (Array.isArray(videosData) && videosData.length > 0) {
-          liveVideos = videosData;
-        }
+        setVideos(Array.isArray(videosData) ? videosData : []);
       } catch {
-        // Fallback to cached VIDEOS
+        setVideos([]);
       }
-      setVideos(liveVideos.length > 0 ? liveVideos : VIDEOS);
 
       // Sync streak and notification badges in the background
       useStreakStore.getState().syncServerStreak().catch(() => {});
@@ -740,12 +737,12 @@ const Home = () => {
                 </Text>
               )}
 
-              {videos.length > 3 && (
+              {videos.length > 0 && (
                 <NativeViewAllButton
-                  label={showAllVideos ? "Show less" : "View all"}
-                  onPress={() => setShowAllVideos((prev) => !prev)}
+                  label="View all"
+                  onPress={() => router.push("/videos")}
                   isDark={isDark}
-                  accessibilityLabel={showAllVideos ? "Show fewer videos" : "View all fellowship videos"}
+                  accessibilityLabel="View all fellowship videos"
                 />
               )}
             </View>
@@ -763,8 +760,34 @@ const Home = () => {
                   />
                 ))}
               </View>
+            ) : videos.length === 0 ? (
+              <View
+                style={{
+                  borderRadius: 16,
+                  padding: 18,
+                  backgroundColor: isDark ? "#171717" : "#f8fafc",
+                  borderWidth: 1,
+                  borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e2e8f0",
+                }}
+              >
+                <Ionicons name="videocam-outline" size={28} color={isDark ? "#fb923c" : PRIMARY} />
+                <Text className={`mt-2 text-base font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                  No fellowship videos yet
+                </Text>
+                <Text className={`mt-1 text-sm leading-5 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                  Leaders can publish the first teaching, worship moment, or fellowship recap.
+                </Text>
+                {canPublishVideos && (
+                  <Pressable
+                    onPress={() => router.push("/videos/manage")}
+                    className="mt-4 self-start rounded-xl bg-orange-500 px-4 py-3"
+                  >
+                    <Text className="font-bold text-white">Post the first video</Text>
+                  </Pressable>
+                )}
+              </View>
             ) : (
-              (showAllVideos ? videos : videos.slice(0, 3)).map((v) => (
+              videos.slice(0, 3).map((v) => (
                 <VideoItem
                   key={v.id}
                   item={v}

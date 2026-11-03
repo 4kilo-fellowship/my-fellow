@@ -54,7 +54,7 @@
 
 | Screen / Component | File Path | Hard-Coded Literals & Data Sources | Target Endpoint(s) | Phase |
 | :--- | :--- | :--- | :--- | :--- |
-| **Home: Video Content Library** | `app/(tabs)/index.tsx`<br>`constants/videos.ts` | Static array `VIDEOS` with 6 videos: Sunday Service Highlights, Acoustic Worship Night, etc. | `GET /api/content/videos` | Phase 2 |
+| **Home: Video Content Library** | `app/(tabs)/index.tsx`<br>`app/videos/` | Production API-backed video library with an empty state and leader/Super Admin publishing flow. | `GET/POST /api/v1/content/videos` | Implemented |
 | **Home: Who to Follow Carousel** | `components/WhoToFollow/index.tsx` | Static array `DEFAULT_MEMBERS`: "Abenezer Bekele" (28 mutual), "Hiwot Tadesse" (34 mutual), "Yohannes Hailu", "Bethelhem Assefa", "Natnael Tamiru". | `GET /api/users/suggestions`<br>`POST /api/users/:id/follow`<br>`DELETE /api/users/:id/suggestions` | Phase 1 |
 | **Home: Streaks Chip** | `app/(tabs)/index.tsx`<br>`stores/streak.store.ts` | Local AsyncStorage only (`fellowship-streak-storage`). Defaults to `1`. No server validation. | `GET /api/streaks/me`<br>`POST /api/streaks/checkin` | Phase 3 |
 | **Home: Notification Bell** | `app/(tabs)/index.tsx`<br>`utils/notificationService.ts` | Synthesized locally by polling events and marketplace. | `GET /api/notifications`<br>`GET /api/notifications/unread-count`<br>`PATCH /api/notifications/:id/read` | Phase 3 |

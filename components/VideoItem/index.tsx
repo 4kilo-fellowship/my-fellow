@@ -70,12 +70,18 @@ const VideoItem: React.FC<VideoItemProps> = ({
               { backgroundColor: isDark ? "#1f1f1f" : "#f1f5f9" },
             ]}
           >
-            <ExpoImage
-              source={{ uri: item.thumbnail }}
-              style={styles.thumbnail}
-              contentFit="cover"
-              transition={150}
-            />
+            {item.thumbnail ? (
+              <ExpoImage
+                source={{ uri: item.thumbnail }}
+                style={styles.thumbnail}
+                contentFit="cover"
+                transition={150}
+              />
+            ) : (
+              <View style={styles.thumbnailFallback}>
+                <Ionicons name="videocam-outline" size={24} color="#94a3b8" />
+              </View>
+            )}
             <LinearGradient
               colors={["transparent", "rgba(0,0,0,0.35)"]}
               style={StyleSheet.absoluteFill}
@@ -159,6 +165,13 @@ const styles = StyleSheet.create({
   thumbnail: {
     width: "100%",
     height: "100%",
+  },
+  thumbnailFallback: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#e2e8f0",
   },
   playIconBadge: {
     position: "absolute",

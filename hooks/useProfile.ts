@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useCommunityStore, MemberProfile } from "@/stores/community.store";
-import { getPrefilledAvatar } from "@/utils/avatar";
 
 export interface ProfileSeedParams {
   id?: string;
@@ -43,40 +42,24 @@ export function resolveProfileSeed(
     handle = `@${handle}`;
   }
 
-  const avatarUrl = seed.avatar?.trim() || getPrefilledAvatar(memberId);
-
   const profile: MemberProfile = {
     id: memberId,
     fullName: displayName,
     handle,
-    avatar: avatarUrl,
-    banner:
-      "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=1200&q=80",
-    team: seed.team || "Campus Ministry",
-    department: seed.department || "Addis Ababa University",
-    academicYear: "4 Kilo Campus",
-    bio: "Rooted in Christ, walking in faith together with 4 Kilo Fellowship brothers and sisters. ✨",
-    streakDays:
-      typeof seed.streakDays === "number"
-        ? seed.streakDays
-        : typeof seed.streakDays === "string" && !isNaN(parseInt(seed.streakDays, 10))
-          ? parseInt(seed.streakDays, 10)
-          : 1,
-    followersCount: 140,
-    followingCount: 88,
-    postsCount: 5,
+    avatar: seed.avatar || null,
+    banner: null,
+    team: seed.team || "",
+    department: seed.department || "",
+    academicYear: "",
+    bio: "",
+    streakDays: 0,
+    followersCount: 0,
+    followingCount: 0,
+    postsCount: 0,
     isFollowing: false,
-    location: "AAU 4 Kilo Campus, Addis Ababa",
-    joinedDate: "September 2023",
-    mutualFollowers: {
-      names: ["Abenezer", "Bethelhem", "Natnael"],
-      count: 24,
-      avatars: [
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-1.2.1&auto=format&fit=crop&w=120&q=80",
-        "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=120&q=80",
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=120&q=80",
-      ],
-    },
+    location: undefined,
+    joinedDate: undefined,
+    mutualFollowers: undefined,
   };
 
   return {

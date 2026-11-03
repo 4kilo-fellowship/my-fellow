@@ -1,7 +1,6 @@
 import api from "./api";
 import {
   ApiPost,
-  ContentVideo,
   FeedResponse,
   MutualFollowersData,
   ProfileDetail,
@@ -14,6 +13,7 @@ import {
   UserMinistry,
   UserSummary,
 } from "@/types/social.types";
+import { Video } from "@/constants/videos";
 
 /**
  * Helper to unwrap responses whether wrapped in ApiResponse ({ success, data })
@@ -24,6 +24,37 @@ function unwrap<T>(response: any): T {
     return response.data.data as T;
   }
   return response?.data as T;
+}
+
+function formatDuration(seconds?: number): string {
+  if (!seconds || seconds < 1) return "Video";
+  const minutes = Math.floor(seconds / 60);
+  const remainder = Math.floor(seconds % 60);
+  return `${minutes}:${String(remainder).padStart(2, "0")}`;
+}
+
+function normalizeContentVideo(item: any): Video {
+  const thumbnail =
+    typeof item.thumbnail === "string"
+      ? item.thumbnail
+      : item.thumbnail?.urls?.md ||
+        item.thumbnail?.urls?.original ||
+        "";
+  const publishedAt = item.publishedAt
+    ? new Date(item.publishedAt).toLocaleDateString()
+    : "Recently";
+
+  return {
+    id: String(item.id),
+    title: item.title,
+    desc: item.description || "",
+    duration: item.duration || formatDuration(item.durationSeconds),
+    thumbnail,
+    videoUrl: item.videoUrl || item.playbackUrl,
+    speaker: item.speaker,
+    views: item.views,
+    publishedAt,
+  };
 }
 
 export const socialApi = {
@@ -351,19 +382,40 @@ export const socialApi = {
   /**
    * Curated media library / videos
    */
-  async getContentVideos(): Promise<ContentVideo[]> {
+  async getContentVideos(): Promise<Video[]> {
     try {
       const res = await api.get("/v1/content/videos");
       const data = unwrap<any>(res);
-      return Array.isArray(data) ? data : data?.videos || data?.items || [];
+      const items = Array.isArray(data) ? data : data?.videos || data?.items || [];
+      return items.map(normalizeContentVideo);
     } catch (err: any) {
       if (err?.response?.status === 404) {
         const fallback = await api.get("/content/videos");
         const data = unwrap<any>(fallback);
-        return Array.isArray(data) ? data : data?.videos || data?.items || [];
+        const items = Array.isArray(data) ? data : data?.videos || data?.items || [];
+        return items.map(normalizeContentVideo);
       }
       throw err;
     }
+  },
+
+  async createContentVideo(input: {
+    title: string;
+    description?: string;
+    video: { uri: string; name: string; type: string };
+    thumbnail?: { uri: string; name: string; type: string };
+  }): Promise<Video> {
+    const formData = new FormData();
+    formData.append("title", input.title);
+    if (input.description) formData.append("description", input.description);
+    formData.append("video", input.video as any);
+    if (input.thumbnail) formData.append("thumbnail", input.thumbnail as any);
+
+    const res = await api.post("/v1/content/videos", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 180000,
+    });
+    return normalizeContentVideo(unwrap<any>(res));
   },
 
   /**

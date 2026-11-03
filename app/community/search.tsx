@@ -8,8 +8,8 @@ import {
   MemberProfile,
   useCommunityStore,
 } from "@/stores/community.store";
-import { getPrefilledAvatar } from "@/utils/avatar";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { Image as ExpoImage } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -30,14 +30,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const TRENDING_TAGS = [
-  { tag: "#4KiloECSF", category: "Campus Ministry", count: "384 posts" },
-  { tag: "#WorshipNight", category: "Music & Praise", count: "148 posts" },
-  { tag: "#PrayerChain", category: "Intercession", count: "92 posts" },
-  { tag: "#FreshmanOutreach", category: "Campus Discipleship", count: "112 posts" },
-  { tag: "#TestimonyTime", category: "Fellowship Encouragement", count: "57 posts" },
-];
-
 export default function CommunitySearchScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ q?: string }>();
@@ -56,7 +48,9 @@ export default function CommunitySearchScreen() {
 
   const [query, setQuery] = useState(initialQuery);
   const [activeTab, setActiveTab] = useState<"all" | "posts" | "people" | "media">("all");
-  const [trendingTags, setTrendingTags] = useState(TRENDING_TAGS);
+  const [trendingTags, setTrendingTags] = useState<
+    { tag: string; category: string; count: string }[]
+  >([]);
   const [apiPosts, setApiPosts] = useState<CommunityPost[]>([]);
   const [apiMembers, setApiMembers] = useState<MemberProfile[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -104,9 +98,10 @@ export default function CommunitySearchScreen() {
           : activeTab === "posts"
             ? "posts"
             : "all";
+      const cacheKey = `community-search:${searchType}:${q.toLowerCase()}`;
       socialApi
         .searchSocial(q, searchType)
-        .then((result) => {
+        .then(async (result) => {
           // Always replace, never merge — otherwise results from a previous
           // keystroke linger and the list looks stale while typing.
           setApiPosts((result.posts || []).map(apiPostToCommunityPost));
@@ -120,22 +115,46 @@ export default function CommunitySearchScreen() {
               avatar:
                 typeof u.avatar === "string"
                   ? u.avatar
-                  : u.avatar?.urls?.md || getPrefilledAvatar(u.id),
-              banner:
-                "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=1200&q=80",
-              team: u.fellowshipRole || "Campus Ministry",
-              department: u.department || "Addis Ababa University",
-              academicYear: u.academicYear || "AAU 4 Kilo",
-              bio: "Rooted in Christ.",
-              streakDays: 1,
-              followersCount: 1,
-              followingCount: 1,
+                  : u.avatar?.urls?.md || null,
+              banner: null,
+              team: u.fellowshipRole || "",
+              department: u.department || "",
+              academicYear: u.academicYear || "",
+              bio: "",
+              streakDays: 0,
+              followersCount: 0,
+              followingCount: 0,
               postsCount: 0,
               isFollowing: !!u.isFollowing,
             })),
           );
+          await AsyncStorage.setItem(
+            cacheKey,
+            JSON.stringify({
+              savedAt: Date.now(),
+              posts: result.posts || [],
+              people: result.people || [],
+            }),
+          );
         })
-        .catch(() => {})
+        .catch(async () => {
+          const cached = await AsyncStorage.getItem(cacheKey);
+          if (!cached) return;
+          try {
+            const parsed = JSON.parse(cached) as {
+              savedAt?: number;
+              posts?: Parameters<typeof apiPostToCommunityPost>[0][];
+              people?: typeof apiMembers;
+            };
+            if (!parsed.savedAt || Date.now() - parsed.savedAt > 24 * 60 * 60 * 1000) {
+              return;
+            }
+            setApiPosts((parsed.posts || []).map(apiPostToCommunityPost));
+            setApiMembers(parsed.people || []);
+          } catch {
+            await AsyncStorage.removeItem(cacheKey);
+          }
+        })
         .finally(() => {
           setIsSearching(false);
         });

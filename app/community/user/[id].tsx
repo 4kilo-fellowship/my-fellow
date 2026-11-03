@@ -7,7 +7,6 @@ import { useAfterTransition } from "@/hooks/useAfterTransition";
 import { ProfileSeed, useProfile } from "@/hooks/useProfile";
 import { socialApi } from "@/services/socialApi";
 import { useCommunityStore } from "@/stores/community.store";
-import { getPrefilledAvatar } from "@/utils/avatar";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image as ExpoImage } from "expo-image";
@@ -36,21 +35,8 @@ import { TabView, TabBar } from "react-native-tab-view";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-const AVATAR_PRESETS = [
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
-  "https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
-  "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
-  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
-];
-
-const BANNER_PRESETS = [
-  "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1507692049790-de58290a4334?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80",
-];
+const AVATAR_PRESETS: string[] = [];
+const BANNER_PRESETS: string[] = [];
 
 const FELLOWSHIP_TEAMS = [
   "Worship Team",
@@ -60,44 +46,6 @@ const FELLOWSHIP_TEAMS = [
   "Media & Tech",
   "Executive Ministry",
   "Evangelism & Missions",
-];
-
-const STORY_HIGHLIGHTS = [
-  {
-    id: "h1",
-    title: "Sunday ⛪",
-    icon: "sparkles",
-    image: "https://images.unsplash.com/photo-1544427920-c49ccfb85579?auto=format&fit=crop&w=400&q=80",
-    quote: "Praise & Word Sunday Service highlights",
-  },
-  {
-    id: "h2",
-    title: "Worship 🎸",
-    icon: "musical-notes",
-    image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80",
-    quote: "Acoustic nights & campus choir rehearsals",
-  },
-  {
-    id: "h3",
-    title: "Camp '25 ⛺",
-    icon: "bonfire",
-    image: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=400&q=80",
-    quote: "Annual spiritual retreat & mountain prayer",
-  },
-  {
-    id: "h4",
-    title: "Outreach 🌱",
-    icon: "people",
-    image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=400&q=80",
-    quote: "Freshman welcome, dorm visits, & charity",
-  },
-  {
-    id: "h5",
-    title: "Testimony ✨",
-    icon: "heart",
-    image: "https://images.unsplash.com/photo-1499209974431-9dddcece7f88?auto=format&fit=crop&w=400&q=80",
-    quote: "God's goodness through finals & campus life",
-  },
 ];
 
 const TAB_ROUTES = [
@@ -137,7 +85,7 @@ export default function MemberProfileScreen() {
 
   const [tabIndex, setTabIndex] = useState(0);
   const [lightboxImage, setLightboxImage] = useState<any | null>(null);
-  const [highlights, setHighlights] = useState<any[]>(STORY_HIGHLIGHTS);
+  const [highlights, setHighlights] = useState<any[]>([]);
   const [ministries, setMinistries] = useState<any[]>([]);
 
   useEffect(() => {
@@ -157,8 +105,7 @@ export default function MemberProfileScreen() {
                   typeof h.cover === "string"
                     ? h.cover
                     : h.cover?.urls?.md ||
-                      h.image ||
-                      "https://images.unsplash.com/photo-1544427920-c49ccfb85579?auto=format&fit=crop&w=400&q=80",
+                      h.image,
                 quote: h.quote || h.title,
               })),
             );
@@ -183,11 +130,13 @@ export default function MemberProfileScreen() {
               mutualFollowers: {
                 names: res.users.map((u) => u.displayName || u.username),
                 count: res.total,
-                avatars: res.users.map((u) =>
-                  typeof u.avatar === "string"
-                    ? u.avatar
-                    : u.avatar?.urls?.sm || getPrefilledAvatar(u.id),
-                ),
+                avatars: res.users
+                  .map((u) =>
+                    typeof u.avatar === "string"
+                      ? u.avatar
+                      : u.avatar?.urls?.sm || null,
+                  )
+                  .filter((avatar): avatar is string => Boolean(avatar)),
               },
             });
           }
@@ -346,7 +295,7 @@ export default function MemberProfileScreen() {
               source={
                 typeof item.authorAvatar === "string"
                   ? { uri: item.authorAvatar }
-                  : item.authorAvatar || { uri: getPrefilledAvatar(item.authorHandle) }
+                  : item.authorAvatar || null
               }
               style={styles.feedAvatar}
               contentFit="cover"
@@ -649,7 +598,7 @@ export default function MemberProfileScreen() {
               source={
                 typeof item.authorAvatar === "string"
                   ? { uri: item.authorAvatar }
-                  : item.authorAvatar || { uri: getPrefilledAvatar(item.authorHandle) }
+                  : item.authorAvatar || null
               }
               style={styles.feedAvatar}
               contentFit="cover"

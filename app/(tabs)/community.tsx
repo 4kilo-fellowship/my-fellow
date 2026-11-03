@@ -130,12 +130,45 @@ export default function CommunityScreen() {
     try {
       Haptics.selectionAsync().catch(() => {});
       await Share.share({
-        message: `${post.content}\n\n— ${post.authorName} (${post.authorHandle}) on 4 Kilo Fellowship`,
+        message: `${post.content}\n\n— ${post.authorName} on 4 Kilo Fellowship\nmy-fellow://community/${post.id}`,
       });
     } catch {
       // ignore
     }
   };
+
+  const renderLoadingSkeleton = (
+    <View style={styles.skeletonCard} accessibilityLabel="Loading post">
+      <View
+        style={[
+          styles.skeletonAvatar,
+          { backgroundColor: isDark ? "#27272a" : "#e5e7eb" },
+        ]}
+      />
+      <View style={styles.skeletonBody}>
+        <View
+          style={[
+            styles.skeletonLine,
+            styles.skeletonLineShort,
+            { backgroundColor: isDark ? "#27272a" : "#e5e7eb" },
+          ]}
+        />
+        <View
+          style={[
+            styles.skeletonLine,
+            { backgroundColor: isDark ? "#27272a" : "#e5e7eb" },
+          ]}
+        />
+        <View
+          style={[
+            styles.skeletonLine,
+            styles.skeletonLineMedium,
+            { backgroundColor: isDark ? "#27272a" : "#e5e7eb" },
+          ]}
+        />
+      </View>
+    </View>
+  );
 
   const toggleExpand = (id: string) => {
     setExpandedPostIds((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -207,10 +240,11 @@ export default function CommunityScreen() {
             <View style={{ paddingVertical: 20, alignItems: "center" }}>
               <ActivityIndicator color={PRIMARY} size="small" />
             </View>
-          ) : undefined
-        }
+          ) : undefined}
         ListEmptyComponent={
-          !isForYouLoading ? (
+          isForYouLoading ? (
+            renderLoadingSkeleton
+          ) : (
             <View
               style={{
                 paddingVertical: 60,
@@ -246,7 +280,7 @@ export default function CommunityScreen() {
                 Be the first to share an encouragement or prayer with the fellowship!
               </Text>
             </View>
-          ) : undefined
+          )
         }
         refreshControl={
           <RefreshControl
@@ -313,13 +347,6 @@ export default function CommunityScreen() {
                         style={{ marginLeft: 3 }}
                       />
                     )}
-
-                    <Text
-                      numberOfLines={1}
-                      style={[styles.tweetHandle, { color: mutedColor }]}
-                    >
-                      {item.authorHandle}
-                    </Text>
 
                     <Text style={[styles.tweetMiddot, { color: mutedColor }]}>
                       ·
@@ -502,10 +529,11 @@ export default function CommunityScreen() {
             <View style={{ paddingVertical: 20, alignItems: "center" }}>
               <ActivityIndicator color={PRIMARY} size="small" />
             </View>
-          ) : undefined
-        }
+          ) : undefined}
         ListEmptyComponent={
-          !isFollowingLoading ? (
+          isFollowingLoading ? (
+            renderLoadingSkeleton
+          ) : (
             <View
               style={{
                 paddingVertical: 60,
@@ -541,8 +569,7 @@ export default function CommunityScreen() {
                 Follow fellow students to see their campus prayers and reflections here.
               </Text>
             </View>
-          ) : undefined
-        }
+          )}
         refreshControl={
           <RefreshControl
             refreshing={refreshingFollowing}
@@ -608,13 +635,6 @@ export default function CommunityScreen() {
                         style={{ marginLeft: 3 }}
                       />
                     )}
-
-                    <Text
-                      numberOfLines={1}
-                      style={[styles.tweetHandle, { color: mutedColor }]}
-                    >
-                      {item.authorHandle}
-                    </Text>
 
                     <Text style={[styles.tweetMiddot, { color: mutedColor }]}>
                       ·
@@ -796,15 +816,7 @@ export default function CommunityScreen() {
           },
         ]}
       >
-        <View
-          style={[
-            styles.searchPillWrapper,
-            {
-              backgroundColor: isDark ? "#202327" : "#f0f2f5",
-            },
-          ]}
-        >
-          <Pressable
+        <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
               router.push("/community/search");
@@ -816,7 +828,8 @@ export default function CommunityScreen() {
               borderless: false,
             }}
             style={({ pressed }) => [
-              styles.searchPressableInner,
+              styles.searchPillWrapper,
+              { backgroundColor: isDark ? "#202327" : "#f0f2f5" },
               pressed && Platform.OS === "ios" && { opacity: 0.7 },
             ]}
           >
@@ -837,7 +850,6 @@ export default function CommunityScreen() {
               </Text>
             </View>
           </Pressable>
-        </View>
       </View>
 
       {/* Feed Tabs: For you / Following - smooth animated TabView (AI Poster Studio style) */}
@@ -1066,6 +1078,32 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
     includeFontPadding: false,
     textAlignVertical: "center",
+  },
+  skeletonCard: {
+    flexDirection: "row",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+  },
+  skeletonAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+  },
+  skeletonBody: {
+    flex: 1,
+    gap: 10,
+  },
+  skeletonLine: {
+    width: "92%",
+    height: 12,
+    borderRadius: 6,
+  },
+  skeletonLineShort: {
+    width: "38%",
+  },
+  skeletonLineMedium: {
+    width: "68%",
   },
   tweetRow: {
     flexDirection: "row",

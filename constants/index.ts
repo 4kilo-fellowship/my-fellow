@@ -10,5 +10,4 @@ export * from "./programs";
 export * from "./quickActions";
 export * from "./team-leaders";
 export * from "./teams";
-export * from "./videos";
 export * from "./years";

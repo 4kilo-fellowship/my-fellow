@@ -4,7 +4,6 @@ import {
   ProfileDetail,
   SuggestedUser,
 } from "@/types/social.types";
-import { getPrefilledAvatar } from "@/utils/avatar";
 import { formatRelativeTime } from "@/utils/date";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
@@ -444,8 +443,6 @@ export function apiPostToCommunityPost(p: ApiPost): CommunityPost {
       p.author.avatar.urls.md ||
       p.author.avatar.urls.sm ||
       p.author.avatar.urls.lg;
-  } else {
-    avatarUrl = getPrefilledAvatar(p.author?.id || "fellow");
   }
 
   return {
@@ -485,8 +482,6 @@ export function apiProfileToMemberProfile(p: ProfileDetail): MemberProfile {
     avatar = p.avatar;
   } else if (p.avatar?.urls) {
     avatar = p.avatar.urls.lg || p.avatar.urls.md || p.avatar.urls.sm;
-  } else {
-    avatar = getPrefilledAvatar(p.id);
   }
 
   let banner: any = null;
@@ -494,20 +489,19 @@ export function apiProfileToMemberProfile(p: ProfileDetail): MemberProfile {
     banner = p.cover;
   } else if (p.cover?.urls) {
     banner = p.cover.urls.lg || p.cover.urls.md;
-  } else {
-    banner =
-      "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=1200&q=80";
   }
 
   const mutualPreview = p.followedByPreview || { total: 0, users: [] };
   const mutualNames = mutualPreview.users.map(
     (u) => u.displayName || u.username,
   );
-  const mutualAvatars = mutualPreview.users.map((u) => {
-    if (typeof u.avatar === "string") return u.avatar;
-    if (u.avatar?.urls) return u.avatar.urls.sm || u.avatar.urls.md;
-    return getPrefilledAvatar(u.id);
-  });
+  const mutualAvatars = mutualPreview.users
+    .map((u) => {
+      if (typeof u.avatar === "string") return u.avatar;
+      if (u.avatar?.urls) return u.avatar.urls.sm || u.avatar.urls.md;
+      return null;
+    })
+    .filter((avatar): avatar is string => Boolean(avatar));
 
   return {
     id: p.id,
@@ -515,28 +509,24 @@ export function apiProfileToMemberProfile(p: ProfileDetail): MemberProfile {
     handle: p.username?.startsWith("@") ? p.username : `@${p.username || "member"}`,
     avatar,
     banner,
-    team: p.fellowshipRole || p.ministryBadge || "Campus Ministry",
+    team: p.fellowshipRole || p.ministryBadge || "",
     department:
-      p.academic?.department || p.department || "Addis Ababa University",
+      p.academic?.department || p.department || "",
     academicYear:
       p.academic?.label ||
       (p.academic?.studyYear
         ? `${p.academic.studyYear} Year`
-        : p.academicYear || "AAU 4 Kilo"),
-    bio:
-      p.bio ||
-      "Rooted in Christ, walking in faith together with 4 Kilo Fellowship brothers and sisters. ✨",
-    streakDays: p.streak?.current ?? 1,
+        : p.academicYear || ""),
+    bio: p.bio || "",
+    streakDays: p.streak?.current ?? 0,
     followersCount: p.counts?.connects ?? 0,
     followingCount: p.counts?.following ?? 0,
     postsCount: p.counts?.reflections ?? 0,
     isFollowing: !!p.viewer?.following,
     telegramUsername:
       p.links?.find((l) => l.kind === "telegram")?.handle || p.username,
-    location: p.location || "4 Kilo Campus, Addis Ababa",
-    joinedDate: p.joinedAt
-      ? formatRelativeTime(p.joinedAt)
-      : "September 2022",
+    location: p.location || undefined,
+    joinedDate: p.joinedAt ? formatRelativeTime(p.joinedAt) : undefined,
     mutualFollowers: {
       names: mutualNames,
       count: mutualPreview.total,
@@ -556,11 +546,9 @@ export function apiSuggestedToSuggestedMember(
     avatarUrl = s.avatar;
   } else if (s.avatar?.urls) {
     avatarUrl = s.avatar.urls.md || s.avatar.urls.sm || "";
-  } else {
-    avatarUrl = getPrefilledAvatar(s.id);
   }
 
-  let dept = s.department || "Addis Ababa University";
+  let dept = s.department || "";
   if (s.academicYear) {
     dept = `${dept} • ${s.academicYear}`;
   }
@@ -568,7 +556,7 @@ export function apiSuggestedToSuggestedMember(
   return {
     id: s.id,
     name: s.displayName || s.username || "Fellowship Member",
-    role: s.fellowshipRole || "Fellowship Member",
+    role: s.fellowshipRole || "",
     department: dept,
     mutualCount: s.mutualCount ?? s.mutualPeersCount ?? 0,
     avatar: avatarUrl,
@@ -654,11 +642,11 @@ interface CommunityStore {
 export const useCommunityStore = create<CommunityStore>()(
   persist(
     (set, get) => ({
-      posts: INITIAL_FELLOWSHIP_POSTS,
-      forYouPosts: INITIAL_FELLOWSHIP_POSTS,
+      posts: [],
+      forYouPosts: [],
       followingPosts: [],
-      members: INITIAL_MEMBERS,
-      whoToFollow: DEFAULT_SUGGESTED_MEMBERS,
+      members: {},
+      whoToFollow: [],
       selectedCategory: "all",
       feedType: "foryou",
       feedCursor: null,
@@ -738,16 +726,15 @@ export const useCommunityStore = create<CommunityStore>()(
                   avatar:
                     typeof auth.avatar === "string"
                       ? auth.avatar
-                      : auth.avatar?.urls?.md || getPrefilledAvatar(auth.id),
-                  banner:
-                    "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=1200&q=80",
+                      : auth.avatar?.urls?.md || null,
+                  banner: null,
                   team:
                     auth.fellowshipRole ||
                     auth.ministryBadge ||
-                    "Campus Ministry",
-                  department: auth.department || "Addis Ababa University",
-                  academicYear: auth.academicYear || "AAU 4 Kilo",
-                  bio: "Rooted in Christ with 4 Kilo Fellowship brothers and sisters.",
+                    "",
+                  department: auth.department || "",
+                  academicYear: auth.academicYear || "",
+                  bio: "",
                   streakDays: 1,
                   followersCount: 1,
                   followingCount: 1,
@@ -1037,8 +1024,8 @@ export const useCommunityStore = create<CommunityStore>()(
             : `@${(payload.author?.fullName || "member").toLowerCase().replace(/\s+/g, "")}`,
           authorAvatar:
             payload.author?.profileImage ||
-            getPrefilledAvatar(payload.author?.id || "fellow"),
-          authorTeam: payload.author?.team || "Campus Ministry",
+            null,
+          authorTeam: payload.author?.team || "",
           isVerified: false,
           timestamp: "Just now",
           content: payload.body,
@@ -1168,8 +1155,7 @@ export const useCommunityStore = create<CommunityStore>()(
               authorAvatar:
                 typeof r.author?.avatar === "string"
                   ? r.author.avatar
-                  : r.author?.avatar?.urls?.md ||
-                    getPrefilledAvatar(r.author?.id),
+                  : r.author?.avatar?.urls?.md || null,
               timestamp: formatRelativeTime(r.createdAt),
               content: r.body || "",
               likesCount: r.counts?.likes ?? 0,
@@ -1284,8 +1270,31 @@ export const useCommunityStore = create<CommunityStore>()(
     {
       name: "fellowship-community-cache",
       storage: createJSONStorage(() => AsyncStorage),
+      version: 2,
+      migrate: () => ({
+        posts: [],
+        forYouPosts: [],
+        followingPosts: [],
+        members: {},
+        whoToFollow: [],
+        selectedCategory: "all" as CommunityCategory,
+        feedType: "foryou" as const,
+        feedCursor: null,
+        forYouCursor: null,
+        followingCursor: null,
+        hasMoreFeed: true,
+        hasMoreForYou: true,
+        hasMoreFollowing: true,
+        isFeedLoading: false,
+        isForYouLoading: false,
+        isFollowingLoading: false,
+        isRefreshing: false,
+        searchHistory: [],
+      }),
       partialize: (state) => ({
         posts: state.posts,
+        forYouPosts: state.forYouPosts,
+        followingPosts: state.followingPosts,
         members: state.members,
         whoToFollow: state.whoToFollow,
         selectedCategory: state.selectedCategory,

@@ -111,7 +111,7 @@ export default function PostDetailScreen() {
     try {
       Haptics.selectionAsync().catch(() => {});
       await Share.share({
-        message: `${post.content}\n\n— ${post.authorName} (${post.authorHandle}) on 4 Kilo Fellowship`,
+        message: `${post.content}\n\n— ${post.authorName} on 4 Kilo Fellowship\nmy-fellow://community/${post.id}`,
       });
     } catch {}
   };
