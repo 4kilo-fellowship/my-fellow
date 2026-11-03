@@ -583,6 +583,31 @@ export default function Devotions() {
                   </ScrollView>
                 </View>
               )}
+
+              {/* 4. CTA: Apply to Write */}
+              <View style={styles.ctaContainer}>
+                <View style={styles.ctaIconCircle}>
+                  <Ionicons name="create-outline" size={24} color="#52525b" />
+                </View>
+                <Text style={styles.ctaTitle}>Want to Share Your Faith?</Text>
+                <Text style={styles.ctaSubtitle}>
+                  Share your devotional insights and encourage the fellowship
+                  community through writing.
+                </Text>
+                <Pressable
+                  android_ripple={{ color: "rgba(0,0,0,0.08)" }}
+                  style={({ pressed }) => [
+                    styles.ctaButton,
+                    Platform.OS === "ios" && pressed && { opacity: 0.85 },
+                  ]}
+                  onPress={() => {
+                    try { Haptics.selectionAsync(); } catch {}
+                    router.push("/help" as never);
+                  }}
+                >
+                  <Text style={styles.ctaButtonText}>Apply to Write</Text>
+                </Pressable>
+              </View>
             </ScrollView>
           )}
         </View>
@@ -810,7 +835,7 @@ const styles = StyleSheet.create({
   },
   // Compact Vertical Card (Inspiration from screenshot)
   compactCardOuter: {
-    width: 175,
+    width: 190,
     backgroundColor: "#ffffff",
     borderRadius: 18,
     borderWidth: 1,
@@ -855,7 +880,7 @@ const styles = StyleSheet.create({
     color: "#09090b",
     lineHeight: 18,
     marginBottom: 8,
-    height: 36,
+    minHeight: 36,
   },
   compactFooter: {
     flexDirection: "row",
@@ -1100,5 +1125,55 @@ const styles = StyleSheet.create({
     color: "#71717a",
     textAlign: "center",
     lineHeight: 18,
+  },
+  // CTA Section
+  ctaContainer: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 16,
+    paddingVertical: 28,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    backgroundColor: "#fafafa",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+  },
+  ctaIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#f4f4f5",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  ctaTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#09090b",
+    marginBottom: 6,
+    textAlign: "center",
+    letterSpacing: -0.2,
+  },
+  ctaSubtitle: {
+    fontSize: 13,
+    color: "#71717a",
+    textAlign: "center",
+    lineHeight: 18,
+    marginBottom: 18,
+    maxWidth: 260,
+  },
+  ctaButton: {
+    backgroundColor: "#09090b",
+    paddingHorizontal: 24,
+    paddingVertical: 11,
+    borderRadius: 10,
+  },
+  ctaButtonText: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "700",
+    letterSpacing: -0.1,
   },
 });
