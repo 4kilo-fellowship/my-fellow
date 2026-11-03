@@ -234,6 +234,12 @@ export default function OtpVerifyScreen() {
     router.back();
   };
 
+  const dismissCodeInput = () => {
+    inputRef.current?.blur();
+    setIsFocused(false);
+    Keyboard.dismiss();
+  };
+
   return (
     <SafeAreaView
       edges={isKeyboardVisible ? ["top"] : ["top", "bottom"]}
@@ -283,7 +289,10 @@ export default function OtpVerifyScreen() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 48 : 0}
         style={styles.keyboardAvoid}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <TouchableWithoutFeedback
+          onPress={dismissCodeInput}
+          accessible={false}
+        >
           <ScrollView
             ref={scrollViewRef}
             contentContainerStyle={styles.scrollContent}
@@ -581,7 +590,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignSelf: "center",
     marginTop: 8,
-    marginBottom: 18,
+    marginBottom: 26,
     paddingVertical: 5,
     paddingHorizontal: 12,
     borderRadius: 20,
@@ -589,7 +598,7 @@ const styles = StyleSheet.create({
   },
   phoneRowCompact: {
     marginTop: 4,
-    marginBottom: 12,
+    marginBottom: 18,
     paddingVertical: 3,
     paddingHorizontal: 10,
   },
