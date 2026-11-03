@@ -341,7 +341,7 @@ export default function OtpVerifyScreen() {
                 We sent a 6-digit verification code to
               </Text>
 
-              {/* Phone display with Interactive Edit badge */}
+              {/* Tapping the phone number returns to the previous step. */}
               <Pressable
                 onPress={handleEditPhone}
                 hitSlop={8}
@@ -490,16 +490,35 @@ export default function OtpVerifyScreen() {
                   hitSlop={10}
                   style={({ pressed }) => [
                     styles.resendButton,
-                    cooldown > 0 && styles.resendButtonDisabled,
+                    cooldown > 0
+                      ? [
+                          styles.resendButtonDisabled,
+                          {
+                            backgroundColor: isDark ? "#27272A" : "#E5E7EB",
+                          },
+                        ]
+                      : styles.resendButtonAvailable,
                     pressed && cooldown === 0 && styles.resendButtonPressed,
                   ]}
                 >
                   {resending ? (
                     <ActivityIndicator size="small" color={PRIMARY} />
                   ) : cooldown > 0 ? (
-                    <Text style={styles.cooldownText}>
+                    <Text
+                      style={[
+                        styles.cooldownText,
+                        { color: isDark ? "#A1A1AA" : "#6B7280" },
+                      ]}
+                    >
                       Resend code in{" "}
-                      <Text style={styles.cooldownNumber}>{cooldown}s</Text>
+                      <Text
+                        style={[
+                          styles.cooldownNumber,
+                          { color: isDark ? "#D4D4D8" : "#4B5563" },
+                        ]}
+                      >
+                        {cooldown}s
+                      </Text>
                     </Text>
                   ) : (
                     <Text style={styles.resendText}>Resend code</Text>
@@ -612,6 +631,7 @@ const styles = StyleSheet.create({
   otpWrapper: {
     width: "100%",
     alignItems: "center",
+    marginTop: 16,
     marginBottom: 20,
   },
   inputWrapper: {
@@ -744,16 +764,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   resendButtonDisabled: {
-    opacity: 0.72,
-    backgroundColor: "rgba(255, 103, 25, 0.08)",
+    opacity: 1,
+  },
+  resendButtonAvailable: {
+    backgroundColor: PRIMARY,
   },
   resendButtonPressed: {
-    backgroundColor: "rgba(255, 103, 25, 0.14)",
+    opacity: 0.82,
   },
   resendText: {
     fontSize: 14,
     fontWeight: "700",
-    color: PRIMARY,
+    color: "#FFFFFF",
     textAlign: "center",
   },
 });
