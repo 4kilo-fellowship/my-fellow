@@ -352,15 +352,10 @@ export default function OtpVerifyScreen() {
                   pressed && { opacity: 0.75, transform: [{ scale: 0.98 }] },
                 ]}
               >
-                <Ionicons
-                  name="call-outline"
-                  size={14}
-                  color={isDark ? "#94A3B8" : "#64748B"}
-                />
                 <Text
                   style={[
                     styles.phoneText,
-                    { color: isDark ? "#FFFFFF" : "#111827" },
+                    { color: PRIMARY },
                   ]}
                 >
                   {formatDisplayPhone(phone)}
@@ -603,23 +598,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",
-    gap: 10,
+    gap: 8,
     marginTop: 8,
     marginBottom: 22,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 20,
     borderWidth: 1,
   },
   phoneRowCompact: {
     marginTop: 4,
     marginBottom: 12,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
   },
   phoneText: {
-    fontSize: 17,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 20,
     fontWeight: "700",
     letterSpacing: 0.3,
   },
@@ -628,13 +623,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 3,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 9,
   },
   editText: {
-    fontSize: 14,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 15,
     fontWeight: "700",
     color: PRIMARY,
     includeFontPadding: false,
@@ -646,9 +641,9 @@ const styles = StyleSheet.create({
   },
   inputWrapper: {
     width: "100%",
-    minHeight: 72,
-    height: 72,
-    borderRadius: 16,
+    minHeight: 60,
+    height: 60,
+    borderRadius: 14,
     borderWidth: 1.5,
     justifyContent: "center",
     alignItems: "center",
@@ -685,16 +680,16 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   inputEmpty: {
-    fontSize: 24,
-    lineHeight: 30,
-    fontWeight: "700",
-    letterSpacing: 1,
+    fontSize: 21,
+    lineHeight: 26,
+    fontWeight: "600",
+    letterSpacing: 0.5,
   },
   inputWithDigits: {
-    fontSize: 24,
-    lineHeight: 30,
+    fontSize: 21,
+    lineHeight: 26,
     fontWeight: "700",
-    letterSpacing: 8,
+    letterSpacing: 6,
   },
   inputError: {
     color: "#EF4444",
