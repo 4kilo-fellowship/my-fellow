@@ -56,13 +56,13 @@ const QuickAction = ({ item, isDark = false, onPress }: QuickActionProps) => {
             {isSocial ? (
               <FontAwesome5
                 name={item.icon}
-                size={28}
+                size={31}
                 color={isDark ? "#f1f5f9" : "#0f172a"}
               />
             ) : (
               <Ionicons
                 name={item.icon}
-                size={30}
+                size={33}
                 color={isDark ? "#f1f5f9" : "#0f172a"}
               />
             )}
