@@ -254,13 +254,19 @@ export default function ManageLocationScreen() {
         router.back();
       }, 1200);
     } catch (err: any) {
+      const isOffline =
+        !err?.response &&
+        (err?.message?.includes("Network") ||
+          err?.code === "ECONNABORTED" ||
+          err?.code === "ERR_NETWORK");
       setInfoModal({
         visible: true,
-        title: "Save Failed",
-        message:
-          err?.response?.data?.message ||
-          err?.message ||
-          "Could not save location.",
+        title: isOffline ? "Connection Issue" : "Save Failed",
+        message: isOffline
+          ? "Network connection issue. Please check your internet connection and try again. Your form inputs have been preserved."
+          : err?.response?.data?.message ||
+            err?.message ||
+            "Could not save location.",
         type: "error",
       });
     } finally {
@@ -287,13 +293,19 @@ export default function ManageLocationScreen() {
         router.back();
       }, 1000);
     } catch (err: any) {
+      const isOffline =
+        !err?.response &&
+        (err?.message?.includes("Network") ||
+          err?.code === "ECONNABORTED" ||
+          err?.code === "ERR_NETWORK");
       setInfoModal({
         visible: true,
-        title: "Delete Failed",
-        message:
-          err?.response?.data?.message ||
-          err?.message ||
-          "Could not delete location.",
+        title: isOffline ? "Connection Issue" : "Delete Failed",
+        message: isOffline
+          ? "Network connection issue. Please check your internet connection and try again."
+          : err?.response?.data?.message ||
+            err?.message ||
+            "Could not delete location.",
         type: "error",
       });
     } finally {

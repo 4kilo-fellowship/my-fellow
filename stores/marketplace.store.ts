@@ -374,6 +374,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         cartItems: state.cartItems,
+        products: state.products,
       }),
     },
   ),
