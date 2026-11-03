@@ -26,7 +26,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const CODE_LENGTH = 6;
-const DEFAULT_RESEND_SECONDS = 15;
+const DEFAULT_RESEND_SECONDS = 60;
 
 export default function OtpVerifyScreen() {
   const router = useRouter();
@@ -352,27 +352,9 @@ export default function OtpVerifyScreen() {
                   pressed && { opacity: 0.75, transform: [{ scale: 0.98 }] },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.phoneText,
-                    { color: PRIMARY },
-                  ]}
-                >
+                <Text style={styles.phoneText}>
                   {formatDisplayPhone(phone)}
                 </Text>
-                <View
-                  style={[
-                    styles.editBadge,
-                    {
-                      backgroundColor: isDark
-                        ? "rgba(255, 103, 25, 0.15)"
-                        : "#FFF7ED",
-                    },
-                  ]}
-                >
-                  <Ionicons name="pencil" size={11} color={PRIMARY} />
-                  <Text style={styles.editText}>Edit</Text>
-                </View>
               </Pressable>
 
               {/* Unified Clean OTP Input Box */}
@@ -598,10 +580,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",
-    gap: 8,
     marginTop: 8,
-    marginBottom: 22,
-    paddingVertical: 6,
+    marginBottom: 18,
+    paddingVertical: 5,
     paddingHorizontal: 12,
     borderRadius: 20,
     borderWidth: 1,
@@ -609,30 +590,15 @@ const styles = StyleSheet.create({
   phoneRowCompact: {
     marginTop: 4,
     marginBottom: 12,
-    paddingVertical: 4,
+    paddingVertical: 3,
     paddingHorizontal: 10,
   },
   phoneText: {
-    fontSize: 15,
+    fontSize: 16,
     lineHeight: 20,
     fontWeight: "700",
     letterSpacing: 0.3,
-  },
-  editBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 3,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 9,
-  },
-  editText: {
-    fontSize: 12,
-    lineHeight: 15,
-    fontWeight: "700",
     color: PRIMARY,
-    includeFontPadding: false,
   },
   otpWrapper: {
     width: "100%",
@@ -641,9 +607,9 @@ const styles = StyleSheet.create({
   },
   inputWrapper: {
     width: "100%",
-    minHeight: 60,
-    height: 60,
-    borderRadius: 14,
+    minHeight: 56,
+    height: 56,
+    borderRadius: 13,
     borderWidth: 1.5,
     justifyContent: "center",
     alignItems: "center",
@@ -680,14 +646,14 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   inputEmpty: {
-    fontSize: 21,
-    lineHeight: 26,
+    fontSize: 20,
+    lineHeight: 25,
     fontWeight: "600",
     letterSpacing: 0.5,
   },
   inputWithDigits: {
-    fontSize: 21,
-    lineHeight: 26,
+    fontSize: 20,
+    lineHeight: 25,
     fontWeight: "700",
     letterSpacing: 6,
   },
