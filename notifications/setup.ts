@@ -49,6 +49,14 @@ export async function setupNotifications(): Promise<void> {
         vibrationPattern: [0, 250, 250, 250],
         enableVibrate: true,
       });
+
+      await Notifications.setNotificationChannelAsync("default", {
+        name: "General Notifications",
+        description: "General alerts and updates",
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        enableVibrate: true,
+      });
     }
 
     // Register actionable notification categories

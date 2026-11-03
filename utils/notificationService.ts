@@ -1,91 +1,83 @@
-import Constants, { ExecutionEnvironment } from "expo-constants";
+import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
+import Constants, { ExecutionEnvironment } from "expo-constants";
+import { REMINDER_CHANNEL_ID } from "@/notifications/config";
 
-let Notifications: any;
 const isExpoGo =
   Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
-const getNotificationsLib = () => {
-  if (!Notifications) {
-    try {
-      Notifications = require("expo-notifications");
-      Notifications.setNotificationHandler({
-        handleNotification: async () => ({
-          shouldShowAlert: true,
-          shouldPlaySound: true,
-          shouldSetBadge: true,
-        }),
-      });
-    } catch (e) {
-      console.warn("Failed to load expo-notifications:", e);
-    }
-  }
-  return Notifications;
-};
-
-export const registerForPushNotificationsAsync = async () => {
-  const notifications = getNotificationsLib();
-  if (!notifications) return;
-
-  const { status: existingStatus } = await notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
-
-  if (existingStatus !== "granted") {
-    const { status } = await notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
-
-  if (finalStatus !== "granted") return;
-
-  if (Platform.OS === "android") {
-    await notifications.setNotificationChannelAsync("default", {
-      name: "default",
-      importance: notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#FF231F7C",
-      enableVibrate: true,
-    });
-  }
-
-  // Push token retrieval is only possible in built apps or specific Expo Go scenarios
-  if (isExpoGo) return;
-
+/**
+ * Push notification token registration for remote server pushes.
+ * Only requested when network connectivity and EAS credentials are present.
+ */
+export const registerForPushNotificationsAsync = async (): Promise<string | undefined> => {
   try {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    if (finalStatus !== "granted") return;
+
+    if (Platform.OS === "android") {
+      await Notifications.setNotificationChannelAsync(REMINDER_CHANNEL_ID, {
+        name: "Event Reminders",
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        enableVibrate: true,
+      });
+    }
+
+    if (isExpoGo) return;
+
     const projectId =
       Constants?.expoConfig?.extra?.eas?.projectId ??
       Constants?.easConfig?.projectId;
     if (!projectId) return;
-    return (await notifications.getExpoPushTokenAsync({ projectId })).data;
+
+    return (await Notifications.getExpoPushTokenAsync({ projectId })).data;
   } catch (e) {
-    console.warn("Error retrieving push token:", e);
+    console.warn("[notificationService] Push token registration skipped or offline:", e);
   }
 };
 
+/**
+ * Ensures local notification permissions without requiring network or push tokens.
+ */
+export const ensureLocalNotificationPermissionAsync = async (): Promise<boolean> => {
+  try {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    if (existingStatus === "granted") return true;
+
+    const { status } = await Notifications.requestPermissionsAsync();
+    return status === "granted";
+  } catch (e) {
+    console.warn("[notificationService] Local permission check failed:", e);
+    return false;
+  }
+};
+
+/**
+ * Schedules a local notification for reminders, habits, or programs.
+ * Operates 100% offline using native device alarms.
+ */
 export const scheduleNotification = async (
   title: string,
   body: string,
   date: Date,
   id?: string,
   repeats?: "daily" | "weekly" | "none",
-) => {
-  await registerForPushNotificationsAsync();
-  const notifications = getNotificationsLib();
-  if (!notifications) return;
-
-  if (Platform.OS === "android") {
-    await notifications.setNotificationChannelAsync("default", {
-      name: "default",
-      importance: notifications.AndroidImportance.MAX,
-      enableVibrate: true,
-      vibrationPattern: [0, 250, 250, 250],
-    });
-  }
+): Promise<void> => {
+  const hasPermission = await ensureLocalNotificationPermissionAsync();
+  if (!hasPermission) return;
 
   const SchedulableTriggerInputTypes =
-    notifications.SchedulableTriggerInputTypes;
+    Notifications.SchedulableTriggerInputTypes;
 
-  let trigger: any;
-
+  let trigger: Notifications.NotificationTriggerInput;
   const scheduledDate = new Date(date);
 
   if (repeats === "daily") {
@@ -93,85 +85,86 @@ export const scheduleNotification = async (
       type: SchedulableTriggerInputTypes.DAILY,
       hour: scheduledDate.getHours(),
       minute: scheduledDate.getMinutes(),
-      channelId: Platform.OS === "android" ? "default" : undefined,
+      channelId: Platform.OS === "android" ? REMINDER_CHANNEL_ID : undefined,
     };
   } else if (repeats === "weekly") {
     const jsDay = scheduledDate.getDay();
-    const expoWeekday = jsDay + 1;
+    const expoWeekday = jsDay + 1; // Expo expects 1-7 (Sunday=1)
 
     trigger = {
       type: SchedulableTriggerInputTypes.WEEKLY,
       weekday: expoWeekday,
       hour: scheduledDate.getHours(),
       minute: scheduledDate.getMinutes(),
-      channelId: Platform.OS === "android" ? "default" : undefined,
+      channelId: Platform.OS === "android" ? REMINDER_CHANNEL_ID : undefined,
     };
   } else {
     if (scheduledDate.getTime() <= Date.now()) {
       return;
     }
 
-    trigger = scheduledDate;
+    trigger = {
+      type: SchedulableTriggerInputTypes.DATE,
+      date: scheduledDate,
+      channelId: Platform.OS === "android" ? REMINDER_CHANNEL_ID : undefined,
+    };
   }
 
   try {
-    await notifications.scheduleNotificationAsync({
+    if (id) {
+      await Notifications.cancelScheduledNotificationAsync(id).catch(() => {});
+    }
+
+    await Notifications.scheduleNotificationAsync({
       identifier: id,
       content: {
         title,
         body,
         sound: "default",
         data: { id },
-        channelId: Platform.OS === "android" ? "default" : undefined,
-        priority: notifications.AndroidNotificationPriority?.MAX,
+        categoryIdentifier: "reminder",
+        priority: Notifications.AndroidNotificationPriority.HIGH,
       },
       trigger,
     });
   } catch (e) {
-    console.error("Failed to schedule notification:", e);
+    console.error("[notificationService] Failed to schedule notification:", e);
   }
 };
 
+/**
+ * Sends an immediate in-app local notification banner.
+ */
 export const sendImmediateNotification = async (
   title: string,
   body: string,
   id?: string,
-) => {
-  await registerForPushNotificationsAsync();
-  const notifications = getNotificationsLib();
-  if (!notifications) return;
-
-  if (Platform.OS === "android") {
-    await notifications.setNotificationChannelAsync("default", {
-      name: "default",
-      importance: notifications.AndroidImportance.MAX,
-      enableVibrate: true,
-      vibrationPattern: [0, 250, 250, 250],
-    });
-  }
+): Promise<void> => {
+  const hasPermission = await ensureLocalNotificationPermissionAsync();
+  if (!hasPermission) return;
 
   try {
-    await notifications.scheduleNotificationAsync({
+    await Notifications.scheduleNotificationAsync({
       identifier: id,
       content: {
         title,
         body,
         sound: "default",
         data: { id },
-        channelId: Platform.OS === "android" ? "default" : undefined,
-        priority: notifications.AndroidNotificationPriority?.MAX,
+        priority: Notifications.AndroidNotificationPriority.HIGH,
       },
       trigger: null,
     });
   } catch (e) {
-    console.error("Failed to send immediate notification:", e);
+    console.error("[notificationService] Failed to send immediate notification:", e);
   }
 };
 
-export const cancelNotification = async (id: string) => {
-  const notifications = getNotificationsLib();
-  if (!notifications) return;
+/**
+ * Cancels a scheduled local notification by ID.
+ */
+export const cancelNotification = async (id: string): Promise<void> => {
   try {
-    await notifications.cancelScheduledNotificationAsync(id);
+    await Notifications.cancelScheduledNotificationAsync(id);
   } catch (e) {}
 };
