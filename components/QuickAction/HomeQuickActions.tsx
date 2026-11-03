@@ -37,53 +37,43 @@ const QuickAction = ({ item, isDark = false, onPress }: QuickActionProps) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.iconBoxRelative}>
-        <View
-          style={[
-            styles.iconBoxOuter,
-            { backgroundColor: isDark ? "#262626" : "#f1f5f9" },
-          ]}
+      <View
+        style={[
+          styles.iconBoxOuter,
+          { backgroundColor: isDark ? "#262626" : "#f1f5f9" },
+        ]}
+      >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={item.label}
+          onPress={handlePress}
+          unstable_pressDelay={0}
+          android_ripple={{
+            color: rippleColor,
+            borderless: false,
+            foreground: true,
+          }}
+          style={styles.iconPressable}
         >
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={item.label}
-            onPress={handlePress}
-            unstable_pressDelay={0}
-            android_ripple={{
-              color: rippleColor,
-              borderless: false,
-              foreground: true,
-            }}
-            style={styles.iconPressable}
-          >
-            <View style={styles.iconCenterWrapper}>
-              {isSocial ? (
-                <FontAwesome5
-                  name={item.icon}
-                  size={31}
-                  color={isDark ? "#f1f5f9" : "#0f172a"}
-                />
-              ) : (
-                <Ionicons
-                  name={item.icon}
-                  size={33}
-                  color={isDark ? "#f1f5f9" : "#0f172a"}
-                />
-              )}
-            </View>
-          </Pressable>
-        </View>
+          <View style={styles.iconCenterWrapper}>
+            {isSocial ? (
+              <FontAwesome5
+                name={item.icon}
+                size={31}
+                color={isDark ? "#f1f5f9" : "#0f172a"}
+              />
+            ) : (
+              <Ionicons
+                name={item.icon}
+                size={33}
+                color={isDark ? "#f1f5f9" : "#0f172a"}
+              />
+            )}
+          </View>
+        </Pressable>
 
         {isNew && (
-          <View
-            pointerEvents="none"
-            style={[
-              styles.badgeContainer,
-              {
-                borderColor: isDark ? "#121212" : "#ffffff",
-              },
-            ]}
-          >
+          <View pointerEvents="none" style={styles.badgeContainer}>
             <Text style={styles.badgeText}>NEW</Text>
           </View>
         )}
@@ -111,46 +101,35 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     width: 68,
     marginRight: 8,
-    paddingTop: 6,
-  },
-  iconBoxRelative: {
-    position: "relative",
-    width: 56,
-    height: 56,
-  },
-  badgeContainer: {
-    position: "absolute",
-    top: -4,
-    right: 0,
-    backgroundColor: PRIMARY,
-    paddingHorizontal: 4.5,
-    paddingVertical: 1,
-    borderRadius: 6,
-    borderWidth: 1.2,
-    zIndex: 10,
-    elevation: 3,
-    shadowColor: PRIMARY,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badgeText: {
-    color: "#ffffff",
-    fontSize: 7.5,
-    fontWeight: "900",
-    letterSpacing: 0.3,
-    includeFontPadding: false,
-    lineHeight: 10,
   },
   iconBoxOuter: {
+    position: "relative",
     width: 56,
     height: 56,
     borderRadius: 16,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
+  },
+  badgeContainer: {
+    position: "absolute",
+    top: 3.5,
+    right: 3.5,
+    backgroundColor: PRIMARY,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 5,
+    zIndex: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badgeText: {
+    color: "#ffffff",
+    fontSize: 7,
+    fontWeight: "900",
+    letterSpacing: 0.2,
+    includeFontPadding: false,
+    lineHeight: 9,
   },
   iconPressable: {
     width: "100%",
