@@ -29,7 +29,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as z from "zod";
 
 type DonationForm = z.infer<typeof donationSchema>;
@@ -47,7 +46,6 @@ const CATEGORIES = [
 const Gifts = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const { top } = useSafeAreaInsets();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -139,22 +137,29 @@ const Gifts = () => {
   const verifyPayment = async (ref: string) => {
     setLoading(true);
     try {
-      const response = await api.get(`/payments/chapa/verify/${ref}`);
+      const endpoint = ref.startsWith("fellow-tx-")
+        ? `/payments/chapa/verify/${ref}`
+        : `/payments/jami/verify/${ref}`;
+      const response = await api.get(endpoint);
       const status = response.data.status || response.data.data?.status;
       if (status === "success" || status === "completed") {
         showInfoModal(
           "Payment Successful",
-          "Thank you for your donation!",
+          "Thank you for your generous gift to the fellowship!",
           "success",
         );
         fetchMyGivings();
       } else {
-        showInfoModal("Payment Failed", "Please try again.", "error");
+        showInfoModal(
+          "Payment Incomplete",
+          "The payment was not completed or was cancelled. Please try again.",
+          "error",
+        );
       }
     } catch (error) {
       showInfoModal(
         "Verification Error",
-        "Could not confirm payment status.",
+        "Could not confirm payment status with the server.",
         "error",
       );
     } finally {
@@ -192,32 +197,47 @@ const Gifts = () => {
       const payload = {
         amount: data.amount,
         email: data.email.trim(),
+        phone: user?.phoneNumber,
         reason: reason,
+        returnUrl: "https://my-fellow-api-6v2i.onrender.com/api/payments/success",
       };
 
-      const response = await api.post("/payments/chapa/init", payload);
+      const response = await api.post("/payments/jami/init", payload);
       const checkout_url =
-        response.data.checkout_url || response.data.data?.checkout_url;
-      const tx_ref = response.data.tx_ref || response.data.data?.tx_ref;
+        response.data.data?.checkout_url || response.data.checkout_url;
+      const sessionOrRef =
+        response.data.data?.sessionId ||
+        response.data.sessionId ||
+        response.data.data?.tx_ref ||
+        response.data.tx_ref;
 
       if (!checkout_url) {
         throw new Error("Invalid checkout URL received from server");
       }
 
-      setTxRef(tx_ref);
+      setTxRef(sessionOrRef);
 
       // Persist email for future use since it's not in the account
       if (data.email) {
         await AsyncStorage.setItem("last_donation_email", data.email);
       }
 
-      await WebBrowser.openBrowserAsync(checkout_url);
+      // openAuthSessionAsync catches redirect back to my-fellow://payment-status and auto-dismisses
+      await WebBrowser.openAuthSessionAsync(
+        checkout_url,
+        "my-fellow://payment-status",
+      );
+
+      // Verify payment when browser session finishes or redirects
+      if (sessionOrRef) {
+        await verifyPayment(sessionOrRef);
+      }
     } catch (error: any) {
       console.error("Payment initialization failed:", error);
       showInfoModal(
         "Error",
-        error.message ||
-          error.response?.data?.message ||
+        error.response?.data?.message ||
+          error.message ||
           "Failed to start payment process.",
         "error",
       );
@@ -235,18 +255,9 @@ const Gifts = () => {
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
-        <MainTabHeader borderBottom={true} />
+        <MainTabHeader borderBottom={true} title="Gifts" />
 
-        <View style={{ flex: 1, paddingTop: 10 }}>
-          {/* header section */}
-          <View className="px-5 mb-4">
-            <Text
-              className={`text-2xl font-extrabold ${isDark ? "text-white" : "text-black"}`}
-            >
-              Gifts
-            </Text>
-          </View>
-
+        <View style={{ flex: 1 }}>
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 140 }}
@@ -281,95 +292,51 @@ const Gifts = () => {
               </Text>
             </View>
 
-            {/* Partner Plans Banner */}
+            {/* Total Givings Native Button */}
             <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={() => router.push("/subscription" as any)}
-              className="mx-5 mb-5 overflow-hidden rounded-[32px] border-2 border-orange-500/30 shadow-lg shadow-orange-500/15"
+              activeOpacity={0.7}
+              onPress={() => router.push("/givings" as any)}
+              accessibilityRole="button"
+              accessibilityLabel="View your total givings"
+              className={`mx-5 mb-8 p-4 rounded-2xl flex-row items-center justify-between border ${
+                isDark
+                  ? "bg-zinc-900/60 border-zinc-800"
+                  : "bg-white border-zinc-200"
+              }`}
             >
-              <View
-                className={`p-6 flex-row items-center justify-between ${
-                  isDark ? "bg-zinc-900" : "bg-white"
-                }`}
-              >
-                <View className="flex-row items-center gap-4 flex-1">
-                  <View className="w-14 h-14 rounded-2xl bg-orange-500/10 items-center justify-center">
-                    <Ionicons name="diamond" size={28} color="#ff6719" />
-                  </View>
-                  <View className="flex-1">
-                    <View className="flex-row items-center gap-2 mb-1">
-                      <Text
-                        className={`text-[10px] font-black uppercase tracking-[2px] ${
-                          isDark ? "text-orange-400" : "text-orange-600"
-                        }`}
-                      >
-                        Partner Plans
-                      </Text>
-                      <View className="bg-orange-500 px-2 py-0.5 rounded-full">
-                        <Text className="text-white text-[9px] font-black">PRO</Text>
-                      </View>
-                    </View>
-                    <Text
-                      className={`text-lg font-black ${
-                        isDark ? "text-white" : "text-black"
-                      }`}
-                    >
-                      Invest in Your Growth
-                    </Text>
-                    <Text
-                      className={`text-xs font-semibold ${
-                        isDark ? "text-zinc-400" : "text-zinc-500"
-                      }`}
-                    >
-                      Explore seasonal partner & study tiers
-                    </Text>
-                  </View>
+              <View className="flex-row items-center gap-3.5">
+                <View className="w-12 h-12 rounded-xl bg-orange-500/10 items-center justify-center">
+                  <Ionicons name="gift" size={24} color="#ff6719" />
                 </View>
-                <View className="w-10 h-10 rounded-full bg-orange-500/10 items-center justify-center ml-2">
-                  <Ionicons name="arrow-forward" size={18} color="#ff6719" />
+                <View>
+                  <Text
+                    className={`text-[11px] font-bold uppercase tracking-wider mb-0.5 ${
+                      isDark ? "text-zinc-400" : "text-zinc-500"
+                    }`}
+                  >
+                    Your Total Givings
+                  </Text>
+                  <Text
+                    className={`text-xl font-black ${
+                      isDark ? "text-white" : "text-black"
+                    }`}
+                  >
+                    {totalGivingsAmount.toLocaleString()} ETB
+                  </Text>
                 </View>
               </View>
-            </TouchableOpacity>
-
-            {/* Total Givings Card */}
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={() => router.push("/givings" as any)}
-              className="mx-5 mb-10 overflow-hidden rounded-[32px] shadow-xl shadow-orange-500/20"
-            >
               <View
-                className={`p-6 flex-row items-center justify-between ${
-                  isDark ? "bg-zinc-900" : "bg-white"
-                } border ${isDark ? "border-zinc-800" : "border-zinc-100"}`}
+                className={`w-9 h-9 rounded-full items-center justify-center border ${
+                  isDark
+                    ? "bg-zinc-800/80 border-zinc-700/60"
+                    : "bg-zinc-100 border-zinc-200/80"
+                }`}
               >
-                <View className="flex-row items-center gap-4">
-                  <View className="w-14 h-14 rounded-2xl bg-orange-500/10 items-center justify-center">
-                    <Ionicons name="gift" size={28} color="#ff6719" />
-                  </View>
-                  <View>
-                    <Text
-                      className={`text-[10px] font-black uppercase tracking-[2px] mb-1 ${
-                        isDark ? "text-zinc-500" : "text-zinc-400"
-                      }`}
-                    >
-                      Your Total Givings
-                    </Text>
-                    <Text
-                      className={`text-2xl font-black ${
-                        isDark ? "text-white" : "text-black"
-                      }`}
-                    >
-                      {totalGivingsAmount.toLocaleString()} ETB
-                    </Text>
-                  </View>
-                </View>
-                <View className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 items-center justify-center">
-                  <Ionicons
-                    name="chevron-forward"
-                    size={20}
-                    color={isDark ? "#a1a1aa" : "#71717a"}
-                  />
-                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={isDark ? "#d4d4d8" : "#52525b"}
+                />
               </View>
             </TouchableOpacity>
 
