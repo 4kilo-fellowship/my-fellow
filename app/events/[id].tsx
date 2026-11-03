@@ -443,29 +443,15 @@ export default function EventDetails() {
               />
             </View>
           </View>
-        </View>
 
-        {/* Minimal Bottom Bar Skeleton */}
-        <View
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: isDark ? "#1A1A1B" : "#ffffff",
-            borderTopWidth: 1,
-            borderTopColor: isDark ? "#27272a" : "#f1f5f9",
-            paddingHorizontal: 20,
-            paddingTop: 14,
-            paddingBottom: Math.max(bottom + 12, 24),
-            zIndex: 50,
-          }}
-        >
+          {/* Action Button Skeleton at the bottom */}
           <View
             style={{
+              marginTop: "auto",
+              marginBottom: Math.max(bottom, 20) + 12,
               width: "100%",
-              height: 52,
-              borderRadius: 26,
+              height: 60,
+              borderRadius: 30,
               backgroundColor: isDark ? "#27272a" : "#e2e8f0",
             }}
           />
@@ -672,189 +658,179 @@ export default function EventDetails() {
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 110 }}
-        >
-          <View className="mb-6">
-            <Text
-              className={`text-lg font-bold mb-3 ${isDark ? "text-white" : "text-gray-900"}`}
-            >
-              About this Event
-            </Text>
-            <Text
-              className={`text-base leading-7 ${isDark ? "text-gray-300" : "text-gray-600"}`}
-            >
-              {ev.fullDescription ||
-                ev.shortDescription ||
-                ev.description ||
-                "No description available for this event."}
-            </Text>
-          </View>
-
-          {ev.location && (
-            <View
-              className={`p-4 rounded-xl border mb-6 flex-row items-start ${
-                isDark
-                  ? "bg-gray-800 border-gray-700"
-                  : "bg-gray-50 border-gray-100"
-              }`}
-            >
-              <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-3">
-                <Ionicons name="location" size={20} color="#0369A1" />
-              </View>
-              <View className="flex-1">
-                <Text
-                  className={`font-bold text-base mb-1 ${isDark ? "text-white" : "text-gray-900"}`}
-                >
-                  Location
-                </Text>
-                <Text
-                  className={`${isDark ? "text-gray-400" : "text-gray-600"}`}
-                >
-                  {ev.location}
-                </Text>
-              </View>
-            </View>
-          )}
-        </ScrollView>
-      </View>
-
-      {/* Bottom Action Bar */}
-      <View
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          backgroundColor: isDark ? "#1A1A1B" : "#ffffff",
-          borderTopWidth: 1,
-          borderTopColor: isDark ? "#27272a" : "#f1f5f9",
-          paddingHorizontal: 20,
-          paddingTop: 12,
-          paddingBottom: Math.max(bottom, 16) + 4,
-          zIndex: 50,
-          elevation: 10,
-        }}
-      >
-        <View
-          style={{
-            width: "100%",
-            borderRadius: 26,
-            backgroundColor:
-              isRegisterCta && isRegisteredForThisEvent
-                ? isDark
-                  ? "#27272a"
-                  : "#e2e8f0"
-                : PRIMARY,
-            shadowColor: isRegisterCta && isRegisteredForThisEvent ? "transparent" : PRIMARY,
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: isRegisterCta && isRegisteredForThisEvent ? 0 : 0.3,
-            shadowRadius: 8,
-            elevation: isRegisterCta && isRegisteredForThisEvent ? 0 : 4,
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingBottom: Math.max(bottom, 24) + 16,
           }}
         >
-          <Pressable
-            accessibilityRole="button"
-            disabled={buttonDisabled}
-            android_ripple={
-              !buttonDisabled
-                ? {
-                    color:
-                      isRegisterCta && isRegisteredForThisEvent
-                        ? isDark
-                          ? "rgba(255, 255, 255, 0.12)"
-                          : "rgba(0, 0, 0, 0.12)"
-                        : "rgba(255, 255, 255, 0.28)",
-                    borderless: false,
-                    foreground: Platform.OS === "android",
-                  }
-                : undefined
-            }
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-              if (isNotifyCta) {
-                if (reminder.status === "active") {
-                  reminder.openSheet();
-                } else if (reminder.status === "permission") {
-                  reminder.openNotificationSettings();
-                } else {
-                  reminder.enable();
-                }
-              } else {
-                handleCta();
-              }
-            }}
-            style={({ pressed }) => [
-              {
-                width: "100%",
-                height: 52,
-                borderRadius: 26,
-                overflow: "hidden",
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                opacity:
-                  buttonDisabled
-                    ? 0.65
-                    : Platform.OS === "ios" && pressed
-                    ? 0.85
-                    : 1,
-              },
-            ]}
-          >
-            {registering || unregistering || (isNotifyCta && reminder.status === "loading") ? (
-              <ActivityIndicator color="white" />
-            ) : (
+          <View style={{ flex: 1 }}>
+            <View className="mb-6">
+              <Text
+                className={`text-lg font-bold mb-3 ${isDark ? "text-white" : "text-gray-900"}`}
+              >
+                About this Event
+              </Text>
+              <Text
+                className={`text-base leading-7 ${isDark ? "text-gray-300" : "text-gray-600"}`}
+              >
+                {ev.fullDescription ||
+                  ev.shortDescription ||
+                  ev.description ||
+                  "No description available for this event."}
+              </Text>
+            </View>
+
+            {ev.location && (
               <View
-                style={{
+                className={`p-4 rounded-xl border mb-6 flex-row items-start ${
+                  isDark
+                    ? "bg-gray-800 border-gray-700"
+                    : "bg-gray-50 border-gray-100"
+                }`}
+              >
+                <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-3">
+                  <Ionicons name="location" size={20} color="#0369A1" />
+                </View>
+                <View className="flex-1">
+                  <Text
+                    className={`font-bold text-base mb-1 ${isDark ? "text-white" : "text-gray-900"}`}
+                  >
+                    Location
+                  </Text>
+                  <Text
+                    className={`${isDark ? "text-gray-400" : "text-gray-600"}`}
+                  >
+                    {ev.location}
+                  </Text>
+                </View>
+              </View>
+            )}
+          </View>
+
+          {/* Action Button at the very bottom of the event page */}
+          <View
+            style={{
+              width: "100%",
+              marginTop: 28,
+              borderRadius: 30,
+              backgroundColor:
+                isRegisterCta && isRegisteredForThisEvent
+                  ? isDark
+                    ? "#27272a"
+                    : "#e2e8f0"
+                  : PRIMARY,
+              shadowColor: isRegisterCta && isRegisteredForThisEvent ? "transparent" : PRIMARY,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: isRegisterCta && isRegisteredForThisEvent ? 0 : 0.35,
+              shadowRadius: 10,
+              elevation: isRegisterCta && isRegisteredForThisEvent ? 0 : 5,
+            }}
+          >
+            <Pressable
+              accessibilityRole="button"
+              disabled={buttonDisabled}
+              android_ripple={
+                !buttonDisabled
+                  ? {
+                      color:
+                        isRegisterCta && isRegisteredForThisEvent
+                          ? isDark
+                            ? "rgba(255, 255, 255, 0.12)"
+                            : "rgba(0, 0, 0, 0.12)"
+                          : "rgba(255, 255, 255, 0.28)",
+                      borderless: false,
+                      foreground: Platform.OS === "android",
+                    }
+                  : undefined
+              }
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                if (isNotifyCta) {
+                  if (reminder.status === "active") {
+                    reminder.openSheet();
+                  } else if (reminder.status === "permission") {
+                    reminder.openNotificationSettings();
+                  } else {
+                    reminder.enable();
+                  }
+                } else {
+                  handleCta();
+                }
+              }}
+              style={({ pressed }) => [
+                {
+                  width: "100%",
+                  height: 60,
+                  minHeight: 60,
+                  borderRadius: 30,
+                  overflow: "hidden",
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: 8,
-                }}
-              >
-                <Text
+                  gap: 10,
+                  opacity:
+                    buttonDisabled
+                      ? 0.65
+                      : Platform.OS === "ios" && pressed
+                      ? 0.85
+                      : 1,
+                },
+              ]}
+            >
+              {registering || unregistering || (isNotifyCta && reminder.status === "loading") ? (
+                <ActivityIndicator color="white" size="small" />
+              ) : (
+                <View
                   style={{
-                    fontSize: 16,
-                    fontWeight: "700",
-                    letterSpacing: -0.2,
-                    color:
-                      isRegisterCta && isRegisteredForThisEvent
-                        ? isDark
-                          ? "#a1a1aa"
-                          : "#64748b"
-                        : "#ffffff",
-                    includeFontPadding: false,
-                    textAlignVertical: "center",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 10,
                   }}
                 >
-                  {resolvedDisplayLabel}
-                </Text>
-                {isRegisterCta && isRegisteredForThisEvent ? (
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={20}
-                    color={isDark ? "#4ade80" : "#16a34a"}
-                  />
-                ) : isNotifyCta ? (
-                  <Ionicons
-                    name={
-                      reminder.status === "active"
-                        ? "notifications"
-                        : reminder.status === "permission"
-                        ? "notifications-off-outline"
-                        : "notifications-outline"
-                    }
-                    size={20}
-                    color="white"
-                  />
-                ) : (
-                  <Ionicons name="arrow-forward" size={20} color="white" />
-                )}
-              </View>
-            )}
-          </Pressable>
-        </View>
+                  <Text
+                    style={{
+                      fontSize: 17,
+                      fontWeight: "800",
+                      letterSpacing: -0.2,
+                      color:
+                        isRegisterCta && isRegisteredForThisEvent
+                          ? isDark
+                            ? "#a1a1aa"
+                            : "#64748b"
+                          : "#ffffff",
+                      includeFontPadding: false,
+                      textAlignVertical: "center",
+                    }}
+                  >
+                    {resolvedDisplayLabel}
+                  </Text>
+                  {isRegisterCta && isRegisteredForThisEvent ? (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={22}
+                      color={isDark ? "#4ade80" : "#16a34a"}
+                    />
+                  ) : isNotifyCta ? (
+                    <Ionicons
+                      name={
+                        reminder.status === "active"
+                          ? "notifications"
+                          : reminder.status === "permission"
+                          ? "notifications-off-outline"
+                          : "notifications-outline"
+                      }
+                      size={22}
+                      color="white"
+                    />
+                  ) : (
+                    <Ionicons name="arrow-forward" size={22} color="white" />
+                  )}
+                </View>
+              )}
+            </Pressable>
+          </View>
+        </ScrollView>
       </View>
       <RegistrationModal
         visible={modalVisible}
