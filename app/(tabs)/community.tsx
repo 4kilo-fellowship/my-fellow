@@ -58,6 +58,7 @@ export default function CommunityScreen() {
   const toggleBookmark = useCommunityStore((s) => s.toggleBookmark);
 
   const [activeTab, setActiveTab] = useState<0 | 1>(feedType === "following" ? 1 : 0);
+  const activeTabRef = useRef<0 | 1>(feedType === "following" ? 1 : 0);
   const pagerRef = useRef<PagerView>(null);
   const scrollOffset = useRef(new Animated.Value(feedType === "following" ? 1 : 0)).current;
 
@@ -102,19 +103,29 @@ export default function CommunityScreen() {
   const handleTabPress = (index: 0 | 1) => {
     if (activeTab === index) return;
     try {
-      Haptics.selectionAsync().catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     } catch {}
+    activeTabRef.current = index;
     setActiveTab(index);
     pagerRef.current?.setPage(index);
   };
 
   const handlePageScroll = (e: { nativeEvent: PagerViewOnPageScrollEventData }) => {
     const { position, offset } = e.nativeEvent;
-    scrollOffset.setValue(position + offset);
+    const progress = position + offset;
+    scrollOffset.setValue(progress);
+
+    // Responsive symmetrical midpoint switch (switches text right at 50% swipe)
+    const targetTab = progress >= 0.5 ? 1 : 0;
+    if (activeTabRef.current !== targetTab) {
+      activeTabRef.current = targetTab;
+      setActiveTab(targetTab);
+    }
   };
 
   const handlePageSelected = (e: any) => {
     const newIndex = e.nativeEvent.position as 0 | 1;
+    activeTabRef.current = newIndex;
     setActiveTab(newIndex);
     scrollOffset.setValue(newIndex);
     const type = newIndex === 0 ? "foryou" : "following";
@@ -242,13 +253,13 @@ export default function CommunityScreen() {
               <Ionicons
                 name="search-outline"
                 size={19}
-                color={isDark ? "#9ca3af" : "#52525b"}
+                color={isDark ? "#8e9196" : "#5f6368"}
                 style={styles.searchIcon}
               />
               <Text
                 style={[
                   styles.searchCenteredText,
-                  { color: isDark ? "#9ca3af" : "#52525b" },
+                  { color: isDark ? "#8e9196" : "#5f6368" },
                 ]}
               >
                 Search
@@ -259,39 +270,57 @@ export default function CommunityScreen() {
       </View>
 
       {/* Feed Tabs: For you / Following */}
-      <View style={[styles.tabsHeader, { borderBottomColor: borderColor }]}>
+      <View style={[styles.tabsHeader, { borderBottomColor: borderColor, backgroundColor: bg }]}>
         <Pressable
           onPress={() => handleTabPress(0)}
-          style={styles.feedTabBtn}
+          android_ripple={{
+            color: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
+            foreground: true,
+          }}
+          style={({ pressed }) => [
+            styles.feedTabBtn,
+            pressed && Platform.OS === "ios" && { opacity: 0.7 },
+          ]}
         >
-          <Text
-            style={[
-              styles.feedTabText,
-              {
-                color: activeTab === 0 ? (isDark ? "#ffffff" : "#000000") : mutedColor,
-                fontWeight: activeTab === 0 ? "700" : "500",
-              },
-            ]}
-          >
-            For you
-          </Text>
+          <View style={styles.tabContentCenter}>
+            <Text
+              style={[
+                styles.feedTabText,
+                {
+                  color: activeTab === 0 ? textColor : mutedColor,
+                  fontWeight: activeTab === 0 ? "700" : "500",
+                },
+              ]}
+            >
+              For you
+            </Text>
+          </View>
         </Pressable>
 
         <Pressable
           onPress={() => handleTabPress(1)}
-          style={styles.feedTabBtn}
+          android_ripple={{
+            color: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
+            foreground: true,
+          }}
+          style={({ pressed }) => [
+            styles.feedTabBtn,
+            pressed && Platform.OS === "ios" && { opacity: 0.7 },
+          ]}
         >
-          <Text
-            style={[
-              styles.feedTabText,
-              {
-                color: activeTab === 1 ? (isDark ? "#ffffff" : "#000000") : mutedColor,
-                fontWeight: activeTab === 1 ? "700" : "500",
-              },
-            ]}
-          >
-            Following
-          </Text>
+          <View style={styles.tabContentCenter}>
+            <Text
+              style={[
+                styles.feedTabText,
+                {
+                  color: activeTab === 1 ? textColor : mutedColor,
+                  fontWeight: activeTab === 1 ? "700" : "500",
+                },
+              ]}
+            >
+              Following
+            </Text>
+          </View>
         </Pressable>
 
         {/* Continuous 60fps sliding underline bar covering half of the bar (black in light, white in dark) */}
@@ -305,6 +334,7 @@ export default function CommunityScreen() {
                   translateX: scrollOffset.interpolate({
                     inputRange: [0, 1],
                     outputRange: [0, TAB_WIDTH],
+                    extrapolate: "clamp",
                   }),
                 },
               ],
@@ -1073,8 +1103,8 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   searchPillWrapper: {
-    height: 42,
-    borderRadius: 21,
+    height: 40,
+    borderRadius: 20,
     overflow: "hidden",
   },
   searchPressableInner: {
@@ -1087,33 +1117,42 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    height: "100%",
   },
   searchIcon: {
     marginRight: 8,
+    marginTop: Platform.OS === "android" ? 1 : 0,
   },
   searchCenteredText: {
     fontSize: 15,
-    fontWeight: "500",
+    fontWeight: "400",
     letterSpacing: -0.2,
     includeFontPadding: false,
-    lineHeight: 20,
     textAlignVertical: "center",
   },
   tabsHeader: {
     flexDirection: "row",
+    width: SCREEN_WIDTH,
+    height: 48,
     borderBottomWidth: StyleSheet.hairlineWidth,
     alignItems: "center",
     position: "relative",
   },
   feedTabBtn: {
     width: TAB_WIDTH,
+    height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 12,
+    position: "relative",
+  },
+  tabContentCenter: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
   feedTabText: {
     fontSize: 15,
+    letterSpacing: -0.2,
   },
   animatedIndicator: {
     position: "absolute",
