@@ -609,7 +609,7 @@ export default function EventDetails() {
         <TouchableOpacity
           onPress={handleBack}
           activeOpacity={0.7}
-          className="absolute left-4 w-10 h-10 rounded-full bg-black/40 items-center justify-center"
+          className="absolute left-4 w-10 h-10 rounded-full bg-black/40 items-center justify-center z-20"
           style={{ top: top + 10 }}
         >
           <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -619,7 +619,7 @@ export default function EventDetails() {
           onPress={handleShare}
           activeOpacity={0.7}
           disabled={isSharing}
-          className="absolute right-4 w-10 h-10 rounded-full bg-black/40 items-center justify-center"
+          className="absolute right-4 w-10 h-10 rounded-full bg-black/40 items-center justify-center z-20"
           style={{ top: top + 10 }}
         >
           {isSharing ? (
@@ -718,11 +718,22 @@ export default function EventDetails() {
         </ScrollView>
       </View>
 
+      {/* Bottom Action Bar */}
       <View
-        className={`absolute bottom-0 left-0 right-0 px-6 pt-3.5 border-t ${
-          isDark ? "bg-[#1A1A1B] border-gray-800" : "bg-white border-gray-100"
-        }`}
-        style={{ paddingBottom: Math.max(bottom, 16) + 4, zIndex: 50, elevation: 10 }}
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: isDark ? "#1A1A1B" : "#ffffff",
+          borderTopWidth: 1,
+          borderTopColor: isDark ? "#27272a" : "#f1f5f9",
+          paddingHorizontal: 20,
+          paddingTop: 12,
+          paddingBottom: Math.max(bottom, 16) + 4,
+          zIndex: 50,
+          elevation: 10,
+        }}
       >
         <TouchableOpacity
           activeOpacity={0.88}
@@ -741,8 +752,14 @@ export default function EventDetails() {
             }
           }}
           disabled={buttonDisabled}
-          className="w-full h-14 rounded-full flex-row items-center justify-center shadow-md"
           style={{
+            width: "100%",
+            height: 52,
+            borderRadius: 26,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
             backgroundColor:
               isRegisterCta && isRegisteredForThisEvent
                 ? isDark
@@ -750,7 +767,7 @@ export default function EventDetails() {
                   : "#e2e8f0"
                 : PRIMARY,
             opacity: buttonDisabled ? 0.65 : 1,
-            shadowColor: isRegisterCta && isRegisteredForThisEvent ? "transparent" : "#ff6719",
+            shadowColor: isRegisterCta && isRegisteredForThisEvent ? "transparent" : PRIMARY,
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: isRegisterCta && isRegisteredForThisEvent ? 0 : 0.3,
             shadowRadius: 8,
@@ -760,10 +777,19 @@ export default function EventDetails() {
           {registering || unregistering || (isNotifyCta && reminder.status === "loading") ? (
             <ActivityIndicator color="white" />
           ) : (
-            <View className="flex-row items-center justify-center gap-2">
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              }}
+            >
               <Text
-                className="text-base font-bold tracking-tight text-center"
                 style={{
+                  fontSize: 16,
+                  fontWeight: "700",
+                  letterSpacing: -0.2,
                   color:
                     isRegisterCta && isRegisteredForThisEvent
                       ? isDark
@@ -771,6 +797,7 @@ export default function EventDetails() {
                         : "#64748b"
                       : "#ffffff",
                   includeFontPadding: false,
+                  textAlignVertical: "center",
                 }}
               >
                 {resolvedDisplayLabel}
