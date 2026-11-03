@@ -499,7 +499,11 @@ const Home = () => {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 overScrollMode="never"
-                contentContainerStyle={{ paddingHorizontal: 20 }}
+                contentContainerStyle={{
+                  paddingHorizontal: 20,
+                  paddingTop: 6,
+                  paddingBottom: 6,
+                }}
               >
                 {[1, 2, 3, 4, 5].map((_, i) => (
                   <View
@@ -521,7 +525,11 @@ const Home = () => {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 overScrollMode="never"
-                contentContainerStyle={{ paddingHorizontal: 20 }}
+                contentContainerStyle={{
+                  paddingHorizontal: 20,
+                  paddingTop: 6,
+                  paddingBottom: 6,
+                }}
               >
                 {QUICK_ACTIONS.map((action, index) => (
                   <QuickAction
