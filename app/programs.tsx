@@ -7,8 +7,19 @@ import {
 } from "@/components";
 import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
-import { useAlerts } from "@/hooks/useAlerts";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import {
+  PROGRAM_CATEGORY_ID,
+  PROGRAM_OFFSETS_MIN,
+  cancelReminders,
+  ensureExactAlarmPermission,
+  ensurePermission,
+  loadAll,
+  scheduleReminders,
+  sendConfirmationNotification,
+  subscribeToReminders,
+  type ReminderTarget,
+} from "@/notifications";
 import { useProgramsStore } from "@/stores/programs.store";
 import { Program } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -33,7 +44,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 interface ProgramProps {
   item: Program;
   isDark: boolean;
-  isAlertActive: (title: string) => boolean;
+  isAlertActive: (item: Program) => boolean;
   onToggleAlert: (item: Program) => void;
   isAdmin?: boolean;
   onEdit?: (item: Program) => void;
@@ -66,7 +77,7 @@ const ProgramCard = ({
   isAdmin,
   onEdit,
 }: ProgramProps) => {
-  const isAlertSet = isAlertActive(item.title);
+  const isAlertSet = isAlertActive(item);
 
   return (
     <View className="flex-1">
@@ -332,12 +343,37 @@ export default function WeeklyPrograms() {
 
   const { programs, loading, refreshing, loadPrograms } = useProgramsStore();
 
-  const { addAlert, deleteAlert, alerts } = useAlerts();
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [alertMessage, setAlertMessage] = useState("");
+  const [activeReminderIds, setActiveReminderIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [infoModal, setInfoModal] = useState<{
+    title: string;
+    message: string;
+    type: "success" | "info" | "error";
+  } | null>(null);
 
   useEffect(() => {
     loadPrograms();
+  }, []);
+
+  // Keep the bell icons in sync with what is actually scheduled on the device
+  useEffect(() => {
+    let isMounted = true;
+
+    const refreshActiveReminders = async () => {
+      const records = await loadAll();
+      if (!isMounted) return;
+      setActiveReminderIds(new Set(records.map((r) => r.eventId)));
+    };
+
+    refreshActiveReminders();
+    const unsubscribe = subscribeToReminders(refreshActiveReminders);
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const onRefresh = () => {
@@ -381,29 +417,95 @@ export default function WeeklyPrograms() {
     return result;
   };
 
-  const handleToggleAlert = async (program: Program) => {
-    const existingAlert = alerts.find((a) => a.title === program.title);
+  const programReminderId = (program: Program) => `program_${program.id}`;
 
-    if (existingAlert) {
-      await deleteAlert(existingAlert.id);
-    } else {
-      const date = parseProgramDate(program.day, program.time);
-      await addAlert({
+  const handleToggleAlert = async (program: Program) => {
+    if (isScheduling) return;
+
+    const eventId = programReminderId(program);
+
+    // Turning an existing reminder off
+    if (activeReminderIds.has(eventId)) {
+      await cancelReminders(eventId);
+      return;
+    }
+
+    setIsScheduling(true);
+    try {
+      // Ask for permission in context, only when a reminder is created
+      const permission = await ensurePermission();
+      if (permission !== "granted") {
+        setInfoModal({
+          title: "Notifications Off",
+          message:
+            "Enable notifications in your device settings to receive program reminders.",
+          type: "info",
+        });
+        return;
+      }
+
+      // Android 12+: without exact alarms the OS may delay delivery
+      await ensureExactAlarmPermission();
+
+      const startsAt = parseProgramDate(program.day, program.time).getTime();
+      if (!Number.isFinite(startsAt) || startsAt <= Date.now()) {
+        setInfoModal({
+          title: "Program Unavailable",
+          message:
+            "This program has already started or has an invalid schedule.",
+          type: "info",
+        });
+        return;
+      }
+
+      const target: ReminderTarget = {
+        eventId,
         title: program.title,
-        description: `Reminder for ${program.title}`,
-        time: date.toISOString(),
-        repeats: "weekly",
-        remindBefore: 15,
-      });
-      setAlertMessage(
-        `We'll notify you 15 minutes before the ${program.title} starts.`,
+        startsAt,
+        url: "/programs",
+        shortDescription: program.location,
+        categoryId: PROGRAM_CATEGORY_ID,
+      };
+
+      // 30 minutes before + at the start time, repeating every week.
+      // All of this is local: it works with zero internet.
+      const scheduledOffsets = await scheduleReminders(
+        target,
+        PROGRAM_OFFSETS_MIN,
+        { repeats: "weekly" },
       );
-      setShowSuccessModal(true);
+
+      if (scheduledOffsets.length === 0) {
+        setInfoModal({
+          title: "Reminder Error",
+          message:
+            "Could not schedule the reminder. Please try again from the Programs screen.",
+          type: "error",
+        });
+        return;
+      }
+
+      await sendConfirmationNotification(target, scheduledOffsets);
+
+      setInfoModal({
+        title: "Reminder Set 🔔",
+        message: `We'll notify you 30 minutes before and when ${program.title} starts — every week.`,
+        type: "success",
+      });
+    } catch (err) {
+      console.warn("[programs] Failed toggling reminder:", err);
+      setInfoModal({
+        title: "Reminder Error",
+        message: "Could not schedule the reminder. Please try again.",
+        type: "error",
+      });
+    } finally {
+      setIsScheduling(false);
     }
   };
 
-  const isAlertActive = (title: string) => {
-    return alerts.some((a) => a.title === title);
+  const isAlertActive = (program: Program) => {
+    return activeReminderIds.has(programReminderId(program));
   };
 
   const isGeneralProgram = (program: Program) => {
@@ -711,11 +813,11 @@ export default function WeeklyPrograms() {
       </View>
 
       <InfoModal
-        visible={showSuccessModal}
-        onClose={() => setShowSuccessModal(false)}
-        title="Alert Set"
-        message={alertMessage}
-        type="success"
+        visible={infoModal !== null}
+        onClose={() => setInfoModal(null)}
+        title={infoModal?.title ?? ""}
+        message={infoModal?.message ?? ""}
+        type={infoModal?.type ?? "info"}
         isDark={isDark}
       />
     </>
