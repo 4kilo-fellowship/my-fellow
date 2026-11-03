@@ -42,6 +42,7 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
+  StyleSheet,
   Text,
   ToastAndroid,
   TouchableOpacity,
@@ -50,12 +51,293 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+interface UpcomingEventsSectionProps {
+  events: any[];
+  loading: boolean;
+  refreshing: boolean;
+  hasSeenFeatures: boolean;
+  isDark: boolean;
+  isAdmin: boolean;
+  error: any;
+  fetchEvents: () => void;
+  itemWidth: number;
+  width: number;
+}
+
+const UpcomingEventsSection = React.memo(({
+  events,
+  loading,
+  refreshing,
+  hasSeenFeatures,
+  isDark,
+  isAdmin,
+  error,
+  fetchEvents,
+  itemWidth,
+  width,
+}: UpcomingEventsSectionProps) => {
+  const router = useRouter();
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeIndexRef = useRef(0);
+
+  const updateIndexFromOffset = (offset: number) => {
+    if (!events.length) return;
+    const current = activeIndexRef.current;
+
+    // Hysteresis threshold to guarantee instant response without glitch/jitter:
+    // To advance: cross ~30% into the next card ("right after the second appears")
+    // To fall back: drop back below 20%
+    let next = current;
+
+    if (current < events.length - 1 && offset >= (current + 0.30) * itemWidth) {
+      next = Math.min(
+        events.length - 1,
+        Math.floor((offset + itemWidth * 0.70) / itemWidth)
+      );
+    } else if (current > 0 && offset <= (current - 1 + 0.20) * itemWidth) {
+      next = Math.max(
+        0,
+        Math.floor((offset + itemWidth * 0.80) / itemWidth)
+      );
+    }
+
+    if (next !== current) {
+      activeIndexRef.current = next;
+      setActiveIndex(next);
+      try {
+        Haptics.selectionAsync().catch(() => {});
+      } catch {}
+    }
+  };
+
+  return (
+    <View className="mb-2">
+      <View
+        style={{
+          paddingHorizontal: 20,
+          paddingTop: 16,
+          paddingBottom: 12,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        {!hasSeenFeatures || ((loading || refreshing) && events.length === 0) ? (
+          <Placeholder width={150} height={24} borderRadius={4} />
+        ) : (
+          <Text
+            numberOfLines={1}
+            className={`text-lg font-extrabold ${
+              isDark ? "text-white" : "text-gray-900"
+            }`}
+            style={{ includeFontPadding: false }}
+          >
+            Upcoming Events
+          </Text>
+        )}
+
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          {/* Real-time total amount indicator */}
+          {events.length > 0 && (
+            <View
+              style={{
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                borderRadius: 9999,
+                backgroundColor: isDark
+                  ? "rgba(255, 255, 255, 0.08)"
+                  : "rgba(0, 0, 0, 0.05)",
+                borderWidth: 1,
+                borderColor: isDark
+                  ? "rgba(255, 255, 255, 0.08)"
+                  : "rgba(0, 0, 0, 0.05)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: "700",
+                  color: isDark ? "#e2e8f0" : "#334155",
+                  includeFontPadding: false,
+                }}
+              >
+                {`${Math.min(activeIndex + 1, events.length)} of ${events.length}`}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {!hasSeenFeatures || ((loading || refreshing) && events.length === 0) ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          overScrollMode="never"
+          contentContainerStyle={{ paddingHorizontal: 20 }}
+        >
+          {[1, 2, 3].map((_, i) => (
+            <Placeholder
+              key={i}
+              width={width - 48}
+              height={400}
+              borderRadius={20}
+              style={{ marginRight: 16 }}
+            />
+          ))}
+        </ScrollView>
+      ) : error ? (
+        <View
+          style={{
+            height: 400,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text
+            style={{
+              color: isDark ? "#fff" : "#0f172a",
+              marginBottom: 8,
+            }}
+          >
+            {String(error)}
+          </Text>
+          <TouchableOpacity
+            onPress={() => fetchEvents()}
+            style={{
+              backgroundColor: "#ff6619",
+              paddingHorizontal: 14,
+              paddingVertical: 10,
+              borderRadius: 8,
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "700" }}>
+              Retry
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : events.length === 0 ? (
+        <View
+          style={{
+            height: 320,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Image
+            source={require("@/assets/images/header.png")}
+            style={{
+              width: 180,
+              height: 120,
+              marginBottom: 18,
+              opacity: 0.95,
+            }}
+            resizeMode="contain"
+          />
+          <Text
+            style={{
+              color: isDark ? "#fff" : "#0f172a",
+              fontSize: 18,
+              fontWeight: "800",
+              marginBottom: 6,
+            }}
+          >
+            No upcoming events
+          </Text>
+          <Text
+            style={{
+              color: isDark ? "#9ca3af" : "#64748b",
+              textAlign: "center",
+              maxWidth: 300,
+            }}
+          >
+            Stay fed — feed your soul. Pull down to refresh and check
+            again.
+          </Text>
+        </View>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          snapToInterval={itemWidth}
+          snapToAlignment="start"
+          disableIntervalMomentum={true}
+          overScrollMode="never"
+          contentContainerStyle={{ paddingHorizontal: 20 }}
+          onScroll={(e) => {
+            updateIndexFromOffset(e.nativeEvent.contentOffset.x);
+          }}
+          onMomentumScrollEnd={(e) => {
+            const settled = Math.min(
+              Math.max(0, Math.round(e.nativeEvent.contentOffset.x / itemWidth)),
+              events.length - 1
+            );
+            if (settled !== activeIndexRef.current) {
+              activeIndexRef.current = settled;
+              setActiveIndex(settled);
+            }
+          }}
+          scrollEventThrottle={16}
+        >
+          {Array.isArray(events) &&
+            events.map((item: any, index) => {
+              const eventId = item._id || item.id;
+              return (
+                <AnnouncementCard
+                  key={eventId ?? index}
+                  item={item}
+                  isDark={isDark}
+                  onPress={() => {
+                    router.push(`/events/${eventId}` as any);
+                  }}
+                />
+              );
+            })}
+        </ScrollView>
+      )}
+
+      {/* Pagination Dots indicator for Events — clean circular dots, no bars */}
+      {events.length > 1 && (
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "center",
+            alignItems: "center",
+            marginTop: 8,
+            gap: 6,
+          }}
+        >
+          {events.map((_, i) => (
+            <View
+              key={i}
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor:
+                  activeIndex === i
+                    ? PRIMARY
+                    : isDark
+                    ? "rgba(255,255,255,0.2)"
+                    : "rgba(0,0,0,0.15)",
+              }}
+            />
+          ))}
+        </View>
+      )}
+    </View>
+  );
+});
+
+UpcomingEventsSection.displayName = "UpcomingEventsSection";
+
 const Home = () => {
-  const { top } = useSafeAreaInsets();
+  const { top, bottom } = useSafeAreaInsets();
   const { theme } = useTheme();
   const { hasSeenFeatures, setHasSeenFeatures } = useAppStore();
   const isDark = theme === "dark";
-  const [activeIndex, setActiveIndex] = useState(0);
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [showNotificationsSheet, setShowNotificationsSheet] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
@@ -214,292 +496,18 @@ const Home = () => {
             />
           }
         >
-          <View className="mb-2">
-            <View
-              style={{
-                paddingHorizontal: 20,
-                paddingTop: 16,
-                paddingBottom: 12,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              {!hasSeenFeatures ||
-              ((loading || refreshing) && events.length === 0) ? (
-                <Placeholder width={150} height={24} borderRadius={4} />
-              ) : (
-                <Text
-                  numberOfLines={1}
-                  className={`text-lg font-extrabold ${
-                    isDark ? "text-white" : "text-gray-900"
-                  }`}
-                  style={{ includeFontPadding: false }}
-                >
-                  Upcoming Events
-                </Text>
-              )}
-
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                {isAdmin && (
-                  <Pressable
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                      router.push("/events/manage");
-                    }}
-                    android_ripple={{
-                      color: "rgba(255, 103, 25, 0.2)",
-                      borderless: false,
-                      foreground: true,
-                    }}
-                    style={{
-                      height: 30,
-                      paddingHorizontal: 10,
-                      borderRadius: 15,
-                      backgroundColor: "rgba(255, 103, 25, 0.12)",
-                      borderWidth: 1,
-                      borderColor: "rgba(255, 103, 25, 0.35)",
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 4,
-                      overflow: "hidden",
-                    }}
-                    accessibilityLabel="Create Event"
-                  >
-                    <Ionicons name="add" size={16} color="#ff6719" />
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: "700",
-                        color: "#ff6719",
-                        includeFontPadding: false,
-                      }}
-                    >
-                      New
-                    </Text>
-                  </Pressable>
-                )}
-
-                {/* Real-time total amount indicator */}
-                {events.length > 0 && (
-                  <View
-                    style={{
-                      paddingHorizontal: 10,
-                      paddingVertical: 4,
-                      borderRadius: 9999,
-                      backgroundColor: isDark
-                        ? "rgba(255, 255, 255, 0.08)"
-                        : "rgba(0, 0, 0, 0.05)",
-                      borderWidth: 1,
-                      borderColor: isDark
-                        ? "rgba(255, 255, 255, 0.08)"
-                        : "rgba(0, 0, 0, 0.05)",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: "700",
-                        color: isDark ? "#e2e8f0" : "#334155",
-                        includeFontPadding: false,
-                      }}
-                    >
-                      {`${Math.min(activeIndex + 1, events.length)} of ${events.length}`}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </View>
-
-            {!hasSeenFeatures ||
-            ((loading || refreshing) && events.length === 0) ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                overScrollMode="never"
-                contentContainerStyle={{ paddingHorizontal: 20 }}
-              >
-                {[1, 2, 3].map((_, i) => (
-                  <Placeholder
-                    key={i}
-                    width={width - 48}
-                    height={400}
-                    borderRadius={20}
-                    style={{ marginRight: 16 }}
-                  />
-                ))}
-              </ScrollView>
-            ) : error ? (
-              <View
-                style={{
-                  height: 400,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    color: isDark ? "#fff" : "#0f172a",
-                    marginBottom: 8,
-                  }}
-                >
-                  {String(error)}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => fetchEvents()}
-                  style={{
-                    backgroundColor: "#ff6619",
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    borderRadius: 8,
-                  }}
-                >
-                  <Text style={{ color: "#fff", fontWeight: "700" }}>
-                    Retry
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ) : events.length === 0 ? (
-              <View
-                style={{
-                  height: 320,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Image
-                  source={require("@/assets/images/header.png")}
-                  style={{
-                    width: 180,
-                    height: 120,
-                    marginBottom: 18,
-                    opacity: 0.95,
-                  }}
-                  resizeMode="contain"
-                />
-                <Text
-                  style={{
-                    color: isDark ? "#fff" : "#0f172a",
-                    fontSize: 18,
-                    fontWeight: "800",
-                    marginBottom: 6,
-                  }}
-                >
-                  No upcoming events
-                </Text>
-                <Text
-                  style={{
-                    color: isDark ? "#9ca3af" : "#64748b",
-                    textAlign: "center",
-                    maxWidth: 300,
-                  }}
-                >
-                  Stay fed — feed your soul. Pull down to refresh and check
-                  again.
-                </Text>
-              </View>
-            ) : (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                decelerationRate="fast"
-                snapToInterval={itemWidth}
-                snapToAlignment="start"
-                disableIntervalMomentum={true}
-                overScrollMode="never"
-                contentContainerStyle={{ paddingHorizontal: 20 }}
-                onScroll={(e) => {
-                  const offset = e.nativeEvent.contentOffset.x;
-                  const newIndex = Math.min(
-                    Math.max(0, Math.round(offset / itemWidth)),
-                    events.length - 1,
-                  );
-                  if (newIndex !== activeIndex) {
-                    setActiveIndex(newIndex);
-                    try {
-                      Haptics.selectionAsync().catch(() => {});
-                    } catch {}
-                  }
-                }}
-                onScrollEndDrag={(e) => {
-                  const offset = e.nativeEvent.contentOffset.x;
-                  const velocity = e.nativeEvent.velocity?.x || 0;
-                  let target = Math.round(offset / itemWidth);
-                  if (velocity > 0.15) {
-                    target = Math.min(events.length - 1, Math.ceil(offset / itemWidth));
-                  } else if (velocity < -0.15) {
-                    target = Math.max(0, Math.floor(offset / itemWidth));
-                  }
-                  if (target !== activeIndex) {
-                    setActiveIndex(target);
-                    try {
-                      Haptics.selectionAsync().catch(() => {});
-                    } catch {}
-                  }
-                }}
-                onMomentumScrollEnd={(e) => {
-                  const newIndex = Math.min(
-                    Math.max(0, Math.round(e.nativeEvent.contentOffset.x / itemWidth)),
-                    events.length - 1,
-                  );
-                  if (newIndex !== activeIndex) {
-                    setActiveIndex(newIndex);
-                  }
-                }}
-                scrollEventThrottle={16}
-              >
-                {Array.isArray(events) &&
-                  events.map((item: any, index) => {
-                    const eventId = item._id || item.id;
-                    const eventImg =
-                      item.imageUrl || item.image || item.bannerUrl || "";
-                    return (
-                      <AnnouncementCard
-                        key={eventId ?? index}
-                        item={item}
-                        isDark={isDark}
-                        onPress={() => {
-                          router.push(`/events/${eventId}` as any);
-                        }}
-                      />
-                    );
-                  })}
-              </ScrollView>
-            )}
-
-            {/* Pagination Dots indicator for Events */}
-            {events.length > 1 && (
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  marginTop: 8,
-                  gap: 6,
-                }}
-              >
-                {events.map((_, i) => (
-                  <View
-                    key={i}
-                    style={{
-                      width: activeIndex === i ? 18 : 6,
-                      height: 6,
-                      borderRadius: 3,
-                      backgroundColor:
-                        activeIndex === i
-                          ? PRIMARY
-                          : isDark
-                          ? "rgba(255,255,255,0.2)"
-                          : "rgba(0,0,0,0.15)",
-                    }}
-                  />
-                ))}
-              </View>
-            )}
-          </View>
+          <UpcomingEventsSection
+            events={events}
+            loading={loading}
+            refreshing={refreshing}
+            hasSeenFeatures={hasSeenFeatures}
+            isDark={isDark}
+            isAdmin={isAdmin}
+            error={error}
+            fetchEvents={fetchEvents}
+            itemWidth={itemWidth}
+            width={width}
+          />
 
           {/* Features Section - pulled upper */}
           <View style={{ marginTop: 10 }}>
@@ -883,6 +891,28 @@ const Home = () => {
         </View>
       </AppBottomSheet>
 
+      {/* Floating Action Button (+) — Admin Only for Event Creation (Matches Community Tab FAB) */}
+      {isAdmin && (
+        <TouchableOpacity
+          activeOpacity={0.88}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+            router.push("/events/manage");
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Create Event"
+          style={[
+            styles.fabBtn,
+            {
+              backgroundColor: PRIMARY,
+              bottom: Math.max(bottom, 12) + 28,
+            },
+          ]}
+        >
+          <Ionicons name="add" size={32} color="#ffffff" />
+        </TouchableOpacity>
+      )}
+
       {/* Production-Quality Video Player Modal */}
       <VideoPlayerModal
         visible={showVideoModal}
@@ -895,5 +925,29 @@ const Home = () => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  fabBtn: {
+    position: "absolute",
+    right: 18,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+    zIndex: 50,
+  },
+});
 
 export default Home;
