@@ -2,12 +2,6 @@ import { useTheme } from "@/context/ThemeContext";
 import { useUserStore } from "@/stores/user.store";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { CommonActions } from "@react-navigation/native";
-import { BlurView } from "expo-blur";
-import {
-  GlassView,
-  isGlassEffectAPIAvailable,
-  isLiquidGlassAvailable,
-} from "expo-glass-effect";
 import * as Haptics from "expo-haptics";
 import { router as expoRouter } from "expo-router";
 import { SFSymbol, SymbolView } from "expo-symbols";
@@ -43,21 +37,6 @@ const triggerTabHaptic = () => {
     // Unsupported environment fallback
   }
 };
-
-// Check Liquid Glass availability for iOS
-const checkLiquidGlassSupport = () => {
-  try {
-    return (
-      Platform.OS === "ios" &&
-      isLiquidGlassAvailable() &&
-      isGlassEffectAPIAvailable()
-    );
-  } catch {
-    return false;
-  }
-};
-
-const IS_LIQUID_GLASS_SUPPORTED = checkLiquidGlassSupport();
 
 // --- Native Platform Icons: SF Symbols on iOS, Material Design Icons on Android ---
 

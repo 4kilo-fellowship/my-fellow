@@ -124,8 +124,8 @@ export function NotifyMeButton({
   const isIconOnly = variant === "iconOnly";
   const isFullWidth = variant === "fullWidth";
 
-  const btnHeight = size === "sm" ? 38 : size === "lg" ? 52 : 44;
-  const iconSize = size === "sm" ? 17 : size === "lg" ? 20 : 18;
+  const btnHeight = size === "sm" ? 44 : size === "lg" ? 62 : 52;
+  const iconSize = size === "sm" ? 18 : size === "lg" ? 22 : 20;
 
   const activeBg = isDark ? "rgba(255, 103, 25, 0.18)" : "#fff7ed";
   const activeBorder = PRIMARY;
@@ -139,13 +139,13 @@ export function NotifyMeButton({
           styles.container,
           {
             height: btnHeight,
-            minHeight: 44, // Minimum 44x44 pt touch target per guidelines
+            minHeight: btnHeight,
             borderRadius: btnHeight / 2,
             backgroundColor: status === "active" ? activeBg : defaultBg,
             borderColor: status === "active" ? activeBorder : defaultBorder,
           },
-          isIconOnly && { width: btnHeight, minWidth: 44 },
-          isFullWidth && { width: "100%" },
+          isIconOnly && { width: btnHeight, minWidth: btnHeight },
+          isFullWidth && { width: "100%", alignSelf: "stretch" },
           status === "unavailable" && { opacity: 0.5 },
           style,
         ]}

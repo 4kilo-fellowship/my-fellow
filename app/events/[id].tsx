@@ -450,8 +450,9 @@ export default function EventDetails() {
               marginTop: "auto",
               marginBottom: Math.max(bottom, 20) + 12,
               width: "100%",
-              height: 60,
-              borderRadius: 30,
+              height: 64,
+              minHeight: 64,
+              borderRadius: 32,
               backgroundColor: isDark ? "#27272a" : "#e2e8f0",
             }}
           />
@@ -711,8 +712,10 @@ export default function EventDetails() {
           <View
             style={{
               width: "100%",
+              height: 64,
+              minHeight: 64,
               marginTop: 28,
-              borderRadius: 30,
+              borderRadius: 32,
               backgroundColor:
                 isRegisterCta && isRegisteredForThisEvent
                   ? isDark
@@ -760,9 +763,9 @@ export default function EventDetails() {
               style={({ pressed }) => [
                 {
                   width: "100%",
-                  height: 60,
-                  minHeight: 60,
-                  borderRadius: 30,
+                  height: 64,
+                  minHeight: 64,
+                  borderRadius: 32,
                   overflow: "hidden",
                   flexDirection: "row",
                   alignItems: "center",
@@ -790,7 +793,7 @@ export default function EventDetails() {
                 >
                   <Text
                     style={{
-                      fontSize: 17,
+                      fontSize: 18,
                       fontWeight: "800",
                       letterSpacing: -0.2,
                       color:
@@ -808,7 +811,7 @@ export default function EventDetails() {
                   {isRegisterCta && isRegisteredForThisEvent ? (
                     <Ionicons
                       name="checkmark-circle"
-                      size={22}
+                      size={24}
                       color={isDark ? "#4ade80" : "#16a34a"}
                     />
                   ) : isNotifyCta ? (
@@ -820,11 +823,11 @@ export default function EventDetails() {
                           ? "notifications-off-outline"
                           : "notifications-outline"
                       }
-                      size={22}
+                      size={24}
                       color="white"
                     />
                   ) : (
-                    <Ionicons name="arrow-forward" size={22} color="white" />
+                    <Ionicons name="arrow-forward" size={24} color="white" />
                   )}
                 </View>
               )}
