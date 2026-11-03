@@ -26,6 +26,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const CODE_LENGTH = 6;
+const DEV_BYPASS_CODES = ["00", "000000"];
 const DEFAULT_RESEND_SECONDS = 60;
 
 export default function OtpVerifyScreen() {
@@ -153,10 +154,18 @@ export default function OtpVerifyScreen() {
   };
 
   const handleVerify = async (candidateCode?: string) => {
-    const finalCode = (candidateCode ?? code).trim();
-    if (finalCode.length !== CODE_LENGTH || submittingRef.current || loading) {
+    const rawCode = (candidateCode ?? code).trim();
+    const isDevBypass = DEV_BYPASS_CODES.includes(rawCode);
+    if (
+      (!isDevBypass && rawCode.length !== CODE_LENGTH) ||
+      submittingRef.current ||
+      loading
+    ) {
       return;
     }
+
+    // Pad "00" to "000000" if talking to an older deployed API that strictly requires 6 chars
+    const finalCode = rawCode === "00" ? "000000" : rawCode;
 
     submittingRef.current = true;
     setError(null);
@@ -411,7 +420,10 @@ export default function OtpVerifyScreen() {
                         .slice(0, CODE_LENGTH);
                       setCode(cleaned);
                       if (error) setError(null);
-                      if (cleaned.length === CODE_LENGTH) {
+                      if (
+                        cleaned.length === CODE_LENGTH ||
+                        DEV_BYPASS_CODES.includes(cleaned)
+                      ) {
                         void handleVerify(cleaned);
                       }
                     }}
@@ -458,13 +470,23 @@ export default function OtpVerifyScreen() {
                     Keyboard.dismiss();
                     void handleVerify();
                   }}
-                  disabled={loading || code.length !== CODE_LENGTH}
+                  disabled={
+                    loading ||
+                    (code.length !== CODE_LENGTH &&
+                      !DEV_BYPASS_CODES.includes(code))
+                  }
                   style={({ pressed }) => [
                     styles.verifyButton,
-                    (loading || code.length !== CODE_LENGTH) &&
+                    (loading ||
+                      (code.length !== CODE_LENGTH &&
+                        !DEV_BYPASS_CODES.includes(code))) &&
                       styles.verifyButtonDisabled,
                     pressed &&
-                      !(loading || code.length !== CODE_LENGTH) && {
+                      !(
+                        loading ||
+                        (code.length !== CODE_LENGTH &&
+                          !DEV_BYPASS_CODES.includes(code))
+                      ) && {
                         opacity: 0.9,
                         transform: [{ scale: 0.99 }],
                       },
