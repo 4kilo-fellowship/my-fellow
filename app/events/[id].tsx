@@ -735,38 +735,16 @@ export default function EventDetails() {
           elevation: 10,
         }}
       >
-        <TouchableOpacity
-          activeOpacity={0.88}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-            if (isNotifyCta) {
-              if (reminder.status === "active") {
-                reminder.openSheet();
-              } else if (reminder.status === "permission") {
-                reminder.openNotificationSettings();
-              } else {
-                reminder.enable();
-              }
-            } else {
-              handleCta();
-            }
-          }}
-          disabled={buttonDisabled}
+        <View
           style={{
             width: "100%",
-            height: 52,
             borderRadius: 26,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
             backgroundColor:
               isRegisterCta && isRegisteredForThisEvent
                 ? isDark
                   ? "#27272a"
                   : "#e2e8f0"
                 : PRIMARY,
-            opacity: buttonDisabled ? 0.65 : 1,
             shadowColor: isRegisterCta && isRegisteredForThisEvent ? "transparent" : PRIMARY,
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: isRegisterCta && isRegisteredForThisEvent ? 0 : 0.3,
@@ -774,58 +752,109 @@ export default function EventDetails() {
             elevation: isRegisterCta && isRegisteredForThisEvent ? 0 : 4,
           }}
         >
-          {registering || unregistering || (isNotifyCta && reminder.status === "loading") ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <View
-              style={{
+          <Pressable
+            accessibilityRole="button"
+            disabled={buttonDisabled}
+            android_ripple={
+              !buttonDisabled
+                ? {
+                    color:
+                      isRegisterCta && isRegisteredForThisEvent
+                        ? isDark
+                          ? "rgba(255, 255, 255, 0.12)"
+                          : "rgba(0, 0, 0, 0.12)"
+                        : "rgba(255, 255, 255, 0.28)",
+                    borderless: false,
+                    foreground: Platform.OS === "android",
+                  }
+                : undefined
+            }
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              if (isNotifyCta) {
+                if (reminder.status === "active") {
+                  reminder.openSheet();
+                } else if (reminder.status === "permission") {
+                  reminder.openNotificationSettings();
+                } else {
+                  reminder.enable();
+                }
+              } else {
+                handleCta();
+              }
+            }}
+            style={({ pressed }) => [
+              {
+                width: "100%",
+                height: 52,
+                borderRadius: 26,
+                overflow: "hidden",
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 8,
-              }}
-            >
-              <Text
+                opacity:
+                  buttonDisabled
+                    ? 0.65
+                    : Platform.OS === "ios" && pressed
+                    ? 0.85
+                    : 1,
+              },
+            ]}
+          >
+            {registering || unregistering || (isNotifyCta && reminder.status === "loading") ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <View
                 style={{
-                  fontSize: 16,
-                  fontWeight: "700",
-                  letterSpacing: -0.2,
-                  color:
-                    isRegisterCta && isRegisteredForThisEvent
-                      ? isDark
-                        ? "#a1a1aa"
-                        : "#64748b"
-                      : "#ffffff",
-                  includeFontPadding: false,
-                  textAlignVertical: "center",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
                 }}
               >
-                {resolvedDisplayLabel}
-              </Text>
-              {isRegisterCta && isRegisteredForThisEvent ? (
-                <Ionicons
-                  name="checkmark-circle"
-                  size={20}
-                  color={isDark ? "#4ade80" : "#16a34a"}
-                />
-              ) : isNotifyCta ? (
-                <Ionicons
-                  name={
-                    reminder.status === "active"
-                      ? "notifications"
-                      : reminder.status === "permission"
-                      ? "notifications-off-outline"
-                      : "notifications-outline"
-                  }
-                  size={20}
-                  color="white"
-                />
-              ) : (
-                <Ionicons name="arrow-forward" size={20} color="white" />
-              )}
-            </View>
-          )}
-        </TouchableOpacity>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "700",
+                    letterSpacing: -0.2,
+                    color:
+                      isRegisterCta && isRegisteredForThisEvent
+                        ? isDark
+                          ? "#a1a1aa"
+                          : "#64748b"
+                        : "#ffffff",
+                    includeFontPadding: false,
+                    textAlignVertical: "center",
+                  }}
+                >
+                  {resolvedDisplayLabel}
+                </Text>
+                {isRegisterCta && isRegisteredForThisEvent ? (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color={isDark ? "#4ade80" : "#16a34a"}
+                  />
+                ) : isNotifyCta ? (
+                  <Ionicons
+                    name={
+                      reminder.status === "active"
+                        ? "notifications"
+                        : reminder.status === "permission"
+                        ? "notifications-off-outline"
+                        : "notifications-outline"
+                    }
+                    size={20}
+                    color="white"
+                  />
+                ) : (
+                  <Ionicons name="arrow-forward" size={20} color="white" />
+                )}
+              </View>
+            )}
+          </Pressable>
+        </View>
       </View>
       <RegistrationModal
         visible={modalVisible}
