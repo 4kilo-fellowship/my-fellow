@@ -432,21 +432,21 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
                   {isRegisterCta && isRegisteredForThisEvent ? (
                     <Ionicons
                       name="checkmark-circle"
-                      size={21}
+                      size={17}
                       color={isDark ? "#4ade80" : "#16a34a"}
                       style={styles.primaryBtnIcon}
                     />
                   ) : ctaText?.toLowerCase()?.includes("notify") ? (
                     <Ionicons
                       name="notifications"
-                      size={21}
+                      size={17}
                       color="white"
                       style={styles.primaryBtnIcon}
                     />
                   ) : (
                     <Ionicons
                       name="arrow-forward"
-                      size={21}
+                      size={17}
                       color="white"
                       style={styles.primaryBtnIcon}
                     />
@@ -471,7 +471,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
             >
               <Ionicons
                 name={isLiked ? "heart" : "heart-outline"}
-                size={24}
+                size={19}
                 color={isLiked ? "#ef4444" : "#ffffff"}
               />
             </Pressable>
@@ -494,7 +494,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
               {isSharing ? (
                 <ActivityIndicator size="small" color="white" />
               ) : (
-                <Ionicons name="share-social-outline" size={23} color="white" />
+                <Ionicons name="share-social-outline" size={18} color="white" />
               )}
             </Pressable>
           </View>
@@ -513,7 +513,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
                 }}
                 style={styles.actionIconBtnInner}
               >
-                <Ionicons name="pencil" size={22} color="#ff6719" />
+                <Ionicons name="pencil" size={17} color="#ff6719" />
               </Pressable>
             </View>
           )}
@@ -608,40 +608,40 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     width: "100%",
-    gap: 8,
-    marginTop: 14,
+    gap: 7,
+    marginTop: 12,
   },
   primaryBtnWrap: {
     flex: 1,
-    height: 52,
-    minHeight: 52,
-    borderRadius: 26,
+    height: 40,
+    minHeight: 40,
+    borderRadius: 20,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#ff6719",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 2,
   },
   primaryBtnInner: {
     width: "100%",
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   primaryBtnContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 7,
+    gap: 6,
     width: "100%",
   },
   primaryBtnText: {
-    fontSize: 15,
-    fontWeight: "800",
+    fontSize: 13.5,
+    fontWeight: "700",
     letterSpacing: 0.1,
     includeFontPadding: false,
     textAlignVertical: "center",
@@ -651,10 +651,10 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   actionIconBtnWrap: {
-    width: 52,
-    height: 52,
-    minHeight: 52,
-    borderRadius: 26,
+    width: 40,
+    height: 40,
+    minHeight: 40,
+    borderRadius: 20,
     backgroundColor: "rgba(0, 0, 0, 0.45)",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.22)",
