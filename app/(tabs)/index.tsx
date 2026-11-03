@@ -124,23 +124,14 @@ const Home = () => {
 
       if (Array.isArray(eventsData) && eventsData.length > 0) {
         const imageUris = eventsData
-          .slice(0, 3)
           .map((e: any) => e.imageUrl || e.image)
           .filter(
-            (uri: string): uri is string => !!uri && typeof uri === "string",
+            (uri: string): uri is string => !!uri && typeof uri === "string" && uri.startsWith("http"),
           );
 
         if (imageUris.length > 0) {
-          try {
-            await Promise.all(
-              imageUris.map((url: string) => {
-                if (url.startsWith("http")) return ExpoImage.prefetch(url);
-                return Promise.resolve();
-              }),
-            );
-          } catch (prefetchError) {
-            console.warn("Image prefetch failed:", prefetchError);
-          }
+          // Pre-warm memory/disk image cache for all events non-blockingly
+          Promise.all(imageUris.map((url) => ExpoImage.prefetch(url))).catch(() => {});
         }
       }
     } catch (err: any) {
@@ -448,27 +439,7 @@ const Home = () => {
                         item={item}
                         isDark={isDark}
                         onPress={() => {
-                          // Immediately cache the tapped event in the store for instant zero-latency loading
-                          useEventsStore.setState({ currentEvent: item });
-                          if (eventImg && eventImg.startsWith("http")) {
-                            ExpoImage.prefetch(eventImg).catch(() => {});
-                          }
-                          router.push({
-                            pathname: `/events/${eventId}`,
-                            params: {
-                              initialImage: eventImg,
-                              initialTitle: item.title || "",
-                              initialStartDate: item.startDate || "",
-                              initialEndDate: item.endDate || "",
-                              initialLocation:
-                                item.location || item.venue || "",
-                              initialDescription:
-                                item.shortDescription ||
-                                item.description ||
-                                "",
-                              initialButtonText: item.buttonText || "",
-                            },
-                          } as any);
+                          router.push(`/events/${eventId}` as any);
                         }}
                       />
                     );

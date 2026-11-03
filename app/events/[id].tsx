@@ -76,52 +76,8 @@ export default function EventDetails() {
 
   const id = params.id as string | undefined;
 
-  // Immediately initialize selectedEvent from cache/store or params for instant 0-delay display
-  const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(() => {
-    // 1. Check currentEvent in store (e.g. if set right on press)
-    const storeState = useEventsStore.getState();
-    if (storeState.currentEvent && (storeState.currentEvent._id === id || (storeState.currentEvent as any).id === id)) {
-      return storeState.currentEvent as any;
-    }
-    // 2. Check eventsList in store
-    if (id) {
-      const fromStore = storeState.eventsList.find(
-        (e: any) => e._id === id || e.id === id,
-      );
-      if (fromStore) return fromStore as any;
-    }
-    // 3. Fallback to initial params passed via navigation
-    if (params.initialTitle || params.initialImage) {
-      return {
-        _id: id || "",
-        id: id || "",
-        title: params.initialTitle || "",
-        image: params.initialImage || "",
-        imageUrl: params.initialImage || "",
-        startDate: params.initialStartDate || "",
-        endDate: params.initialEndDate || "",
-        location: params.initialLocation || "",
-        description: params.initialDescription || "",
-        shortDescription: params.initialDescription || "",
-        buttonText: params.initialButtonText || "Register Now",
-      } as any;
-    }
-    return null;
-  });
-  const [loadingDetail, setLoadingDetail] = useState<boolean>(() => {
-    const storeState = useEventsStore.getState();
-    if (storeState.currentEvent && (storeState.currentEvent._id === id || (storeState.currentEvent as any).id === id)) {
-      return false;
-    }
-    if (id) {
-      const fromStore = storeState.eventsList.find(
-        (e: any) => e._id === id || e.id === id,
-      );
-      if (fromStore) return false;
-    }
-    if (params.initialTitle || params.initialImage) return false;
-    return true;
-  });
+  const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isNetworkError, setIsNetworkError] = useState<boolean>(false);
 
@@ -196,33 +152,25 @@ export default function EventDetails() {
 
   const fetchEventById = useCallback(
     async (eventId: string) => {
-      // If we already have the full event cached from store/navigation, don't trigger refetch
-      if (selectedEvent && selectedEvent.fullDescription) {
-        return;
-      }
-      if (!selectedEvent) {
-        setLoadingDetail(true);
-      }
+      setLoadingDetail(true);
       setError(null);
       setIsNetworkError(false);
       try {
         const data = await eventsService.fetchEventById(eventId);
         setSelectedEvent(data);
       } catch (err: any) {
-        if (!selectedEvent) {
-          const isOffline =
-            err.message === "Network Error" ||
-            err.code === "ERR_NETWORK" ||
-            !err.response;
-          setIsNetworkError(isOffline);
-          setError(err.message || "Something went wrong.");
-          if (isOffline) startAnimations();
-        }
+        const isOffline =
+          err.message === "Network Error" ||
+          err.code === "ERR_NETWORK" ||
+          !err.response;
+        setIsNetworkError(isOffline);
+        setError(err.message || "Something went wrong.");
+        if (isOffline) startAnimations();
       } finally {
         setLoadingDetail(false);
       }
     },
-    [startAnimations, selectedEvent],
+    [startAnimations],
   );
 
   useEffect(() => {
@@ -340,7 +288,7 @@ export default function EventDetails() {
       isRegisteredForThisEvent,
     });
 
-  if (loadingDetail && !selectedEvent) {
+  if (loadingDetail) {
     return (
       <View
         className={`flex-1 items-center justify-center ${

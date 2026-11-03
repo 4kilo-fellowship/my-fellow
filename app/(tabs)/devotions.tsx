@@ -9,6 +9,8 @@ import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Animated,
+  Dimensions,
   FlatList,
   Image,
   Platform,
@@ -19,11 +21,17 @@ import {
   Text,
   View,
 } from "react-native";
-import PagerView from "react-native-pager-view";
+import PagerView, {
+  PagerViewOnPageScrollEventData,
+} from "react-native-pager-view";
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
+const TAB_WIDTH = SCREEN_WIDTH / 2;
 
 export default function Devotions() {
   const [activeTab, setActiveTab] = useState<0 | 1>(0);
   const pagerRef = useRef<PagerView>(null);
+  const scrollOffset = useRef(new Animated.Value(0)).current;
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -63,11 +71,17 @@ export default function Devotions() {
   };
 
   const handleTabChange = (index: 0 | 1) => {
+    if (activeTab === index) return;
     try {
       Haptics.selectionAsync();
     } catch {}
     setActiveTab(index);
     pagerRef.current?.setPage(index);
+  };
+
+  const handlePageScroll = (e: { nativeEvent: PagerViewOnPageScrollEventData }) => {
+    const { position, offset } = e.nativeEvent;
+    scrollOffset.setValue(position + offset);
   };
 
   const handleToggleSave = (item: Devotion) => {
@@ -104,23 +118,23 @@ export default function Devotions() {
     }
   };
 
-  // Ultra-minimalist Twitter/X-style feed card with native ripple
+  // Elegant editorial article-style card for fellowship devotions
   const MinimalDevotionCard = ({ item }: { item: Devotion }) => {
     const isSaved = isDevotionSaved(item._id);
     const isRead = isDevotionRead(item._id);
 
     return (
-      <View style={styles.tweetCardOuter}>
+      <View style={styles.articleCardOuter}>
         <Pressable
-          android_ripple={{ color: "rgba(0, 0, 0, 0.05)", foreground: true }}
+          android_ripple={{ color: "rgba(0, 0, 0, 0.04)", foreground: true }}
           style={({ pressed }) => [
-            styles.tweetCardPressable,
-            Platform.OS === "ios" && pressed && { opacity: 0.95, backgroundColor: "#fafafa" },
+            styles.articleCardPressable,
+            Platform.OS === "ios" && pressed && { opacity: 0.96, backgroundColor: "#fafafa" },
           ]}
           onPress={() => router.push(`/devotion/${item._id}`)}
         >
-          {/* Top Row: Author avatar / icon, author name, handle/role, date, bookmark button */}
-          <View style={styles.tweetHeader}>
+          {/* Top Byline: Author monogram + name, fellowship role / badge, date, bookmark */}
+          <View style={styles.articleHeader}>
             <View style={styles.authorAvatar}>
               <Text style={styles.authorAvatarText}>
                 {item.author?.charAt(0)?.toUpperCase() || "F"}
@@ -132,18 +146,29 @@ export default function Devotions() {
                 <Text style={styles.authorName} numberOfLines={1}>
                   {item.author}
                 </Text>
-                <Text style={styles.authorDot}>·</Text>
-                <Text style={styles.authorDate}>{formatDate(item.date)}</Text>
-              </View>
-              {isRead && (
-                <View style={styles.readBadge}>
-                  <Ionicons name="checkmark-done" size={12} color="#10b981" />
-                  <Text style={styles.readText}>Read</Text>
+                <View style={styles.fellowBadge}>
+                  <Text style={styles.fellowBadgeText}>Fellowship</Text>
                 </View>
-              )}
+              </View>
+              <View style={styles.metaSubRow}>
+                <Text style={styles.authorDate}>{formatDate(item.date)}</Text>
+                <Text style={styles.authorDot}>·</Text>
+                <Text style={styles.readTimeText}>
+                  {item.duration || "4 min read"}
+                </Text>
+                {isRead && (
+                  <>
+                    <Text style={styles.authorDot}>·</Text>
+                    <View style={styles.readBadge}>
+                      <Ionicons name="checkmark-done" size={12} color="#10b981" />
+                      <Text style={styles.readText}>Read</Text>
+                    </View>
+                  </>
+                )}
+              </View>
             </View>
 
-            {/* Quick Bookmark action */}
+            {/* Bookmark button */}
             <Pressable
               hitSlop={12}
               android_ripple={{
@@ -159,21 +184,21 @@ export default function Devotions() {
             >
               <Ionicons
                 name={isSaved ? "bookmark" : "bookmark-outline"}
-                size={19}
-                color={isSaved ? PRIMARY : "#71717a"}
+                size={20}
+                color={isSaved ? "#000000" : "#a1a1aa"}
               />
             </Pressable>
           </View>
 
-          {/* Main Title & Teaser */}
-          <Text style={styles.tweetTitle}>{item.title}</Text>
+          {/* Headline & Abstract snippet */}
+          <Text style={styles.articleTitle}>{item.title}</Text>
           {item.caption ? (
-            <Text style={styles.tweetCaption} numberOfLines={2}>
+            <Text style={styles.articleCaption} numberOfLines={2}>
               {item.caption}
             </Text>
           ) : null}
 
-          {/* Minimalist 16:9 Image Preview */}
+          {/* Clean 16:9 Editorial Cover Image */}
           {item.image ? (
             <View style={styles.imageWrapper}>
               <Image
@@ -192,37 +217,46 @@ export default function Devotions() {
             </View>
           ) : null}
 
-          {/* Twitter-style Bottom Stats / Action Bar */}
-          <View style={styles.tweetFooter}>
-            <View style={styles.footerItem}>
-              <Ionicons name="eye-outline" size={15} color="#71717a" />
-              <Text style={styles.footerItemText}>
-                {item.views > 999
-                  ? `${(item.views / 1000).toFixed(1)}k`
-                  : item.views || 0}
-              </Text>
+          {/* Article Footer: "Read Article" action button + metrics & share */}
+          <View style={styles.articleFooter}>
+            {/* Direct "Read Article" Call to Action */}
+            <View style={styles.readButton}>
+              <Text style={styles.readButtonText}>Read Article</Text>
+              <Ionicons name="arrow-forward" size={14} color="#000000" />
             </View>
 
-            <View style={styles.footerItem}>
-              <Ionicons name="heart-outline" size={15} color="#71717a" />
-              <Text style={styles.footerItemText}>{item.likes || 0}</Text>
-            </View>
+            {/* Right side stats: views, likes, and share */}
+            <View style={styles.footerRightActions}>
+              <View style={styles.footerStat}>
+                <Ionicons name="eye-outline" size={14} color="#a1a1aa" />
+                <Text style={styles.footerStatText}>
+                  {item.views > 999
+                    ? `${(item.views / 1000).toFixed(1)}k`
+                    : item.views || 0}
+                </Text>
+              </View>
 
-            <Pressable
-              hitSlop={10}
-              android_ripple={{
-                color: "rgba(0,0,0,0.1)",
-                borderless: true,
-                radius: 16,
-              }}
-              style={styles.footerShareButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                handleShare(item);
-              }}
-            >
-              <Ionicons name="share-outline" size={15} color="#71717a" />
-            </Pressable>
+              <View style={styles.footerStat}>
+                <Ionicons name="heart-outline" size={14} color="#a1a1aa" />
+                <Text style={styles.footerStatText}>{item.likes || 0}</Text>
+              </View>
+
+              <Pressable
+                hitSlop={10}
+                android_ripple={{
+                  color: "rgba(0,0,0,0.1)",
+                  borderless: true,
+                  radius: 16,
+                }}
+                style={styles.footerShareButton}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleShare(item);
+                }}
+              >
+                <Ionicons name="share-outline" size={16} color="#71717a" />
+              </Pressable>
+            </View>
           </View>
         </Pressable>
       </View>
@@ -264,7 +298,7 @@ export default function Devotions() {
           style={styles.tabItem}
           onPress={() => handleTabChange(0)}
         >
-          <View style={styles.tabTitleWrapper}>
+          <View style={styles.tabContentCenter}>
             <Text
               style={[
                 styles.tabTitleText,
@@ -273,7 +307,6 @@ export default function Devotions() {
             >
               All
             </Text>
-            {activeTab === 0 && <View style={styles.activeIndicator} />}
           </View>
         </Pressable>
 
@@ -283,7 +316,7 @@ export default function Devotions() {
           style={styles.tabItem}
           onPress={() => handleTabChange(1)}
         >
-          <View style={styles.tabTitleWrapper}>
+          <View style={styles.tabContentCenter}>
             <View style={styles.savedTabContent}>
               <Text
                 style={[
@@ -311,9 +344,25 @@ export default function Devotions() {
                 </View>
               )}
             </View>
-            {activeTab === 1 && <View style={styles.activeIndicator} />}
           </View>
         </Pressable>
+
+        {/* Continuous 60fps sliding underline bar tracking gesture & clicks */}
+        <Animated.View
+          style={[
+            styles.animatedIndicator,
+            {
+              transform: [
+                {
+                  translateX: scrollOffset.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, TAB_WIDTH],
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
       </View>
 
       {/* Gesture Movement Page View: swipe between All and Saved */}
@@ -321,7 +370,12 @@ export default function Devotions() {
         ref={pagerRef}
         style={styles.pagerView}
         initialPage={0}
-        onPageSelected={(e) => setActiveTab(e.nativeEvent.position as 0 | 1)}
+        onPageScroll={handlePageScroll}
+        onPageSelected={(e) => {
+          const newIndex = e.nativeEvent.position as 0 | 1;
+          setActiveTab(newIndex);
+          scrollOffset.setValue(newIndex);
+        }}
       >
         {/* Page 0: All Devotions */}
         <View key="all" style={styles.page}>
@@ -386,7 +440,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#ffffff",
   },
-  // Tab Bar (Twitter/X style with centered labels and active underline indicator)
+  // Tab Bar (Twitter/X style with centered labels and full-half active underline indicator)
   tabBarContainer: {
     flexDirection: "row",
     height: 48,
@@ -399,13 +453,12 @@ const styles = StyleSheet.create({
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
+    position: "relative",
   },
-  tabTitleWrapper: {
+  tabContentCenter: {
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 8,
-    position: "relative",
   },
   savedTabContent: {
     flexDirection: "row",
@@ -417,20 +470,19 @@ const styles = StyleSheet.create({
   },
   tabTitleActive: {
     fontWeight: "700",
-    color: "#0f1419",
+    color: "#000000",
   },
   tabTitleInactive: {
     fontWeight: "500",
-    color: "#536471",
+    color: "#71717a",
   },
-  activeIndicator: {
+  animatedIndicator: {
     position: "absolute",
     bottom: 0,
     left: 0,
-    right: 0,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: PRIMARY,
+    width: TAB_WIDTH,
+    height: 3,
+    backgroundColor: "#000000",
   },
   tabBadge: {
     marginLeft: 6,
@@ -440,7 +492,7 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
   },
   tabBadgeActive: {
-    backgroundColor: PRIMARY,
+    backgroundColor: "#000000",
   },
   tabBadgeText: {
     fontSize: 11,
@@ -466,27 +518,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
   },
-  // Minimalist Twitter/X Feed Card
-  tweetCardOuter: {
-    marginBottom: 12,
+  // Editorial Article-Style Card
+  articleCardOuter: {
+    marginBottom: 16,
     borderRadius: 16,
     backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: "#f1f5f9",
+    borderColor: "#eff3f4",
     overflow: "hidden",
   },
-  tweetCardPressable: {
-    padding: 14,
+  articleCardPressable: {
+    padding: 16,
   },
-  tweetHeader: {
+  articleHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   authorAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: "#f4f4f5",
     alignItems: "center",
     justifyContent: "center",
@@ -495,9 +547,9 @@ const styles = StyleSheet.create({
     borderColor: "#e4e4e7",
   },
   authorAvatarText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "700",
-    color: "#3f3f46",
+    color: "#18181b",
   },
   authorMeta: {
     flex: 1,
@@ -506,6 +558,7 @@ const styles = StyleSheet.create({
   authorNameRow: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: 2,
   },
   authorName: {
     fontSize: 14,
@@ -513,8 +566,25 @@ const styles = StyleSheet.create({
     color: "#09090b",
     maxWidth: 160,
   },
+  fellowBadge: {
+    marginLeft: 6,
+    backgroundColor: "#f4f4f5",
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  fellowBadgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#52525b",
+    letterSpacing: -0.1,
+  },
+  metaSubRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   authorDot: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#a1a1aa",
     marginHorizontal: 4,
   },
@@ -522,10 +592,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#71717a",
   },
+  readTimeText: {
+    fontSize: 12,
+    color: "#71717a",
+    fontWeight: "500",
+  },
   readBadge: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 1,
   },
   readText: {
     fontSize: 11,
@@ -537,27 +611,27 @@ const styles = StyleSheet.create({
     padding: 6,
     borderRadius: 16,
   },
-  tweetTitle: {
-    fontSize: 15,
-    fontWeight: "700",
+  articleTitle: {
+    fontSize: 17,
+    fontWeight: "800",
     color: "#09090b",
-    lineHeight: 21,
-    marginBottom: 4,
+    lineHeight: 23,
+    marginBottom: 6,
+    letterSpacing: -0.3,
   },
-  tweetCaption: {
-    fontSize: 13,
+  articleCaption: {
+    fontSize: 13.5,
     color: "#52525b",
-    lineHeight: 18,
-    marginBottom: 10,
+    lineHeight: 19,
+    marginBottom: 12,
   },
   imageWrapper: {
     width: "100%",
-    height: 160,
+    height: 165,
     borderRadius: 12,
     overflow: "hidden",
     backgroundColor: "#f4f4f5",
-    marginTop: 6,
-    marginBottom: 10,
+    marginBottom: 14,
     position: "relative",
   },
   cardImage: {
@@ -581,27 +655,45 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginLeft: 3,
   },
-  tweetFooter: {
+  articleFooter: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 2,
-    paddingTop: 8,
+    justifyContent: "space-between",
+    paddingTop: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: "#f4f4f5",
   },
-  footerItem: {
+  readButton: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 20,
+    backgroundColor: "#f4f4f5",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
-  footerItemText: {
+  readButtonText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#000000",
+    marginRight: 4,
+  },
+  footerRightActions: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  footerStat: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 16,
+  },
+  footerStatText: {
     fontSize: 12,
     color: "#71717a",
-    marginLeft: 5,
+    marginLeft: 4,
     fontWeight: "500",
   },
   footerShareButton: {
-    marginLeft: "auto",
+    marginLeft: 14,
     padding: 4,
   },
   // Empty State
