@@ -356,7 +356,6 @@ export default function ManageProductScreen() {
       style={[
         styles.screen,
         isDark ? styles.screenDark : styles.screenLight,
-        { paddingTop: insets.top },
       ]}
     >
       <StatusBar style={isDark ? "light" : "dark"} />

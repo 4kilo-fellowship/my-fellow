@@ -75,8 +75,8 @@ export function ScreenHeader({
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           android_ripple={{
             color: rippleColor,
-            borderless: true,
-            radius: 22,
+            borderless: false,
+            foreground: true,
           }}
           style={({ pressed }) => [
             styles.iconBtn,
@@ -143,6 +143,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
     position: "relative",

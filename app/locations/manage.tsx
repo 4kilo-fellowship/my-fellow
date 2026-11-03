@@ -336,7 +336,6 @@ export default function ManageLocationScreen() {
       style={[
         styles.screen,
         isDark ? styles.screenDark : styles.screenLight,
-        { paddingTop: insets.top },
       ]}
     >
       <StatusBar style={isDark ? "light" : "dark"} />

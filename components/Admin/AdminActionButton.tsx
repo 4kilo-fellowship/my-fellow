@@ -54,6 +54,8 @@ const styles = StyleSheet.create({
   inner: {
     height: "100%",
     paddingHorizontal: 12,
+    borderRadius: 16,
+    overflow: "hidden",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
