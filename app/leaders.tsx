@@ -1,6 +1,13 @@
-import { InfoModal, LeaderCard, Placeholder, ScreenHeader } from "@/components";
+import {
+  AdminActionButton,
+  InfoModal,
+  LeaderCard,
+  Placeholder,
+  ScreenHeader,
+} from "@/components";
 import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useLeadersStore } from "@/stores/leaders.store";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
@@ -22,6 +29,7 @@ export default function LeadersScreen() {
   const isDark = theme === "dark";
   const router = useRouter();
   const { top } = useSafeAreaInsets();
+  const isAdmin = useIsAdmin();
 
   // Header Heights
   const STATIC_HEADER_HEIGHT = top + 80;
@@ -203,6 +211,8 @@ export default function LeadersScreen() {
                   isDark={isDark}
                   onCall={() => handleCall(item.phoneNumber)}
                   onTelegram={() => handleOpenTelegram(item.telegram)}
+                  isAdmin={isAdmin}
+                  onEdit={(ldr) => router.push(`/leaders/manage?id=${ldr.id}`)}
                 />
               </View>
             )}
@@ -226,6 +236,14 @@ export default function LeadersScreen() {
         {/* Static Header: Back and Title */}
         <ScreenHeader
           title="Fellowship Leaders"
+          rightAction={
+            isAdmin ? (
+              <AdminActionButton
+                label="Add"
+                onPress={() => router.push("/leaders/manage")}
+              />
+            ) : null
+          }
           containerStyle={{
             position: "absolute",
             top: 0,

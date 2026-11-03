@@ -2,6 +2,7 @@ import SignInPromptModal from "@/components/SignInPromptModal";
 import { PRIMARY } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { devotionsService } from "@/services/devotionsService";
 import { useDevotionsStore } from "@/stores/devotions.store";
 import { useStreakStore } from "@/stores/streak.store";
@@ -30,6 +31,7 @@ const DevotionDetail = () => {
   const { top, bottom } = useSafeAreaInsets();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const isAdmin = useIsAdmin();
 
   const { markAsRead, savedDevotions, cacheDevotion, getCachedDevotion } =
     useDevotionsStore();
@@ -301,16 +303,26 @@ const DevotionDetail = () => {
           {devotion.title}
         </Text>
 
-        <TouchableOpacity
-          onPress={handleShare}
-          className="w-9 h-9 rounded-full items-center justify-center"
-        >
-          <Ionicons
-            name="share-social-outline"
-            size={20}
-            color={isDark ? "#fff" : "#111"}
-          />
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          {isAdmin && (
+            <TouchableOpacity
+              onPress={() => router.push(`/devotion/manage?id=${devotion._id || id}`)}
+              className="w-9 h-9 rounded-full items-center justify-center bg-orange-500/10"
+            >
+              <Ionicons name="pencil" size={18} color="#ff6719" />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            onPress={handleShare}
+            className="w-9 h-9 rounded-full items-center justify-center"
+          >
+            <Ionicons
+              name="share-social-outline"
+              size={20}
+              color={isDark ? "#fff" : "#111"}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView

@@ -1,4 +1,5 @@
 import {
+  Devotion,
   DevotionResponse,
   SingleDevotionResponse,
 } from "@/types/devotion.types";
@@ -64,5 +65,26 @@ export const devotionsService = {
       data: { views: number; viewsFormatted: string };
     }>(`/devotions/${id}/view`);
     return response.data;
+  },
+
+  createDevotion: async (data: FormData | any): Promise<Devotion> => {
+    const isFormData = data instanceof FormData;
+    const res = await api.post<SingleDevotionResponse>("/devotions", data, {
+      headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
+    });
+    return res.data.data;
+  },
+
+  updateDevotion: async (id: string, data: FormData | any): Promise<Devotion> => {
+    const isFormData = data instanceof FormData;
+    const res = await api.put<SingleDevotionResponse>(`/devotions/${id}`, data, {
+      headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
+    });
+    return res.data.data;
+  },
+
+  deleteDevotion: async (id: string): Promise<boolean> => {
+    const res = await api.delete(`/devotions/${id}`);
+    return res.data?.success !== false;
   },
 };

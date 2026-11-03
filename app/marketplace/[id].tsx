@@ -1,6 +1,7 @@
 import ImageGallery from "@/components/Marketplace/ImageGallery";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { useTheme } from "@/context/ThemeContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useMarketplaceStore } from "@/stores/marketplace.store";
 import { useUserStore } from "@/stores/user.store";
 import { getProductImages, getProductPrice } from "@/types/marketplace.types";
@@ -29,6 +30,7 @@ export default function ProductDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const id = params.id as string;
+  const isAdmin = useIsAdmin();
 
   const { user } = useUserStore();
   const {
@@ -157,6 +159,8 @@ export default function ProductDetailScreen() {
         isDark={isDark}
         top={top}
         onBack={() => router.back()}
+        isAdmin={isAdmin}
+        onEdit={() => router.push(`/marketplace/manage?id=${id}`)}
         onShare={() => {
           setInfoModal({
             visible: true,
@@ -433,11 +437,15 @@ const HeaderBar = ({
   top,
   onBack,
   onShare,
+  isAdmin,
+  onEdit,
 }: {
   isDark: boolean;
   top: number;
   onBack: () => void;
   onShare: () => void;
+  isAdmin?: boolean;
+  onEdit?: () => void;
 }) => (
   <View style={[styles.headerContainer, { top: top + 10 }]}>
     <TouchableOpacity
@@ -447,13 +455,24 @@ const HeaderBar = ({
     >
       <Ionicons name="arrow-back" size={24} color="#fff" />
     </TouchableOpacity>
-    <TouchableOpacity
-      onPress={onShare}
-      activeOpacity={0.8}
-      style={styles.headerButton}
-    >
-      <Ionicons name="share-social-outline" size={22} color="#fff" />
-    </TouchableOpacity>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      {isAdmin && onEdit && (
+        <TouchableOpacity
+          onPress={onEdit}
+          activeOpacity={0.8}
+          style={styles.headerButton}
+        >
+          <Ionicons name="pencil" size={20} color="#ff6719" />
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity
+        onPress={onShare}
+        activeOpacity={0.8}
+        style={styles.headerButton}
+      >
+        <Ionicons name="share-social-outline" size={22} color="#fff" />
+      </TouchableOpacity>
+    </View>
   </View>
 );
 

@@ -1,4 +1,9 @@
-import { fetchLocationsApi } from "./location.api";
+import {
+  createLocationApi,
+  deleteLocationApi,
+  fetchLocationsApi,
+  updateLocationApi,
+} from "./location.api";
 
 export const locationService = {
   fetchLocations: async (): Promise<any[]> => {
@@ -12,5 +17,17 @@ export const locationService = {
       console.error("Error fetching locations:", error);
       throw error;
     }
+  },
+
+  createLocation: async (data: FormData | any): Promise<any> => {
+    return await createLocationApi(data);
+  },
+
+  updateLocation: async (id: string, data: FormData | any): Promise<any> => {
+    return await updateLocationApi(id, data);
+  },
+
+  deleteLocation: async (id: string): Promise<boolean> => {
+    return await deleteLocationApi(id);
   },
 };

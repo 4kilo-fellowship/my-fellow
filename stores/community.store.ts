@@ -577,13 +577,21 @@ export function apiSuggestedToSuggestedMember(
 
 interface CommunityStore {
   posts: CommunityPost[];
+  forYouPosts: CommunityPost[];
+  followingPosts: CommunityPost[];
   members: Record<string, MemberProfile>;
   whoToFollow: SuggestedMember[];
   selectedCategory: CommunityCategory;
   feedType: "following" | "foryou";
   feedCursor: string | null;
+  forYouCursor: string | null;
+  followingCursor: string | null;
   hasMoreFeed: boolean;
+  hasMoreForYou: boolean;
+  hasMoreFollowing: boolean;
   isFeedLoading: boolean;
+  isForYouLoading: boolean;
+  isFollowingLoading: boolean;
   isRefreshing: boolean;
 
   setSelectedCategory: (cat: CommunityCategory) => void;
@@ -641,34 +649,52 @@ export const useCommunityStore = create<CommunityStore>()(
   persist(
     (set, get) => ({
       posts: INITIAL_FELLOWSHIP_POSTS,
+      forYouPosts: INITIAL_FELLOWSHIP_POSTS,
+      followingPosts: [],
       members: INITIAL_MEMBERS,
       whoToFollow: DEFAULT_SUGGESTED_MEMBERS,
       selectedCategory: "all",
       feedType: "foryou",
       feedCursor: null,
+      forYouCursor: null,
+      followingCursor: null,
       hasMoreFeed: true,
+      hasMoreForYou: true,
+      hasMoreFollowing: true,
       isFeedLoading: false,
+      isForYouLoading: false,
+      isFollowingLoading: false,
       isRefreshing: false,
 
       setSelectedCategory: (cat) => set({ selectedCategory: cat }),
       setFeedType: (type) => set({ feedType: type }),
 
       fetchFeed: async (type = "foryou", refresh = false) => {
-        const currentCursor = refresh ? undefined : (get().feedCursor || undefined);
-        set({ isFeedLoading: true, ...(refresh ? { isRefreshing: true } : {}) });
+        const isForyou = type === "foryou";
+        const currentCursor = refresh
+          ? undefined
+          : (isForyou ? get().forYouCursor : get().followingCursor) || undefined;
+        set({
+          isFeedLoading: true,
+          ...(isForyou ? { isForYouLoading: true } : { isFollowingLoading: true }),
+          ...(refresh ? { isRefreshing: true } : {}),
+        });
 
         try {
           const response = await socialApi.getFeed(type, currentCursor);
           const adaptedPosts = (response.items || []).map(apiPostToCommunityPost);
 
           set((state) => {
+            const targetPosts = isForyou
+              ? state.forYouPosts || []
+              : state.followingPosts || [];
             let mergedPosts: CommunityPost[];
-            if (refresh || !state.posts.length) {
+            if (refresh || !targetPosts.length) {
               mergedPosts = adaptedPosts;
             } else {
-              const existingIds = new Set(state.posts.map((p) => p.id));
+              const existingIds = new Set(targetPosts.map((p) => p.id));
               const newUnique = adaptedPosts.filter((p) => !existingIds.has(p.id));
-              mergedPosts = [...state.posts, ...newUnique];
+              mergedPosts = [...targetPosts, ...newUnique];
             }
 
             const updatedMembers = { ...state.members };
@@ -705,6 +731,19 @@ export const useCommunityStore = create<CommunityStore>()(
 
             return {
               posts: mergedPosts,
+              ...(isForyou
+                ? {
+                    forYouPosts: mergedPosts,
+                    forYouCursor: response.nextCursor ?? null,
+                    hasMoreForYou: !!response.hasMore,
+                    isForYouLoading: false,
+                  }
+                : {
+                    followingPosts: mergedPosts,
+                    followingCursor: response.nextCursor ?? null,
+                    hasMoreFollowing: !!response.hasMore,
+                    isFollowingLoading: false,
+                  }),
               members: updatedMembers,
               feedCursor: response.nextCursor ?? null,
               hasMoreFeed: !!response.hasMore,
@@ -714,7 +753,12 @@ export const useCommunityStore = create<CommunityStore>()(
             };
           });
         } catch {
-          set({ isFeedLoading: false, isRefreshing: false });
+          set({
+            isFeedLoading: false,
+            isForYouLoading: false,
+            isFollowingLoading: false,
+            isRefreshing: false,
+          });
         }
       },
 
@@ -771,7 +815,9 @@ export const useCommunityStore = create<CommunityStore>()(
       },
 
       toggleLike: async (postId: string) => {
-        const currentPost = get().posts.find((p) => p.id === postId);
+        const currentPost = get().posts.find((p) => p.id === postId) ||
+          get().forYouPosts.find((p) => p.id === postId) ||
+          get().followingPosts.find((p) => p.id === postId);
         if (!currentPost) return;
 
         const previousIsLiked = !!currentPost.isLiked;
@@ -781,13 +827,16 @@ export const useCommunityStore = create<CommunityStore>()(
           ? previousLikesCount + 1
           : Math.max(0, previousLikesCount - 1);
 
-        // Optimistic update
+        const updatePost = (p: CommunityPost) =>
+          p.id === postId
+            ? { ...p, isLiked: nextIsLiked, likesCount: nextLikesCount }
+            : p;
+
+        // Optimistic update across all feeds
         set((state) => ({
-          posts: state.posts.map((p) =>
-            p.id === postId
-              ? { ...p, isLiked: nextIsLiked, likesCount: nextLikesCount }
-              : p,
-          ),
+          posts: state.posts.map(updatePost),
+          forYouPosts: (state.forYouPosts || []).map(updatePost),
+          followingPosts: (state.followingPosts || []).map(updatePost),
         }));
 
         try {
@@ -798,22 +847,26 @@ export const useCommunityStore = create<CommunityStore>()(
           }
         } catch {
           // Rollback on error
+          const rollbackPost = (p: CommunityPost) =>
+            p.id === postId
+              ? {
+                  ...p,
+                  isLiked: previousIsLiked,
+                  likesCount: previousLikesCount,
+                }
+              : p;
           set((state) => ({
-            posts: state.posts.map((p) =>
-              p.id === postId
-                ? {
-                    ...p,
-                    isLiked: previousIsLiked,
-                    likesCount: previousLikesCount,
-                  }
-                : p,
-            ),
+            posts: state.posts.map(rollbackPost),
+            forYouPosts: (state.forYouPosts || []).map(rollbackPost),
+            followingPosts: (state.followingPosts || []).map(rollbackPost),
           }));
         }
       },
 
       toggleRepost: async (postId: string) => {
-        const currentPost = get().posts.find((p) => p.id === postId);
+        const currentPost = get().posts.find((p) => p.id === postId) ||
+          get().forYouPosts.find((p) => p.id === postId) ||
+          get().followingPosts.find((p) => p.id === postId);
         if (!currentPost) return;
 
         const previousIsReposted = !!currentPost.isReposted;
@@ -823,17 +876,21 @@ export const useCommunityStore = create<CommunityStore>()(
           ? previousRepostsCount + 1
           : Math.max(0, previousRepostsCount - 1);
 
+        const updatePost = (p: CommunityPost) =>
+          p.id === postId
+            ? {
+                ...p,
+                isReposted: nextIsReposted,
+                repostssCount: nextRepostsCount,
+                repostsCount: nextRepostsCount,
+              }
+            : p;
+
         // Optimistic update
         set((state) => ({
-          posts: state.posts.map((p) =>
-            p.id === postId
-              ? {
-                  ...p,
-                  isReposted: nextIsReposted,
-                  repostsCount: nextRepostsCount,
-                }
-              : p,
-          ),
+          posts: state.posts.map(updatePost),
+          forYouPosts: (state.forYouPosts || []).map(updatePost),
+          followingPosts: (state.followingPosts || []).map(updatePost),
         }));
 
         try {
@@ -844,34 +901,39 @@ export const useCommunityStore = create<CommunityStore>()(
           }
         } catch {
           // Rollback on error
+          const rollbackPost = (p: CommunityPost) =>
+            p.id === postId
+              ? {
+                  ...p,
+                  isReposted: previousIsReposted,
+                  repostsCount: previousRepostsCount,
+                }
+              : p;
           set((state) => ({
-            posts: state.posts.map((p) =>
-              p.id === postId
-                ? {
-                    ...p,
-                    isReposted: previousIsReposted,
-                    repostsCount: previousRepostsCount,
-                  }
-                : p,
-            ),
+            posts: state.posts.map(rollbackPost),
+            forYouPosts: (state.forYouPosts || []).map(rollbackPost),
+            followingPosts: (state.followingPosts || []).map(rollbackPost),
           }));
         }
       },
 
       toggleBookmark: async (postId: string) => {
-        const currentPost = get().posts.find((p) => p.id === postId);
+        const currentPost = get().posts.find((p) => p.id === postId) ||
+          get().forYouPosts.find((p) => p.id === postId) ||
+          get().followingPosts.find((p) => p.id === postId);
         if (!currentPost) return;
 
         const previousIsBookmarked = !!currentPost.isBookmarked;
         const nextIsBookmarked = !previousIsBookmarked;
 
+        const updatePost = (p: CommunityPost) =>
+          p.id === postId ? { ...p, isBookmarked: nextIsBookmarked } : p;
+
         // Optimistic update
         set((state) => ({
-          posts: state.posts.map((p) =>
-            p.id === postId
-              ? { ...p, isBookmarked: nextIsBookmarked }
-              : p,
-          ),
+          posts: state.posts.map(updatePost),
+          forYouPosts: (state.forYouPosts || []).map(updatePost),
+          followingPosts: (state.followingPosts || []).map(updatePost),
         }));
 
         try {
@@ -882,12 +944,12 @@ export const useCommunityStore = create<CommunityStore>()(
           }
         } catch {
           // Rollback on error
+          const rollbackPost = (p: CommunityPost) =>
+            p.id === postId ? { ...p, isBookmarked: previousIsBookmarked } : p;
           set((state) => ({
-            posts: state.posts.map((p) =>
-              p.id === postId
-                ? { ...p, isBookmarked: previousIsBookmarked }
-                : p,
-            ),
+            posts: state.posts.map(rollbackPost),
+            forYouPosts: (state.forYouPosts || []).map(rollbackPost),
+            followingPosts: (state.followingPosts || []).map(rollbackPost),
           }));
         }
       },
@@ -966,6 +1028,7 @@ export const useCommunityStore = create<CommunityStore>()(
         // Prepend optimistically
         set((state) => ({
           posts: [optimisticPost, ...state.posts],
+          forYouPosts: [optimisticPost, ...(state.forYouPosts || [])],
         }));
 
         try {
@@ -986,6 +1049,9 @@ export const useCommunityStore = create<CommunityStore>()(
             posts: state.posts.map((p) =>
               p.id === tempId ? realPost : p,
             ),
+            forYouPosts: (state.forYouPosts || []).map((p) =>
+              p.id === tempId ? realPost : p,
+            ),
           }));
 
           return realPost;
@@ -993,6 +1059,7 @@ export const useCommunityStore = create<CommunityStore>()(
           // Rollback optimistic post on error
           set((state) => ({
             posts: state.posts.filter((p) => p.id !== tempId),
+            forYouPosts: (state.forYouPosts || []).filter((p) => p.id !== tempId),
           }));
           throw err;
         }
@@ -1114,6 +1181,7 @@ export const useCommunityStore = create<CommunityStore>()(
       addPost: (newPost) =>
         set((state) => ({
           posts: [newPost, ...state.posts],
+          forYouPosts: [newPost, ...(state.forYouPosts || [])],
         })),
 
       toggleLikeComment: (postId, commentId) =>

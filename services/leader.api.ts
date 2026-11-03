@@ -18,3 +18,27 @@ export const fetchLeadersApi = async (): Promise<Leader[]> => {
   const payload = unwrap<any>(res.data ?? res);
   return Array.isArray(payload) ? payload : [];
 };
+
+export const createLeaderApi = async (data: FormData | any): Promise<Leader> => {
+  const isFormData = data instanceof FormData;
+  const res = await api.post("/leaders", data, {
+    headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
+  });
+  return unwrap<Leader>(res.data);
+};
+
+export const updateLeaderApi = async (
+  id: string,
+  data: FormData | any,
+): Promise<Leader> => {
+  const isFormData = data instanceof FormData;
+  const res = await api.put(`/leaders/${id}`, data, {
+    headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
+  });
+  return unwrap<Leader>(res.data);
+};
+
+export const deleteLeaderApi = async (id: string): Promise<boolean> => {
+  const res = await api.delete(`/leaders/${id}`);
+  return res.data?.success !== false;
+};

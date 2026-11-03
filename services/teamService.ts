@@ -73,8 +73,6 @@ export const fetchTeams = async (forceRefresh = false): Promise<Team[]> => {
             imageUrl: t.imageUrl || "",
           };
 
-          const teamId = team.id || t._id;
-
           if (
             team.imageUrl &&
             (team.imageUrl.startsWith("http") ||
@@ -111,4 +109,36 @@ export const fetchTeams = async (forceRefresh = false): Promise<Team[]> => {
     if (cached) return JSON.parse(cached);
     return [];
   }
+};
+
+export const createTeamApi = async (data: FormData | any): Promise<Team> => {
+  const isFormData = data instanceof FormData;
+  const res = await api.post("/teams", data, {
+    headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
+  });
+  const t = res.data?.data || res.data;
+  return {
+    ...t,
+    id: t._id || t.id,
+  };
+};
+
+export const updateTeamApi = async (
+  id: string,
+  data: FormData | any,
+): Promise<Team> => {
+  const isFormData = data instanceof FormData;
+  const res = await api.put(`/teams/${id}`, data, {
+    headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
+  });
+  const t = res.data?.data || res.data;
+  return {
+    ...t,
+    id: t._id || t.id || id,
+  };
+};
+
+export const deleteTeamApi = async (id: string): Promise<boolean> => {
+  const res = await api.delete(`/teams/${id}`);
+  return res.data?.success !== false;
 };

@@ -2,6 +2,7 @@ import { ConfirmModal, InfoModal } from "@/components";
 import { PRIMARY } from "@/constants/colors";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { JoinRequest, joinRequestService } from "@/services/joinRequestService";
 import { fetchTeams } from "@/services/teamService";
 import { useUserStore } from "@/stores/user.store";
@@ -30,6 +31,7 @@ const TeamDetails = () => {
   const { top } = useSafeAreaInsets();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const isAdmin = useIsAdmin();
 
   const { authState, getCurrentUser } = useAuth();
   const user = useUserStore((state) => state.user);
@@ -343,6 +345,27 @@ const TeamDetails = () => {
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
       </View>
+
+      {isAdmin && (
+        <View
+          style={{
+            position: "absolute",
+            top: top + 10,
+            right: 20,
+            zIndex: 100,
+          }}
+        >
+          <TouchableOpacity
+            onPress={() =>
+              router.push(`/teams/manage?id=${team?.id || team?._id}`)
+            }
+            className="w-11 h-11 bg-black/40 rounded-full items-center justify-center shadow-lg border border-white/20"
+            activeOpacity={0.8}
+          >
+            <Ionicons name="pencil" size={20} color="#ff6719" />
+          </TouchableOpacity>
+        </View>
+      )}
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View className="relative">

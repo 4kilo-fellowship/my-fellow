@@ -161,6 +161,12 @@ function RootNavigator() {
       />
       <Stack.Screen name="events/manage" options={{ title: "Manage Event", headerShown: false }} />
       <Stack.Screen name="events/ai-poster" options={{ title: "AI Poster", headerShown: false }} />
+      <Stack.Screen name="programs/manage" options={{ title: "Manage Program", headerShown: false }} />
+      <Stack.Screen name="locations/manage" options={{ title: "Manage Location", headerShown: false }} />
+      <Stack.Screen name="leaders/manage" options={{ title: "Manage Leader", headerShown: false }} />
+      <Stack.Screen name="teams/manage" options={{ title: "Manage Team", headerShown: false }} />
+      <Stack.Screen name="marketplace/manage" options={{ title: "Manage Product", headerShown: false }} />
+      <Stack.Screen name="devotion/manage" options={{ title: "Manage Devotion", headerShown: false }} />
       <Stack.Screen name="teams/index" options={{ title: "Teams" }} />
       <Stack.Screen name="teams/[id]" options={{ title: "Teams" }} />
       <Stack.Screen name="devotion/[id]" options={{ title: "Devotions" }} />

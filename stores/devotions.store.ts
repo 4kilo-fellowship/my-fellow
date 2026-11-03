@@ -1,3 +1,4 @@
+import { devotionsService } from "@/services/devotionsService";
 import { Devotion } from "@/types/devotion.types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
@@ -16,6 +17,9 @@ interface DevotionsStore {
   isDevotionRead: (id: string) => boolean;
   cacheDevotion: (devotion: Devotion) => void;
   getCachedDevotion: (id: string) => Devotion | undefined;
+  createDevotion: (data: FormData | any) => Promise<Devotion>;
+  updateDevotion: (id: string, data: FormData | any) => Promise<Devotion>;
+  deleteDevotion: (id: string) => Promise<boolean>;
 }
 
 export const useDevotionsStore = create<DevotionsStore>()(
@@ -67,10 +71,47 @@ export const useDevotionsStore = create<DevotionsStore>()(
       getCachedDevotion: (id) => {
         return get().cachedDevotions[id];
       },
+
+      createDevotion: async (data: FormData | any) => {
+        const newDevotion = await devotionsService.createDevotion(data);
+        set((state) => ({
+          devotionsList: [newDevotion, ...state.devotionsList],
+        }));
+        return newDevotion;
+      },
+
+      updateDevotion: async (id: string, data: FormData | any) => {
+        const updated = await devotionsService.updateDevotion(id, data);
+        set((state) => ({
+          devotionsList: state.devotionsList.map((d) =>
+            d._id === id ? updated : d,
+          ),
+          cachedDevotions: {
+            ...state.cachedDevotions,
+            [id]: updated,
+          },
+        }));
+        return updated;
+      },
+
+      deleteDevotion: async (id: string) => {
+        const success = await devotionsService.deleteDevotion(id);
+        if (success) {
+          set((state) => ({
+            devotionsList: state.devotionsList.filter((d) => d._id !== id),
+            savedDevotions: state.savedDevotions.filter((d) => d._id !== id),
+          }));
+        }
+        return success;
+      },
     }),
     {
       name: "devotions-storage",
       storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        savedDevotions: state.savedDevotions,
+        readDevotions: state.readDevotions,
+      }),
     },
   ),
 );

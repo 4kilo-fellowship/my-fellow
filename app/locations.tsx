@@ -1,6 +1,12 @@
-import { Placeholder, ScreenHeader } from "@/components";
+import {
+  AdminActionButton,
+  AdminEditTrigger,
+  Placeholder,
+  ScreenHeader,
+} from "@/components";
 import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useLocationsStore } from "@/stores/locations.store";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -21,9 +27,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 interface Props {
   item: any;
   isDark: boolean;
+  isAdmin?: boolean;
+  onEdit?: (item: any) => void;
 }
 
-const LocationCard = ({ item, isDark }: Props) => {
+const LocationCard = ({ item, isDark, isAdmin, onEdit }: Props) => {
   const handleOpenMaps = () => {
     const scheme = Platform.select({ ios: "maps:", android: "geo:" });
     const latLng =
@@ -57,12 +65,22 @@ const LocationCard = ({ item, isDark }: Props) => {
         isDark ? "bg-[#111] border-[#222]" : "bg-[#f9fafb] border-gray-200"
       }`}
     >
-      <Image
-        source={imageSource}
-        style={{ width: "100%", height: 160 }}
-        contentFit="cover"
-        transition={300}
-      />
+      <View style={{ position: "relative" }}>
+        <Image
+          source={imageSource}
+          style={{ width: "100%", height: 160 }}
+          contentFit="cover"
+          transition={300}
+        />
+        {isAdmin && onEdit && (
+          <View style={{ position: "absolute", top: 14, right: 14 }}>
+            <AdminEditTrigger
+              size={38}
+              onPress={() => onEdit(item)}
+            />
+          </View>
+        )}
+      </View>
       <View className="p-5">
         <Text
           className={`text-lg font-bold mb-1 ${
@@ -153,6 +171,7 @@ export default function LocationsScreen() {
   const isDark = theme === "dark";
   const router = useRouter();
   const { top } = useSafeAreaInsets();
+  const isAdmin = useIsAdmin();
 
   const { locations, loading, refreshing, error, loadLocations } =
     useLocationsStore();
@@ -178,6 +197,14 @@ export default function LocationsScreen() {
         {/* Header */}
         <ScreenHeader
           title="Locations"
+          rightAction={
+            isAdmin ? (
+              <AdminActionButton
+                label="Add"
+                onPress={() => router.push("/locations/manage")}
+              />
+            ) : null
+          }
           containerStyle={{
             backgroundColor: isDark ? "#0A0A0A" : "#ffffff",
             borderBottomColor: isDark ? "#1f2937" : "#e5e7eb",
@@ -273,7 +300,12 @@ export default function LocationsScreen() {
             data={locations}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <LocationCard item={item} isDark={isDark} />
+              <LocationCard
+                item={item}
+                isDark={isDark}
+                isAdmin={isAdmin}
+                onEdit={(loc) => router.push(`/locations/manage?id=${loc.id}`)}
+              />
             )}
             contentContainerStyle={{
               padding: 20,

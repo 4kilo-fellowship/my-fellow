@@ -1,6 +1,9 @@
-import { MainTabHeader, Placeholder } from "@/components";
+import { AdminActionButton, MainTabHeader, Placeholder } from "@/components";
+import { DevotionWriterModal } from "@/components/DevotionWriterModal";
 import { PRIMARY } from "@/constants";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { devotionsService } from "@/services/devotionsService";
+import { devotionWriterService, WriterRequest } from "@/services/devotionWriterService";
 import { useDevotionsStore } from "@/stores/devotions.store";
 import { Devotion } from "@/types/devotion.types";
 import { Ionicons } from "@expo/vector-icons";
@@ -30,6 +33,7 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 const TAB_WIDTH = SCREEN_WIDTH / 2;
 
 export default function Devotions() {
+  const isAdmin = useIsAdmin();
   const [activeTab, setActiveTab] = useState<0 | 1>(0);
   const pagerRef = useRef<PagerView>(null);
   const scrollOffset = useRef(new Animated.Value(0)).current;
@@ -37,6 +41,14 @@ export default function Devotions() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [devotions, setDevotions] = useState<Devotion[]>([]);
+  const [writerModalVisible, setWriterModalVisible] = useState(false);
+  const [myWriterRequest, setMyWriterRequest] = useState<WriterRequest | null>(null);
+
+  useEffect(() => {
+    devotionWriterService.getMyApplication().then((res) => {
+      if (res) setMyWriterRequest(res);
+    }).catch(() => {});
+  }, []);
 
   const {
     saveDevotion,
@@ -175,14 +187,15 @@ export default function Devotions() {
             </Pressable>
           </View>
 
-          {/* Article Title */}
-          <Text style={styles.compactTitle} numberOfLines={2}>
-            {item.title}
-          </Text>
+          {/* Article Info Container */}
+          <View style={styles.compactBody}>
+            {/* Article Title */}
+            <Text style={styles.compactTitle} numberOfLines={2}>
+              {item.title}
+            </Text>
 
-          {/* Bottom Row: Author + Date */}
-          <View style={styles.compactFooter}>
-            <View style={styles.compactAuthorRow}>
+            {/* Bottom Row: Author + Date */}
+            <View style={styles.compactFooter}>
               <View style={styles.compactAvatar}>
                 <Text style={styles.compactAvatarText}>
                   {item.author?.charAt(0)?.toUpperCase() || "F"}
@@ -191,10 +204,11 @@ export default function Devotions() {
               <Text style={styles.compactAuthorName} numberOfLines={1}>
                 {item.author}
               </Text>
+              <Text style={styles.compactDot}>·</Text>
+              <Text style={styles.compactDate} numberOfLines={1}>
+                {formatDate(item.date)}
+              </Text>
             </View>
-            <Text style={styles.compactDate} numberOfLines={1}>
-              {formatDate(item.date)}
-            </Text>
           </View>
         </Pressable>
       </View>
@@ -371,7 +385,19 @@ export default function Devotions() {
       <StatusBar style="dark" />
 
       {/* Main Tab Header with "Devotions" in the center and live Streak badge */}
-      <MainTabHeader borderBottom={true} title="Devotions" showStreak={true} />
+      <MainTabHeader
+        borderBottom={true}
+        title="Devotions"
+        showStreak={true}
+        rightExtra={
+          isAdmin ? (
+            <AdminActionButton
+              label="New"
+              onPress={() => router.push("/devotion/manage")}
+            />
+          ) : null
+        }
+      />
 
       {/* Minimalist Twitter/X Tab Filter: All & Bookmarks */}
       <View style={styles.tabBarContainer}>
@@ -496,63 +522,70 @@ export default function Devotions() {
                 />
               }
             >
-              {/* 1. LATEST POST HERO BANNER (Top) */}
+              {/* 1. LATEST DEVOTION HERO (Top) */}
               {latestDevotion && (
                 <View style={styles.heroOuter}>
                   <Pressable
-                    android_ripple={{ color: "rgba(255, 255, 255, 0.15)", foreground: true }}
+                    android_ripple={{ color: "rgba(0, 0, 0, 0.04)", foreground: true }}
                     style={({ pressed }) => [
                       styles.heroPressable,
                       Platform.OS === "ios" && pressed && { opacity: 0.94 },
                     ]}
                     onPress={() => router.push(`/devotion/${latestDevotion._id}`)}
                   >
-                    {/* Background Artwork */}
-                    {latestDevotion.image ? (
-                      <Image
-                        source={{ uri: latestDevotion.image }}
-                        style={styles.heroImage}
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View style={styles.heroFallbackBg} />
-                    )}
-                    <View style={styles.heroOverlay} />
-
-                    {/* Content inside Hero */}
-                    <View style={styles.heroContent}>
-                      <View style={styles.heroTagRow}>
-                        <View style={styles.heroBadge}>
-                          <Text style={styles.heroBadgeText}>LATEST</Text>
-                        </View>
-                        <Text style={styles.heroDate}>
-                          {formatDate(latestDevotion.date)}
-                        </Text>
+                    {/* Clean Image with only LATEST badge on it */}
+                    <View style={styles.heroImageContainer}>
+                      {latestDevotion.image ? (
+                        <Image
+                          source={{ uri: latestDevotion.image }}
+                          style={styles.heroImage}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={styles.heroFallbackBg} />
+                      )}
+                      <View style={styles.heroBadge}>
+                        <Text style={styles.heroBadgeText}>LATEST</Text>
                       </View>
+                    </View>
 
+                    {/* Content below image */}
+                    <View style={styles.heroContent}>
                       <Text style={styles.heroTitle} numberOfLines={2}>
                         {latestDevotion.title}
                       </Text>
 
                       <View style={styles.heroFooter}>
-                        <View style={styles.heroButton}>
-                          <Text style={styles.heroButtonText}>Read more</Text>
-                          <Ionicons name="arrow-forward" size={13} color="#000000" />
+                        <View style={styles.heroAuthorRow}>
+                          <View style={styles.heroAuthorAvatar}>
+                            <Text style={styles.heroAuthorAvatarText}>
+                              {latestDevotion.author?.charAt(0)?.toUpperCase() || "F"}
+                            </Text>
+                          </View>
+                          <Text style={styles.heroAuthor} numberOfLines={1}>
+                            {latestDevotion.author}
+                          </Text>
+                          <Text style={styles.heroDot}>·</Text>
+                          <Text style={styles.heroDate}>
+                            {formatDate(latestDevotion.date)}
+                          </Text>
                         </View>
-                        <Text style={styles.heroAuthor} numberOfLines={1}>
-                          by {latestDevotion.author}
-                        </Text>
+
+                        <View style={styles.heroButton}>
+                          <Text style={styles.heroButtonText}>Read</Text>
+                          <Ionicons name="arrow-forward" size={12} color="#000000" />
+                        </View>
                       </View>
                     </View>
                   </Pressable>
                 </View>
               )}
 
-              {/* 2. RECENT ARTICLES (Horizontal Scroll) */}
+              {/* 2. RECENT DEVOTIONS (Horizontal Scroll) */}
               {recentDevotions.length > 0 && (
                 <View style={styles.sectionContainer}>
                   <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Recent Articles</Text>
+                    <Text style={styles.sectionTitle}>Recent Devotions</Text>
                   </View>
                   <ScrollView
                     horizontal
@@ -595,17 +628,41 @@ export default function Devotions() {
                   community through writing.
                 </Text>
                 <Pressable
-                  android_ripple={{ color: "rgba(0,0,0,0.08)" }}
+                  android_ripple={{
+                    color: "rgba(255, 255, 255, 0.25)",
+                    foreground: true,
+                  }}
                   style={({ pressed }) => [
                     styles.ctaButton,
-                    Platform.OS === "ios" && pressed && { opacity: 0.85 },
+                    Platform.OS === "ios" &&
+                      pressed && { opacity: 0.88, transform: [{ scale: 0.98 }] },
                   ]}
                   onPress={() => {
-                    try { Haptics.selectionAsync(); } catch {}
-                    router.push("/help" as never);
+                    try {
+                      Haptics.selectionAsync();
+                    } catch {}
+                    setWriterModalVisible(true);
                   }}
                 >
-                  <Text style={styles.ctaButtonText}>Apply to Write</Text>
+                  <Ionicons
+                    name={
+                      myWriterRequest?.status === "pending"
+                        ? "time-outline"
+                        : myWriterRequest?.status === "approved"
+                        ? "checkmark-circle-outline"
+                        : "create-outline"
+                    }
+                    size={18}
+                    color="#ffffff"
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text style={styles.ctaButtonText}>
+                    {myWriterRequest?.status === "pending"
+                      ? "Application Pending"
+                      : myWriterRequest?.status === "approved"
+                      ? "Writer Status Active"
+                      : "Apply to Write"}
+                  </Text>
                 </Pressable>
               </View>
             </ScrollView>
@@ -632,6 +689,14 @@ export default function Devotions() {
           />
         </View>
       </PagerView>
+
+      {/* Devotion Writer Application Modal */}
+      <DevotionWriterModal
+        visible={writerModalVisible}
+        onClose={() => setWriterModalVisible(false)}
+        existingRequest={myWriterRequest}
+        onSuccess={(newReq) => setMyWriterRequest(newReq)}
+      />
     </View>
   );
 }
@@ -716,32 +781,33 @@ const styles = StyleSheet.create({
     paddingBottom: 96,
   },
   scrollPageContent: {
-    paddingBottom: 96,
+    paddingBottom: 240,
   },
   skeletonContainer: {
     paddingHorizontal: 16,
     paddingTop: 16,
   },
-  // 1. Hero Banner (Latest Post)
+  // 1. Hero Banner (Latest Devotion)
   heroOuter: {
     marginHorizontal: 16,
     marginTop: 14,
     marginBottom: 24,
-    borderRadius: 22,
+    borderRadius: 20,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#eff3f4",
     overflow: "hidden",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 3,
   },
   heroPressable: {
-    height: 220,
+    width: "100%",
+  },
+  heroImageContainer: {
+    width: "100%",
+    height: 180,
     position: "relative",
-    justifyContent: "flex-end",
+    backgroundColor: "#f4f4f5",
   },
   heroImage: {
-    ...StyleSheet.absoluteFill,
     width: "100%",
     height: "100%",
   },
@@ -749,24 +815,14 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     backgroundColor: "#18181b",
   },
-  heroOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(0,0,0,0.48)",
-  },
-  heroContent: {
-    padding: 18,
-  },
-  heroTagRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
   heroBadge: {
+    position: "absolute",
+    top: 12,
+    left: 12,
     backgroundColor: PRIMARY,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    marginRight: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   heroBadgeText: {
     color: "#ffffff",
@@ -774,31 +830,67 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     letterSpacing: 0.5,
   },
-  heroDate: {
-    color: "rgba(255,255,255,0.8)",
-    fontSize: 12,
-    fontWeight: "500",
+  heroContent: {
+    padding: 14,
   },
   heroTitle: {
-    color: "#ffffff",
-    fontSize: 19,
+    color: "#09090b",
+    fontSize: 17,
     fontWeight: "800",
-    lineHeight: 25,
+    lineHeight: 23,
     letterSpacing: -0.3,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   heroFooter: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
+  heroAuthorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: 10,
+  },
+  heroAuthorAvatar: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#f4f4f5",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 6,
+    borderWidth: 1,
+    borderColor: "#e4e4e7",
+  },
+  heroAuthorAvatarText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#3f3f46",
+  },
+  heroAuthor: {
+    color: "#3f3f46",
+    fontSize: 12,
+    fontWeight: "600",
+    maxWidth: 130,
+  },
+  heroDot: {
+    fontSize: 12,
+    color: "#a1a1aa",
+    marginHorizontal: 5,
+  },
+  heroDate: {
+    color: "#71717a",
+    fontSize: 12,
+    fontWeight: "500",
+  },
   heroButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 9999,
+    backgroundColor: "#f4f4f5",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
   heroButtonText: {
     color: "#000000",
@@ -806,15 +898,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginRight: 4,
   },
-  heroAuthor: {
-    color: "rgba(255,255,255,0.85)",
-    fontSize: 12,
-    fontWeight: "500",
-    maxWidth: 150,
-  },
   // Section Headers
   sectionContainer: {
-    marginBottom: 20,
+    marginBottom: 28,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -832,10 +918,11 @@ const styles = StyleSheet.create({
   horizontalScrollContent: {
     paddingHorizontal: 16,
     gap: 12,
+    paddingBottom: 8,
   },
   // Compact Vertical Card (Inspiration from screenshot)
   compactCardOuter: {
-    width: 190,
+    width: 220,
     backgroundColor: "#ffffff",
     borderRadius: 18,
     borderWidth: 1,
@@ -843,16 +930,19 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   compactCardPressable: {
-    padding: 10,
+    paddingTop: 10,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
+    width: "100%",
   },
   compactImageWrapper: {
     width: "100%",
-    height: 125,
+    height: 135,
     borderRadius: 14,
     overflow: "hidden",
     position: "relative",
     backgroundColor: "#f4f4f5",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   compactImage: {
     width: "100%",
@@ -874,24 +964,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  compactBody: {
+    width: "100%",
+    paddingHorizontal: 2,
+    paddingTop: 2,
+    paddingBottom: 4,
+  },
   compactTitle: {
-    fontSize: 14,
+    fontSize: 14.5,
     fontWeight: "700",
     color: "#09090b",
-    lineHeight: 18,
-    marginBottom: 8,
-    minHeight: 36,
+    lineHeight: 20,
+    marginBottom: 10,
+    minHeight: 40,
   },
   compactFooter: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-  },
-  compactAuthorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    marginRight: 6,
+    width: "100%",
+    marginTop: 2,
   },
   compactAvatar: {
     width: 20,
@@ -900,9 +991,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#f4f4f5",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 5,
+    marginRight: 6,
     borderWidth: 1,
     borderColor: "#e4e4e7",
+    flexShrink: 0,
   },
   compactAvatarText: {
     fontSize: 9,
@@ -910,15 +1002,22 @@ const styles = StyleSheet.create({
     color: "#3f3f46",
   },
   compactAuthorName: {
-    fontSize: 11,
+    fontSize: 11.5,
     color: "#52525b",
     fontWeight: "600",
-    flex: 1,
+    flexShrink: 1,
+  },
+  compactDot: {
+    fontSize: 12,
+    color: "#a1a1aa",
+    marginHorizontal: 4,
+    flexShrink: 0,
   },
   compactDate: {
-    fontSize: 10,
+    fontSize: 11,
     color: "#a1a1aa",
     fontWeight: "500",
+    flexShrink: 0,
   },
   // Editorial Article-Style Card
   articleCardOuter: {
@@ -1130,7 +1229,7 @@ const styles = StyleSheet.create({
   ctaContainer: {
     marginHorizontal: 16,
     marginTop: 12,
-    marginBottom: 16,
+    marginBottom: 28,
     paddingVertical: 28,
     paddingHorizontal: 24,
     alignItems: "center",
@@ -1143,7 +1242,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#f4f4f5",
+    backgroundColor: "rgba(255, 103, 25, 0.12)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 14,
@@ -1165,15 +1264,23 @@ const styles = StyleSheet.create({
     maxWidth: 260,
   },
   ctaButton: {
-    backgroundColor: "#09090b",
-    paddingHorizontal: 24,
-    paddingVertical: 11,
-    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: PRIMARY,
+    paddingHorizontal: 26,
+    paddingVertical: 13,
+    borderRadius: 14,
+    shadowColor: PRIMARY,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
   },
   ctaButtonText: {
     color: "#ffffff",
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "700",
-    letterSpacing: -0.1,
+    letterSpacing: -0.2,
   },
 });

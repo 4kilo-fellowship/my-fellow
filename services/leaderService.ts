@@ -1,5 +1,10 @@
 import { Leader } from "@/types/leader.types";
-import { fetchLeadersApi } from "./leader.api";
+import {
+  createLeaderApi,
+  deleteLeaderApi,
+  fetchLeadersApi,
+  updateLeaderApi,
+} from "./leader.api";
 
 export const leaderService = {
   fetchLeaders: async (): Promise<Leader[]> => {
@@ -14,5 +19,17 @@ export const leaderService = {
       console.error("Error fetching leaders:", error);
       throw error;
     }
+  },
+
+  createLeader: async (data: FormData | any): Promise<Leader> => {
+    return await createLeaderApi(data);
+  },
+
+  updateLeader: async (id: string, data: FormData | any): Promise<Leader> => {
+    return await updateLeaderApi(id, data);
+  },
+
+  deleteLeader: async (id: string): Promise<boolean> => {
+    return await deleteLeaderApi(id);
   },
 };

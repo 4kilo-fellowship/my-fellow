@@ -1,3 +1,4 @@
+import { AdminActionButton } from "@/components/Admin/AdminActionButton";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import CartBadge from "@/components/Marketplace/CartBadge";
 import CartSheet from "@/components/Marketplace/CartSheet";
@@ -6,6 +7,7 @@ import ProductSkeleton from "@/components/Marketplace/ProductSkeleton";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { ProductBottomSheet } from "@/components/Modals/ProductBottomSheet";
 import { useTheme } from "@/context/ThemeContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useMarketplaceStore } from "@/stores/marketplace.store";
 import { Product } from "@/types/marketplace.types";
 import { Ionicons } from "@expo/vector-icons";
@@ -48,6 +50,7 @@ export default function MarketplaceScreen() {
   const isDark = theme === "dark";
   const { top } = useSafeAreaInsets();
   const router = useRouter();
+  const isAdmin = useIsAdmin();
 
   const [cartVisible, setCartVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -283,17 +286,25 @@ export default function MarketplaceScreen() {
       <ScreenHeader
         title="Fellowship Store"
         rightAction={
-          <TouchableOpacity
-            onPress={() => router.push("/marketplace/orders" as any)}
-            activeOpacity={0.8}
-            className="w-11 h-11 rounded-full items-center justify-center"
-          >
-            <Ionicons
-              name="receipt-outline"
-              size={22}
-              color={isDark ? "white" : "#0f172a"}
-            />
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            {isAdmin && (
+              <AdminActionButton
+                label="Add"
+                onPress={() => router.push("/marketplace/manage")}
+              />
+            )}
+            <TouchableOpacity
+              onPress={() => router.push("/marketplace/orders" as any)}
+              activeOpacity={0.8}
+              className="w-10 h-10 rounded-full items-center justify-center"
+            >
+              <Ionicons
+                name="receipt-outline"
+                size={22}
+                color={isDark ? "white" : "#0f172a"}
+              />
+            </TouchableOpacity>
+          </View>
         }
         containerStyle={{
           position: "absolute",

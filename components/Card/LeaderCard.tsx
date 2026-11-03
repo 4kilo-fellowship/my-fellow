@@ -1,3 +1,4 @@
+import { AdminEditTrigger } from "@/components/Admin/AdminEditTrigger";
 import { PRIMARY } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -9,9 +10,18 @@ interface Props {
   isDark: boolean;
   onCall: () => void;
   onTelegram: () => void;
+  isAdmin?: boolean;
+  onEdit?: (item: any) => void;
 }
 
-const LeaderCard = ({ item, isDark, onCall, onTelegram }: Props) => {
+const LeaderCard = ({
+  item,
+  isDark,
+  onCall,
+  onTelegram,
+  isAdmin,
+  onEdit,
+}: Props) => {
   return (
     <View
       className={`mb-4 rounded-[24px] p-5 border ${
@@ -52,18 +62,23 @@ const LeaderCard = ({ item, isDark, onCall, onTelegram }: Props) => {
               </Text>
             </View>
 
-            <View
-              className={`px-3 py-1.5 rounded-lg border ${
-                isDark ? "bg-[#222] border-[#333]" : "bg-white border-gray-200"
-              }`}
-            >
-              <Text
-                className={`text-[10px] font-bold uppercase tracking-wide ${
-                  isDark ? "text-gray-400" : "text-gray-600"
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              {isAdmin && onEdit && (
+                <AdminEditTrigger size={32} onPress={() => onEdit(item)} />
+              )}
+              <View
+                className={`px-3 py-1.5 rounded-lg border ${
+                  isDark ? "bg-[#222] border-[#333]" : "bg-white border-gray-200"
                 }`}
               >
-                {item.role}
-              </Text>
+                <Text
+                  className={`text-[10px] font-bold uppercase tracking-wide ${
+                    isDark ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  {item.role}
+                </Text>
+              </View>
             </View>
           </View>
         </View>

@@ -1,7 +1,14 @@
-import { InfoModal, Placeholder, ScreenHeader } from "@/components";
+import {
+  AdminActionButton,
+  AdminEditTrigger,
+  InfoModal,
+  Placeholder,
+  ScreenHeader,
+} from "@/components";
 import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { useAlerts } from "@/hooks/useAlerts";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useProgramsStore } from "@/stores/programs.store";
 import { Program } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,6 +34,8 @@ interface ProgramProps {
   isDark: boolean;
   isAlertActive: (title: string) => boolean;
   onToggleAlert: (item: Program) => void;
+  isAdmin?: boolean;
+  onEdit?: (item: Program) => void;
 }
 const openGoogleMaps = (lat: number, lng: number, label: string) => {
   const scheme = Platform.select({
@@ -53,6 +62,8 @@ const ProgramCard = ({
   isDark,
   isAlertActive,
   onToggleAlert,
+  isAdmin,
+  onEdit,
 }: ProgramProps) => {
   const isAlertSet = isAlertActive(item.title);
 
@@ -81,17 +92,25 @@ const ProgramCard = ({
             }}
           />
 
-          <TouchableOpacity
-            onPress={() => onToggleAlert(item)}
-            activeOpacity={0.7}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full items-center justify-center bg-black/40 backdrop-blur-sm"
-          >
-            <Ionicons
-              name={isAlertSet ? "notifications" : "notifications-outline"}
-              size={20}
-              color={isAlertSet ? "#f97316" : "white"}
-            />
-          </TouchableOpacity>
+          <View style={{ position: "absolute", top: 16, right: 16, flexDirection: "row", alignItems: "center", gap: 8 }}>
+            {isAdmin && onEdit && (
+              <AdminEditTrigger
+                size={40}
+                onPress={() => onEdit(item)}
+              />
+            )}
+            <TouchableOpacity
+              onPress={() => onToggleAlert(item)}
+              activeOpacity={0.7}
+              className="w-10 h-10 rounded-full items-center justify-center bg-black/40 backdrop-blur-sm"
+            >
+              <Ionicons
+                name={isAlertSet ? "notifications" : "notifications-outline"}
+                size={20}
+                color={isAlertSet ? "#f97316" : "white"}
+              />
+            </TouchableOpacity>
+          </View>
 
           <View className="absolute bottom-4 left-5 right-5">
             <Text
@@ -225,6 +244,7 @@ export default function WeeklyPrograms() {
   const isDark = theme === "dark";
   const router = useRouter();
   const { top } = useSafeAreaInsets();
+  const isAdmin = useIsAdmin();
 
   // Header Heights
   const STATIC_HEADER_HEIGHT = top + 80;
@@ -482,6 +502,8 @@ export default function WeeklyPrograms() {
                   isDark={isDark}
                   isAlertActive={isAlertActive}
                   onToggleAlert={handleToggleAlert}
+                  isAdmin={isAdmin}
+                  onEdit={(prog) => router.push(`/programs/manage?id=${prog.id}`)}
                 />
               </View>
             )}
@@ -505,6 +527,14 @@ export default function WeeklyPrograms() {
         {/* Static Header: Back and Title */}
         <ScreenHeader
           title="Programs"
+          rightAction={
+            isAdmin ? (
+              <AdminActionButton
+                label="Add"
+                onPress={() => router.push("/programs/manage")}
+              />
+            ) : null
+          }
           containerStyle={{
             position: "absolute",
             top: 0,

@@ -18,3 +18,27 @@ export const fetchLocationsApi = async (): Promise<any[]> => {
   const payload = unwrap<any>(res.data ?? res);
   return Array.isArray(payload) ? payload : [];
 };
+
+export const createLocationApi = async (data: FormData | any): Promise<any> => {
+  const isFormData = data instanceof FormData;
+  const res = await api.post("/locations", data, {
+    headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
+  });
+  return unwrap<any>(res.data);
+};
+
+export const updateLocationApi = async (
+  id: string,
+  data: FormData | any,
+): Promise<any> => {
+  const isFormData = data instanceof FormData;
+  const res = await api.put(`/locations/${id}`, data, {
+    headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
+  });
+  return unwrap<any>(res.data);
+};
+
+export const deleteLocationApi = async (id: string): Promise<boolean> => {
+  const res = await api.delete(`/locations/${id}`);
+  return res.data?.success !== false;
+};

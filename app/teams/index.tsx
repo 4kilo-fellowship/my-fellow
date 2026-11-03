@@ -1,7 +1,8 @@
-import { Placeholder, QuickActions } from "@/components";
+import { AdminActionButton, Placeholder, QuickActions } from "@/components";
 import { PRIMARY } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { JoinRequest, joinRequestService } from "@/services/joinRequestService";
 import { useTeamsStore } from "@/stores/teams.store";
 import { useUserStore } from "@/stores/user.store";
@@ -130,6 +131,7 @@ export default function TeamsScreen() {
   const isDark = theme === "dark";
   const [searchText, setSearchText] = useState("");
   const router = useRouter();
+  const isAdmin = useIsAdmin();
 
   const { authState, getCurrentUser } = useAuth();
   const user = useUserStore((state) => state.user);
@@ -173,24 +175,32 @@ export default function TeamsScreen() {
 
       <View style={{ paddingTop: top + 10 }}>
         {/* HEADER */}
-        <View className="px-5 mb-4 flex-row items-center">
-          {router.canGoBack() && (
-            <TouchableOpacity
-              onPress={() => router.back()}
-              className="mr-3 p-2 -ml-2 rounded-full"
+        <View className="px-5 mb-4 flex-row items-center justify-between">
+          <View className="flex-row items-center">
+            {router.canGoBack() && (
+              <TouchableOpacity
+                onPress={() => router.back()}
+                className="mr-3 p-2 -ml-2 rounded-full"
+              >
+                <Ionicons
+                  name="arrow-back"
+                  size={24}
+                  color={isDark ? "white" : "black"}
+                />
+              </TouchableOpacity>
+            )}
+            <Text
+              className={`text-3xl font-extrabold ${isDark ? "text-white" : "text-black"}`}
             >
-              <Ionicons
-                name="arrow-back"
-                size={24}
-                color={isDark ? "white" : "black"}
-              />
-            </TouchableOpacity>
+              Teams
+            </Text>
+          </View>
+          {isAdmin && (
+            <AdminActionButton
+              label="Add"
+              onPress={() => router.push("/teams/manage")}
+            />
           )}
-          <Text
-            className={`text-3xl font-extrabold ${isDark ? "text-white" : "text-black"}`}
-          >
-            Teams
-          </Text>
         </View>
 
         {/* Search & Actions */}

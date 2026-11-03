@@ -9,6 +9,9 @@ interface LocationsState {
   refreshing: boolean;
   error: string | null;
   loadLocations: (forceRefresh?: boolean) => Promise<void>;
+  createLocation: (data: FormData | any) => Promise<any>;
+  updateLocation: (id: string, data: FormData | any) => Promise<any>;
+  deleteLocation: (id: string) => Promise<boolean>;
 }
 
 export const useLocationsStore = create<LocationsState>()(
@@ -39,6 +42,44 @@ export const useLocationsStore = create<LocationsState>()(
         } finally {
           set({ loading: false, refreshing: false });
         }
+      },
+
+      createLocation: async (data: FormData | any) => {
+        const newLocation = await locationService.createLocation(data);
+        const normalized = {
+          ...newLocation,
+          id: newLocation.id || newLocation._id,
+        };
+        set((state) => ({
+          locations: [normalized, ...state.locations],
+        }));
+        return normalized;
+      },
+
+      updateLocation: async (id: string, data: FormData | any) => {
+        const updated = await locationService.updateLocation(id, data);
+        const normalized = {
+          ...updated,
+          id: updated.id || updated._id || id,
+        };
+        set((state) => ({
+          locations: state.locations.map((loc) =>
+            loc.id === id || loc._id === id ? normalized : loc,
+          ),
+        }));
+        return normalized;
+      },
+
+      deleteLocation: async (id: string) => {
+        const success = await locationService.deleteLocation(id);
+        if (success) {
+          set((state) => ({
+            locations: state.locations.filter(
+              (loc) => loc.id !== id && loc._id !== id,
+            ),
+          }));
+        }
+        return success;
       },
     }),
     {

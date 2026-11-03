@@ -1,8 +1,13 @@
 import {
+  createProductApi,
+  deleteProductApi,
+  fetchAllOrdersAdminApi,
   fetchMyOrdersApi,
   fetchProductByIdApi,
   fetchProductsApi,
   placeOrderApi,
+  updateOrderStatusAdminApi,
+  updateProductApi,
 } from "@/services/marketplace.api";
 import {
   CartItem,
@@ -34,6 +39,10 @@ type MarketplaceState = {
   ordersHasMore: boolean;
   placingOrder: boolean;
 
+  // Admin orders
+  adminOrders: Order[];
+  adminOrdersLoading: boolean;
+
   error: string | null;
 
   // Product actions
@@ -41,6 +50,9 @@ type MarketplaceState = {
   fetchProductById: (id: string) => Promise<void>;
   loadMore: () => Promise<void>;
   setSelectedCategory: (category: string) => void;
+  createProduct: (data: FormData | any) => Promise<Product>;
+  updateProduct: (id: string, data: FormData | any) => Promise<Product>;
+  deleteProduct: (id: string) => Promise<boolean>;
 
   // Cart actions
   addToCart: (product: Product, quantity?: number) => void;
@@ -55,6 +67,11 @@ type MarketplaceState = {
   placeOrder: () => Promise<Order | null>;
   fetchMyOrders: (reset?: boolean, limit?: number) => Promise<void>;
   loadMoreOrders: () => Promise<void>;
+  fetchAdminOrders: () => Promise<void>;
+  updateOrderStatus: (
+    id: string,
+    status: "PENDING" | "CONFIRMED" | "SHIPPED" | "DELIVERED" | "CANCELLED",
+  ) => Promise<Order | null>;
 
   setError: (error: string | null) => void;
 };
@@ -78,6 +95,9 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       ordersPage: 1,
       ordersHasMore: true,
       placingOrder: false,
+
+      adminOrders: [],
+      adminOrdersLoading: false,
 
       error: null,
 
@@ -135,38 +155,69 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         }
       },
 
+      createProduct: async (data: FormData | any) => {
+        const res = await createProductApi(data);
+        if (res.data) {
+          set((state) => ({
+            products: [res.data, ...state.products],
+          }));
+          return res.data;
+        }
+        throw new Error(res.message || "Failed to create product");
+      },
+
+      updateProduct: async (id: string, data: FormData | any) => {
+        const res = await updateProductApi(id, data);
+        if (res.data) {
+          set((state) => ({
+            products: state.products.map((p) =>
+              p.id === id || (p as any)._id === id ? res.data : p,
+            ),
+            currentProduct:
+              state.currentProduct?.id === id ||
+              (state.currentProduct as any)?._id === id
+                ? res.data
+                : state.currentProduct,
+          }));
+          return res.data;
+        }
+        throw new Error(res.message || "Failed to update product");
+      },
+
+      deleteProduct: async (id: string) => {
+        const res = await deleteProductApi(id);
+        if (res.success !== false) {
+          set((state) => ({
+            products: state.products.filter(
+              (p) => p.id !== id && (p as any)._id !== id,
+            ),
+          }));
+          return true;
+        }
+        return false;
+      },
+
       loadMore: async () => {
         const { hasMore, loading } = get();
         if (!hasMore || loading) return;
-        set({ loading: true });
         await get().fetchProducts(false);
       },
+
       setSelectedCategory: (category: string) => {
-        set({
-          selectedCategory: category,
-          page: 1,
-          products: [],
-          loading: true,
-        });
-        get()
-          .fetchProducts(true)
-          .catch(() => set({ loading: false }));
+        set({ selectedCategory: category });
+        get().fetchProducts(true);
       },
 
-      addToCart: (product: Product, quantity: number = 1) => {
+      addToCart: (product: Product, quantity = 1) => {
         const { cartItems } = get();
-        const existing = cartItems.find(
+        const existingItemIndex = cartItems.findIndex(
           (item) => item.product.id === product.id,
         );
 
-        if (existing) {
-          set({
-            cartItems: cartItems.map((item) =>
-              item.product.id === product.id
-                ? { ...item, quantity: item.quantity + quantity }
-                : item,
-            ),
-          });
+        if (existingItemIndex > -1) {
+          const updatedItems = [...cartItems];
+          updatedItems[existingItemIndex].quantity += quantity;
+          set({ cartItems: updatedItems });
         } else {
           set({ cartItems: [...cartItems, { product, quantity }] });
         }
@@ -185,6 +236,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
           get().removeFromCart(productId);
           return;
         }
+
         set({
           cartItems: get().cartItems.map((item) =>
             item.product.id === productId ? { ...item, quantity } : item,
@@ -197,14 +249,17 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       setCartVisible: (visible: boolean) => set({ cartVisible: visible }),
 
       getCartTotal: () => {
-        return get().cartItems.reduce(
-          (sum, item) => sum + getProductPrice(item.product) * item.quantity,
-          0,
-        );
+        return get().cartItems.reduce((total, item) => {
+          const price = getProductPrice(item.product);
+          return total + price * item.quantity;
+        }, 0);
       },
 
       getCartCount: () => {
-        return get().cartItems.reduce((sum, item) => sum + item.quantity, 0);
+        return get().cartItems.reduce(
+          (count, item) => count + item.quantity,
+          0,
+        );
       },
 
       placeOrder: async () => {
@@ -212,6 +267,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         if (cartItems.length === 0) return null;
 
         set({ placingOrder: true, error: null });
+
         try {
           const items = cartItems.map((item) => ({
             productId: item.product.id,
@@ -219,23 +275,31 @@ export const useMarketplaceStore = create<MarketplaceState>()(
           }));
 
           const response = await placeOrderApi(items);
-          if (response.success) {
-            set({ placingOrder: false, cartItems: [], cartVisible: false });
+
+          if (response.success && response.data) {
+            get().clearCart();
+            set({
+              orders: [response.data, ...get().orders],
+              placingOrder: false,
+              cartVisible: false,
+            });
             return response.data;
           } else {
             set({
-              error: response.message || "Order failed",
+              error: response.message || "Failed to place order",
               placingOrder: false,
             });
             return null;
           }
         } catch (err: any) {
-          const message =
-            err?.response?.data?.message ||
-            err?.message ||
-            "Failed to place order";
-          set({ error: message, placingOrder: false });
-          throw err;
+          set({
+            error:
+              err?.response?.data?.message ||
+              err?.message ||
+              "Failed to place order",
+            placingOrder: false,
+          });
+          return null;
         }
       },
 
@@ -266,6 +330,41 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         const { ordersHasMore, ordersLoading } = get();
         if (!ordersHasMore || ordersLoading) return;
         await get().fetchMyOrders(false);
+      },
+
+      fetchAdminOrders: async () => {
+        set({ adminOrdersLoading: true });
+        try {
+          const response = await fetchAllOrdersAdminApi(1, 100);
+          set({
+            adminOrders: response.data?.orders || [],
+            adminOrdersLoading: false,
+          });
+        } catch (err: any) {
+          set({
+            error: err?.message || "Failed to fetch admin orders",
+            adminOrdersLoading: false,
+          });
+        }
+      },
+
+      updateOrderStatus: async (id, status) => {
+        try {
+          const res = await updateOrderStatusAdminApi(id, status);
+          if (res.data) {
+            set((state) => ({
+              adminOrders: state.adminOrders.map((o) =>
+                o.id === id ? res.data : o,
+              ),
+              orders: state.orders.map((o) => (o.id === id ? res.data : o)),
+            }));
+            return res.data;
+          }
+          return null;
+        } catch (err: any) {
+          set({ error: err?.message || "Failed to update order status" });
+          return null;
+        }
       },
 
       setError: (error) => set({ error }),
