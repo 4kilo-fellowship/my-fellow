@@ -413,19 +413,41 @@ const Home = () => {
                 contentContainerStyle={{ paddingHorizontal: 20 }}
                 onScroll={(e) => {
                   const offset = e.nativeEvent.contentOffset.x;
-                  // Fast transition threshold: triggers earlier at 25% of card swipe
                   const newIndex = Math.min(
-                    Math.max(0, Math.floor((offset + itemWidth * 0.25) / itemWidth)),
+                    Math.max(0, Math.round(offset / itemWidth)),
                     events.length - 1,
                   );
-                  setActiveIndex((prev) => (prev !== newIndex ? newIndex : prev));
+                  if (newIndex !== activeIndex) {
+                    setActiveIndex(newIndex);
+                    try {
+                      Haptics.selectionAsync().catch(() => {});
+                    } catch {}
+                  }
+                }}
+                onScrollEndDrag={(e) => {
+                  const offset = e.nativeEvent.contentOffset.x;
+                  const velocity = e.nativeEvent.velocity?.x || 0;
+                  let target = Math.round(offset / itemWidth);
+                  if (velocity > 0.15) {
+                    target = Math.min(events.length - 1, Math.ceil(offset / itemWidth));
+                  } else if (velocity < -0.15) {
+                    target = Math.max(0, Math.floor(offset / itemWidth));
+                  }
+                  if (target !== activeIndex) {
+                    setActiveIndex(target);
+                    try {
+                      Haptics.selectionAsync().catch(() => {});
+                    } catch {}
+                  }
                 }}
                 onMomentumScrollEnd={(e) => {
                   const newIndex = Math.min(
                     Math.max(0, Math.round(e.nativeEvent.contentOffset.x / itemWidth)),
                     events.length - 1,
                   );
-                  setActiveIndex((prev) => (prev !== newIndex ? newIndex : prev));
+                  if (newIndex !== activeIndex) {
+                    setActiveIndex(newIndex);
+                  }
                 }}
                 scrollEventThrottle={16}
               >
@@ -463,7 +485,7 @@ const Home = () => {
                   <View
                     key={i}
                     style={{
-                      width: 6,
+                      width: activeIndex === i ? 18 : 6,
                       height: 6,
                       borderRadius: 3,
                       backgroundColor:

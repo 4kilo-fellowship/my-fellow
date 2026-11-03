@@ -164,27 +164,6 @@ export default function Devotions() {
                 <Ionicons name="book-outline" size={24} color="#a1a1aa" />
               </View>
             )}
-
-            {/* Bookmark button on top right of thumbnail */}
-            <Pressable
-              hitSlop={10}
-              android_ripple={{
-                color: "rgba(0,0,0,0.2)",
-                borderless: true,
-                radius: 16,
-              }}
-              style={styles.compactBookmarkBtn}
-              onPress={(e) => {
-                e.stopPropagation();
-                handleToggleSave(item);
-              }}
-            >
-              <Ionicons
-                name={isSaved ? "bookmark" : "bookmark-outline"}
-                size={14}
-                color={isSaved ? PRIMARY : "#ffffff"}
-              />
-            </Pressable>
           </View>
 
           {/* Article Info Container */}
@@ -194,20 +173,49 @@ export default function Devotions() {
               {item.title}
             </Text>
 
-            {/* Bottom Row: Author + Date */}
+            {/* Bottom Row: Stacked Author & Date on Left + Save Icon at Bottom-Right */}
             <View style={styles.compactFooter}>
-              <View style={styles.compactAvatar}>
-                <Text style={styles.compactAvatarText}>
-                  {item.author?.charAt(0)?.toUpperCase() || "F"}
-                </Text>
+              <View style={styles.compactByline}>
+                <View style={styles.compactAvatar}>
+                  <Text style={styles.compactAvatarText}>
+                    {item.author?.charAt(0)?.toUpperCase() || "F"}
+                  </Text>
+                </View>
+                <View style={styles.compactMetaCol}>
+                  <Text style={styles.compactAuthorName} numberOfLines={1}>
+                    {item.author}
+                  </Text>
+                  <Text style={styles.compactDate} numberOfLines={1}>
+                    {formatDate(item.date)}
+                  </Text>
+                </View>
               </View>
-              <Text style={styles.compactAuthorName} numberOfLines={1}>
-                {item.author}
-              </Text>
-              <Text style={styles.compactDot}>·</Text>
-              <Text style={styles.compactDate} numberOfLines={1}>
-                {formatDate(item.date)}
-              </Text>
+
+              {/* Bookmark button on bottom right */}
+              <Pressable
+                hitSlop={8}
+                android_ripple={{
+                  color: "rgba(255, 103, 25, 0.2)",
+                  borderless: true,
+                  radius: 16,
+                }}
+                style={[
+                  styles.compactSaveBtn,
+                  isSaved && styles.compactSaveBtnActive,
+                ]}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleToggleSave(item);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={isSaved ? "Remove from saved" : "Save devotion"}
+              >
+                <Ionicons
+                  name={isSaved ? "bookmark" : "bookmark-outline"}
+                  size={16}
+                  color={isSaved ? PRIMARY : "#71717a"}
+                />
+              </Pressable>
             </View>
           </View>
         </Pressable>
@@ -922,25 +930,29 @@ const styles = StyleSheet.create({
   },
   // Compact Vertical Card (Inspiration from screenshot)
   compactCardOuter: {
-    width: 220,
+    width: 232,
     backgroundColor: "#ffffff",
     borderRadius: 18,
     borderWidth: 1,
     borderColor: "#eff3f4",
     overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
   compactCardPressable: {
     paddingTop: 10,
     paddingHorizontal: 12,
-    paddingBottom: 20,
+    paddingBottom: 14,
     width: "100%",
   },
   compactImageWrapper: {
     width: "100%",
-    height: 135,
+    height: 130,
     borderRadius: 14,
     overflow: "hidden",
-    position: "relative",
     backgroundColor: "#f4f4f5",
     marginBottom: 10,
   },
@@ -953,22 +965,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  compactBookmarkBtn: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
   compactBody: {
     width: "100%",
     paddingHorizontal: 2,
-    paddingTop: 2,
-    paddingBottom: 4,
   },
   compactTitle: {
     fontSize: 14.5,
@@ -981,43 +980,62 @@ const styles = StyleSheet.create({
   compactFooter: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     width: "100%",
     marginTop: 2,
   },
+  compactByline: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: 8,
+  },
   compactAvatar: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: "#f4f4f5",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 6,
+    marginRight: 8,
     borderWidth: 1,
     borderColor: "#e4e4e7",
     flexShrink: 0,
   },
   compactAvatarText: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: "700",
     color: "#3f3f46",
   },
-  compactAuthorName: {
-    fontSize: 11.5,
-    color: "#52525b",
-    fontWeight: "600",
-    flexShrink: 1,
+  compactMetaCol: {
+    flexDirection: "column",
+    flex: 1,
+    justifyContent: "center",
   },
-  compactDot: {
+  compactAuthorName: {
     fontSize: 12,
-    color: "#a1a1aa",
-    marginHorizontal: 4,
-    flexShrink: 0,
+    color: "#27272a",
+    fontWeight: "600",
+    lineHeight: 15,
   },
   compactDate: {
     fontSize: 11,
-    color: "#a1a1aa",
+    color: "#71717a",
     fontWeight: "500",
+    lineHeight: 14,
+    marginTop: 1,
+  },
+  compactSaveBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#f4f4f5",
+    alignItems: "center",
+    justifyContent: "center",
     flexShrink: 0,
+  },
+  compactSaveBtnActive: {
+    backgroundColor: "rgba(255, 103, 25, 0.12)",
   },
   // Editorial Article-Style Card
   articleCardOuter: {

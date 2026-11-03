@@ -923,7 +923,7 @@ export default function CommunityScreen() {
           styles.fabBtn,
           {
             backgroundColor: PRIMARY,
-            bottom: Math.max(insets.bottom, 12) + 50,
+            bottom: Math.max(insets.bottom, 12) + 28,
           },
         ]}
       >
