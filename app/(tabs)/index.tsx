@@ -408,6 +408,7 @@ const Home = () => {
     image: { uri: d.image },
     title: d.title,
     date: d.date,
+    author: d.author,
     views: d.views,
     likes: d.likes,
   }));

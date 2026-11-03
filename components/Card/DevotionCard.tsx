@@ -17,6 +17,7 @@ type DevotionItem = {
   image: string;
   title: string;
   date: string;
+  author: string;
   views: number;
   likes: number;
 };
@@ -106,21 +107,24 @@ function DevotionCard({ item, isDark, onPress }: DevotionCardProps) {
                 </Text>
               </View>
 
-              <View style={styles.statItem}>
-                <Ionicons
-                  name="heart-outline"
-                  size={14}
-                  color={isDark ? "#94a3b8" : "#64748b"}
-                />
-                <Text
-                  style={[
-                    styles.statText,
-                    { color: isDark ? "#94a3b8" : "#64748b" },
-                  ]}
-                >
-                  {item.likes}
-                </Text>
-              </View>
+              {item.author ? (
+                <View style={styles.authorItem}>
+                  <Ionicons
+                    name="person-outline"
+                    size={14}
+                    color={isDark ? "#94a3b8" : "#64748b"}
+                  />
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.authorText,
+                      { color: isDark ? "#94a3b8" : "#64748b" },
+                    ]}
+                  >
+                    {item.author}
+                  </Text>
+                </View>
+              ) : null}
             </View>
           </View>
         </View>
@@ -186,6 +190,18 @@ const styles = StyleSheet.create({
     marginLeft: 5,
     fontSize: 12,
     fontWeight: "500",
+  },
+  authorItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexShrink: 1,
+    marginLeft: 8,
+  },
+  authorText: {
+    marginLeft: 4,
+    fontSize: 11,
+    fontWeight: "500",
+    flexShrink: 1,
   },
 });
 

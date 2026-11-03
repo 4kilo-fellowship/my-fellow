@@ -12,8 +12,6 @@ import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Animated,
-  Dimensions,
   FlatList,
   Image,
   Platform,
@@ -24,15 +22,11 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import PagerView, {
-  PagerViewOnPageScrollEventData,
-  PageScrollStateChangedNativeEvent,
-} from "react-native-pager-view";
-
-const SCREEN_WIDTH = Dimensions.get("window").width;
+import { Route, TabBar, TabView } from "react-native-tab-view";
 
 const formatDate = (dateStr: string) => {
   try {
@@ -82,17 +76,19 @@ const isNewDevotion = (dateStr?: string) => {
 interface CompactArticleCardProps {
   item: Devotion;
   isSaved: boolean;
+  width: number;
+  imageHeight: number;
   onPress: () => void;
   onToggleSave: () => void;
 }
 
 // Compact Video / Devotional Card (Matching user reference UI, memoized)
 const CompactArticleCard = React.memo<CompactArticleCardProps>(
-  ({ item, isSaved, onPress, onToggleSave }) => {
+  ({ item, isSaved, width, imageHeight, onPress, onToggleSave }) => {
     const isNew = isNewDevotion(item.date);
 
     return (
-      <View style={styles.compactCardOuter}>
+      <View style={[styles.compactCardOuter, { width }]}>
         <Pressable
           android_ripple={{ color: "rgba(0, 0, 0, 0.05)", foreground: true }}
           style={({ pressed }) => [
@@ -102,7 +98,7 @@ const CompactArticleCard = React.memo<CompactArticleCardProps>(
           onPress={onPress}
         >
           {/* Card Thumbnail Image with Screenshot-accurate Overlays */}
-          <View style={styles.compactImageWrapper}>
+          <View style={[styles.compactImageWrapper, { height: imageHeight }]}>
             {item.image ? (
               <Image
                 source={{ uri: item.image }}
@@ -150,41 +146,42 @@ const CompactArticleCard = React.memo<CompactArticleCardProps>(
               {item.title}
             </Text>
 
-            {/* Author Name ("Eddie Yong") */}
-            <Text style={styles.compactAuthor} numberOfLines={1}>
-              {item.author || "Fellowship"}
-            </Text>
+            {/* Single meta row: author · views · bookmark */}
+            <View style={styles.compactMetaRow}>
+              <Text style={styles.compactAuthor} numberOfLines={1}>
+                {item.author || "Fellowship"}
+              </Text>
 
-            {/* Bottom Row: Eye icon + views count ("👁 5.5k") & Bookmark Button */}
-            <View style={styles.compactFooterRow}>
-              <View style={styles.compactViewsRow}>
-                <Ionicons name="eye-outline" size={15} color="#8a8a93" />
-                <Text style={styles.compactViewsText}>
-                  {formatViews(item.views, item.viewsFormatted)}
-                </Text>
+              <View style={styles.compactMetaActions}>
+                <View style={styles.compactViewsRow}>
+                  <Ionicons name="eye-outline" size={14} color="#8a8a93" />
+                  <Text style={styles.compactViewsText}>
+                    {formatViews(item.views, item.viewsFormatted)}
+                  </Text>
+                </View>
+
+                <Pressable
+                  hitSlop={8}
+                  android_ripple={{
+                    color: "rgba(255, 103, 25, 0.2)",
+                    borderless: true,
+                    radius: 14,
+                  }}
+                  style={styles.compactBookmarkBtn}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    onToggleSave();
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={isSaved ? "Remove from saved" : "Save devotion"}
+                >
+                  <Ionicons
+                    name={isSaved ? "bookmark" : "bookmark-outline"}
+                    size={16}
+                    color={isSaved ? PRIMARY : "#a1a1aa"}
+                  />
+                </Pressable>
               </View>
-
-              <Pressable
-                hitSlop={8}
-                android_ripple={{
-                  color: "rgba(255, 103, 25, 0.2)",
-                  borderless: true,
-                  radius: 14,
-                }}
-                style={styles.compactBookmarkBtn}
-                onPress={(e) => {
-                  e.stopPropagation();
-                  onToggleSave();
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={isSaved ? "Remove from saved" : "Save devotion"}
-              >
-                <Ionicons
-                  name={isSaved ? "bookmark" : "bookmark-outline"}
-                  size={16}
-                  color={isSaved ? PRIMARY : "#a1a1aa"}
-                />
-              </Pressable>
             </View>
           </View>
         </Pressable>
@@ -348,22 +345,30 @@ const MinimalDevotionCard = React.memo<MinimalDevotionCardProps>(
 );
 MinimalDevotionCard.displayName = "MinimalDevotionCard";
 
+const TAB_ROUTES = [
+  { key: "all", title: "All" },
+  { key: "saved", title: "Saved" },
+];
+
 export default function Devotions() {
   const insets = useSafeAreaInsets();
   const isAdmin = useIsAdmin();
-  const [activeTab, setActiveTab] = useState<0 | 1>(0);
-  const activeTabRef = useRef<0 | 1>(0);
-  const isTabPressRef = useRef(false);
-  const pagerRef = useRef<PagerView>(null);
-  const scrollOffset = useRef(new Animated.Value(0)).current;
-  const [tabBarWidth, setTabBarWidth] = useState(SCREEN_WIDTH);
-  const tabWidth = tabBarWidth / 2;
+  const { width: viewportWidth } = useWindowDimensions();
+  const [tabIndex, setTabIndex] = useState(0);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [devotions, setDevotions] = useState<Devotion[]>([]);
   const [writerModalVisible, setWriterModalVisible] = useState(false);
   const [myWriterRequest, setMyWriterRequest] = useState<WriterRequest | null>(null);
+
+  // Responsive card sizing: shows ~1.7 cards on phones and ~3 on tablets
+  const cardWidth = useMemo(() => {
+    const columns = viewportWidth >= 700 ? 3.15 : 1.72;
+    const available = viewportWidth - 44; // page padding + card gap
+    return Math.round(Math.min(280, Math.max(168, available / columns)));
+  }, [viewportWidth]);
+  const cardImageHeight = Math.round(cardWidth * 0.88);
 
   useEffect(() => {
     devotionWriterService.getMyApplication().then((res) => {
@@ -379,20 +384,28 @@ export default function Devotions() {
     isDevotionRead,
   } = useDevotionsStore();
 
+  const requestIdRef = useRef(0);
+
   const fetchDevotions = useCallback(async (isRefresh = false) => {
+    const requestId = ++requestIdRef.current;
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
 
     try {
       const response = await devotionsService.getDevotions();
+      // Ignore responses that arrive after a newer request
+      if (requestId !== requestIdRef.current) return;
       if (response.success) {
         setDevotions(response.data);
       }
     } catch (error) {
+      if (requestId !== requestIdRef.current) return;
       console.error("Error fetching devotions:", error);
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, []);
 
@@ -404,65 +417,12 @@ export default function Devotions() {
     fetchDevotions(true);
   }, [fetchDevotions]);
 
-  const handleTabChange = useCallback(
-    (index: 0 | 1) => {
-      if (activeTabRef.current === index) return;
-      try {
-        Haptics.selectionAsync();
-      } catch {}
-      isTabPressRef.current = true;
-      activeTabRef.current = index;
-      setActiveTab(index);
-      Animated.timing(scrollOffset, {
-        toValue: index,
-        duration: 220,
-        useNativeDriver: true,
-      }).start(() => {
-        isTabPressRef.current = false;
-      });
-      pagerRef.current?.setPage(index);
-    },
-    [scrollOffset],
-  );
-
-  const handlePageScroll = useCallback(
-    (e: { nativeEvent: PagerViewOnPageScrollEventData }) => {
-      if (isTabPressRef.current) return;
-      const { position, offset } = e.nativeEvent;
-      const progress = position + offset;
-      scrollOffset.setValue(progress);
-
-      // Symmetrical midpoint switch (switches text right at 50% swipe)
-      const targetTab = progress >= 0.5 ? 1 : 0;
-      if (activeTabRef.current !== targetTab) {
-        activeTabRef.current = targetTab;
-        setActiveTab(targetTab);
-      }
-    },
-    [scrollOffset],
-  );
-
-  const handlePageSelected = useCallback(
-    (e: { nativeEvent: { position: number } }) => {
-      const newIndex = (e.nativeEvent.position === 1 ? 1 : 0) as 0 | 1;
-      activeTabRef.current = newIndex;
-      setActiveTab(newIndex);
-      if (!isTabPressRef.current) {
-        scrollOffset.setValue(newIndex);
-      }
-    },
-    [scrollOffset],
-  );
-
-  const handlePageScrollStateChanged = useCallback(
-    (e: PageScrollStateChangedNativeEvent) => {
-      if (e.nativeEvent.pageScrollState === "idle") {
-        isTabPressRef.current = false;
-        scrollOffset.setValue(activeTabRef.current);
-      }
-    },
-    [scrollOffset],
-  );
+  // Native TabView drives the indicator, so taps only need to update the index.
+  const handleTabChange = useCallback((index: number) => {
+    if (index === tabIndex) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setTabIndex(index);
+  }, [tabIndex]);
 
   const handleToggleSave = useCallback(
     (item: Devotion) => {
@@ -528,23 +488,276 @@ export default function Devotions() {
     [],
   );
 
-  const renderEmptyState = (isBookmarkTab: boolean) => (
+  const renderAllEmptyState = () => (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIconCircle}>
-        <Ionicons
-          name={isBookmarkTab ? "bookmark-outline" : "document-text-outline"}
-          size={36}
-          color="#a1a1aa"
-        />
+        <Ionicons name="document-text-outline" size={36} color="#a1a1aa" />
       </View>
-      <Text style={styles.emptyTitle}>
-        {isBookmarkTab ? "No saved devotions" : "No devotions found"}
-      </Text>
+      <Text style={styles.emptyTitle}>No devotions found</Text>
       <Text style={styles.emptySubtitle}>
-        {isBookmarkTab
-          ? "Tap the bookmark icon on any devotion to save it here for later."
-          : "Check back later for newly published devotions."}
+        Check back later for newly published devotions.
       </Text>
+    </View>
+  );
+
+  /* ── Page 0: All Devotions (Editorial Magazine / Native Hub) ── */
+  const allScene = (
+    <View style={styles.page}>
+      {loading && devotions.length === 0 ? (
+        <View style={styles.skeletonContainer}>
+          <Placeholder
+            width="100%"
+            height={170}
+            borderRadius={4}
+            style={{ marginBottom: 20 }}
+          />
+          <Placeholder
+            width="60%"
+            height={22}
+            borderRadius={6}
+            style={{ marginBottom: 14 }}
+          />
+          <View style={{ flexDirection: "row", gap: 12, marginBottom: 24 }}>
+            <Placeholder width={160} height={210} borderRadius={4} />
+            <Placeholder width={160} height={210} borderRadius={4} />
+          </View>
+        </View>
+      ) : devotions.length === 0 ? (
+        renderAllEmptyState()
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollPageContent}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={PRIMARY}
+              colors={[PRIMARY]}
+            />
+          }
+        >
+          {/* 1. LATEST DEVOTION HERO (Top) */}
+          {latestDevotion && (
+            <View style={styles.heroOuter}>
+              <Pressable
+                android_ripple={{ color: "rgba(0, 0, 0, 0.04)", foreground: true }}
+                style={({ pressed }) => [
+                  styles.heroPressable,
+                  Platform.OS === "ios" && pressed && { opacity: 0.94 },
+                ]}
+                onPress={() => router.push(`/devotion/${latestDevotion._id}`)}
+              >
+                {/* Clean Image with only LATEST badge on it */}
+                <View style={styles.heroImageContainer}>
+                  {latestDevotion.image ? (
+                    <Image
+                      source={{ uri: latestDevotion.image }}
+                      style={styles.heroImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={styles.heroFallbackBg} />
+                  )}
+                  <View style={styles.heroBadge}>
+                    <Text style={styles.heroBadgeText}>LATEST</Text>
+                  </View>
+                </View>
+
+                {/* Content below image */}
+                <View style={styles.heroContent}>
+                  <Text style={styles.heroTitle} numberOfLines={2}>
+                    {latestDevotion.title}
+                  </Text>
+
+                  <View style={styles.heroFooter}>
+                    <View style={styles.heroAuthorRow}>
+                      <View style={styles.heroAuthorAvatar}>
+                        <Text style={styles.heroAuthorAvatarText}>
+                          {latestDevotion.author?.charAt(0)?.toUpperCase() || "F"}
+                        </Text>
+                      </View>
+                      <Text style={styles.heroAuthor} numberOfLines={1}>
+                        {latestDevotion.author}
+                      </Text>
+                      <Text style={styles.heroDot}>·</Text>
+                      <Text style={styles.heroDate}>
+                        {formatDate(latestDevotion.date)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.heroButton}>
+                      <Text style={styles.heroButtonText}>Read</Text>
+                      <Ionicons name="arrow-forward" size={12} color="#000000" />
+                    </View>
+                  </View>
+                </View>
+              </Pressable>
+            </View>
+          )}
+
+          {/* 2. RECENT DEVOTIONS (Horizontal Scroll) */}
+          {recentDevotions.length > 0 && (
+            <View style={styles.sectionContainer}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Recent Devotions</Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalScrollContent}
+                nestedScrollEnabled={true}
+                overScrollMode="never"
+                keyboardShouldPersistTaps="handled"
+              >
+                {recentDevotions.map((item: Devotion) => (
+                  <CompactArticleCard
+                    key={`recent-${item._id}`}
+                    item={item}
+                    isSaved={isDevotionSaved(item._id)}
+                    width={cardWidth}
+                    imageHeight={cardImageHeight}
+                    onPress={() => router.push(`/devotion/${item._id}`)}
+                    onToggleSave={() => handleToggleSave(item)}
+                  />
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* 3. POPULAR DEVOTIONS (Horizontal Scroll / Grid) */}
+          {popularDevotions.length > 0 && (
+            <View style={styles.sectionContainer}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Popular Devotions</Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalScrollContent}
+                nestedScrollEnabled={true}
+                overScrollMode="never"
+              >
+                {popularDevotions.map((item: Devotion) => (
+                  <CompactArticleCard
+                    key={`popular-${item._id}`}
+                    item={item}
+                    isSaved={isDevotionSaved(item._id)}
+                    width={cardWidth}
+                    imageHeight={cardImageHeight}
+                    onPress={() => router.push(`/devotion/${item._id}`)}
+                    onToggleSave={() => handleToggleSave(item)}
+                  />
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* 4. CTA: Apply to Write */}
+          <View style={styles.ctaContainer}>
+            <View style={styles.ctaIconCircle}>
+              <Ionicons name="create-outline" size={24} color={PRIMARY} />
+            </View>
+            <Text style={styles.ctaTitle}>Want to Share Your Faith?</Text>
+            <Text style={styles.ctaSubtitle}>
+              Share your devotional insights and encourage the fellowship
+              community through writing.
+            </Text>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={styles.ctaButton}
+              onPress={() => {
+                try {
+                  Haptics.selectionAsync();
+                } catch {}
+                setWriterModalVisible(true);
+              }}
+            >
+              <Ionicons
+                name={
+                  myWriterRequest?.status === "pending"
+                    ? "time-outline"
+                    : myWriterRequest?.status === "approved"
+                    ? "checkmark-circle-outline"
+                    : "create-outline"
+                }
+                size={18}
+                color="#ffffff"
+                style={{ marginRight: 8 }}
+              />
+              <Text style={styles.ctaButtonText}>
+                {myWriterRequest?.status === "pending"
+                  ? "Application Pending"
+                  : myWriterRequest?.status === "approved"
+                  ? "Writer Status Active"
+                  : "Apply to Write"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      )}
+    </View>
+  );
+
+  /* ── Page 1: Saved Bookmarks ── */
+  const savedScene = (
+    <View style={styles.page}>
+      <FlatList
+        data={savedDevotions}
+        keyExtractor={(item) => item._id}
+        renderItem={renderSavedItem}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        removeClippedSubviews={false}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={5}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={PRIMARY}
+            colors={[PRIMARY]}
+          />
+        }
+        ListEmptyComponent={savedEmptyComponent}
+      />
+    </View>
+  );
+
+  const renderTabLabel = ({
+    route,
+    color,
+    focused,
+  }: {
+    route: Route;
+    color: string;
+    focused: boolean;
+  }) => (
+    <View style={styles.tabLabelRow}>
+      <Text
+        style={[
+          styles.tabLabelText,
+          { color },
+          focused && styles.tabLabelActive,
+        ]}
+      >
+        {route.title}
+      </Text>
+      {route.key === "saved" && savedDevotions.length > 0 && (
+        <View style={[styles.tabBadge, focused && styles.tabBadgeActive]}>
+          <Text
+            style={[
+              styles.tabBadgeText,
+              focused && styles.tabBadgeTextActive,
+            ]}
+          >
+            {savedDevotions.length}
+          </Text>
+        </View>
+      )}
     </View>
   );
 
@@ -559,317 +772,30 @@ export default function Devotions() {
         showStreak={true}
       />
 
-      {/* Minimalist Twitter/X Tab Filter: All & Bookmarks */}
-      <View
-        style={styles.tabBarContainer}
-        onLayout={(e) => {
-          const w = e.nativeEvent.layout.width;
-          if (w > 0 && Math.abs(w - tabBarWidth) > 1) {
-            setTabBarWidth(w);
-          }
-        }}
-      >
-        {/* Tab 0: All */}
-        <Pressable
-          android_ripple={{ color: "rgba(0, 0, 0, 0.06)", foreground: true }}
-          style={styles.tabItem}
-          onPress={() => handleTabChange(0)}
-        >
-          <View style={styles.tabContentCenter}>
-            <Text
-              style={[
-                styles.tabTitleText,
-                activeTab === 0 ? styles.tabTitleActive : styles.tabTitleInactive,
-              ]}
-            >
-              All
-            </Text>
-          </View>
-        </Pressable>
-
-        {/* Tab 1: Bookmarks / Saved */}
-        <Pressable
-          android_ripple={{ color: "rgba(0, 0, 0, 0.06)", foreground: true }}
-          style={styles.tabItem}
-          onPress={() => handleTabChange(1)}
-        >
-          <View style={styles.tabContentCenter}>
-            <View style={styles.savedTabContent}>
-              <Text
-                style={[
-                  styles.tabTitleText,
-                  activeTab === 1 ? styles.tabTitleActive : styles.tabTitleInactive,
-                ]}
-              >
-                Saved
-              </Text>
-              {savedDevotions.length > 0 && (
-                <View
-                  style={[
-                    styles.tabBadge,
-                    activeTab === 1 && styles.tabBadgeActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.tabBadgeText,
-                      activeTab === 1 && styles.tabBadgeTextActive,
-                    ]}
-                  >
-                    {savedDevotions.length}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
-        </Pressable>
-
-        {/* Continuous 60fps sliding underline bar tracking gesture & clicks */}
-        <Animated.View
-          style={[
-            styles.animatedIndicator,
-            {
-              width: tabWidth,
-              transform: [
-                {
-                  translateX: scrollOffset.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, tabWidth],
-                    extrapolate: "clamp",
-                  }),
-                },
-              ],
-            },
-          ]}
-        />
-      </View>
-
-      {/* Gesture Movement Page View: swipe between All and Saved */}
-      <PagerView
-        ref={pagerRef}
-        style={styles.pagerView}
-        initialPage={0}
-        onPageScroll={handlePageScroll}
-        onPageSelected={handlePageSelected}
-        onPageScrollStateChanged={handlePageScrollStateChanged}
-        overScrollMode="never"
-      >
-        {/* Page 0: All Devotions (Editorial Magazine / Native Hub) */}
-        <View key="all" style={styles.page}>
-          {loading && devotions.length === 0 ? (
-            <View style={styles.skeletonContainer}>
-              <Placeholder
-                width="100%"
-                height={170}
-                borderRadius={20}
-                style={{ marginBottom: 20 }}
-              />
-              <Placeholder
-                width="60%"
-                height={22}
-                borderRadius={6}
-                style={{ marginBottom: 14 }}
-              />
-              <View style={{ flexDirection: "row", gap: 12, marginBottom: 24 }}>
-                <Placeholder width={160} height={210} borderRadius={16} />
-                <Placeholder width={160} height={210} borderRadius={16} />
-              </View>
-            </View>
-          ) : devotions.length === 0 ? (
-            renderEmptyState(false)
-          ) : (
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.scrollPageContent}
-              refreshControl={
-                <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={onRefresh}
-                  tintColor={PRIMARY}
-                  colors={[PRIMARY]}
-                />
-              }
-            >
-              {/* 1. LATEST DEVOTION HERO (Top) */}
-              {latestDevotion && (
-                <View style={styles.heroOuter}>
-                  <Pressable
-                    android_ripple={{ color: "rgba(0, 0, 0, 0.04)", foreground: true }}
-                    style={({ pressed }) => [
-                      styles.heroPressable,
-                      Platform.OS === "ios" && pressed && { opacity: 0.94 },
-                    ]}
-                    onPress={() => router.push(`/devotion/${latestDevotion._id}`)}
-                  >
-                    {/* Clean Image with only LATEST badge on it */}
-                    <View style={styles.heroImageContainer}>
-                      {latestDevotion.image ? (
-                        <Image
-                          source={{ uri: latestDevotion.image }}
-                          style={styles.heroImage}
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <View style={styles.heroFallbackBg} />
-                      )}
-                      <View style={styles.heroBadge}>
-                        <Text style={styles.heroBadgeText}>LATEST</Text>
-                      </View>
-                    </View>
-
-                    {/* Content below image */}
-                    <View style={styles.heroContent}>
-                      <Text style={styles.heroTitle} numberOfLines={2}>
-                        {latestDevotion.title}
-                      </Text>
-
-                      <View style={styles.heroFooter}>
-                        <View style={styles.heroAuthorRow}>
-                          <View style={styles.heroAuthorAvatar}>
-                            <Text style={styles.heroAuthorAvatarText}>
-                              {latestDevotion.author?.charAt(0)?.toUpperCase() || "F"}
-                            </Text>
-                          </View>
-                          <Text style={styles.heroAuthor} numberOfLines={1}>
-                            {latestDevotion.author}
-                          </Text>
-                          <Text style={styles.heroDot}>·</Text>
-                          <Text style={styles.heroDate}>
-                            {formatDate(latestDevotion.date)}
-                          </Text>
-                        </View>
-
-                        <View style={styles.heroButton}>
-                          <Text style={styles.heroButtonText}>Read</Text>
-                          <Ionicons name="arrow-forward" size={12} color="#000000" />
-                        </View>
-                      </View>
-                    </View>
-                  </Pressable>
-                </View>
-              )}
-
-              {/* 2. RECENT DEVOTIONS (Horizontal Scroll) */}
-              {recentDevotions.length > 0 && (
-                <View style={styles.sectionContainer}>
-                  <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Recent Devotions</Text>
-                  </View>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.horizontalScrollContent}
-                    nestedScrollEnabled={true}
-                    overScrollMode="never"
-                  >
-                    {recentDevotions.map((item: Devotion) => (
-                      <CompactArticleCard
-                        key={`recent-${item._id}`}
-                        item={item}
-                        isSaved={isDevotionSaved(item._id)}
-                        onPress={() => router.push(`/devotion/${item._id}`)}
-                        onToggleSave={() => handleToggleSave(item)}
-                      />
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-
-              {/* 3. POPULAR DEVOTIONS (Horizontal Scroll / Grid) */}
-              {popularDevotions.length > 0 && (
-                <View style={styles.sectionContainer}>
-                  <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Popular Devotions</Text>
-                  </View>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.horizontalScrollContent}
-                    nestedScrollEnabled={true}
-                    overScrollMode="never"
-                  >
-                    {popularDevotions.map((item: Devotion) => (
-                      <CompactArticleCard
-                        key={`popular-${item._id}`}
-                        item={item}
-                        isSaved={isDevotionSaved(item._id)}
-                        onPress={() => router.push(`/devotion/${item._id}`)}
-                        onToggleSave={() => handleToggleSave(item)}
-                      />
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-
-              {/* 4. CTA: Apply to Write */}
-              <View style={styles.ctaContainer}>
-                <View style={styles.ctaIconCircle}>
-                  <Ionicons name="create-outline" size={24} color={PRIMARY} />
-                </View>
-                <Text style={styles.ctaTitle}>Want to Share Your Faith?</Text>
-                <Text style={styles.ctaSubtitle}>
-                  Share your devotional insights and encourage the fellowship
-                  community through writing.
-                </Text>
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  style={styles.ctaButton}
-                  onPress={() => {
-                    try {
-                      Haptics.selectionAsync();
-                    } catch {}
-                    setWriterModalVisible(true);
-                  }}
-                >
-                  <Ionicons
-                    name={
-                      myWriterRequest?.status === "pending"
-                        ? "time-outline"
-                        : myWriterRequest?.status === "approved"
-                        ? "checkmark-circle-outline"
-                        : "create-outline"
-                    }
-                    size={18}
-                    color="#ffffff"
-                    style={{ marginRight: 8 }}
-                  />
-                  <Text style={styles.ctaButtonText}>
-                    {myWriterRequest?.status === "pending"
-                      ? "Application Pending"
-                      : myWriterRequest?.status === "approved"
-                      ? "Writer Status Active"
-                      : "Apply to Write"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          )}
-        </View>
-
-        {/* Page 1: Saved Bookmarks */}
-        <View key="saved" style={styles.page}>
-          <FlatList
-            data={savedDevotions}
-            keyExtractor={(item) => item._id}
-            renderItem={renderSavedItem}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-            removeClippedSubviews={false}
-            initialNumToRender={8}
-            maxToRenderPerBatch={8}
-            windowSize={5}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tintColor={PRIMARY}
-                colors={[PRIMARY]}
-              />
-            }
-            ListEmptyComponent={savedEmptyComponent}
+      {/* All / Saved — native finger-tracking TabView (AI Poster Studio pattern) */}
+      <TabView
+        navigationState={{ index: tabIndex, routes: TAB_ROUTES }}
+        onIndexChange={handleTabChange}
+        renderScene={({ route }) => (route.key === "saved" ? savedScene : allScene)}
+        initialLayout={{ width: viewportWidth }}
+        lazy
+        lazyPreloadDistance={1}
+        renderTabBar={(tabBarProps) => (
+          <TabBar
+            {...tabBarProps}
+            indicatorStyle={styles.tabIndicator}
+            style={styles.tabBar}
+            activeColor="#000000"
+            inactiveColor="#71717a"
+            pressColor="rgba(0, 0, 0, 0.05)"
+            scrollEnabled={false}
+            options={{
+              all: { label: renderTabLabel },
+              saved: { label: renderTabLabel },
+            }}
           />
-        </View>
-      </PagerView>
+        )}
+      />
 
       {/* Floating Action Button (+) — Admin Only for Devotion Creation (Like in Community Tab) */}
       {isAdmin && (
@@ -930,48 +856,30 @@ const styles = StyleSheet.create({
     }),
     zIndex: 50,
   },
-  // Tab Bar (Twitter/X style with centered labels and full-half active underline indicator)
-  tabBarContainer: {
-    flexDirection: "row",
-    height: 48,
+  // Tab Bar (native TabView indicator, finger-tracked by the pager)
+  tabBar: {
     backgroundColor: "#ffffff",
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#eff3f4",
+    elevation: 0,
+    shadowOpacity: 0,
   },
-  tabItem: {
-    flex: 1,
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
+  tabIndicator: {
+    backgroundColor: "#000000",
+    height: 2,
   },
-  tabContentCenter: {
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  savedTabContent: {
+  tabLabelRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
   },
-  tabTitleText: {
+  tabLabelText: {
     fontSize: 15,
     letterSpacing: -0.2,
-  },
-  tabTitleActive: {
-    fontWeight: "700",
-    color: "#000000",
-  },
-  tabTitleInactive: {
     fontWeight: "500",
-    color: "#71717a",
   },
-  animatedIndicator: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    height: 2,
-    backgroundColor: "#000000",
+  tabLabelActive: {
+    fontWeight: "700",
   },
   tabBadge: {
     marginLeft: 6,
@@ -992,9 +900,6 @@ const styles = StyleSheet.create({
     color: "#ffffff",
   },
   // Pager & List
-  pagerView: {
-    flex: 1,
-  },
   page: {
     flex: 1,
   },
@@ -1015,7 +920,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 14,
     marginBottom: 24,
-    borderRadius: 20,
+    borderRadius: 4,
     backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: "#eff3f4",
@@ -1145,7 +1050,6 @@ const styles = StyleSheet.create({
   },
   // Compact Video / Devotional Card (Matching user reference UI)
   compactCardOuter: {
-    width: 216,
     overflow: "visible",
   },
   compactCardPressable: {
@@ -1153,8 +1057,7 @@ const styles = StyleSheet.create({
   },
   compactImageWrapper: {
     width: "100%",
-    height: 190,
-    borderRadius: 20,
+    borderRadius: 4,
     overflow: "hidden",
     position: "relative",
     backgroundColor: "#e4e4e7",
@@ -1234,21 +1137,27 @@ const styles = StyleSheet.create({
     minHeight: 38,
   },
   compactAuthor: {
+    flex: 1,
     fontSize: 13,
     color: "#71717a",
     fontWeight: "500",
-    marginBottom: 6,
+    marginRight: 8,
   },
-  compactFooterRow: {
+  compactMetaRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     width: "100%",
   },
+  compactMetaActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   compactViewsRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: 4,
   },
   compactViewsText: {
     fontSize: 12,
@@ -1264,7 +1173,7 @@ const styles = StyleSheet.create({
   // Editorial Article-Style Card
   articleCardOuter: {
     marginBottom: 16,
-    borderRadius: 16,
+    borderRadius: 4,
     backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: "#eff3f4",
@@ -1371,7 +1280,7 @@ const styles = StyleSheet.create({
   imageWrapper: {
     width: "100%",
     height: 165,
-    borderRadius: 12,
+    borderRadius: 4,
     overflow: "hidden",
     backgroundColor: "#f4f4f5",
     marginBottom: 14,
