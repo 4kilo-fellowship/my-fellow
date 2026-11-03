@@ -33,12 +33,17 @@ export function calculateBudgetAssignments(
 /**
  * Pure helper: finds scheduled notification identifiers starting with ID_PREFIX
  * that do not exist in the valid set of stored identifiers.
+ * One-off snooze notifications are intentionally kept: they are short-lived
+ * and not part of the reminder records.
  */
 export function findOrphanNotificationIds(
   scheduledNotificationIds: string[],
   validIdentifierSet: Set<string>,
 ): string[] {
   return scheduledNotificationIds.filter(
-    (id) => id.startsWith(ID_PREFIX) && !validIdentifierSet.has(id),
+    (id) =>
+      id.startsWith(ID_PREFIX) &&
+      !id.includes("_snooze_") &&
+      !validIdentifierSet.has(id),
   );
 }

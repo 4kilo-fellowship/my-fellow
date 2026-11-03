@@ -1,7 +1,12 @@
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import * as TaskManager from "expo-task-manager";
-import { ACTIONS, REMINDER_CATEGORY_ID, REMINDER_CHANNEL_ID } from "./config";
+import {
+  ACTIONS,
+  PROGRAM_CATEGORY_ID,
+  REMINDER_CATEGORY_ID,
+  REMINDER_CHANNEL_ID,
+} from "./config";
 import { handleNotificationResponse } from "./responses";
 
 export const REMINDER_NOTIFICATION_TASK = "REMINDER_NOTIFICATION_TASK";
@@ -74,6 +79,25 @@ export async function setupNotifications(): Promise<void> {
         options: {
           opensAppToForeground: false,
           isDestructive: true,
+        },
+      },
+    ]);
+
+    // Program reminders: two tappable buttons right on the notification.
+    // "View Program" opens the app; "Snooze 10m" re-alerts shortly after.
+    await Notifications.setNotificationCategoryAsync(PROGRAM_CATEGORY_ID, [
+      {
+        identifier: ACTIONS.VIEW,
+        buttonTitle: "View Program",
+        options: {
+          opensAppToForeground: true,
+        },
+      },
+      {
+        identifier: ACTIONS.SNOOZE,
+        buttonTitle: "Snooze 10m",
+        options: {
+          opensAppToForeground: Platform.OS === "ios",
         },
       },
     ]);

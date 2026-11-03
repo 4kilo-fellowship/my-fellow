@@ -23,15 +23,56 @@ export {
   findOrphanNotificationIds,
 };
 
+type ReminderRepeats = "none" | "weekly";
+
+interface ReminderScheduleOptions {
+  /** "weekly" repeats every week at the same local weekday/time (default "none"). */
+  repeats?: ReminderRepeats;
+}
+
+/**
+ * Builds the native trigger for a reminder offset.
+ * Weekly reminders use a WEEKLY trigger so one notification repeats forever
+ * instead of flooding the iOS 64-pending-notification budget with one-offs.
+ */
+function buildReminderTrigger(
+  fireAt: number,
+  repeats: ReminderRepeats,
+): Notifications.NotificationTriggerInput {
+  if (repeats === "weekly") {
+    const fireDate = new Date(fireAt);
+    return {
+      type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+      weekday: fireDate.getDay() + 1, // Expo expects 1-7 (Sunday = 1)
+      hour: fireDate.getHours(),
+      minute: fireDate.getMinutes(),
+      channelId: REMINDER_CHANNEL_ID,
+    };
+  }
+
+  return {
+    type: Notifications.SchedulableTriggerInputTypes.DATE,
+    date: new Date(fireAt),
+    channelId: REMINDER_CHANNEL_ID,
+  };
+}
+
 /**
  * Schedules multi-offset local notifications for a given event target.
+ * Works fully offline — the OS owns delivery once scheduled.
  */
 export async function scheduleReminders(
   target: ReminderTarget,
   offsets: readonly number[] = DEFAULT_OFFSETS_MIN,
+  options: ReminderScheduleOptions = {},
 ): Promise<number[]> {
   const now = Date.now();
-  const validOffsets = filterValidOffsets(target.startsAt, offsets, now);
+  const repeats: ReminderRepeats = options.repeats ?? "none";
+  // Weekly reminders always have a valid "next occurrence" in the future.
+  const validOffsets =
+    repeats === "weekly"
+      ? [...new Set(offsets)].sort((a, b) => b - a)
+      : filterValidOffsets(target.startsAt, offsets, now);
 
   if (validOffsets.length === 0) {
     // Event is already in the past or starts within seconds
@@ -82,15 +123,11 @@ export async function scheduleReminders(
             startsAt: target.startsAt,
             title: target.title,
           },
-          categoryIdentifier: REMINDER_CATEGORY_ID,
+          categoryIdentifier: target.categoryId ?? REMINDER_CATEGORY_ID,
           sound: "default",
           priority: Notifications.AndroidNotificationPriority.HIGH,
         },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DATE,
-          date: new Date(fireAt),
-          channelId: REMINDER_CHANNEL_ID,
-        },
+        trigger: buildReminderTrigger(fireAt, repeats),
       });
 
       scheduledResults.push(offset);
@@ -104,6 +141,7 @@ export async function scheduleReminders(
     offsets: scheduledResults,
     createdAt: now,
     deferred: isDeferred,
+    repeats,
   });
 
   return scheduledResults;
@@ -130,7 +168,7 @@ export async function sendConfirmationNotification(
           url: target.url,
           title: target.title,
         },
-        categoryIdentifier: REMINDER_CATEGORY_ID,
+        categoryIdentifier: target.categoryId ?? REMINDER_CATEGORY_ID,
         sound: "default",
         priority: Notifications.AndroidNotificationPriority.HIGH,
       },
@@ -167,9 +205,10 @@ export async function cancelReminders(eventId: string): Promise<void> {
 export async function rescheduleReminders(
   target: ReminderTarget,
   newOffsets: readonly number[] = DEFAULT_OFFSETS_MIN,
+  options: ReminderScheduleOptions = {},
 ): Promise<number[]> {
   await cancelReminders(target.eventId);
-  return scheduleReminders(target, newOffsets);
+  return scheduleReminders(target, newOffsets, options);
 }
 
 /**
@@ -192,7 +231,8 @@ export async function scheduleSnooze(
         subtitle: content.subtitle ?? undefined,
         title: content.title || "Event Reminder",
         body: content.body || `Snoozed for ${snoozeMinutes} minutes`,
-        categoryIdentifier: REMINDER_CATEGORY_ID,
+        // Preserve the original category so the action buttons stay available
+        categoryIdentifier: content.categoryIdentifier ?? REMINDER_CATEGORY_ID,
         sound: "default",
         priority: Notifications.AndroidNotificationPriority.HIGH,
       } as Notifications.NotificationContentInput,
@@ -225,7 +265,10 @@ export async function reconcile(): Promise<{
   const validRecordMap = new Map<string, ReminderRecord>();
 
   for (const record of records) {
-    if (record.startsAt <= now) {
+    // Weekly reminders repeat forever, so their first occurrence being in the
+    // past does not make them stale — only one-off reminders expire.
+    const isWeekly = record.repeats === "weekly";
+    if (!isWeekly && record.startsAt <= now) {
       await cancelReminders(record.eventId);
       removedPast++;
     } else {
@@ -266,7 +309,10 @@ export async function reconcile(): Promise<{
 
   // Restore missing future offsets within budget
   for (const record of validRecordMap.values()) {
-    const validFutureOffsets = filterValidOffsets(record.startsAt, record.offsets, now);
+    const isWeekly = record.repeats === "weekly";
+    const validFutureOffsets = isWeekly
+      ? [...new Set(record.offsets)].sort((a, b) => b - a)
+      : filterValidOffsets(record.startsAt, record.offsets, now);
     for (const offset of validFutureOffsets) {
       const id = notifId(record.eventId, offset);
       if (!scheduledIdSet.has(id)) {
@@ -286,15 +332,11 @@ export async function reconcile(): Promise<{
                 startsAt: record.startsAt,
                 title: record.title,
               },
-              categoryIdentifier: REMINDER_CATEGORY_ID,
+              categoryIdentifier: record.categoryId ?? REMINDER_CATEGORY_ID,
               sound: "default",
               priority: Notifications.AndroidNotificationPriority.HIGH,
             },
-            trigger: {
-              type: Notifications.SchedulableTriggerInputTypes.DATE,
-              date: new Date(fireAt),
-              channelId: REMINDER_CHANNEL_ID,
-            },
+            trigger: buildReminderTrigger(fireAt, isWeekly ? "weekly" : "none"),
           });
           reconciled++;
         } catch {}

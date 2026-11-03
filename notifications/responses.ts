@@ -3,6 +3,20 @@ import { router } from "expo-router";
 import { ACTIONS } from "./config";
 import { cancelReminders, scheduleSnooze } from "./scheduler";
 
+function navigateToUrl(url: unknown): void {
+  if (typeof url !== "string" || url.length === 0) return;
+
+  try {
+    const path = url.startsWith("/") ? url : `/${url}`;
+    router.push(path as any);
+  } catch (routerErr) {
+    console.warn(
+      "[notification response] Navigation failed or app in background:",
+      routerErr,
+    );
+  }
+}
+
 export async function handleNotificationResponse(
   res: Notifications.NotificationResponse,
 ): Promise<void> {
@@ -26,19 +40,13 @@ export async function handleNotificationResponse(
         }
         break;
 
+      case ACTIONS.VIEW:
+        navigateToUrl(data.url);
+        break;
+
       case Notifications.DEFAULT_ACTION_IDENTIFIER:
       default:
-        if (typeof data.url === "string" && data.url.length > 0) {
-          try {
-            const path = data.url.startsWith("/") ? data.url : `/${data.url}`;
-            router.push(path as any);
-          } catch (routerErr) {
-            console.warn(
-              "[notification response] Navigation failed or app in background:",
-              routerErr,
-            );
-          }
-        }
+        navigateToUrl(data.url);
         break;
     }
 

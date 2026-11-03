@@ -1,5 +1,5 @@
 import * as Notifications from "expo-notifications";
-import { Linking } from "react-native";
+import { Linking, Platform } from "react-native";
 import { PermState } from "./types";
 
 export async function ensurePermission(): Promise<PermState> {
@@ -22,6 +22,30 @@ export async function ensurePermission(): Promise<PermState> {
   } catch (err) {
     console.warn("[permissions] Failed checking notification permission", err);
     return "denied";
+  }
+}
+
+/**
+ * Android 12+ exact alarms: without this permission the OS may delay
+ * scheduled notifications. Android 14+ denies it by default for new
+ * installs, so we check and, when possible, send the user to the system
+ * screen to grant it. Never blocks scheduling — reminders simply become
+ * approximate if denied.
+ */
+export async function ensureExactAlarmPermission(): Promise<boolean> {
+  if (Platform.OS !== "android") return true;
+
+  try {
+    const current = await Notifications.getExactAlarmPermissionsAsync();
+    if (current.granted) return true;
+    if (!current.canAskAgain) return false;
+
+    const result = await Notifications.requestExactAlarmPermissionsAsync();
+    return result.granted;
+  } catch (err) {
+    // Older Android versions or unsupported builds: exact alarms are allowed.
+    console.warn("[permissions] Exact alarm check unavailable:", err);
+    return true;
   }
 }
 
