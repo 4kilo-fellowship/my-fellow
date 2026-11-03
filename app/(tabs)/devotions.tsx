@@ -29,10 +29,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import PagerView, {
   PagerViewOnPageScrollEventData,
+  PageScrollStateChangedNativeEvent,
 } from "react-native-pager-view";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
-const TAB_WIDTH = SCREEN_WIDTH / 2;
 
 const formatDate = (dateStr: string) => {
   try {
@@ -352,8 +352,12 @@ export default function Devotions() {
   const insets = useSafeAreaInsets();
   const isAdmin = useIsAdmin();
   const [activeTab, setActiveTab] = useState<0 | 1>(0);
+  const activeTabRef = useRef<0 | 1>(0);
+  const isTabPressRef = useRef(false);
   const pagerRef = useRef<PagerView>(null);
   const scrollOffset = useRef(new Animated.Value(0)).current;
+  const [tabBarWidth, setTabBarWidth] = useState(SCREEN_WIDTH);
+  const tabWidth = tabBarWidth / 2;
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -402,31 +406,38 @@ export default function Devotions() {
 
   const handleTabChange = useCallback(
     (index: 0 | 1) => {
-      if (activeTab === index) return;
+      if (activeTabRef.current === index) return;
       try {
         Haptics.selectionAsync();
       } catch {}
+      isTabPressRef.current = true;
+      activeTabRef.current = index;
       setActiveTab(index);
-      Animated.spring(scrollOffset, {
+      Animated.timing(scrollOffset, {
         toValue: index,
-        useNativeDriver: false,
-        friction: 8,
-        tension: 70,
-      }).start();
+        duration: 220,
+        useNativeDriver: true,
+      }).start(() => {
+        isTabPressRef.current = false;
+      });
       pagerRef.current?.setPage(index);
     },
-    [activeTab, scrollOffset],
+    [scrollOffset],
   );
 
   const handlePageScroll = useCallback(
     (e: { nativeEvent: PagerViewOnPageScrollEventData }) => {
+      if (isTabPressRef.current) return;
       const { position, offset } = e.nativeEvent;
       const progress = position + offset;
       scrollOffset.setValue(progress);
 
-      // Fast threshold: update tab highlights smoothly as soon as swipe crosses 50%
+      // Symmetrical midpoint switch (switches text right at 50% swipe)
       const targetTab = progress >= 0.5 ? 1 : 0;
-      setActiveTab((prev) => (prev !== targetTab ? targetTab : prev));
+      if (activeTabRef.current !== targetTab) {
+        activeTabRef.current = targetTab;
+        setActiveTab(targetTab);
+      }
     },
     [scrollOffset],
   );
@@ -434,8 +445,21 @@ export default function Devotions() {
   const handlePageSelected = useCallback(
     (e: { nativeEvent: { position: number } }) => {
       const newIndex = (e.nativeEvent.position === 1 ? 1 : 0) as 0 | 1;
+      activeTabRef.current = newIndex;
       setActiveTab(newIndex);
-      scrollOffset.setValue(newIndex);
+      if (!isTabPressRef.current) {
+        scrollOffset.setValue(newIndex);
+      }
+    },
+    [scrollOffset],
+  );
+
+  const handlePageScrollStateChanged = useCallback(
+    (e: PageScrollStateChangedNativeEvent) => {
+      if (e.nativeEvent.pageScrollState === "idle") {
+        isTabPressRef.current = false;
+        scrollOffset.setValue(activeTabRef.current);
+      }
     },
     [scrollOffset],
   );
@@ -536,7 +560,15 @@ export default function Devotions() {
       />
 
       {/* Minimalist Twitter/X Tab Filter: All & Bookmarks */}
-      <View style={styles.tabBarContainer}>
+      <View
+        style={styles.tabBarContainer}
+        onLayout={(e) => {
+          const w = e.nativeEvent.layout.width;
+          if (w > 0 && Math.abs(w - tabBarWidth) > 1) {
+            setTabBarWidth(w);
+          }
+        }}
+      >
         {/* Tab 0: All */}
         <Pressable
           android_ripple={{ color: "rgba(0, 0, 0, 0.06)", foreground: true }}
@@ -597,11 +629,12 @@ export default function Devotions() {
           style={[
             styles.animatedIndicator,
             {
+              width: tabWidth,
               transform: [
                 {
                   translateX: scrollOffset.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [0, TAB_WIDTH],
+                    outputRange: [0, tabWidth],
                     extrapolate: "clamp",
                   }),
                 },
@@ -618,6 +651,7 @@ export default function Devotions() {
         initialPage={0}
         onPageScroll={handlePageScroll}
         onPageSelected={handlePageSelected}
+        onPageScrollStateChanged={handlePageScrollStateChanged}
         overScrollMode="never"
       >
         {/* Page 0: All Devotions (Editorial Magazine / Native Hub) */}
@@ -770,23 +804,16 @@ export default function Devotions() {
               {/* 4. CTA: Apply to Write */}
               <View style={styles.ctaContainer}>
                 <View style={styles.ctaIconCircle}>
-                  <Ionicons name="create-outline" size={24} color="#52525b" />
+                  <Ionicons name="create-outline" size={24} color={PRIMARY} />
                 </View>
                 <Text style={styles.ctaTitle}>Want to Share Your Faith?</Text>
                 <Text style={styles.ctaSubtitle}>
                   Share your devotional insights and encourage the fellowship
                   community through writing.
                 </Text>
-                <Pressable
-                  android_ripple={{
-                    color: "rgba(255, 255, 255, 0.25)",
-                    foreground: true,
-                  }}
-                  style={({ pressed }) => [
-                    styles.ctaButton,
-                    Platform.OS === "ios" &&
-                      pressed && { opacity: 0.88, transform: [{ scale: 0.98 }] },
-                  ]}
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  style={styles.ctaButton}
                   onPress={() => {
                     try {
                       Haptics.selectionAsync();
@@ -804,7 +831,7 @@ export default function Devotions() {
                     }
                     size={18}
                     color="#ffffff"
-                    style={{ marginRight: 6 }}
+                    style={{ marginRight: 8 }}
                   />
                   <Text style={styles.ctaButtonText}>
                     {myWriterRequest?.status === "pending"
@@ -813,7 +840,7 @@ export default function Devotions() {
                       ? "Writer Status Active"
                       : "Apply to Write"}
                   </Text>
-                </Pressable>
+                </TouchableOpacity>
               </View>
             </ScrollView>
           )}
@@ -943,8 +970,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     left: 0,
-    width: TAB_WIDTH,
-    height: 3,
+    height: 2,
     backgroundColor: "#000000",
   },
   tabBadge: {
@@ -1484,18 +1510,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: PRIMARY,
-    paddingHorizontal: 26,
-    paddingVertical: 13,
-    borderRadius: 14,
-    shadowColor: PRIMARY,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
+    minWidth: 200,
+    height: 48,
+    paddingHorizontal: 28,
+    borderRadius: 24,
+    ...Platform.select({
+      ios: {
+        shadowColor: PRIMARY,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   ctaButtonText: {
     color: "#ffffff",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "700",
     letterSpacing: -0.2,
   },
