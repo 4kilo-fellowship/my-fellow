@@ -8,7 +8,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -19,7 +18,6 @@ import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 
-import { AdminGuardFallback } from "@/components/Admin/AdminGuardFallback";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { ConfirmModal } from "@/components/Modals/ConfirmModal";
 import { InfoModal } from "@/components/Modals/InfoModal";
@@ -40,6 +38,8 @@ const DAY_OPTIONS = [
 ];
 
 const CATEGORY_PRESETS = [
+  "General",
+  "Team",
   "Weekly Service",
   "Prayer Meeting",
   "Bible Study",
@@ -73,7 +73,7 @@ export default function ManageProgramScreen() {
   const [description, setDescription] = useState<string>("");
   const [day, setDay] = useState<string>("Monday");
   const [time, setTime] = useState<string>("");
-  const [category, setCategory] = useState<string>("Weekly Service");
+  const [category, setCategory] = useState<string>("General");
   const [location, setLocation] = useState<string>("");
   const [latitude, setLatitude] = useState<string>("9.0358");
   const [longitude, setLongitude] = useState<string>("38.7619");
@@ -107,7 +107,7 @@ export default function ManageProgramScreen() {
     setDescription(item.description || "");
     setDay(item.day || "Monday");
     setTime(item.time || "");
-    setCategory(item.category || "Weekly Service");
+    setCategory(item.category || "General");
     setLocation(item.location || "");
     if (item.coordinates) {
       setLatitude(item.coordinates.lat?.toString() || "9.0358");
@@ -125,6 +125,7 @@ export default function ManageProgramScreen() {
 
   const pickImage = async () => {
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
@@ -148,7 +149,6 @@ export default function ManageProgramScreen() {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         setImageUri(result.assets[0].uri);
         setIsLocalImage(true);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       }
     } catch {
       setInfoModal({
@@ -161,20 +161,20 @@ export default function ManageProgramScreen() {
   };
 
   const validate = (): string | null => {
+    if (!imageUri) {
+      return "Please select a cover banner for the program.";
+    }
     if (!title.trim() || title.trim().length < 2) {
       return "Program title must be at least 2 characters.";
     }
-    if (!description.trim() || description.trim().length < 5) {
-      return "Program description must be at least 5 characters.";
-    }
     if (!time.trim()) {
-      return "Service time is required (e.g., 6:00 PM - 8:00 PM).";
+      return "Service time is required (e.g., 5:00 PM - 8:00 PM).";
     }
     if (!location.trim()) {
-      return "Location is required.";
+      return "Location / Venue is required.";
     }
-    if (!imageUri) {
-      return "Please select a cover image for the program.";
+    if (!description.trim() || description.trim().length < 5) {
+      return "Program description must be at least 5 characters.";
     }
     return null;
   };
@@ -195,6 +195,7 @@ export default function ManageProgramScreen() {
     }
 
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
       setSubmitting(true);
       const parsedLat = parseFloat(latitude) || 9.0358;
       const parsedLng = parseFloat(longitude) || 38.7619;
@@ -316,7 +317,41 @@ export default function ManageProgramScreen() {
   };
 
   if (!isAdmin) {
-    return <AdminGuardFallback title="Manage Program" />;
+    return (
+      <View
+        style={[
+          styles.screen,
+          { backgroundColor: isDark ? "#0A0A0A" : "#ffffff" },
+        ]}
+      >
+        <StatusBar style={isDark ? "light" : "dark"} />
+        <ScreenHeader title={isEditing ? "Edit Program" : "Manage Program"} />
+        <View style={styles.centerBox}>
+          <Ionicons
+            name="shield-outline"
+            size={56}
+            color={isDark ? "#52525b" : "#94a3b8"}
+          />
+          <Text
+            style={[
+              styles.unauthorizedTitle,
+              { color: isDark ? "#fff" : "#0f172a" },
+            ]}
+          >
+            Admin Access Required
+          </Text>
+          <Text
+            style={[
+              styles.unauthorizedDesc,
+              { color: isDark ? "#a1a1aa" : "#64748b" },
+            ]}
+          >
+            You must be signed in with an authorized fellowship administrator
+            account to manage programs.
+          </Text>
+        </View>
+      </View>
+    );
   }
 
   if (loadingInitial) {
@@ -324,116 +359,260 @@ export default function ManageProgramScreen() {
       <View
         style={[
           styles.screen,
-          isDark ? styles.screenDark : styles.screenLight,
-          styles.centerBox,
+          { backgroundColor: isDark ? "#0A0A0A" : "#ffffff" },
         ]}
       >
-        <ActivityIndicator size="large" color={PRIMARY} />
+        <StatusBar style={isDark ? "light" : "dark"} />
+        <ScreenHeader title={isEditing ? "Edit Program" : "Create Program"} />
+        <View style={styles.centerBox}>
+          <ActivityIndicator size="large" color={PRIMARY} />
+          <Text
+            style={[
+              styles.loadingText,
+              { color: isDark ? "#a1a1aa" : "#64748b" },
+            ]}
+          >
+            Loading program details...
+          </Text>
+        </View>
       </View>
     );
   }
+
+  const rippleColor = isDark
+    ? "rgba(255, 255, 255, 0.12)"
+    : "rgba(0, 0, 0, 0.08)";
 
   return (
     <View
       style={[
         styles.screen,
-        isDark ? styles.screenDark : styles.screenLight,
-        { paddingTop: insets.top },
+        { backgroundColor: isDark ? "#0A0A0A" : "#ffffff" },
       ]}
     >
       <StatusBar style={isDark ? "light" : "dark"} />
-      <ScreenHeader title={isEditing ? "Edit Program" : "Add Program"} />
+      <ScreenHeader
+        title={isEditing ? "Edit Program" : "Create Program"}
+        containerStyle={{
+          backgroundColor: isDark ? "#0A0A0A" : "#ffffff",
+          borderBottomColor: isDark ? "#27272a" : "#e2e8f0",
+        }}
+      />
 
       <KeyboardAvoidingView
-        style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
       >
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: insets.bottom + 40 },
+            { paddingBottom: Math.max(insets.bottom + 24, 40) },
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Cover Image Picker */}
+          {/* Cover Banner Picker */}
           <View style={styles.section}>
-            <Text
-              style={[
-                styles.label,
-                isDark ? styles.textLight : styles.textDark,
-              ]}
-            >
-              Cover Banner <Text style={styles.required}>*</Text>
-            </Text>
-            <Pressable
-              onPress={pickImage}
-              style={[
-                styles.imagePicker,
-                isDark ? styles.inputDark : styles.inputLight,
-                imageUri ? styles.imagePickerWithImage : null,
-              ]}
-            >
-              {imageUri ? (
-                <View style={styles.imageWrapper}>
-                  <ExpoImage
-                    source={{ uri: imageUri }}
-                    style={styles.previewImage}
-                    contentFit="cover"
-                  />
-                  <View style={styles.imageOverlayBadge}>
-                    <Ionicons name="camera" size={16} color="#fff" />
-                    <Text style={styles.imageOverlayText}>Change</Text>
+            <View style={styles.bannerHeaderRow}>
+              <Text
+                style={[
+                  styles.label,
+                  { color: isDark ? "#e4e4e7" : "#0f172a", marginBottom: 0 },
+                ]}
+              >
+                Cover Banner <Text style={styles.required}>*</Text>
+              </Text>
+            </View>
+
+            {imageUri ? (
+              <View style={styles.imagePreviewContainer}>
+                <ExpoImage
+                  source={{ uri: imageUri }}
+                  style={styles.imagePreview}
+                  contentFit="cover"
+                />
+                <View style={styles.imageOverlayRow}>
+                  <View style={styles.changeImageBtnWrap}>
+                    <Pressable
+                      onPress={pickImage}
+                      android_ripple={{
+                        color: "rgba(255, 255, 255, 0.25)",
+                        borderless: false,
+                        foreground: true,
+                      }}
+                      style={styles.changeImageBtnInner}
+                    >
+                      <Ionicons
+                        name="camera-outline"
+                        size={16}
+                        color="#ffffff"
+                      />
+                      <Text style={styles.changeImageText}>Change</Text>
+                    </Pressable>
+                  </View>
+                  <View style={styles.removeImageBtnWrap}>
+                    <Pressable
+                      onPress={() => {
+                        setImageUri(null);
+                        setIsLocalImage(false);
+                      }}
+                      android_ripple={{
+                        color: "rgba(239, 68, 68, 0.3)",
+                        borderless: false,
+                        foreground: true,
+                      }}
+                      style={styles.removeImageBtnInner}
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={16}
+                        color="#ef4444"
+                      />
+                    </Pressable>
                   </View>
                 </View>
-              ) : (
-                <View style={styles.emptyImageState}>
-                  <Ionicons name="image-outline" size={40} color="#94a3b8" />
+              </View>
+            ) : (
+              <View
+                style={[
+                  styles.uploadPlaceholderContainer,
+                  {
+                    borderColor: isDark ? "#3f3f46" : "#cbd5e1",
+                    backgroundColor: isDark ? "#18181b" : "#f1f5f9",
+                  },
+                ]}
+              >
+                <Pressable
+                  onPress={pickImage}
+                  android_ripple={{
+                    color: rippleColor,
+                    borderless: false,
+                    foreground: true,
+                  }}
+                  style={styles.uploadPlaceholderInner}
+                >
+                  <View style={styles.uploadIconCircle}>
+                    <Ionicons name="image-outline" size={28} color={PRIMARY} />
+                  </View>
                   <Text
                     style={[
-                      styles.emptyImageText,
-                      isDark ? styles.descDark : styles.descLight,
+                      styles.uploadTitle,
+                      { color: isDark ? "#ffffff" : "#0f172a" },
                     ]}
                   >
-                    Tap to select 16:9 banner
+                    Upload Program Banner
                   </Text>
-                </View>
-              )}
-            </Pressable>
+                  <Text
+                    style={[
+                      styles.uploadSubtitle,
+                      { color: isDark ? "#a1a1aa" : "#64748b" },
+                    ]}
+                  >
+                    Recommended aspect ratio 16:9 • High resolution
+                  </Text>
+                </Pressable>
+              </View>
+            )}
           </View>
 
-          {/* Title */}
+          {/* Program Title */}
           <View style={styles.section}>
             <Text
               style={[
                 styles.label,
-                isDark ? styles.textLight : styles.textDark,
+                { color: isDark ? "#e4e4e7" : "#0f172a" },
               ]}
             >
-              Title <Text style={styles.required}>*</Text>
+              Program Title <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
               value={title}
               onChangeText={setTitle}
-              placeholder="e.g., Friday Youth Worship Service"
-              placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
               onFocus={() => setFocusedField("title")}
               onBlur={() => setFocusedField(null)}
+              placeholder="e.g. Monday Fellowship Service"
+              placeholderTextColor={isDark ? "#52525b" : "#94a3b8"}
               style={[
                 styles.input,
-                isDark ? styles.inputDark : styles.inputLight,
-                focusedField === "title" && styles.inputFocused,
-                isDark ? styles.textLight : styles.textDark,
+                {
+                  color: isDark ? "#ffffff" : "#0f172a",
+                  borderColor:
+                    focusedField === "title"
+                      ? PRIMARY
+                      : isDark
+                        ? "#27272a"
+                        : "#cbd5e1",
+                  backgroundColor: isDark ? "#18181b" : "#ffffff",
+                },
               ]}
             />
           </View>
 
-          {/* Day Selection */}
+          {/* Category Chips */}
           <View style={styles.section}>
             <Text
               style={[
                 styles.label,
-                isDark ? styles.textLight : styles.textDark,
+                { color: isDark ? "#e4e4e7" : "#0f172a" },
+              ]}
+            >
+              Category <Text style={styles.required}>*</Text>
+            </Text>
+            <View style={styles.wrapChips}>
+              {CATEGORY_PRESETS.map((cat) => {
+                const selected = category === cat;
+                return (
+                  <View
+                    key={cat}
+                    style={[
+                      styles.chipWrap,
+                      selected
+                        ? { backgroundColor: PRIMARY, borderColor: PRIMARY }
+                        : {
+                            backgroundColor: isDark ? "#18181b" : "#ffffff",
+                            borderColor: isDark ? "#27272a" : "#cbd5e1",
+                          },
+                    ]}
+                  >
+                    <Pressable
+                      onPress={() => {
+                        Haptics.impactAsync(
+                          Haptics.ImpactFeedbackStyle.Light,
+                        ).catch(() => {});
+                        setCategory(cat);
+                      }}
+                      android_ripple={{
+                        color: selected
+                          ? "rgba(255, 255, 255, 0.25)"
+                          : rippleColor,
+                        borderless: false,
+                        foreground: true,
+                      }}
+                      style={styles.chipInner}
+                    >
+                      <Text
+                        style={[
+                          styles.chipText,
+                          selected
+                            ? { color: "#ffffff", fontWeight: "700" }
+                            : { color: isDark ? "#a1a1aa" : "#475569" },
+                        ]}
+                      >
+                        {cat}
+                      </Text>
+                    </Pressable>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Day of Week Chips */}
+          <View style={styles.section}>
+            <Text
+              style={[
+                styles.label,
+                { color: isDark ? "#e4e4e7" : "#0f172a" },
               ]}
             >
               Day of Week <Text style={styles.required}>*</Text>
@@ -441,37 +620,51 @@ export default function ManageProgramScreen() {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.chipsRow}
+              contentContainerStyle={styles.horizontalChipsRow}
             >
               {DAY_OPTIONS.map((d) => {
                 const selected = day === d;
                 return (
-                  <TouchableOpacity
+                  <View
                     key={d}
-                    onPress={() => {
-                      Haptics.impactAsync(
-                        Haptics.ImpactFeedbackStyle.Light,
-                      ).catch(() => {});
-                      setDay(d);
-                    }}
                     style={[
-                      styles.chip,
-                      selected ? styles.chipSelected : isDark ? styles.chipDark : styles.chipLight,
+                      styles.chipWrap,
+                      selected
+                        ? { backgroundColor: PRIMARY, borderColor: PRIMARY }
+                        : {
+                            backgroundColor: isDark ? "#18181b" : "#ffffff",
+                            borderColor: isDark ? "#27272a" : "#cbd5e1",
+                          },
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.chipText,
-                        selected
-                          ? styles.chipTextSelected
-                          : isDark
-                            ? styles.descDark
-                            : styles.descLight,
-                      ]}
+                    <Pressable
+                      onPress={() => {
+                        Haptics.impactAsync(
+                          Haptics.ImpactFeedbackStyle.Light,
+                        ).catch(() => {});
+                        setDay(d);
+                      }}
+                      android_ripple={{
+                        color: selected
+                          ? "rgba(255, 255, 255, 0.25)"
+                          : rippleColor,
+                        borderless: false,
+                        foreground: true,
+                      }}
+                      style={styles.chipInner}
                     >
-                      {d}
-                    </Text>
-                  </TouchableOpacity>
+                      <Text
+                        style={[
+                          styles.chipText,
+                          selected
+                            ? { color: "#ffffff", fontWeight: "700" }
+                            : { color: isDark ? "#a1a1aa" : "#475569" },
+                        ]}
+                      >
+                        {d}
+                      </Text>
+                    </Pressable>
+                  </View>
                 );
               })}
             </ScrollView>
@@ -482,7 +675,7 @@ export default function ManageProgramScreen() {
             <Text
               style={[
                 styles.label,
-                isDark ? styles.textLight : styles.textDark,
+                { color: isDark ? "#e4e4e7" : "#0f172a" },
               ]}
             >
               Time <Text style={styles.required}>*</Text>
@@ -490,71 +683,32 @@ export default function ManageProgramScreen() {
             <TextInput
               value={time}
               onChangeText={setTime}
-              placeholder="e.g., 6:00 PM - 8:00 PM"
-              placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
               onFocus={() => setFocusedField("time")}
               onBlur={() => setFocusedField(null)}
+              placeholder="e.g. 5:00 PM - 8:00 PM"
+              placeholderTextColor={isDark ? "#52525b" : "#94a3b8"}
               style={[
                 styles.input,
-                isDark ? styles.inputDark : styles.inputLight,
-                focusedField === "time" && styles.inputFocused,
-                isDark ? styles.textLight : styles.textDark,
+                {
+                  color: isDark ? "#ffffff" : "#0f172a",
+                  borderColor:
+                    focusedField === "time"
+                      ? PRIMARY
+                      : isDark
+                        ? "#27272a"
+                        : "#cbd5e1",
+                  backgroundColor: isDark ? "#18181b" : "#ffffff",
+                },
               ]}
             />
           </View>
 
-          {/* Category */}
+          {/* Location / Venue */}
           <View style={styles.section}>
             <Text
               style={[
                 styles.label,
-                isDark ? styles.textLight : styles.textDark,
-              ]}
-            >
-              Category <Text style={styles.required}>*</Text>
-            </Text>
-            <View style={styles.wrapChips}>
-              {CATEGORY_PRESETS.map((cat) => {
-                const selected = category === cat;
-                return (
-                  <TouchableOpacity
-                    key={cat}
-                    onPress={() => {
-                      Haptics.impactAsync(
-                        Haptics.ImpactFeedbackStyle.Light,
-                      ).catch(() => {});
-                      setCategory(cat);
-                    }}
-                    style={[
-                      styles.chip,
-                      selected ? styles.chipSelected : isDark ? styles.chipDark : styles.chipLight,
-                      { marginBottom: 8 },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.chipText,
-                        selected
-                          ? styles.chipTextSelected
-                          : isDark
-                            ? styles.descDark
-                            : styles.descLight,
-                      ]}
-                    >
-                      {cat}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
-          {/* Location */}
-          <View style={styles.section}>
-            <Text
-              style={[
-                styles.label,
-                isDark ? styles.textLight : styles.textDark,
+                { color: isDark ? "#e4e4e7" : "#0f172a" },
               ]}
             >
               Location / Venue <Text style={styles.required}>*</Text>
@@ -562,64 +716,85 @@ export default function ManageProgramScreen() {
             <TextInput
               value={location}
               onChangeText={setLocation}
-              placeholder="e.g., Main Sanctuary, 4 Kilo Campus"
-              placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
               onFocus={() => setFocusedField("location")}
               onBlur={() => setFocusedField(null)}
+              placeholder="e.g. Hibret Amba, 4 Kilo Campus"
+              placeholderTextColor={isDark ? "#52525b" : "#94a3b8"}
               style={[
                 styles.input,
-                isDark ? styles.inputDark : styles.inputLight,
-                focusedField === "location" && styles.inputFocused,
-                isDark ? styles.textLight : styles.textDark,
+                {
+                  color: isDark ? "#ffffff" : "#0f172a",
+                  borderColor:
+                    focusedField === "location"
+                      ? PRIMARY
+                      : isDark
+                        ? "#27272a"
+                        : "#cbd5e1",
+                  backgroundColor: isDark ? "#18181b" : "#ffffff",
+                },
               ]}
             />
           </View>
 
-          {/* Coordinates */}
-          <View style={styles.row}>
-            <View style={[styles.section, { flex: 1, marginRight: 8 }]}>
-              <Text
-                style={[
-                  styles.label,
-                  isDark ? styles.textLight : styles.textDark,
-                ]}
-              >
-                Latitude
-              </Text>
-              <TextInput
-                value={latitude}
-                onChangeText={setLatitude}
-                keyboardType="numeric"
-                placeholder="9.0358"
-                placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
-                style={[
-                  styles.input,
-                  isDark ? styles.inputDark : styles.inputLight,
-                  isDark ? styles.textLight : styles.textDark,
-                ]}
-              />
-            </View>
-            <View style={[styles.section, { flex: 1, marginLeft: 8 }]}>
-              <Text
-                style={[
-                  styles.label,
-                  isDark ? styles.textLight : styles.textDark,
-                ]}
-              >
-                Longitude
-              </Text>
-              <TextInput
-                value={longitude}
-                onChangeText={setLongitude}
-                keyboardType="numeric"
-                placeholder="38.7619"
-                placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
-                style={[
-                  styles.input,
-                  isDark ? styles.inputDark : styles.inputLight,
-                  isDark ? styles.textLight : styles.textDark,
-                ]}
-              />
+          {/* Coordinates (Latitude & Longitude) */}
+          <View style={styles.section}>
+            <Text
+              style={[
+                styles.label,
+                { color: isDark ? "#e4e4e7" : "#0f172a" },
+              ]}
+            >
+              Coordinates (Map Coordinates)
+            </Text>
+            <View style={styles.coordinatesRow}>
+              <View style={{ flex: 1 }}>
+                <TextInput
+                  value={latitude}
+                  onChangeText={setLatitude}
+                  onFocus={() => setFocusedField("latitude")}
+                  onBlur={() => setFocusedField(null)}
+                  keyboardType="numeric"
+                  placeholder="Latitude (e.g. 9.0358)"
+                  placeholderTextColor={isDark ? "#52525b" : "#94a3b8"}
+                  style={[
+                    styles.input,
+                    {
+                      color: isDark ? "#ffffff" : "#0f172a",
+                      borderColor:
+                        focusedField === "latitude"
+                          ? PRIMARY
+                          : isDark
+                            ? "#27272a"
+                            : "#cbd5e1",
+                      backgroundColor: isDark ? "#18181b" : "#ffffff",
+                    },
+                  ]}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <TextInput
+                  value={longitude}
+                  onChangeText={setLongitude}
+                  onFocus={() => setFocusedField("longitude")}
+                  onBlur={() => setFocusedField(null)}
+                  keyboardType="numeric"
+                  placeholder="Longitude (e.g. 38.7619)"
+                  placeholderTextColor={isDark ? "#52525b" : "#94a3b8"}
+                  style={[
+                    styles.input,
+                    {
+                      color: isDark ? "#ffffff" : "#0f172a",
+                      borderColor:
+                        focusedField === "longitude"
+                          ? PRIMARY
+                          : isDark
+                            ? "#27272a"
+                            : "#cbd5e1",
+                      backgroundColor: isDark ? "#18181b" : "#ffffff",
+                    },
+                  ]}
+                />
+              </View>
             </View>
           </View>
 
@@ -628,62 +803,108 @@ export default function ManageProgramScreen() {
             <Text
               style={[
                 styles.label,
-                isDark ? styles.textLight : styles.textDark,
+                { color: isDark ? "#e4e4e7" : "#0f172a" },
               ]}
             >
-              Description <Text style={styles.required}>*</Text>
+              Program Description <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
               value={description}
               onChangeText={setDescription}
-              placeholder="Detailed description of the program and schedule..."
-              placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
-              multiline
-              numberOfLines={4}
               onFocus={() => setFocusedField("description")}
               onBlur={() => setFocusedField(null)}
+              placeholder="Detailed overview of the program, topics, and schedule..."
+              placeholderTextColor={isDark ? "#52525b" : "#94a3b8"}
+              multiline
+              numberOfLines={4}
               style={[
                 styles.input,
-                styles.textArea,
-                isDark ? styles.inputDark : styles.inputLight,
-                focusedField === "description" && styles.inputFocused,
-                isDark ? styles.textLight : styles.textDark,
+                styles.multilineTall,
+                {
+                  color: isDark ? "#ffffff" : "#0f172a",
+                  borderColor:
+                    focusedField === "description"
+                      ? PRIMARY
+                      : isDark
+                        ? "#27272a"
+                        : "#cbd5e1",
+                  backgroundColor: isDark ? "#18181b" : "#ffffff",
+                },
               ]}
             />
           </View>
 
-          {/* Action Buttons */}
-          <View style={styles.btnRow}>
-            <TouchableOpacity
-              onPress={handleSubmit}
-              disabled={submitting}
-              style={[styles.primaryBtn, submitting && styles.btnDisabled]}
+          {/* Action Buttons - Fully rounded pill matching event manager */}
+          <View style={styles.submitSection}>
+            <View
+              style={[
+                styles.submitBtnWrap,
+                { backgroundColor: PRIMARY },
+              ]}
             >
-              {submitting ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <>
-                  <Ionicons
-                    name={isEditing ? "checkmark" : "add"}
-                    size={20}
-                    color="#fff"
-                  />
-                  <Text style={styles.primaryBtnText}>
-                    {isEditing ? "Update Program" : "Create Program"}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-
-            {isEditing && (
-              <TouchableOpacity
-                onPress={() => setDeleteModalVisible(true)}
-                disabled={deleting}
-                style={[styles.deleteBtn, deleting && styles.btnDisabled]}
+              <Pressable
+                onPress={handleSubmit}
+                disabled={submitting || deleting}
+                android_ripple={{
+                  color: "rgba(255, 255, 255, 0.3)",
+                  borderless: false,
+                  foreground: true,
+                }}
+                style={styles.submitBtnInner}
               >
-                <Ionicons name="trash-outline" size={18} color="#ef4444" />
-                <Text style={styles.deleteBtnText}>Delete Program</Text>
-              </TouchableOpacity>
+                {submitting ? (
+                  <ActivityIndicator color="#ffffff" size="small" />
+                ) : (
+                  <View style={styles.btnContent}>
+                    <Ionicons
+                      name={
+                        isEditing
+                          ? "checkmark-circle-outline"
+                          : "paper-plane-outline"
+                      }
+                      size={20}
+                      color="#ffffff"
+                    />
+                    <Text style={styles.submitButtonText}>
+                      {isEditing ? "Save Changes" : "Publish Program"}
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
+            </View>
+
+            {/* Delete Option (Editing Mode Only) */}
+            {isEditing && (
+              <View style={styles.deleteBtnWrap}>
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(
+                      Haptics.ImpactFeedbackStyle.Medium,
+                    ).catch(() => {});
+                    setDeleteModalVisible(true);
+                  }}
+                  disabled={submitting || deleting}
+                  android_ripple={{
+                    color: "rgba(239, 68, 68, 0.25)",
+                    borderless: false,
+                    foreground: true,
+                  }}
+                  style={styles.deleteBtnInner}
+                >
+                  {deleting ? (
+                    <ActivityIndicator color="#ef4444" size="small" />
+                  ) : (
+                    <View style={styles.btnContent}>
+                      <Ionicons
+                        name="trash-outline"
+                        size={18}
+                        color="#ef4444"
+                      />
+                      <Text style={styles.deleteButtonText}>Delete Program</Text>
+                    </View>
+                  )}
+                </Pressable>
+              </View>
             )}
           </View>
         </ScrollView>
@@ -719,114 +940,221 @@ export default function ManageProgramScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  screenDark: { backgroundColor: "#000" },
-  screenLight: { backgroundColor: "#fff" },
-  centerBox: { alignItems: "center", justifyContent: "center" },
-  keyboardView: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 16 },
-  section: { marginBottom: 20 },
-  row: { flexDirection: "row", alignItems: "center" },
-  label: { fontSize: 13, fontWeight: "600", marginBottom: 8 },
-  required: { color: "#ef4444" },
-  textLight: { color: "#f8fafc" },
-  textDark: { color: "#0f172a" },
-  descDark: { color: "#94a3b8" },
-  descLight: { color: "#64748b" },
-  input: {
-    height: 48,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    fontSize: 15,
-    borderWidth: 1,
+  screen: {
+    flex: 1,
   },
-  textArea: {
-    height: 100,
+  scrollContent: {
+    padding: 16,
+  },
+  section: {
+    marginBottom: 20,
+  },
+  bannerHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 8,
+    letterSpacing: -0.2,
+  },
+  required: {
+    color: PRIMARY,
+  },
+  input: {
+    height: 50,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    paddingHorizontal: 14,
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  multilineTall: {
+    height: 110,
     paddingTop: 12,
     textAlignVertical: "top",
   },
-  inputDark: {
-    backgroundColor: "#111827",
-    borderColor: "#1f2937",
-  },
-  inputLight: {
-    backgroundColor: "#f8fafc",
-    borderColor: "#e2e8f0",
-  },
-  inputFocused: {
-    borderColor: PRIMARY,
-  },
-  chipsRow: { gap: 8 },
-  wrapChips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  chipDark: {
-    backgroundColor: "#111827",
-    borderColor: "#1f2937",
-  },
-  chipLight: {
-    backgroundColor: "#f1f5f9",
-    borderColor: "#e2e8f0",
-  },
-  chipSelected: {
-    backgroundColor: PRIMARY,
-    borderColor: PRIMARY,
-  },
-  chipText: { fontSize: 13, fontWeight: "600" },
-  chipTextSelected: { color: "#ffffff" },
-  imagePicker: {
-    height: 180,
-    borderRadius: 18,
+  imagePreviewContainer: {
+    width: "100%",
+    aspectRatio: 16 / 9,
+    borderRadius: 16,
     overflow: "hidden",
-    borderWidth: 1,
-    borderStyle: "dashed",
-    alignItems: "center",
-    justifyContent: "center",
+    position: "relative",
   },
-  imagePickerWithImage: { borderStyle: "solid" },
-  imageWrapper: { width: "100%", height: "100%", position: "relative" },
-  previewImage: { width: "100%", height: "100%" },
-  imageOverlayBadge: {
+  imagePreview: {
+    width: "100%",
+    height: "100%",
+  },
+  imageOverlayRow: {
     position: "absolute",
-    bottom: 10,
-    right: 10,
-    backgroundColor: "rgba(0,0,0,0.75)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
+    bottom: 12,
+    right: 12,
     flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  imageOverlayText: { color: "#fff", fontSize: 12, fontWeight: "600" },
-  emptyImageState: { alignItems: "center", gap: 8 },
-  emptyImageText: { fontSize: 13 },
-  btnRow: { marginTop: 10, gap: 12 },
-  primaryBtn: {
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: PRIMARY,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
     gap: 8,
   },
-  primaryBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  deleteBtn: {
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.3)",
-    backgroundColor: "rgba(239, 68, 68, 0.08)",
+  changeImageBtnWrap: {
+    borderRadius: 20,
+    overflow: "hidden",
+    backgroundColor: "rgba(0,0,0,0.72)",
+  },
+  changeImageBtnInner: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
     gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
   },
-  deleteBtnText: { color: "#ef4444", fontSize: 14, fontWeight: "600" },
-  btnDisabled: { opacity: 0.6 },
+  changeImageText: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  removeImageBtnWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    overflow: "hidden",
+    backgroundColor: "rgba(0,0,0,0.72)",
+  },
+  removeImageBtnInner: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  uploadPlaceholderContainer: {
+    width: "100%",
+    aspectRatio: 16 / 9,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    overflow: "hidden",
+  },
+  uploadPlaceholderInner: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+  },
+  uploadIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "rgba(255,103,25,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  uploadTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  uploadSubtitle: {
+    fontSize: 12,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+  wrapChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  horizontalChipsRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  chipWrap: {
+    borderRadius: 20,
+    borderWidth: 1.5,
+    overflow: "hidden",
+  },
+  chipInner: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  coordinatesRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  submitSection: {
+    marginTop: 14,
+    gap: 12,
+  },
+  submitBtnWrap: {
+    height: 52,
+    borderRadius: 26,
+    overflow: "hidden",
+    elevation: 3,
+    shadowColor: PRIMARY,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+  },
+  submitBtnInner: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  submitButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  deleteBtnWrap: {
+    height: 50,
+    borderRadius: 25,
+    overflow: "hidden",
+    borderWidth: 1.5,
+    borderColor: "rgba(239,68,68,0.35)",
+    backgroundColor: "rgba(239,68,68,0.08)",
+  },
+  deleteBtnInner: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deleteButtonText: {
+    color: "#ef4444",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  btnContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  centerBox: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+    gap: 12,
+  },
+  unauthorizedTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  unauthorizedDesc: {
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  loadingText: {
+    fontSize: 14,
+    marginTop: 12,
+  },
 });

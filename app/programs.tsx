@@ -21,10 +21,11 @@ import {
   Animated,
   Linking,
   Platform,
+  Pressable,
   RefreshControl,
   ScrollView,
+  StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -70,170 +71,222 @@ const ProgramCard = ({
   return (
     <View className="flex-1">
       <View
-        className={`mb-5 rounded-[24px] overflow-hidden border ${
-          isDark ? "bg-[#111] border-[#222]" : "bg-[#f9fafb] border-gray-200"
-        }`}
+        style={[
+          styles.card,
+          isDark ? styles.cardDark : styles.cardLight,
+        ]}
       >
-        <View className="h-52 w-full relative">
-          <Image
-            source={item.image}
-            style={{ width: "100%", height: "100%" }}
-            contentFit="cover"
-            transition={400}
-          />
-          <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.7)"]}
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 100,
-            }}
-          />
-
-          <View style={{ position: "absolute", top: 16, right: 16, flexDirection: "row", alignItems: "center", gap: 8 }}>
-            {isAdmin && onEdit && (
-              <AdminEditTrigger
-                size={40}
-                onPress={() => onEdit(item)}
-              />
-            )}
-            <TouchableOpacity
-              onPress={() => onToggleAlert(item)}
-              activeOpacity={0.7}
-              className="w-10 h-10 rounded-full items-center justify-center bg-black/40 backdrop-blur-sm"
-            >
-              <Ionicons
-                name={isAlertSet ? "notifications" : "notifications-outline"}
-                size={20}
-                color={isAlertSet ? "#f97316" : "white"}
-              />
-            </TouchableOpacity>
-          </View>
-
-          <View className="absolute bottom-4 left-5 right-5">
-            <Text
-              className="text-white text-2xl font-extrabold"
+        <Pressable
+          onPress={() =>
+            openGoogleMaps(
+              item.coordinates.lat,
+              item.coordinates.lng,
+              item.location,
+            )
+          }
+          accessibilityRole="button"
+          accessibilityLabel={`${item.title}, tap to view map directions`}
+          android_ripple={{
+            color: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)",
+            borderless: false,
+            foreground: true,
+          }}
+          style={{ width: "100%" }}
+        >
+          <View className="h-52 w-full relative">
+            <Image
+              source={item.image}
+              style={{ width: "100%", height: "100%" }}
+              contentFit="cover"
+              transition={400}
+            />
+            <LinearGradient
+              colors={["transparent", "rgba(0,0,0,0.7)"]}
               style={{
-                textShadowColor: "rgba(0,0,0,0.5)",
-                textShadowOffset: { width: 0, height: 1 },
-                textShadowRadius: 4,
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 100,
+              }}
+            />
+
+            <View
+              style={{
+                position: "absolute",
+                top: 16,
+                right: 16,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                zIndex: 10,
               }}
             >
-              {item.title}
+              {isAdmin && onEdit && (
+                <AdminEditTrigger
+                  size={40}
+                  onPress={() => onEdit(item)}
+                />
+              )}
+              <View style={styles.alertBtnWrap}>
+                <Pressable
+                  onPress={() => onToggleAlert(item)}
+                  accessibilityRole="button"
+                  accessibilityLabel={isAlertSet ? "Remove reminder" : "Set reminder"}
+                  android_ripple={{
+                    color: "rgba(255, 255, 255, 0.35)",
+                    borderless: false,
+                    foreground: true,
+                  }}
+                  style={styles.alertBtnInner}
+                >
+                  <Ionicons
+                    name={isAlertSet ? "notifications" : "notifications-outline"}
+                    size={20}
+                    color={isAlertSet ? "#f97316" : "white"}
+                  />
+                </Pressable>
+              </View>
+            </View>
+
+            <View className="absolute bottom-4 left-5 right-5">
+              <Text
+                className="text-white text-2xl font-extrabold"
+                style={{
+                  textShadowColor: "rgba(0,0,0,0.5)",
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 4,
+                }}
+              >
+                {item.title}
+              </Text>
+            </View>
+          </View>
+
+          <View className="p-5">
+            <Text
+              className={`text-[14px] mb-4 leading-[22px] ${
+                isDark ? "text-gray-400" : "text-gray-500"
+              }`}
+              numberOfLines={2}
+            >
+              {item.description}
             </Text>
-          </View>
-        </View>
 
-        <View className="p-5">
-          <Text
-            className={`text-[14px] mb-4 leading-[22px] ${
-              isDark ? "text-gray-400" : "text-gray-500"
-            }`}
-            numberOfLines={2}
-          >
-            {item.description}
-          </Text>
-
-          <View className="flex-row items-center justify-between mb-4">
-            <View
-              className={`flex-row items-center px-3.5 py-2 rounded-lg border ${
-                isDark
-                  ? "bg-[#1a1a1a] border-[#222]"
-                  : "bg-white border-gray-100"
-              }`}
-            >
-              <Ionicons
-                name="calendar-outline"
-                size={14}
-                color={PRIMARY}
-                style={{ marginRight: 6 }}
-              />
-              <Text
-                className={`font-bold text-xs ${
-                  isDark ? "text-gray-300" : "text-gray-700"
-                }`}
-              >
-                {item.day}
-              </Text>
-            </View>
-
-            <View
-              className={`flex-row items-center px-3.5 py-2 rounded-lg border ${
-                isDark
-                  ? "bg-[#1a1a1a] border-[#222]"
-                  : "bg-white border-gray-100"
-              }`}
-            >
-              <Ionicons
-                name="time-outline"
-                size={14}
-                color={isDark ? "#9ca3af" : "#6b7280"}
-                style={{ marginRight: 6 }}
-              />
-              <Text
-                className={`text-xs font-semibold ${
-                  isDark ? "text-gray-400" : "text-gray-600"
-                }`}
-              >
-                {item.time}
-              </Text>
-            </View>
-          </View>
-
-          <View
-            className={`h-[1px] w-full mb-4 ${isDark ? "bg-[#222]" : "bg-gray-100"}`}
-          />
-
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() =>
-              openGoogleMaps(
-                item.coordinates.lat,
-                item.coordinates.lng,
-                item.location,
-              )
-            }
-            className={`flex-row items-center justify-between py-3 px-4 rounded-xl border ${
-              isDark ? "bg-[#1a1a1a] border-[#222]" : "bg-white border-gray-100"
-            }`}
-          >
-            <View className="flex-row items-center flex-1">
+            <View className="flex-row items-center justify-between mb-4">
               <View
-                className={`w-9 h-9 rounded-full items-center justify-center mr-3 ${
-                  isDark ? "bg-[#222]" : "bg-orange-50"
+                className={`flex-row items-center px-3.5 py-2 rounded-lg border ${
+                  isDark
+                    ? "bg-[#1a1a1a] border-[#222]"
+                    : "bg-white border-gray-100"
                 }`}
               >
-                <Ionicons name="location" size={18} color={PRIMARY} />
-              </View>
-              <View className="flex-1">
+                <Ionicons
+                  name="calendar-outline"
+                  size={14}
+                  color={PRIMARY}
+                  style={{ marginRight: 6 }}
+                />
                 <Text
-                  className={`text-[11px] font-medium mb-0.5 ${isDark ? "text-gray-500" : "text-gray-400"}`}
-                >
-                  Location
-                </Text>
-                <Text
-                  className={`text-[13px] font-bold ${
-                    isDark ? "text-white" : "text-gray-800"
+                  className={`font-bold text-xs ${
+                    isDark ? "text-gray-300" : "text-gray-700"
                   }`}
-                  numberOfLines={1}
                 >
-                  {item.location}
+                  {item.day}
+                </Text>
+              </View>
+
+              <View
+                className={`flex-row items-center px-3.5 py-2 rounded-lg border ${
+                  isDark
+                    ? "bg-[#1a1a1a] border-[#222]"
+                    : "bg-white border-gray-100"
+                }`}
+              >
+                <Ionicons
+                  name="time-outline"
+                  size={14}
+                  color={isDark ? "#9ca3af" : "#6b7280"}
+                  style={{ marginRight: 6 }}
+                />
+                <Text
+                  className={`text-xs font-semibold ${
+                    isDark ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  {item.time}
                 </Text>
               </View>
             </View>
+
             <View
-              className={`w-8 h-8 rounded-full items-center justify-center border ${
-                isDark
-                  ? "bg-[#222] border-[#333]"
-                  : "bg-gray-50 border-gray-200"
-              }`}
+              className={`h-[1px] w-full mb-4 ${isDark ? "bg-[#222]" : "bg-gray-100"}`}
+            />
+
+            <View
+              style={[
+                styles.locationBtnWrap,
+                isDark ? styles.locationDark : styles.locationLight,
+              ]}
             >
-              <Ionicons name="navigate" size={14} color={PRIMARY} />
+              <Pressable
+                onPress={() =>
+                  openGoogleMaps(
+                    item.coordinates.lat,
+                    item.coordinates.lng,
+                    item.location,
+                  )
+                }
+                accessibilityRole="button"
+                accessibilityLabel={`Get directions to ${item.location}`}
+                android_ripple={{
+                  color: isDark
+                    ? "rgba(255, 255, 255, 0.12)"
+                    : "rgba(255, 103, 25, 0.12)",
+                  borderless: false,
+                  foreground: true,
+                }}
+                style={styles.locationBtnInner}
+              >
+                <View className="flex-row items-center flex-1">
+                  <View
+                    className={`w-9 h-9 rounded-full items-center justify-center mr-3 ${
+                      isDark ? "bg-[#222]" : "bg-orange-50"
+                    }`}
+                  >
+                    <Ionicons name="location" size={18} color={PRIMARY} />
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      className={`text-[11px] font-medium mb-0.5 ${
+                        isDark ? "text-gray-500" : "text-gray-400"
+                      }`}
+                    >
+                      Location
+                    </Text>
+                    <Text
+                      className={`text-[13px] font-bold ${
+                        isDark ? "text-white" : "text-gray-800"
+                      }`}
+                      numberOfLines={1}
+                    >
+                      {item.location}
+                    </Text>
+                  </View>
+                </View>
+                <View
+                  className={`w-8 h-8 rounded-full items-center justify-center border ${
+                    isDark
+                      ? "bg-[#222] border-[#333]"
+                      : "bg-gray-50 border-gray-200"
+                  }`}
+                >
+                  <Ionicons name="navigate" size={14} color={PRIMARY} />
+                </View>
+              </Pressable>
             </View>
-          </TouchableOpacity>
-        </View>
+          </View>
+        </Pressable>
       </View>
     </View>
   );
@@ -272,26 +325,10 @@ export default function WeeklyPrograms() {
     extrapolate: "clamp",
   });
 
-  const [selectedFilter, setSelectedFilter] = useState("All");
+  const FILTERS = ["All", "General", "Team"] as const;
+  type ProgramFilter = (typeof FILTERS)[number];
 
-  const [blinkAnim] = useState(new Animated.Value(0));
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(blinkAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(blinkAnim, {
-          toValue: 0,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ]),
-    ).start();
-  }, []);
+  const [selectedFilter, setSelectedFilter] = useState<ProgramFilter>("All");
 
   const { programs, loading, refreshing, loadPrograms } = useProgramsStore();
 
@@ -369,25 +406,49 @@ export default function WeeklyPrograms() {
     return alerts.some((a) => a.title === title);
   };
 
-  const filteredPrograms = programs.filter((program) => {
-    if (selectedFilter === "All") return true;
-    return program.category
-      ?.toLowerCase()
-      .includes(selectedFilter.toLowerCase());
-  });
-
-  const hasNewPrograms = programs.some((p) =>
-    p.category?.toLowerCase().includes("new"),
-  );
-
-  const getFilters = () => {
-    const baseFilters = ["All", "Weekly", "Daily", "General", "Team"];
-    return hasNewPrograms
-      ? ["All", "New", ...baseFilters.slice(1)]
-      : baseFilters;
+  const isGeneralProgram = (program: Program) => {
+    const cat = (program.category || "").toLowerCase().trim();
+    const title = (program.title || "").toLowerCase().trim();
+    return (
+      cat.includes("general") ||
+      cat === "gf" ||
+      cat.includes("weekly service") ||
+      (cat.includes("fellowship") &&
+        !cat.includes("team") &&
+        !title.includes("team")) ||
+      title.includes("monday service") ||
+      title.includes("general") ||
+      title.includes("morning prayer")
+    );
   };
 
-  const dynamicFilters = getFilters();
+  const isTeamProgram = (program: Program) => {
+    const cat = (program.category || "").toLowerCase().trim();
+    const title = (program.title || "").toLowerCase().trim();
+    return (
+      cat.includes("team") ||
+      title.includes("team") ||
+      cat.includes("ministry") ||
+      cat.includes("teaching") ||
+      cat.includes("outreach") ||
+      cat.includes("bible study") ||
+      (cat.includes("prayer") && title.includes("team")) ||
+      (cat.includes("service") && !cat.includes("weekly")) ||
+      title.includes("worship") ||
+      title.includes("media") ||
+      title.includes("evangelism") ||
+      title.includes("i4u") ||
+      title.includes("fresh") ||
+      !isGeneralProgram(program)
+    );
+  };
+
+  const filteredPrograms = programs.filter((program) => {
+    if (selectedFilter === "All") return true;
+    if (selectedFilter === "General") return isGeneralProgram(program);
+    if (selectedFilter === "Team") return isTeamProgram(program);
+    return true;
+  });
 
   return (
     <>
@@ -510,7 +571,35 @@ export default function WeeklyPrograms() {
             contentContainerStyle={{
               paddingHorizontal: 20,
               paddingBottom: 40,
+              flexGrow: 1,
             }}
+            ListEmptyComponent={
+              <View className="items-center justify-center pt-24 pb-12">
+                <View
+                  className={`w-16 h-16 rounded-full items-center justify-center mb-4 ${
+                    isDark ? "bg-[#1C1C1E]" : "bg-orange-50"
+                  }`}
+                >
+                  <Ionicons name="calendar-outline" size={28} color={PRIMARY} />
+                </View>
+                <Text
+                  className={`text-base font-bold mb-1 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  No Programs Found
+                </Text>
+                <Text
+                  className={`text-sm text-center px-6 ${
+                    isDark ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
+                  {selectedFilter === "All"
+                    ? "There are currently no programs scheduled."
+                    : `No ${selectedFilter.toLowerCase()} programs found.`}
+                </Text>
+              </View>
+            }
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -571,45 +660,52 @@ export default function WeeklyPrograms() {
             className="mt-4"
             contentContainerStyle={{ paddingHorizontal: 20 }}
           >
-            {dynamicFilters.map((filter) => (
-              <TouchableOpacity
-                key={filter}
-                activeOpacity={0.7}
-                onPress={() => setSelectedFilter(filter)}
-                className={`px-4 py-1.5 mr-3 rounded-xl border flex-row items-center ${
-                  selectedFilter === filter
-                    ? "bg-orange-500 border-orange-500"
-                    : isDark
-                      ? "bg-[#1C1C1E] border-gray-800"
-                      : "bg-white border-gray-200"
-                }`}
-              >
-                {filter === "New" && (
-                  <Animated.View
-                    style={{
-                      opacity: blinkAnim,
-                      width: 8,
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor:
-                        selectedFilter === "New" ? "white" : "#ef4444",
-                      marginRight: 6,
-                    }}
-                  />
-                )}
-                <Text
-                  className={`font-semibold ${
-                    selectedFilter === filter
-                      ? "text-white"
+            {FILTERS.map((filter) => {
+              const isSelected = selectedFilter === filter;
+              return (
+                <View
+                  key={filter}
+                  style={[
+                    styles.filterPillWrap,
+                    isSelected
+                      ? styles.filterPillSelected
                       : isDark
-                        ? "text-gray-400"
-                        : "text-gray-600"
-                  }`}
+                        ? styles.filterPillDark
+                        : styles.filterPillLight,
+                  ]}
                 >
-                  {filter}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Pressable
+                    onPress={() => setSelectedFilter(filter)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                    accessibilityLabel={`Filter by ${filter}`}
+                    android_ripple={{
+                      color: isSelected
+                        ? "rgba(255, 255, 255, 0.3)"
+                        : isDark
+                          ? "rgba(255, 255, 255, 0.12)"
+                          : "rgba(0, 0, 0, 0.08)",
+                      borderless: false,
+                      foreground: true,
+                    }}
+                    style={styles.filterPillInner}
+                  >
+                    <Text
+                      style={[
+                        styles.filterPillText,
+                        isSelected
+                          ? styles.filterPillTextSelected
+                          : isDark
+                            ? styles.filterPillTextDark
+                            : styles.filterPillTextLight,
+                      ]}
+                    >
+                      {filter}
+                    </Text>
+                  </Pressable>
+                </View>
+              );
+            })}
           </ScrollView>
         </Animated.View>
       </View>
@@ -625,3 +721,94 @@ export default function WeeklyPrograms() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    borderRadius: 24,
+    overflow: "hidden",
+    borderWidth: 1,
+    marginBottom: 20,
+  },
+  cardDark: {
+    backgroundColor: "#111111",
+    borderColor: "#222222",
+  },
+  cardLight: {
+    backgroundColor: "#f9fafb",
+    borderColor: "#e5e7eb",
+  },
+  alertBtnWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: "hidden",
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+  },
+  alertBtnInner: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  locationBtnWrap: {
+    borderRadius: 16,
+    overflow: "hidden",
+    borderWidth: 1,
+  },
+  locationDark: {
+    backgroundColor: "#1a1a1a",
+    borderColor: "#222222",
+  },
+  locationLight: {
+    backgroundColor: "#ffffff",
+    borderColor: "#f3f4f6",
+  },
+  locationBtnInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    width: "100%",
+  },
+  filterPillWrap: {
+    height: 38,
+    borderRadius: 19,
+    overflow: "hidden",
+    borderWidth: 1.5,
+    marginRight: 10,
+  },
+  filterPillSelected: {
+    backgroundColor: "#f97316",
+    borderColor: "#f97316",
+  },
+  filterPillDark: {
+    backgroundColor: "#1C1C1E",
+    borderColor: "#27272a",
+  },
+  filterPillLight: {
+    backgroundColor: "#ffffff",
+    borderColor: "#e5e7eb",
+  },
+  filterPillInner: {
+    height: "100%",
+    paddingHorizontal: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filterPillText: {
+    fontSize: 14,
+    fontWeight: "600",
+    includeFontPadding: false,
+  },
+  filterPillTextSelected: {
+    color: "#ffffff",
+    fontWeight: "700",
+  },
+  filterPillTextDark: {
+    color: "#9ca3af",
+  },
+  filterPillTextLight: {
+    color: "#4b5563",
+  },
+});
