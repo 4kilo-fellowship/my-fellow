@@ -295,7 +295,10 @@ export default function OtpVerifyScreen() {
         >
           <ScrollView
             ref={scrollViewRef}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[
+              styles.scrollContent,
+              isKeyboardVisible && styles.scrollContentKeyboard,
+            ]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
@@ -305,7 +308,6 @@ export default function OtpVerifyScreen() {
               <View
                 style={[
                   styles.iconBadge,
-                  isKeyboardVisible && styles.iconBadgeCompact,
                   {
                     backgroundColor: isDark
                       ? "rgba(255, 103, 25, 0.15)"
@@ -318,7 +320,7 @@ export default function OtpVerifyScreen() {
               >
                 <Ionicons
                   name="chatbubble-ellipses-outline"
-                  size={isKeyboardVisible ? 24 : 32}
+                  size={32}
                   color={PRIMARY}
                 />
               </View>
@@ -570,6 +572,9 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === "ios" ? 36 : 24,
     justifyContent: "flex-start",
   },
+  scrollContentKeyboard: {
+    paddingBottom: 96,
+  },
   contentCard: {
     width: "100%",
     maxWidth: 420,
@@ -741,8 +746,10 @@ const styles = StyleSheet.create({
   },
   resendSection: {
     alignItems: "center",
+    marginTop: 8,
     paddingVertical: 8,
     width: "100%",
+    zIndex: 2,
   },
   cooldownText: {
     fontSize: 14,
@@ -762,12 +769,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
   },
   resendButtonDisabled: {
     opacity: 1,
+    borderColor: "#D1D5DB",
   },
   resendButtonAvailable: {
     backgroundColor: PRIMARY,
+    borderColor: PRIMARY,
   },
   resendButtonPressed: {
     opacity: 0.82,
