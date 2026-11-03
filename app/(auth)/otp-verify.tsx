@@ -26,7 +26,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const CODE_LENGTH = 6;
-const DEFAULT_RESEND_SECONDS = 60;
+const DEFAULT_RESEND_SECONDS = 15;
 
 export default function OtpVerifyScreen() {
   const router = useRouter();
@@ -492,25 +492,33 @@ export default function OtpVerifyScreen() {
 
               {/* Resend Code Section */}
               <View style={styles.resendSection}>
-                {cooldown > 0 ? (
-                  <Text style={styles.cooldownText}>
-                    Resend code in{" "}
-                    <Text style={styles.cooldownNumber}>{cooldown}s</Text>
-                  </Text>
-                ) : (
-                  <Pressable
-                    onPress={handleResend}
-                    disabled={resending}
-                    hitSlop={10}
-                    style={styles.resendButton}
-                  >
-                    {resending ? (
-                      <ActivityIndicator size="small" color={PRIMARY} />
-                    ) : (
-                      <Text style={styles.resendText}>Resend code</Text>
-                    )}
-                  </Pressable>
-                )}
+                <Pressable
+                  onPress={handleResend}
+                  disabled={cooldown > 0 || resending}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    cooldown > 0
+                      ? `Resend code available in ${cooldown} seconds`
+                      : "Resend code"
+                  }
+                  hitSlop={10}
+                  style={({ pressed }) => [
+                    styles.resendButton,
+                    cooldown > 0 && styles.resendButtonDisabled,
+                    pressed && cooldown === 0 && styles.resendButtonPressed,
+                  ]}
+                >
+                  {resending ? (
+                    <ActivityIndicator size="small" color={PRIMARY} />
+                  ) : cooldown > 0 ? (
+                    <Text style={styles.cooldownText}>
+                      Resend code in{" "}
+                      <Text style={styles.cooldownNumber}>{cooldown}s</Text>
+                    </Text>
+                  ) : (
+                    <Text style={styles.resendText}>Resend code</Text>
+                  )}
+                </Pressable>
               </View>
             </View>
           </ScrollView>
@@ -752,8 +760,20 @@ const styles = StyleSheet.create({
     color: PRIMARY,
   },
   resendButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 16,
+    minHeight: 40,
+    minWidth: 150,
+    paddingVertical: 9,
+    paddingHorizontal: 18,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  resendButtonDisabled: {
+    opacity: 0.72,
+    backgroundColor: "rgba(255, 103, 25, 0.08)",
+  },
+  resendButtonPressed: {
+    backgroundColor: "rgba(255, 103, 25, 0.14)",
   },
   resendText: {
     fontSize: 14,

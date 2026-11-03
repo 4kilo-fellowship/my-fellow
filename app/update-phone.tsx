@@ -139,25 +139,36 @@ export default function UpdatePhoneScreen() {
                 control={control}
                 name="newPhoneNumber"
                 render={({ field: { onChange, onBlur, value } }) => (
-                  <TextInput
+                  <View
                     style={[
-                      styles.input,
+                      styles.phoneInputShell,
                       {
-                        color: isDark ? "#fff" : "#000",
                         borderColor: errors.newPhoneNumber
                           ? "#ef4444"
                           : isDark
                             ? "#333"
                             : "#e5e7eb",
+                        backgroundColor: isDark ? "#111827" : "#fff",
                       },
                     ]}
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
-                    keyboardType="phone-pad"
-                    placeholder="254..."
-                    placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
-                  />
+                  >
+                    <Text style={[styles.countryPrefix, { color: isDark ? "#d1d5db" : "#475569" }]}>
+                      +251
+                    </Text>
+                    <View style={styles.prefixDivider} />
+                    <TextInput
+                      style={[styles.phoneInput, { color: isDark ? "#fff" : "#000" }]}
+                      onBlur={onBlur}
+                      onChangeText={(text) => onChange(text.replace(/\D/g, "").slice(0, 10))}
+                      value={value}
+                      keyboardType="phone-pad"
+                      placeholder="091 123 4567"
+                      placeholderTextColor={isDark ? "#6b7280" : "#9ca3af"}
+                      maxLength={10}
+                      textContentType="telephoneNumber"
+                      autoComplete="tel"
+                    />
+                  </View>
                 )}
               />
               {errors.newPhoneNumber && (
@@ -277,6 +288,32 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     fontSize: 15,
+  },
+  phoneInputShell: {
+    minHeight: 52,
+    borderWidth: 1,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+  },
+  countryPrefix: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  prefixDivider: {
+    width: 1,
+    height: 24,
+    marginHorizontal: 12,
+    backgroundColor: "#cbd5e1",
+  },
+  phoneInput: {
+    flex: 1,
+    minWidth: 0,
+    height: 50,
+    paddingVertical: 0,
+    fontSize: 16,
+    letterSpacing: 0.4,
   },
   errorText: {
     color: "#ef4444",
