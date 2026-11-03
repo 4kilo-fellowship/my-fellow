@@ -450,9 +450,8 @@ export default function EventDetails() {
               marginTop: "auto",
               marginBottom: Math.max(bottom, 20) + 12,
               width: "100%",
-              height: 64,
-              minHeight: 64,
-              borderRadius: 32,
+              height: 52,
+              borderRadius: 26,
               backgroundColor: isDark ? "#27272a" : "#e2e8f0",
             }}
           />
@@ -709,130 +708,98 @@ export default function EventDetails() {
           </View>
 
           {/* Action Button at the very bottom of the event page */}
-          <View
+          <TouchableOpacity
+            activeOpacity={1}
+            disabled={buttonDisabled}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              if (isNotifyCta) {
+                if (reminder.status === "active") {
+                  reminder.openSheet();
+                } else if (reminder.status === "permission") {
+                  reminder.openNotificationSettings();
+                } else {
+                  reminder.enable();
+                }
+              } else {
+                handleCta();
+              }
+            }}
             style={{
               width: "100%",
-              height: 64,
-              minHeight: 64,
-              marginTop: 28,
-              borderRadius: 32,
+              height: 52,
+              borderRadius: 26,
+              marginTop: 24,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
               backgroundColor:
                 isRegisterCta && isRegisteredForThisEvent
                   ? isDark
                     ? "#27272a"
                     : "#e2e8f0"
                   : PRIMARY,
+              opacity: buttonDisabled ? 0.65 : 1,
               shadowColor: isRegisterCta && isRegisteredForThisEvent ? "transparent" : PRIMARY,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: isRegisterCta && isRegisteredForThisEvent ? 0 : 0.35,
-              shadowRadius: 10,
-              elevation: isRegisterCta && isRegisteredForThisEvent ? 0 : 5,
+              shadowOffset: { width: 0, height: 3 },
+              shadowOpacity: isRegisterCta && isRegisteredForThisEvent ? 0 : 0.3,
+              shadowRadius: 6,
+              elevation: isRegisterCta && isRegisteredForThisEvent ? 0 : 3,
             }}
           >
-            <Pressable
-              accessibilityRole="button"
-              disabled={buttonDisabled}
-              android_ripple={
-                !buttonDisabled
-                  ? {
-                      color:
-                        isRegisterCta && isRegisteredForThisEvent
-                          ? isDark
-                            ? "rgba(255, 255, 255, 0.12)"
-                            : "rgba(0, 0, 0, 0.12)"
-                          : "rgba(255, 255, 255, 0.28)",
-                      borderless: false,
-                      foreground: Platform.OS === "android",
-                    }
-                  : undefined
-              }
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                if (isNotifyCta) {
-                  if (reminder.status === "active") {
-                    reminder.openSheet();
-                  } else if (reminder.status === "permission") {
-                    reminder.openNotificationSettings();
-                  } else {
-                    reminder.enable();
-                  }
-                } else {
-                  handleCta();
-                }
-              }}
-              style={({ pressed }) => [
-                {
-                  width: "100%",
-                  height: 64,
-                  minHeight: 64,
-                  borderRadius: 32,
-                  overflow: "hidden",
+            {registering || unregistering || (isNotifyCta && reminder.status === "loading") ? (
+              <ActivityIndicator color="white" size="small" />
+            ) : (
+              <View
+                style={{
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: 10,
-                  opacity:
-                    buttonDisabled
-                      ? 0.65
-                      : Platform.OS === "ios" && pressed
-                      ? 0.85
-                      : 1,
-                },
-              ]}
-            >
-              {registering || unregistering || (isNotifyCta && reminder.status === "loading") ? (
-                <ActivityIndicator color="white" size="small" />
-              ) : (
-                <View
+                  gap: 8,
+                }}
+              >
+                <Text
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 10,
+                    fontSize: 16,
+                    fontWeight: "700",
+                    letterSpacing: -0.2,
+                    color:
+                      isRegisterCta && isRegisteredForThisEvent
+                        ? isDark
+                          ? "#a1a1aa"
+                          : "#64748b"
+                        : "#ffffff",
+                    includeFontPadding: false,
+                    textAlignVertical: "center",
                   }}
                 >
-                  <Text
-                    style={{
-                      fontSize: 18,
-                      fontWeight: "800",
-                      letterSpacing: -0.2,
-                      color:
-                        isRegisterCta && isRegisteredForThisEvent
-                          ? isDark
-                            ? "#a1a1aa"
-                            : "#64748b"
-                          : "#ffffff",
-                      includeFontPadding: false,
-                      textAlignVertical: "center",
-                    }}
-                  >
-                    {resolvedDisplayLabel}
-                  </Text>
-                  {isRegisterCta && isRegisteredForThisEvent ? (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={24}
-                      color={isDark ? "#4ade80" : "#16a34a"}
-                    />
-                  ) : isNotifyCta ? (
-                    <Ionicons
-                      name={
-                        reminder.status === "active"
-                          ? "notifications"
-                          : reminder.status === "permission"
-                          ? "notifications-off-outline"
-                          : "notifications-outline"
-                      }
-                      size={24}
-                      color="white"
-                    />
-                  ) : (
-                    <Ionicons name="arrow-forward" size={24} color="white" />
-                  )}
-                </View>
-              )}
-            </Pressable>
-          </View>
+                  {resolvedDisplayLabel}
+                </Text>
+                {isRegisterCta && isRegisteredForThisEvent ? (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color={isDark ? "#4ade80" : "#16a34a"}
+                  />
+                ) : isNotifyCta ? (
+                  <Ionicons
+                    name={
+                      reminder.status === "active"
+                        ? "notifications"
+                        : reminder.status === "permission"
+                        ? "notifications-off-outline"
+                        : "notifications-outline"
+                    }
+                    size={20}
+                    color="white"
+                  />
+                ) : (
+                  <Ionicons name="arrow-forward" size={20} color="white" />
+                )}
+              </View>
+            )}
+          </TouchableOpacity>
         </ScrollView>
       </View>
       <RegistrationModal
