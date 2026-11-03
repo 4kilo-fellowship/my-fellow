@@ -256,69 +256,64 @@ export default function Devotions() {
       {/* Main Tab Header with "Devotions" in the center and live Streak badge */}
       <MainTabHeader borderBottom={true} title="Devotions" showStreak={true} />
 
-      {/* 50/50 Minimalistic Segmented Filter: All vs Bookmarks */}
+      {/* Minimalist Twitter/X Tab Filter: All & Bookmarks */}
       <View style={styles.tabBarContainer}>
-        <View style={styles.tabTrack}>
-          {/* Tab 1: All */}
-          <Pressable
-            android_ripple={{ color: "rgba(0, 0, 0, 0.06)", foreground: true }}
-            style={[styles.tabButton, activeTab === 0 && styles.tabButtonActive]}
-            onPress={() => handleTabChange(0)}
-          >
-            <Ionicons
-              name={activeTab === 0 ? "albums" : "albums-outline"}
-              size={15}
-              color={activeTab === 0 ? "#09090b" : "#71717a"}
-            />
+        {/* Tab 0: All */}
+        <Pressable
+          android_ripple={{ color: "rgba(0, 0, 0, 0.06)", foreground: true }}
+          style={styles.tabItem}
+          onPress={() => handleTabChange(0)}
+        >
+          <View style={styles.tabTitleWrapper}>
             <Text
               style={[
-                styles.tabText,
-                activeTab === 0 && styles.tabTextActive,
+                styles.tabTitleText,
+                activeTab === 0 ? styles.tabTitleActive : styles.tabTitleInactive,
               ]}
             >
               All
             </Text>
-          </Pressable>
+            {activeTab === 0 && <View style={styles.activeIndicator} />}
+          </View>
+        </Pressable>
 
-          {/* Tab 2: Half Bookmark Filter */}
-          <Pressable
-            android_ripple={{ color: "rgba(0, 0, 0, 0.06)", foreground: true }}
-            style={[styles.tabButton, activeTab === 1 && styles.tabButtonActive]}
-            onPress={() => handleTabChange(1)}
-          >
-            <Ionicons
-              name={activeTab === 1 ? "bookmark" : "bookmark-outline"}
-              size={15}
-              color={activeTab === 1 ? PRIMARY : "#71717a"}
-            />
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === 1 && styles.tabTextActive,
-                activeTab === 1 && { color: PRIMARY },
-              ]}
-            >
-              Saved
-            </Text>
-            {savedDevotions.length > 0 && (
-              <View
+        {/* Tab 1: Bookmarks / Saved */}
+        <Pressable
+          android_ripple={{ color: "rgba(0, 0, 0, 0.06)", foreground: true }}
+          style={styles.tabItem}
+          onPress={() => handleTabChange(1)}
+        >
+          <View style={styles.tabTitleWrapper}>
+            <View style={styles.savedTabContent}>
+              <Text
                 style={[
-                  styles.tabBadge,
-                  activeTab === 1 && { backgroundColor: PRIMARY },
+                  styles.tabTitleText,
+                  activeTab === 1 ? styles.tabTitleActive : styles.tabTitleInactive,
                 ]}
               >
-                <Text
+                Saved
+              </Text>
+              {savedDevotions.length > 0 && (
+                <View
                   style={[
-                    styles.tabBadgeText,
-                    activeTab === 1 && { color: "#ffffff" },
+                    styles.tabBadge,
+                    activeTab === 1 && styles.tabBadgeActive,
                   ]}
                 >
-                  {savedDevotions.length}
-                </Text>
-              </View>
-            )}
-          </Pressable>
-        </View>
+                  <Text
+                    style={[
+                      styles.tabBadgeText,
+                      activeTab === 1 && styles.tabBadgeTextActive,
+                    ]}
+                  >
+                    {savedDevotions.length}
+                  </Text>
+                </View>
+              )}
+            </View>
+            {activeTab === 1 && <View style={styles.activeIndicator} />}
+          </View>
+        </Pressable>
       </View>
 
       {/* Gesture Movement Page View: swipe between All and Saved */}
@@ -391,57 +386,69 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#ffffff",
   },
-  // Tab Bar
+  // Tab Bar (Twitter/X style with centered labels and active underline indicator)
   tabBarContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    flexDirection: "row",
+    height: 48,
     backgroundColor: "#ffffff",
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: "#eff3f4",
   },
-  tabTrack: {
-    flexDirection: "row",
-    backgroundColor: "#f4f4f5",
-    borderRadius: 12,
-    padding: 3,
-  },
-  tabButton: {
+  tabItem: {
     flex: 1,
-    flexDirection: "row",
+    height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
-    borderRadius: 9,
   },
-  tabButtonActive: {
-    backgroundColor: "#ffffff",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 1.5,
+  tabTitleWrapper: {
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 8,
+    position: "relative",
   },
-  tabText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#71717a",
-    marginLeft: 6,
+  savedTabContent: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-  tabTextActive: {
-    color: "#09090b",
+  tabTitleText: {
+    fontSize: 15,
+    letterSpacing: -0.2,
+  },
+  tabTitleActive: {
     fontWeight: "700",
+    color: "#0f1419",
+  },
+  tabTitleInactive: {
+    fontWeight: "500",
+    color: "#536471",
+  },
+  activeIndicator: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: PRIMARY,
   },
   tabBadge: {
     marginLeft: 6,
-    backgroundColor: "#e4e4e7",
+    backgroundColor: "#f4f4f5",
     paddingHorizontal: 6,
     paddingVertical: 1.5,
     borderRadius: 9999,
+  },
+  tabBadgeActive: {
+    backgroundColor: PRIMARY,
   },
   tabBadgeText: {
     fontSize: 11,
     fontWeight: "700",
     color: "#71717a",
+  },
+  tabBadgeTextActive: {
+    color: "#ffffff",
   },
   // Pager & List
   pagerView: {

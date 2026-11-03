@@ -471,7 +471,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
             >
               <Ionicons
                 name={isLiked ? "heart" : "heart-outline"}
-                size={21}
+                size={23}
                 color={isLiked ? "#ef4444" : "#ffffff"}
               />
             </Pressable>
@@ -494,7 +494,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
               {isSharing ? (
                 <ActivityIndicator size="small" color="white" />
               ) : (
-                <Ionicons name="share-social-outline" size={20} color="white" />
+                <Ionicons name="share-social-outline" size={22} color="white" />
               )}
             </Pressable>
           </View>
@@ -513,7 +513,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
                 }}
                 style={styles.actionIconBtnInner}
               >
-                <Ionicons name="pencil" size={20} color="#ff6719" />
+                <Ionicons name="pencil" size={21} color="#ff6719" />
               </Pressable>
             </View>
           )}
@@ -613,8 +613,8 @@ const styles = StyleSheet.create({
   },
   primaryBtnWrap: {
     flex: 1,
-    height: 42,
-    borderRadius: 21,
+    height: 44,
+    borderRadius: 22,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
@@ -650,9 +650,9 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   actionIconBtnWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "rgba(0, 0, 0, 0.45)",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.22)",

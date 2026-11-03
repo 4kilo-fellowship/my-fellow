@@ -280,50 +280,20 @@ export default function AppTabBar(props: any) {
     return null;
   }
 
+  // Native Material tab bar on all platforms with zero glass overhead
   return (
     <View
       style={[
         styles.tabBarWrapper,
-        isIOS
-          ? [
-              styles.iosGlassContainer,
-              {
-                paddingBottom: Math.max(insets.bottom, 12),
-                height: 56 + Math.max(insets.bottom, 12),
-                borderTopColor: isDark
-                  ? "rgba(255, 255, 255, 0.12)"
-                  : "rgba(0, 0, 0, 0.08)",
-              },
-            ]
-          : [
-              styles.androidContainer,
-              {
-                paddingBottom: Math.max(insets.bottom, 6),
-                height: 62 + Math.max(insets.bottom, 6),
-                backgroundColor: isDark ? "#121212" : "#ffffff",
-                borderTopColor: isDark ? "#262626" : "#e5e7eb",
-              },
-            ],
+        styles.androidContainer,
+        {
+          paddingBottom: Math.max(insets.bottom, 6),
+          height: 60 + Math.max(insets.bottom, 6),
+          backgroundColor: isDark ? "#121212" : "#ffffff",
+          borderTopColor: isDark ? "#262626" : "#e5e7eb",
+        },
       ]}
     >
-      {/* 100% Native Liquid Glass for iPhone */}
-      {isIOS ? (
-        IS_LIQUID_GLASS_SUPPORTED ? (
-          <GlassView
-            style={StyleSheet.absoluteFill}
-            glassEffectStyle="regular"
-            pointerEvents="none"
-          />
-        ) : (
-          <BlurView
-            intensity={85}
-            tint={isDark ? "systemMaterialDark" : "systemMaterialLight"}
-            style={StyleSheet.absoluteFill}
-            pointerEvents="none"
-          />
-        )
-      ) : null}
-
       {/* Tabs Content Row */}
       <View style={styles.tabsRow} onLayout={handleTabsLayout}>
         {/* Animated Sliding Rounded Indicator Capsule */}

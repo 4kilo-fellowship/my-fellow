@@ -149,7 +149,6 @@ export default function EventDetails() {
   const [modalVisible, setModalVisible] = useState(false);
   const [signInModalVisible, setSignInModalVisible] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [isGoingBack, setIsGoingBack] = useState(false);
   const [unregisterModalVisible, setUnregisterModalVisible] = useState(false);
   const [showOfflineToaster, setShowOfflineToaster] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
@@ -197,6 +196,10 @@ export default function EventDetails() {
 
   const fetchEventById = useCallback(
     async (eventId: string) => {
+      // If we already have the full event cached from store/navigation, don't trigger refetch
+      if (selectedEvent && selectedEvent.fullDescription) {
+        return;
+      }
       if (!selectedEvent) {
         setLoadingDetail(true);
       }
@@ -240,7 +243,6 @@ export default function EventDetails() {
   const imageSource = buildEventImageSource(imgPath);
 
   const handleBack = () => {
-    setIsGoingBack(true);
     router.back();
   };
 
@@ -399,18 +401,11 @@ export default function EventDetails() {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={handleBack} style={{ marginTop: 16 }}>
-            {isGoingBack ? (
-              <ActivityIndicator
-                size="small"
-                color={isDark ? "#fff" : "#64748b"}
-              />
-            ) : (
-              <Text
-                style={{ color: isDark ? "#94a3b8" : "#64748b", fontSize: 15 }}
-              >
-                Go Back
-              </Text>
-            )}
+            <Text
+              style={{ color: isDark ? "#94a3b8" : "#64748b", fontSize: 15 }}
+            >
+              Go Back
+            </Text>
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -446,16 +441,9 @@ export default function EventDetails() {
           <Text className="text-white font-bold">Try Again</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleBack} className="mt-4">
-          {isGoingBack ? (
-            <ActivityIndicator
-              size="small"
-              color={isDark ? "#fff" : "#64748b"}
-            />
-          ) : (
-            <Text className={`${isDark ? "text-gray-400" : "text-gray-600"}`}>
-              Go Back
-            </Text>
-          )}
+          <Text className={`${isDark ? "text-gray-400" : "text-gray-600"}`}>
+            Go Back
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -472,11 +460,7 @@ export default function EventDetails() {
           Event not found
         </Text>
         <TouchableOpacity onPress={handleBack} className="mt-4">
-          {isGoingBack ? (
-            <ActivityIndicator size="small" color="#ff6719" />
-          ) : (
-            <Text className="text-[#ff6719] font-bold">Go Back</Text>
-          )}
+          <Text className="text-[#ff6719] font-bold">Go Back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -502,22 +486,18 @@ export default function EventDetails() {
 
         <TouchableOpacity
           onPress={handleBack}
-          activeOpacity={0.8}
-          className="absolute left-4 w-10 h-10 rounded-full bg-black/30 items-center justify-center backdrop-blur-md"
+          activeOpacity={0.7}
+          className="absolute left-4 w-10 h-10 rounded-full bg-black/40 items-center justify-center"
           style={{ top: top + 10 }}
         >
-          {isGoingBack ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          )}
+          <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={handleShare}
-          activeOpacity={0.8}
+          activeOpacity={0.7}
           disabled={isSharing}
-          className="absolute right-4 w-10 h-10 rounded-full bg-black/30 items-center justify-center backdrop-blur-md"
+          className="absolute right-4 w-10 h-10 rounded-full bg-black/40 items-center justify-center"
           style={{ top: top + 10 }}
         >
           {isSharing ? (
@@ -570,7 +550,7 @@ export default function EventDetails() {
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 24 }}
         >
           <View className="mb-6">
             <Text
@@ -616,159 +596,123 @@ export default function EventDetails() {
         </ScrollView>
       </View>
 
-      {/* Solid Bottom Bar matching Auth AppButton */}
+      {/* Clean Android Solid Bottom Bar */}
       <View
         style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
           backgroundColor: isDark ? "#1A1A1B" : "#ffffff",
-          borderTopWidth: 1,
-          borderTopColor: isDark ? "#27272a" : "#f1f5f9",
-          paddingHorizontal: 20,
-          paddingTop: 14,
-          paddingBottom: Math.max(bottom + 12, 24),
-          zIndex: 50,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: isDark ? "#27272a" : "#e5e7eb",
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          paddingBottom: Math.max(bottom, 12),
         }}
       >
-        <View
-          style={{
-            height: 52,
-            borderRadius: 26,
-            overflow: "hidden",
-            backgroundColor:
-              isRegisterCta && isRegisteredForThisEvent
-                ? isDark
-                  ? "#27272a"
-                  : "#e2e8f0"
-                : isNotifyCta && reminder.status === "unavailable"
-                ? isDark
-                  ? "#334155"
-                  : "#64748b"
-                : PRIMARY,
-            shadowColor:
-              (isRegisterCta && isRegisteredForThisEvent) ||
-              (isNotifyCta && reminder.status === "unavailable")
-                ? "transparent"
-                : "#ff6719",
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity:
-              (isRegisterCta && isRegisteredForThisEvent) ||
-              (isNotifyCta && reminder.status === "unavailable")
-                ? 0
-                : 0.35,
-            shadowRadius: 8,
-            elevation:
-              (isRegisterCta && isRegisteredForThisEvent) ||
-              (isNotifyCta && reminder.status === "unavailable")
-                ? 0
-                : 4,
-          }}
-        >
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
-                () => {},
-              );
-              if (isNotifyCta) {
-                if (reminder.status === "active") {
-                  reminder.openSheet();
-                } else if (reminder.status === "permission") {
-                  reminder.openNotificationSettings();
-                } else if (reminder.status !== "unavailable") {
-                  reminder.enable();
-                }
-              } else {
-                handleCta();
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+              () => {},
+            );
+            if (isNotifyCta) {
+              if (reminder.status === "active") {
+                reminder.openSheet();
+              } else if (reminder.status === "permission") {
+                reminder.openNotificationSettings();
+              } else if (reminder.status !== "unavailable") {
+                reminder.enable();
               }
-            }}
-            disabled={isButtonDisabled}
-            android_ripple={{
-              color: "rgba(255, 255, 255, 0.28)",
-              borderless: false,
-              foreground: true,
-            }}
-            style={({ pressed }) => [
-              {
-                width: "100%",
-                height: 52,
+            } else {
+              handleCta();
+            }
+          }}
+          disabled={isButtonDisabled}
+          android_ripple={{
+            color: "rgba(255, 255, 255, 0.2)",
+            borderless: false,
+          }}
+          style={({ pressed }) => [
+            {
+              width: "100%",
+              height: 48,
+              borderRadius: 12,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor:
+                isRegisterCta && isRegisteredForThisEvent
+                  ? isDark
+                    ? "#27272a"
+                    : "#e2e8f0"
+                  : isNotifyCta && reminder.status === "unavailable"
+                  ? isDark
+                    ? "#334155"
+                    : "#64748b"
+                  : PRIMARY,
+              elevation:
+                (isRegisterCta && isRegisteredForThisEvent) ||
+                (isNotifyCta && reminder.status === "unavailable")
+                  ? 0
+                  : 2,
+              opacity: pressed ? 0.9 : isButtonDisabled ? 0.7 : 1,
+            },
+          ]}
+        >
+          {registering || unregistering || (isNotifyCta && reminder.status === "loading") ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <View
+              style={{
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "center",
-                opacity:
-                  pressed && Platform.OS === "ios"
-                    ? 0.85
-                    : isNotifyCta && reminder.status === "unavailable"
-                    ? 0.95
-                    : isButtonDisabled
-                    ? 0.65
-                    : 1,
-              },
-            ]}
-          >
-            {registering || unregistering || (isNotifyCta && reminder.status === "loading") ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <View
+                gap: 8,
+              }}
+            >
+              <Text
                 style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
+                  fontSize: 15,
+                  fontWeight: "700",
+                  color:
+                    isRegisterCta && isRegisteredForThisEvent
+                      ? isDark
+                        ? "#a1a1aa"
+                        : "#64748b"
+                      : "#ffffff",
+                  includeFontPadding: false,
+                  textAlignVertical: "center",
                 }}
               >
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "700",
-                    letterSpacing: -0.2,
-                    color:
-                      isRegisterCta && isRegisteredForThisEvent
-                        ? isDark
-                          ? "#a1a1aa"
-                          : "#64748b"
-                        : "#ffffff",
-                    includeFontPadding: false,
-                    textAlignVertical: "center",
-                  }}
-                >
-                  {resolvedDisplayLabel}
-                </Text>
-                {isRegisterCta && isRegisteredForThisEvent ? (
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={20}
-                    color={isDark ? "#4ade80" : "#16a34a"}
-                    style={{ marginTop: Platform.OS === "android" ? 1 : 0 }}
-                  />
-                ) : isNotifyCta ? (
-                  <Ionicons
-                    name={
-                      reminder.status === "active"
-                        ? "notifications"
-                        : reminder.status === "permission"
-                        ? "notifications-off-outline"
-                        : reminder.status === "unavailable"
-                        ? "time-outline"
-                        : "notifications-outline"
-                    }
-                    size={20}
-                    color="white"
-                    style={{ marginTop: Platform.OS === "android" ? 1 : 0 }}
-                  />
-                ) : (
-                  <Ionicons
-                    name="arrow-forward"
-                    size={20}
-                    color="white"
-                    style={{ marginTop: Platform.OS === "android" ? 1 : 0 }}
-                  />
-                )}
-              </View>
-            )}
-          </Pressable>
-        </View>
+                {resolvedDisplayLabel}
+              </Text>
+              {isRegisterCta && isRegisteredForThisEvent ? (
+                <Ionicons
+                  name="checkmark-circle"
+                  size={19}
+                  color={isDark ? "#4ade80" : "#16a34a"}
+                />
+              ) : isNotifyCta ? (
+                <Ionicons
+                  name={
+                    reminder.status === "active"
+                      ? "notifications"
+                      : reminder.status === "permission"
+                      ? "notifications-off-outline"
+                      : reminder.status === "unavailable"
+                      ? "time-outline"
+                      : "notifications-outline"
+                  }
+                  size={19}
+                  color="white"
+                />
+              ) : (
+                <Ionicons
+                  name="arrow-forward"
+                  size={19}
+                  color="white"
+                />
+              )}
+            </View>
+          )}
+        </Pressable>
       </View>
       <RegistrationModal
         visible={modalVisible}
