@@ -1,4 +1,6 @@
 import { PRIMARY } from "@/constants";
+import { useConfirmUnsavedChanges } from "@/hooks/useConfirmUnsavedChanges";
+import { useNativeConfirmation } from "@/components/NativeConfirmationDialog";
 import { useTheme } from "@/context/ThemeContext";
 import { useCommunityStore } from "@/stores/community.store";
 import { useUserStore } from "@/stores/user.store";
@@ -21,6 +23,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  ToastAndroid,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -149,29 +152,47 @@ export default function ComposePostScreen() {
     }
   };
 
-  const toggleLocation = () => {
+  const showComingSoonToast = () => {
     Haptics.selectionAsync().catch(() => {});
-    setHasLocation((prev) => !prev);
-  };
-
-  const handleAddHashtag = (tag: string) => {
-    Haptics.selectionAsync().catch(() => {});
-    setContent((prev) => (prev ? `${prev} ${tag}` : tag));
-  };
-
-  const handleAddScriptureQuote = () => {
-    Haptics.selectionAsync().catch(() => {});
-    setContent((prev) =>
-      prev ? `${prev}\n\n“ ” — ` : "“The Lord is my shepherd; I shall not want.” — Psalm 23:1"
-    );
+    if (Platform.OS === "android") {
+      ToastAndroid.showWithGravity(
+        "Coming soon",
+        ToastAndroid.SHORT,
+        ToastAndroid.BOTTOM,
+      );
+    } else {
+      Alert.alert("Coming soon");
+    }
   };
 
   const currentAudienceObj =
     AUDIENCES.find((a) => a.id === selectedAudience) || AUDIENCES[0];
 
-  const charLimit = 280;
+  const charLimit = 500;
   const charsLeft = charLimit - content.length;
-  const hasContent = !!content.trim() || !!pickedImageUri;
+  const isOverLimit = charsLeft < 0;
+  const hasContent = (!!content.trim() || !!pickedImageUri) && !isOverLimit;
+  const hasUnsavedChanges = content.trim().length > 0 || !!pickedImageUri;
+
+  const { confirmDiscardOrContinue } = useNativeConfirmation();
+
+  useConfirmUnsavedChanges(hasUnsavedChanges, {
+    title: "Discard draft?",
+    message: "You have an unsaved fellowship post that will be lost.",
+    discardLabel: "Discard",
+    continueLabel: "Keep Editing",
+  });
+
+  const handleDismiss = () => {
+    if (hasUnsavedChanges) {
+      confirmDiscardOrContinue(
+        () => router.back(),
+        () => {},
+      );
+    } else {
+      router.back();
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]} edges={["top", "bottom"]}>
@@ -180,7 +201,7 @@ export default function ComposePostScreen() {
       {/* Top Bar matching reference */}
       <View style={[styles.topBar, { borderBottomColor: borderColor }]}>
         <Pressable
-          onPress={() => router.back()}
+          onPress={handleDismiss}
           hitSlop={10}
           android_ripple={{
             color: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)",
@@ -366,7 +387,7 @@ export default function ComposePostScreen() {
 
             {/* 3. Audio / Devotion Scripture */}
             <Pressable
-              onPress={handleAddScriptureQuote}
+              onPress={showComingSoonToast}
               hitSlop={6}
               android_ripple={{
                 color: isDark ? "rgba(255, 103, 25, 0.25)" : "rgba(255, 102, 25, 0.15)",
@@ -380,10 +401,7 @@ export default function ComposePostScreen() {
 
             {/* 4. GIF badge */}
             <Pressable
-              onPress={() => {
-                Haptics.selectionAsync().catch(() => {});
-                setContent((prev) => (prev ? `${prev} 🙌` : "🙌"));
-              }}
+              onPress={showComingSoonToast}
               hitSlop={6}
               android_ripple={{
                 color: isDark ? "rgba(255, 103, 25, 0.25)" : "rgba(255, 102, 25, 0.15)",
@@ -403,12 +421,7 @@ export default function ComposePostScreen() {
 
             {/* 5. Poll / Questionnaire */}
             <Pressable
-              onPress={() => {
-                Haptics.selectionAsync().catch(() => {});
-                setContent((prev) =>
-                  prev ? `${prev}\n\n📊 Fellowship Poll:\n1. \n2. ` : "📊 Fellowship Poll:\n1. \n2. "
-                );
-              }}
+              onPress={showComingSoonToast}
               hitSlop={6}
               android_ripple={{
                 color: isDark ? "rgba(255, 103, 25, 0.25)" : "rgba(255, 102, 25, 0.15)",
@@ -422,7 +435,7 @@ export default function ComposePostScreen() {
 
             {/* 6. Location Pin */}
             <Pressable
-              onPress={toggleLocation}
+              onPress={showComingSoonToast}
               hitSlop={6}
               android_ripple={{
                 color: isDark ? "rgba(255, 103, 25, 0.25)" : "rgba(255, 102, 25, 0.15)",
@@ -440,7 +453,7 @@ export default function ComposePostScreen() {
 
             {/* 7. Bookmark / Tag */}
             <Pressable
-              onPress={() => handleAddHashtag("#PrayerRequest")}
+              onPress={showComingSoonToast}
               hitSlop={6}
               android_ripple={{
                 color: isDark ? "rgba(255, 103, 25, 0.25)" : "rgba(255, 102, 25, 0.15)",
@@ -454,7 +467,7 @@ export default function ComposePostScreen() {
 
             {/* 8. Plus Chip button */}
             <Pressable
-              onPress={() => handleAddHashtag("#4KiloECSF")}
+              onPress={showComingSoonToast}
               hitSlop={6}
               android_ripple={{
                 color: isDark ? "rgba(255, 103, 25, 0.25)" : "rgba(255, 102, 25, 0.15)",
@@ -467,8 +480,12 @@ export default function ComposePostScreen() {
             </Pressable>
           </ScrollView>
 
-          {/* Circular Character Counter */}
-          <View style={styles.charCounterWrap}>
+          {/* 9. Circular Character Counter */}
+          <Pressable
+            onPress={showComingSoonToast}
+            hitSlop={6}
+            style={styles.charCounterWrap}
+          >
             <Text
               style={[
                 styles.charCounter,
@@ -484,7 +501,7 @@ export default function ComposePostScreen() {
             >
               {charsLeft}
             </Text>
-          </View>
+          </Pressable>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

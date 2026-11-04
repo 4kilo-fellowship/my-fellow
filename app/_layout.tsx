@@ -16,6 +16,7 @@ import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
 import { AvatarPreviewHost } from "@/components/avatar-preview";
+import { NativeConfirmationProvider } from "@/components/NativeConfirmationDialog";
 import { useNotificationObserver } from "@/notifications";
 import "./global.css";
 
@@ -268,18 +269,20 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
         <ThemeProvider>
-          <RootNavigator />
-          <AvatarPreviewHost />
-          <Toast
-            position="bottom"
-            bottomOffset={40}
-            config={{
-              success: (props: any) => renderCustomToast(props, "success"),
-              error: (props: any) => renderCustomToast(props, "error"),
-              warning: (props: any) => renderCustomToast(props, "warning"),
-              info: (props: any) => renderCustomToast(props, "info"),
-            }}
-          />
+          <NativeConfirmationProvider>
+            <RootNavigator />
+            <AvatarPreviewHost />
+            <Toast
+              position="bottom"
+              bottomOffset={40}
+              config={{
+                success: (props: any) => renderCustomToast(props, "success"),
+                error: (props: any) => renderCustomToast(props, "error"),
+                warning: (props: any) => renderCustomToast(props, "warning"),
+                info: (props: any) => renderCustomToast(props, "info"),
+              }}
+            />
+          </NativeConfirmationProvider>
         </ThemeProvider>
       </AuthProvider>
     </GestureHandlerRootView>

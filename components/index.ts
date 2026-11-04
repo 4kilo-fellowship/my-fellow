@@ -13,6 +13,11 @@ export { default as ProductSkeleton } from "./Marketplace/ProductSkeleton";
 export { AIPosterModal } from "./Modals/AIPosterModal";
 export { ConfirmModal } from "./Modals/ConfirmModal";
 export { DeleteConfirmModal } from "./Modals/DeleteConfirmModal";
+export {
+  NativeConfirmationProvider,
+  useNativeConfirmation,
+  NativeConfirmationDialog,
+} from "./NativeConfirmationDialog";
 export { InfoModal } from "./Modals/InfoModal";
 export { ProductBottomSheet } from "./Modals/ProductBottomSheet";
 export { default as NoInternetScreen } from "./NoInternetScreen";

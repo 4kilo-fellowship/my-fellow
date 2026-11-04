@@ -1,4 +1,4 @@
-import { NativeAlert } from "@/components/NativeAlert";
+import { NativeConfirmationDialog, NativeDialogAction } from "@/components/NativeConfirmationDialog";
 import { formatAlertContent } from "@/utils/alertUtils";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
@@ -28,7 +28,7 @@ export interface ConfirmModalProps {
 }
 
 /**
- * Native confirmation alert modal using @expo/ui Alert on iOS, AlertDialog on Android.
+ * Native confirmation alert dialog modal using @expo/ui ConfirmationDialog on iOS, AlertDialog on Android.
  */
 export const ConfirmModal = ({
   visible,
@@ -39,31 +39,41 @@ export const ConfirmModal = ({
   buttons,
   cancelButton,
 }: ConfirmModalProps) => {
-  const primaryButton = buttons && buttons.length > 0 ? buttons[0] : undefined;
-  const isDestructive = primaryButton?.variant === "danger";
-
-  const handlePrimary = () => {
-    primaryButton?.onPress?.();
-    onClose();
-  };
-
-  const handleSecondary = () => {
-    cancelButton?.onPress?.();
-    onClose();
-  };
-
   const formatted = formatAlertContent(title, description, "info");
 
+  const actions: NativeDialogAction[] = [];
+
+  if (buttons && buttons.length > 0) {
+    buttons.forEach((b) => {
+      actions.push({
+        label: b.label,
+        role: b.variant === "danger" ? "destructive" : "default",
+        onPress: () => {
+          b.onPress?.();
+          onClose();
+        },
+      });
+    });
+  }
+
+  if (cancelButton) {
+    actions.push({
+      label: cancelButton.label,
+      role: "cancel",
+      onPress: () => {
+        cancelButton.onPress?.();
+        onClose();
+      },
+    });
+  }
+
   return (
-    <NativeAlert
+    <NativeConfirmationDialog
       visible={visible}
-      onClose={handlePrimary}
+      onClose={onClose}
       title={formatted.title}
       message={formatted.message}
-      buttonText={primaryButton?.label || "OK"}
-      secondaryButtonText={cancelButton ? cancelButton.label : undefined}
-      onSecondaryPress={handleSecondary}
-      destructive={isDestructive}
+      actions={actions}
       isDark={isDark}
     />
   );

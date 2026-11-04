@@ -1,4 +1,4 @@
-import { NativeAlert } from "@/components/NativeAlert";
+import { NativeConfirmationDialog } from "@/components/NativeConfirmationDialog";
 import React from "react";
 
 export interface DeleteConfirmModalProps {
@@ -19,15 +19,23 @@ export const DeleteConfirmModal = ({
   message = "This action cannot be undone.",
 }: DeleteConfirmModalProps) => {
   return (
-    <NativeAlert
+    <NativeConfirmationDialog
       visible={visible}
       title={title}
       message={message}
-      buttonText="Delete"
-      onClose={onConfirm}
-      secondaryButtonText="Cancel"
-      onSecondaryPress={onClose}
-      destructive
+      actions={[
+        {
+          label: "Delete",
+          role: "destructive",
+          onPress: onConfirm,
+        },
+        {
+          label: "Cancel",
+          role: "cancel",
+          onPress: onClose,
+        },
+      ]}
+      onClose={onClose}
       isDark={isDark}
     />
   );

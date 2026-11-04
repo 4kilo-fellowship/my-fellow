@@ -23,6 +23,7 @@ import { AdminGuardFallback } from "@/components/Admin/AdminGuardFallback";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { ConfirmModal } from "@/components/Modals/ConfirmModal";
 import { InfoModal } from "@/components/Modals/InfoModal";
+import { useConfirmUnsavedChanges } from "@/hooks/useConfirmUnsavedChanges";
 import { PRIMARY } from "@/constants";
 import { useTheme } from "@/context/ThemeContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -67,6 +68,20 @@ export default function ManageProductScreen() {
   const [stock, setStock] = useState<string>("10");
   const [category, setCategory] = useState<string>("apparel");
   const [images, setImages] = useState<ImageItem[]>([]);
+
+  const hasUnsavedChanges =
+    !submitting &&
+    (title.trim().length > 0 ||
+      shortDescription.trim().length > 0 ||
+      price.trim().length > 0 ||
+      images.length > 0);
+
+  useConfirmUnsavedChanges(hasUnsavedChanges, {
+    title: "Discard product edits?",
+    message: "You have unsaved changes to this store product.",
+    discardLabel: "Discard",
+    continueLabel: "Keep Editing",
+  });
 
   const [infoModal, setInfoModal] = useState<{
     visible: boolean;

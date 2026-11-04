@@ -1,4 +1,5 @@
 import { InfoModal, ScreenHeader } from "@/components";
+import { useConfirmUnsavedChanges } from "@/hooks/useConfirmUnsavedChanges";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useUserStore } from "@/stores/user.store";
@@ -59,7 +60,7 @@ export default function EditProfileScreen() {
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<EditProfileFormValues>({
     resolver: zodResolver(editProfileSchema),
     defaultValues: {
@@ -72,6 +73,16 @@ export default function EditProfileScreen() {
           ? user.team
           : (user?.team as any)?.name || (user?.team as any)?.fullName || "",
     },
+  });
+
+  const hasUnsavedImage = profileImage !== (user?.profileImage || null);
+  const hasUnsavedChanges = isDirty || hasUnsavedImage;
+
+  useConfirmUnsavedChanges(hasUnsavedChanges, {
+    title: "Discard profile changes?",
+    message: "You have unsaved edits to your profile.",
+    discardLabel: "Discard",
+    continueLabel: "Keep Editing",
   });
 
   const handlePickImage = async () => {
