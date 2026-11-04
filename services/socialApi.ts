@@ -80,6 +80,36 @@ export const socialApi = {
   },
 
   /**
+   * Upload an image file for community posts
+   */
+  async uploadMediaFile(
+    uri: string,
+    purpose: "post" | "avatar" | "cover" = "post",
+  ): Promise<{ assetId: string; url: string }> {
+    const formData = new FormData();
+    const filename = uri.split("/").pop() || "upload.jpg";
+    const match = /\.(\w+)$/.exec(filename);
+    const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+    formData.append("image", {
+      uri,
+      name: filename,
+      type,
+    } as any);
+    formData.append("purpose", purpose);
+
+    const res = await api.post("/v1/media/upload-file", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 60000,
+    });
+    const data = unwrap<any>(res);
+    return {
+      assetId: data?.assetId || data?.asset?.id,
+      url: data?.asset?.urls?.original || data?.asset?.urls?.lg || uri,
+    };
+  },
+
+  /**
    * Create a new post, reply, or quote
    */
   async createPost(payload: {
@@ -109,6 +139,14 @@ export const socialApi = {
       }
       throw err;
     }
+  },
+
+  /**
+   * Delete a post
+   */
+  async deletePost(id: string): Promise<{ success: boolean }> {
+    const res = await api.delete(`/v1/posts/${id}`);
+    return unwrap(res) ?? { success: true };
   },
 
   /**
@@ -278,18 +316,36 @@ export const socialApi = {
   },
 
   /**
+   * Get user posts
+   */
+  async getUserPosts(usernameOrId: string): Promise<ApiPost[]> {
+    const res = await api.get(`/v1/profiles/${usernameOrId}/posts`);
+    const data = unwrap<any>(res);
+    return Array.isArray(data) ? data : data?.items || data?.posts || [];
+  },
+
+  /**
+   * Get user liked posts
+   */
+  async getUserLikedPosts(usernameOrId: string): Promise<ApiPost[]> {
+    const res = await api.get(`/v1/profiles/${usernameOrId}/likes`);
+    const data = unwrap<any>(res);
+    return Array.isArray(data) ? data : data?.items || data?.posts || [];
+  },
+
+  /**
    * Get user highlights
    */
   async getUserHighlights(usernameOrId: string): Promise<StoryHighlight[]> {
     try {
       const res = await api.get(`/v1/profiles/${usernameOrId}/highlights`);
       const data = unwrap<any>(res);
-      return Array.isArray(data) ? data : data?.highlights || [];
+      return Array.isArray(data) ? data : data?.items || data?.highlights || [];
     } catch (err: any) {
       if (err?.response?.status === 404) {
         const fallback = await api.get(`/v1/users/${usernameOrId}/highlights`);
         const data = unwrap<any>(fallback);
-        return Array.isArray(data) ? data : data?.highlights || [];
+        return Array.isArray(data) ? data : data?.items || data?.highlights || [];
       }
       throw err;
     }
@@ -302,12 +358,12 @@ export const socialApi = {
     try {
       const res = await api.get(`/v1/profiles/${usernameOrId}/ministries`);
       const data = unwrap<any>(res);
-      return Array.isArray(data) ? data : data?.ministries || [];
+      return Array.isArray(data) ? data : data?.items || data?.ministries || [];
     } catch (err: any) {
       if (err?.response?.status === 404) {
         const fallback = await api.get(`/v1/users/${usernameOrId}/ministries`);
         const data = unwrap<any>(fallback);
-        return Array.isArray(data) ? data : data?.ministries || [];
+        return Array.isArray(data) ? data : data?.items || data?.ministries || [];
       }
       throw err;
     }
@@ -359,9 +415,10 @@ export const socialApi = {
       if (Array.isArray(data)) {
         return { total: data.length, users: data };
       }
+      const list = data?.items || data?.users || [];
       return {
-        total: data?.total ?? (data?.users?.length || 0),
-        users: data?.users || [],
+        total: data?.total ?? list.length,
+        users: list,
       };
     } catch (err: any) {
       if (err?.response?.status === 404) {
@@ -370,9 +427,10 @@ export const socialApi = {
         if (Array.isArray(data)) {
           return { total: data.length, users: data };
         }
+        const list = data?.items || data?.users || [];
         return {
-          total: data?.total ?? (data?.users?.length || 0),
-          users: data?.users || [],
+          total: data?.total ?? list.length,
+          users: list,
         };
       }
       throw err;

@@ -33,7 +33,10 @@ export function AvatarPreviewHost() {
   const reduceMotion = useReducedMotion();
 
   const unmount = useCallback(() => {
-    setPayload(null);
+    setPayload((prev) => {
+      prev?.onClose?.();
+      return null;
+    });
   }, []);
 
   const open = useCallback(

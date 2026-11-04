@@ -5,6 +5,7 @@ export type PreviewPayload = {
   placeholderUri?: string; // the small, already-cached avatar
   rect: Rect;              // avatar's on-screen rect (measured with measureInWindow)
   label?: string;          // accessibility label, e.g. "Sara's profile photo"
+  onClose?: () => void;    // optional callback invoked when preview finishes closing
 };
 
 type Api = {

@@ -1,4 +1,5 @@
 import { ImageViewerModal } from "@/components/ImageViewerModal";
+import { ProfileLink } from "@/components/profile/ProfileLink";
 import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
 import { LongPressAvatar, closeAvatarPreview } from "@/components/avatar-preview";
 import { PRIMARY } from "@/constants/colors";
@@ -6,7 +7,12 @@ import { useTheme } from "@/context/ThemeContext";
 import { useAfterTransition } from "@/hooks/useAfterTransition";
 import { ProfileSeed, useProfile } from "@/hooks/useProfile";
 import { socialApi } from "@/services/socialApi";
-import { useCommunityStore } from "@/stores/community.store";
+import {
+  apiPostToCommunityPost,
+  CommunityPost,
+  useCommunityStore,
+} from "@/stores/community.store";
+import { useUserStore } from "@/stores/user.store";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image as ExpoImage } from "expo-image";
@@ -17,16 +23,13 @@ import {
   Alert,
   Animated,
   Dimensions,
-  KeyboardAvoidingView,
   Linking,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
   Share,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -34,19 +37,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TabView, TabBar } from "react-native-tab-view";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-
-const AVATAR_PRESETS: string[] = [];
-const BANNER_PRESETS: string[] = [];
-
-const FELLOWSHIP_TEAMS = [
-  "Worship Team",
-  "Prayer Ministry",
-  "Bible Study Team",
-  "Freshman Outreach",
-  "Media & Tech",
-  "Executive Ministry",
-  "Evangelism & Missions",
-];
 
 const TAB_ROUTES = [
   { key: "posts", title: "Reflections" },
@@ -75,23 +65,73 @@ export default function MemberProfileScreen() {
     }, [])
   );
 
+  const { user } = useUserStore();
   const posts = useCommunityStore((s) => s.posts);
   const toggleFollowMember = useCommunityStore((s) => s.toggleFollowMember);
   const updateMemberProfile = useCommunityStore((s) => s.updateMemberProfile);
   const fetchUserProfile = useCommunityStore((s) => s.fetchUserProfile);
   const toggleLike = useCommunityStore((s) => s.toggleLike);
-  const toggleRepost = useCommunityStore((s) => s.toggleRepost);
   const toggleBookmark = useCommunityStore((s) => s.toggleBookmark);
 
   const [tabIndex, setTabIndex] = useState(0);
   const [lightboxImage, setLightboxImage] = useState<any | null>(null);
   const [highlights, setHighlights] = useState<any[]>([]);
   const [ministries, setMinistries] = useState<any[]>([]);
+  const [fetchedAuthorPosts, setFetchedAuthorPosts] = useState<CommunityPost[]>([]);
+  const [fetchedLikedPosts, setFetchedLikedPosts] = useState<CommunityPost[]>([]);
+
+  const isOwnProfile = Boolean(
+    user?.id &&
+      (currentMember.id === user.id ||
+        (user.telegramUserName &&
+          currentMember.handle.replace(/^@/, "").toLowerCase() ===
+            user.telegramUserName.replace(/^@/, "").toLowerCase())),
+  );
 
   useEffect(() => {
     const memberId = params.id;
     if (memberId) {
       fetchUserProfile(memberId);
+
+      socialApi
+        .getUserPosts(memberId)
+        .then((res) => {
+          if (Array.isArray(res)) {
+            const mapped = res.map(apiPostToCommunityPost);
+            setFetchedAuthorPosts(mapped);
+            if (mapped.length > 0) {
+              useCommunityStore.setState((state) => {
+                const map = new Map<string, CommunityPost>();
+                for (const p of state.posts) map.set(p.id, p);
+                for (const p of mapped) {
+                  if (!map.has(p.id)) map.set(p.id, p);
+                }
+                return { posts: Array.from(map.values()) };
+              });
+            }
+          }
+        })
+        .catch(() => {});
+
+      socialApi
+        .getUserLikedPosts(memberId)
+        .then((res) => {
+          if (Array.isArray(res)) {
+            const mapped = res.map(apiPostToCommunityPost);
+            setFetchedLikedPosts(mapped);
+            if (mapped.length > 0) {
+              useCommunityStore.setState((state) => {
+                const map = new Map<string, CommunityPost>();
+                for (const p of state.posts) map.set(p.id, p);
+                for (const p of mapped) {
+                  if (!map.has(p.id)) map.set(p.id, p);
+                }
+                return { posts: Array.from(map.values()) };
+              });
+            }
+          }
+        })
+        .catch(() => {});
 
       socialApi
         .getUserHighlights(memberId)
@@ -125,7 +165,7 @@ export default function MemberProfileScreen() {
       socialApi
         .getUserMutuals(memberId)
         .then((res) => {
-          if (res && res.users && res.users.length > 0) {
+          if (res && res.users && res.users.length > 0 && res.total > 0) {
             updateMemberProfile(memberId, {
               mutualFollowers: {
                 names: res.users.map((u) => u.displayName || u.username),
@@ -167,88 +207,56 @@ export default function MemberProfileScreen() {
   });
 
 
-  // Profile Customizer State
-  const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
-  const [editFullName, setEditFullName] = useState("");
-  const [editHandle, setEditHandle] = useState("");
-  const [editTeam, setEditTeam] = useState("");
-  const [editDept, setEditDept] = useState("");
-  const [editYear, setEditYear] = useState("");
-  const [editBio, setEditBio] = useState("");
-  const [editLocation, setEditLocation] = useState("");
-  const [editTelegram, setEditTelegram] = useState("");
-  const [editAvatar, setEditAvatar] = useState("");
-  const [editBanner, setEditBanner] = useState("");
-
   const textColor = isDark ? "#ffffff" : "#0f172a";
   const mutedColor = isDark ? "#94a3b8" : "#64748b";
   const borderColor = isDark ? "#27272a" : "#e2e8f0";
   const bg = isDark ? "#09090b" : "#ffffff";
   const cardBg = isDark ? "#18181b" : "#f8fafc";
-  const inputBg = isDark ? "#27272a" : "#f1f5f9";
+
+  const livePostMap = useMemo(() => {
+    const map = new Map<string, CommunityPost>();
+    for (const p of posts) map.set(p.id, p);
+    return map;
+  }, [posts]);
 
   const authorPosts = useMemo(() => {
-    return posts.filter(
-      (p) =>
+    const merged = new Map<string, CommunityPost>();
+    for (const p of posts) {
+      if (
         p.authorId === currentMember.id ||
         p.authorHandle.toLowerCase() === currentMember.handle.toLowerCase()
-    );
-  }, [posts, currentMember]);
+      ) {
+        merged.set(p.id, p);
+      }
+    }
+    for (const p of fetchedAuthorPosts) {
+      const live = livePostMap.get(p.id);
+      merged.set(p.id, live ? { ...p, ...live } : p);
+    }
+    return Array.from(merged.values());
+  }, [posts, fetchedAuthorPosts, livePostMap, currentMember.id, currentMember.handle]);
 
   const mediaPosts = useMemo(() => {
     return authorPosts.filter((p) => !!p.image);
   }, [authorPosts]);
 
   const likedPosts = useMemo(() => {
-    return posts.filter((p) => p.isLiked);
-  }, [posts]);
-
-  const openCustomizeModal = () => {
-    if (Platform.OS !== "web") {
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch {}
+    const merged = new Map<string, CommunityPost>();
+    for (const p of fetchedLikedPosts) {
+      const live = livePostMap.get(p.id);
+      merged.set(p.id, live ? { ...p, ...live } : p);
     }
-    setEditFullName(currentMember.fullName);
-    setEditHandle(currentMember.handle.replace(/^@/, ""));
-    setEditTeam(currentMember.team);
-    setEditDept(currentMember.department);
-    setEditYear(currentMember.academicYear);
-    setEditBio(currentMember.bio);
-    setEditLocation(currentMember.location || "AAU 4 Kilo Campus");
-    setEditTelegram(currentMember.telegramUsername || "");
-    setEditAvatar(typeof currentMember.avatar === "string" ? currentMember.avatar : "");
-    setEditBanner(typeof currentMember.banner === "string" ? currentMember.banner : "");
-    setIsCustomizeModalOpen(true);
-  };
-
-  const handleSaveProfile = () => {
-    if (!editFullName.trim()) {
-      Alert.alert("Missing Name", "Please provide a valid display name.");
-      return;
+    if (isOwnProfile) {
+      for (const p of posts) {
+        if (p.isLiked) {
+          merged.set(p.id, p);
+        } else if (merged.has(p.id) && !p.isLiked) {
+          merged.delete(p.id);
+        }
+      }
     }
-
-    if (Platform.OS !== "web") {
-      try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {}
-    }
-
-    updateMemberProfile(currentMember.id, {
-      fullName: editFullName.trim(),
-      handle: editHandle.startsWith("@") ? editHandle.trim() : `@${editHandle.trim()}`,
-      team: editTeam,
-      department: editDept,
-      academicYear: editYear,
-      bio: editBio.trim(),
-      location: editLocation.trim(),
-      telegramUsername: editTelegram.replace(/^@/, "").trim(),
-      avatar: editAvatar || currentMember.avatar,
-      banner: editBanner || currentMember.banner,
-    });
-
-    setIsCustomizeModalOpen(false);
-  };
+    return Array.from(merged.values());
+  }, [fetchedLikedPosts, livePostMap, isOwnProfile, posts]);
 
   const handleShareProfile = async () => {
     try {
@@ -274,6 +282,125 @@ export default function MemberProfileScreen() {
     }
   };
 
+  const renderProfilePostRow = useCallback(
+    (item: CommunityPost) => (
+      <View key={item.id} style={[styles.postRow, { borderBottomColor: borderColor }]}>
+        <ProfileLink
+          user={{
+            id: item.authorId || currentMember.id,
+            name: item.authorName,
+            username: item.authorHandle,
+            avatarUrl: item.authorAvatar,
+            team: item.authorTeam,
+          }}
+          size={40}
+        />
+        <View style={styles.postBody}>
+          <ProfileLink
+            user={{
+              id: item.authorId || currentMember.id,
+              name: item.authorName,
+              username: item.authorHandle,
+              avatarUrl: item.authorAvatar,
+              team: item.authorTeam,
+            }}
+            showAvatar={false}
+          >
+            <View style={styles.postAuthorLine}>
+              <Text style={[styles.postAuthorName, { color: textColor }]}>
+                {item.authorName}
+              </Text>
+              {item.isVerified && (
+                <Ionicons
+                  name="checkmark-circle"
+                  size={14}
+                  color={PRIMARY}
+                  style={{ marginHorizontal: 2 }}
+                />
+              )}
+              <Text style={[styles.postTime, { color: mutedColor }]}>
+                · {item.timestamp}
+              </Text>
+            </View>
+          </ProfileLink>
+
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => router.push(`/community/${item.id}` as any)}
+          >
+            <Text style={[styles.postContentText, { color: textColor }]}>
+              {item.content}
+            </Text>
+          </TouchableOpacity>
+
+          {item.image && (
+            <TouchableOpacity
+              activeOpacity={0.92}
+              onPress={() =>
+                setLightboxImage({
+                  uri: item.image,
+                  caption: item.content,
+                  author: item.authorName,
+                })
+              }
+              style={styles.postImageCard}
+            >
+              <ExpoImage
+                source={typeof item.image === "string" ? { uri: item.image } : item.image}
+                style={styles.postImage}
+                contentFit="cover"
+              />
+            </TouchableOpacity>
+          )}
+
+          {/* Feed Actions Row (Reply, Like, Bookmark) */}
+          <View style={styles.feedActionsRow}>
+            <TouchableOpacity
+              onPress={() => router.push(`/community/${item.id}` as any)}
+              style={styles.feedActionBtn}
+            >
+              <Ionicons name="chatbubble-outline" size={16} color={mutedColor} />
+              <Text style={[styles.feedActionCount, { color: mutedColor }]}>
+                {item.repliesCount}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => toggleLike(item.id)}
+              style={styles.feedActionBtn}
+            >
+              <Ionicons
+                name={item.isLiked ? "heart" : "heart-outline"}
+                size={17}
+                color={item.isLiked ? "#f91880" : mutedColor}
+              />
+              <Text
+                style={[
+                  styles.feedActionCount,
+                  { color: item.isLiked ? "#f91880" : mutedColor },
+                ]}
+              >
+                {item.likesCount}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => toggleBookmark(item.id)}
+              style={styles.feedActionBtn}
+            >
+              <Ionicons
+                name={item.isBookmarked ? "bookmark" : "bookmark-outline"}
+                size={17}
+                color={item.isBookmarked ? PRIMARY : mutedColor}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    ),
+    [borderColor, currentMember.id, textColor, mutedColor, router, toggleLike, toggleBookmark],
+  );
+
   const renderPostsTab = useCallback(() => {
     if (authorPosts.length === 0) {
       return (
@@ -287,128 +414,8 @@ export default function MemberProfileScreen() {
       );
     }
 
-    return (
-      <View>
-        {authorPosts.map((item) => (
-          <View key={item.id} style={[styles.postRow, { borderBottomColor: borderColor }]}>
-            <ExpoImage
-              source={
-                typeof item.authorAvatar === "string"
-                  ? { uri: item.authorAvatar }
-                  : item.authorAvatar || null
-              }
-              style={styles.feedAvatar}
-              contentFit="cover"
-            />
-            <View style={styles.postBody}>
-              <View style={styles.postAuthorLine}>
-                <Text style={[styles.postAuthorName, { color: textColor }]}>
-                  {item.authorName}
-                </Text>
-                {item.isVerified && (
-                  <Ionicons name="checkmark-circle" size={14} color={PRIMARY} style={{ marginHorizontal: 2 }} />
-                )}
-                <Text style={[styles.postTime, { color: mutedColor }]}>
-                  · {item.timestamp}
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                activeOpacity={0.9}
-                onPress={() => router.push(`/community/${item.id}` as any)}
-              >
-                <Text style={[styles.postContentText, { color: textColor }]}>
-                  {item.content}
-                </Text>
-              </TouchableOpacity>
-
-              {item.image && (
-                <TouchableOpacity
-                  activeOpacity={0.92}
-                  onPress={() =>
-                    setLightboxImage({
-                      uri: item.image,
-                      caption: item.content,
-                      author: item.authorName,
-                    })
-                  }
-                  style={styles.postImageCard}
-                >
-                  <ExpoImage
-                    source={typeof item.image === "string" ? { uri: item.image } : item.image}
-                    style={styles.postImage}
-                    contentFit="cover"
-                  />
-                </TouchableOpacity>
-              )}
-
-              {/* Feed Actions Row */}
-              <View style={styles.feedActionsRow}>
-                <TouchableOpacity
-                  onPress={() => router.push(`/community/${item.id}` as any)}
-                  style={styles.feedActionBtn}
-                >
-                  <Ionicons name="chatbubble-outline" size={16} color={mutedColor} />
-                  <Text style={[styles.feedActionCount, { color: mutedColor }]}>
-                    {item.repliesCount}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => toggleRepost(item.id)}
-                  style={styles.feedActionBtn}
-                >
-                  <Ionicons
-                    name="repeat-outline"
-                    size={18}
-                    color={item.isReposted ? "#00ba7c" : mutedColor}
-                  />
-                  <Text
-                    style={[
-                      styles.feedActionCount,
-                      { color: item.isReposted ? "#00ba7c" : mutedColor },
-                    ]}
-                  >
-                    {item.repostsCount}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => toggleLike(item.id)}
-                  style={styles.feedActionBtn}
-                >
-                  <Ionicons
-                    name={item.isLiked ? "heart" : "heart-outline"}
-                    size={17}
-                    color={item.isLiked ? "#f91880" : mutedColor}
-                  />
-                  <Text
-                    style={[
-                      styles.feedActionCount,
-                      { color: item.isLiked ? "#f91880" : mutedColor },
-                    ]}
-                  >
-                    {item.likesCount}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => toggleBookmark(item.id)}
-                  style={styles.feedActionBtn}
-                >
-                  <Ionicons
-                    name={item.isBookmarked ? "bookmark" : "bookmark-outline"}
-                    size={17}
-                    color={item.isBookmarked ? PRIMARY : mutedColor}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        ))}
-      </View>
-    );
-  }, [authorPosts, currentMember.fullName, textColor, mutedColor, borderColor, router, toggleRepost, toggleLike, toggleBookmark]);
+    return <View>{authorPosts.map(renderProfilePostRow)}</View>;
+  }, [authorPosts, currentMember.fullName, textColor, mutedColor, renderProfilePostRow]);
 
   const renderMediaTab = useCallback(() => {
     if (mediaPosts.length === 0) {
@@ -590,128 +597,8 @@ export default function MemberProfileScreen() {
       );
     }
 
-    return (
-      <View>
-        {likedPosts.map((item) => (
-          <View key={item.id} style={[styles.postRow, { borderBottomColor: borderColor }]}>
-            <ExpoImage
-              source={
-                typeof item.authorAvatar === "string"
-                  ? { uri: item.authorAvatar }
-                  : item.authorAvatar || null
-              }
-              style={styles.feedAvatar}
-              contentFit="cover"
-            />
-            <View style={styles.postBody}>
-              <View style={styles.postAuthorLine}>
-                <Text style={[styles.postAuthorName, { color: textColor }]}>
-                  {item.authorName}
-                </Text>
-                {item.isVerified && (
-                  <Ionicons name="checkmark-circle" size={14} color={PRIMARY} style={{ marginHorizontal: 2 }} />
-                )}
-                <Text style={[styles.postTime, { color: mutedColor }]}>
-                  · {item.timestamp}
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                activeOpacity={0.9}
-                onPress={() => router.push(`/community/${item.id}` as any)}
-              >
-                <Text style={[styles.postContentText, { color: textColor }]}>
-                  {item.content}
-                </Text>
-              </TouchableOpacity>
-
-              {item.image && (
-                <TouchableOpacity
-                  activeOpacity={0.92}
-                  onPress={() =>
-                    setLightboxImage({
-                      uri: item.image,
-                      caption: item.content,
-                      author: item.authorName,
-                    })
-                  }
-                  style={styles.postImageCard}
-                >
-                  <ExpoImage
-                    source={typeof item.image === "string" ? { uri: item.image } : item.image}
-                    style={styles.postImage}
-                    contentFit="cover"
-                  />
-                </TouchableOpacity>
-              )}
-
-              {/* Feed Actions Row */}
-              <View style={styles.feedActionsRow}>
-                <TouchableOpacity
-                  onPress={() => router.push(`/community/${item.id}` as any)}
-                  style={styles.feedActionBtn}
-                >
-                  <Ionicons name="chatbubble-outline" size={16} color={mutedColor} />
-                  <Text style={[styles.feedActionCount, { color: mutedColor }]}>
-                    {item.repliesCount}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => toggleRepost(item.id)}
-                  style={styles.feedActionBtn}
-                >
-                  <Ionicons
-                    name="repeat-outline"
-                    size={18}
-                    color={item.isReposted ? "#00ba7c" : mutedColor}
-                  />
-                  <Text
-                    style={[
-                      styles.feedActionCount,
-                      { color: item.isReposted ? "#00ba7c" : mutedColor },
-                    ]}
-                  >
-                    {item.repostsCount}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => toggleLike(item.id)}
-                  style={styles.feedActionBtn}
-                >
-                  <Ionicons
-                    name={item.isLiked ? "heart" : "heart-outline"}
-                    size={17}
-                    color={item.isLiked ? "#f91880" : mutedColor}
-                  />
-                  <Text
-                    style={[
-                      styles.feedActionCount,
-                      { color: item.isLiked ? "#f91880" : mutedColor },
-                    ]}
-                  >
-                    {item.likesCount}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => toggleBookmark(item.id)}
-                  style={styles.feedActionBtn}
-                >
-                  <Ionicons
-                    name={item.isBookmarked ? "bookmark" : "bookmark-outline"}
-                    size={17}
-                    color={item.isBookmarked ? PRIMARY : mutedColor}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        ))}
-      </View>
-    );
-  }, [likedPosts, textColor, mutedColor, borderColor, router, toggleRepost, toggleLike, toggleBookmark]);
+    return <View>{likedPosts.map(renderProfilePostRow)}</View>;
+  }, [likedPosts, textColor, mutedColor, renderProfilePostRow]);
 
   const renderScene = useCallback(
     ({ route }: { route: { key: string } }) => {
@@ -828,7 +715,7 @@ export default function MemberProfileScreen() {
 
         {/* Profile Avatar & Inline Action Pill Controls */}
         <View style={styles.profileActionRow}>
-          {/* Story Ring Avatar (IG Style with smooth image viewer tap + Long-Press Instagram preview) */}
+          {/* Story Ring Avatar (Instagram-style tap/long-press circular preview via AvatarPreviewHost) */}
           <View
             style={[
               styles.avatarStoryRing,
@@ -840,83 +727,96 @@ export default function MemberProfileScreen() {
                 size={72}
                 uri={typeof currentMember.avatar === "string" ? currentMember.avatar : undefined}
                 name={currentMember.fullName}
+              />
+              <View style={[styles.onlineDot, { borderColor: bg }]} pointerEvents="none" />
+            </View>
+          </View>
+
+          {/* Action Row: Own Profile -> Edit Profile | Other Member -> Message + Follow Pill */}
+          <View style={styles.actionButtonsCol}>
+            {isOwnProfile ? (
+              <TouchableOpacity
+                activeOpacity={0.8}
                 onPress={() => {
                   if (Platform.OS !== "web") {
                     try {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     } catch {}
                   }
-                  setLightboxImage({
-                    uri: typeof currentMember.avatar === "string" ? currentMember.avatar : undefined,
-                    caption: `${currentMember.fullName}'s profile photo`,
-                    author: currentMember.fullName,
-                  });
+                  router.push("/edit-profile" as any);
                 }}
-              />
-              <View style={[styles.onlineDot, { borderColor: bg }]} pointerEvents="none" />
-            </View>
-          </View>
-
-          {/* Action Row: Message + Edit/Customize + Follow Pill */}
-          <View style={styles.actionButtonsCol}>
-            {/* Telegram Message */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={handleTelegramMessage}
-              style={[styles.iconActionBtn, { borderColor, backgroundColor: cardBg }]}
-              accessibilityLabel="Message on Telegram"
-            >
-              <Ionicons name="paper-plane-outline" size={18} color={textColor} />
-            </TouchableOpacity>
-
-            {/* Edit / Customize Profile */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={openCustomizeModal}
-              style={[styles.iconActionBtn, { borderColor, backgroundColor: cardBg }]}
-              accessibilityLabel="Customize Profile"
-            >
-              <Ionicons name="create-outline" size={18} color={textColor} />
-            </TouchableOpacity>
-
-            {/* Follow Pill Button */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => {
-                if (Platform.OS !== "web") {
-                  try {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  } catch {}
-                }
-                toggleFollowMember(currentMember.id);
-              }}
-              style={[
-                styles.followPillBtn,
-                {
-                  backgroundColor: currentMember.isFollowing
-                    ? (isDark ? "#27272a" : "#f1f5f9")
-                    : PRIMARY,
-                  borderColor: currentMember.isFollowing ? borderColor : "transparent",
-                  borderWidth: currentMember.isFollowing ? 1 : 0,
-                },
-              ]}
-              accessibilityLabel={currentMember.isFollowing ? "Unfollow" : "Follow"}
-            >
-              <Ionicons
-                name={currentMember.isFollowing ? "checkmark" : "person-add"}
-                size={14}
-                color={currentMember.isFollowing ? textColor : "#ffffff"}
-                style={{ marginRight: 6 }}
-              />
-              <Text
                 style={[
-                  styles.followPillText,
-                  { color: currentMember.isFollowing ? textColor : "#ffffff" },
+                  styles.followPillBtn,
+                  {
+                    backgroundColor: cardBg,
+                    borderColor,
+                    borderWidth: 1,
+                  },
                 ]}
+                accessibilityLabel="Edit Profile"
               >
-                {currentMember.isFollowing ? "Following" : "Follow"}
-              </Text>
-            </TouchableOpacity>
+                <Ionicons
+                  name="create-outline"
+                  size={15}
+                  color={textColor}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={[styles.followPillText, { color: textColor }]}>
+                  Edit Profile
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <>
+                {/* Telegram Message */}
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={handleTelegramMessage}
+                  style={[styles.iconActionBtn, { borderColor, backgroundColor: cardBg }]}
+                  accessibilityLabel="Message on Telegram"
+                >
+                  <Ionicons name="paper-plane-outline" size={18} color={textColor} />
+                </TouchableOpacity>
+
+                {/* Follow Pill Button */}
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    if (Platform.OS !== "web") {
+                      try {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      } catch {}
+                    }
+                    toggleFollowMember(currentMember.id, currentMember);
+                  }}
+                  style={[
+                    styles.followPillBtn,
+                    {
+                      backgroundColor: currentMember.isFollowing
+                        ? (isDark ? "#27272a" : "#f1f5f9")
+                        : PRIMARY,
+                      borderColor: currentMember.isFollowing ? borderColor : "transparent",
+                      borderWidth: currentMember.isFollowing ? 1 : 0,
+                    },
+                  ]}
+                  accessibilityLabel={currentMember.isFollowing ? "Unfollow" : "Follow"}
+                >
+                  <Ionicons
+                    name={currentMember.isFollowing ? "checkmark" : "person-add"}
+                    size={14}
+                    color={currentMember.isFollowing ? textColor : "#ffffff"}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text
+                    style={[
+                      styles.followPillText,
+                      { color: currentMember.isFollowing ? textColor : "#ffffff" },
+                    ]}
+                  >
+                    {currentMember.isFollowing ? "Following" : "Follow"}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
 
@@ -940,19 +840,23 @@ export default function MemberProfileScreen() {
 
           {/* Fellowship Badges Row */}
           <View style={styles.badgesWrap}>
-            <View style={[styles.infoBadge, { backgroundColor: isDark ? "rgba(255, 103, 25, 0.15)" : "#fff7ed", borderColor: PRIMARY }]}>
-              <Ionicons name="heart" size={12} color={PRIMARY} />
-              <Text style={[styles.infoBadgeText, { color: PRIMARY }]}>
-                {currentMember.team}
-              </Text>
-            </View>
+            {Boolean(currentMember.team) && (
+              <View style={[styles.infoBadge, { backgroundColor: isDark ? "rgba(255, 103, 25, 0.15)" : "#fff7ed", borderColor: PRIMARY }]}>
+                <Ionicons name="heart" size={12} color={PRIMARY} />
+                <Text style={[styles.infoBadgeText, { color: PRIMARY }]}>
+                  {currentMember.team}
+                </Text>
+              </View>
+            )}
 
-            <View style={[styles.infoBadge, { backgroundColor: cardBg, borderColor }]}>
-              <Ionicons name="school-outline" size={12} color={mutedColor} />
-              <Text style={[styles.infoBadgeText, { color: textColor }]}>
-                {currentMember.department} · {currentMember.academicYear}
-              </Text>
-            </View>
+            {Boolean(currentMember.department || currentMember.academicYear) && (
+              <View style={[styles.infoBadge, { backgroundColor: cardBg, borderColor }]}>
+                <Ionicons name="school-outline" size={12} color={mutedColor} />
+                <Text style={[styles.infoBadgeText, { color: textColor }]}>
+                  {[currentMember.department, currentMember.academicYear].filter(Boolean).join(" · ")}
+                </Text>
+              </View>
+            )}
 
             {/* Devotions Streak Badge */}
             <View style={[styles.infoBadge, { backgroundColor: isDark ? "#2a1b12" : "#fff1eb", borderColor: "#f97316" }]}>
@@ -1057,33 +961,39 @@ export default function MemberProfileScreen() {
           </View>
 
           {/* Social Proof: Mutual Fellowship Peers (from X Screenshot UX) */}
-          {currentMember.mutualFollowers && (
-            <View style={[styles.mutualFollowersRow, { backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)" }]}>
-              <View style={styles.mutualAvatarsCluster}>
-                {currentMember.mutualFollowers.avatars.slice(0, 3).map((av, idx) => (
-                  <ExpoImage
-                    key={idx}
-                    source={{ uri: av }}
-                    style={[
-                      styles.mutualMiniAvatar,
-                      { marginLeft: idx === 0 ? 0 : -8, borderColor: bg },
-                    ]}
-                    contentFit="cover"
-                  />
-                ))}
-              </View>
-              <Text style={[styles.mutualFollowersText, { color: mutedColor }]} numberOfLines={1}>
-                Followed by{" "}
-                <Text style={{ fontWeight: "700", color: textColor }}>
-                  {currentMember.mutualFollowers.names.slice(0, 2).join(", ")}
-                </Text>{" "}
-                and{" "}
-                <Text style={{ fontWeight: "700", color: textColor }}>
-                  {currentMember.mutualFollowers.count} other fellowship peers
+          {currentMember.mutualFollowers &&
+            currentMember.mutualFollowers.count > 0 &&
+            currentMember.mutualFollowers.names.length > 0 && (
+              <View style={[styles.mutualFollowersRow, { backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)" }]}>
+                <View style={styles.mutualAvatarsCluster}>
+                  {currentMember.mutualFollowers.avatars.slice(0, 3).map((av, idx) => (
+                    <ExpoImage
+                      key={idx}
+                      source={{ uri: av }}
+                      style={[
+                        styles.mutualMiniAvatar,
+                        { marginLeft: idx === 0 ? 0 : -8, borderColor: bg },
+                      ]}
+                      contentFit="cover"
+                    />
+                  ))}
+                </View>
+                <Text style={[styles.mutualFollowersText, { color: mutedColor }]} numberOfLines={1}>
+                  Followed by{" "}
+                  <Text style={{ fontWeight: "700", color: textColor }}>
+                    {currentMember.mutualFollowers.names.slice(0, 2).join(", ")}
+                  </Text>
+                  {currentMember.mutualFollowers.count > currentMember.mutualFollowers.names.slice(0, 2).length && (
+                    <>
+                      {" "}and{" "}
+                      <Text style={{ fontWeight: "700", color: textColor }}>
+                        {currentMember.mutualFollowers.count - currentMember.mutualFollowers.names.slice(0, 2).length} other fellowship peers
+                      </Text>
+                    </>
+                  )}
                 </Text>
-              </Text>
-            </View>
-          )}
+              </View>
+            )}
 
           {/* Instagram-Inspired Highlights Carousel (Ministry Stories with Real Photos) */}
           <View style={styles.highlightsContainer}>
@@ -1221,7 +1131,7 @@ export default function MemberProfileScreen() {
         </View>
       </Animated.View>
 
-      {/* Lightbox Modal */}
+      {/* Lightbox Modal (for post & highlight media) */}
       <ImageViewerModal
         visible={!!lightboxImage}
         imageUri={lightboxImage?.uri}
@@ -1229,214 +1139,6 @@ export default function MemberProfileScreen() {
         authorName={lightboxImage?.author}
         onClose={() => setLightboxImage(null)}
       />
-
-      {/* Customizer Modal / Bottom Sheet */}
-      <Modal
-        visible={isCustomizeModalOpen}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setIsCustomizeModalOpen(false)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={[styles.modalScreen, { backgroundColor: bg }]}
-        >
-          {/* Header */}
-          <View style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
-            <TouchableOpacity
-              onPress={() => setIsCustomizeModalOpen(false)}
-              style={styles.modalCancelBtn}
-            >
-              <Text style={[styles.modalCancelText, { color: mutedColor }]}>Cancel</Text>
-            </TouchableOpacity>
-
-            <Text style={[styles.modalTitle, { color: textColor }]}>Customize Profile</Text>
-
-            <TouchableOpacity
-              onPress={handleSaveProfile}
-              style={[styles.modalSaveBtn, { backgroundColor: PRIMARY }]}
-            >
-              <Text style={styles.modalSaveText}>Save</Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.modalScroll}
-          >
-            {/* Banner Selection */}
-            <Text style={[styles.fieldLabel, { color: textColor }]}>Cover Banner</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.presetScroll}>
-              {BANNER_PRESETS.map((preset, idx) => {
-                const isSelected = editBanner === preset;
-                return (
-                  <TouchableOpacity
-                    key={idx}
-                    onPress={() => {
-                      Haptics.selectionAsync().catch(() => {});
-                      setEditBanner(preset);
-                    }}
-                    style={[
-                      styles.bannerPresetCard,
-                      isSelected && { borderColor: PRIMARY, borderWidth: 2.5 },
-                    ]}
-                  >
-                    <ExpoImage source={{ uri: preset }} style={styles.bannerPresetImg} contentFit="cover" />
-                    {isSelected && (
-                      <View style={styles.presetCheckmarkBadge}>
-                        <Ionicons name="checkmark-circle" size={18} color={PRIMARY} />
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-
-            {/* Avatar Selection */}
-            <Text style={[styles.fieldLabel, { color: textColor, marginTop: 16 }]}>Avatar Photo</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.presetScroll}>
-              {AVATAR_PRESETS.map((preset, idx) => {
-                const isSelected = editAvatar === preset;
-                return (
-                  <TouchableOpacity
-                    key={idx}
-                    onPress={() => {
-                      Haptics.selectionAsync().catch(() => {});
-                      setEditAvatar(preset);
-                    }}
-                    style={[
-                      styles.avatarPresetCircle,
-                      isSelected && { borderColor: PRIMARY, borderWidth: 3 },
-                    ]}
-                  >
-                    <ExpoImage source={{ uri: preset }} style={styles.avatarPresetImg} contentFit="cover" />
-                    {isSelected && (
-                      <View style={styles.presetCheckmarkBadge}>
-                        <Ionicons name="checkmark-circle" size={16} color={PRIMARY} />
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-
-            {/* Full Name */}
-            <Text style={[styles.fieldLabel, { color: textColor, marginTop: 18 }]}>Full Name</Text>
-            <TextInput
-              value={editFullName}
-              onChangeText={setEditFullName}
-              placeholder="Your Full Name"
-              placeholderTextColor={mutedColor}
-              style={[styles.inputField, { backgroundColor: inputBg, color: textColor, borderColor }]}
-            />
-
-            {/* Handle */}
-            <Text style={[styles.fieldLabel, { color: textColor, marginTop: 14 }]}>Handle</Text>
-            <View style={[styles.inputWithPrefix, { backgroundColor: inputBg, borderColor }]}>
-              <Text style={{ color: mutedColor, fontSize: 15, fontWeight: "600" }}>@</Text>
-              <TextInput
-                value={editHandle}
-                onChangeText={setEditHandle}
-                placeholder="username"
-                placeholderTextColor={mutedColor}
-                autoCapitalize="none"
-                style={[styles.inputFieldInner, { color: textColor }]}
-              />
-            </View>
-
-            {/* Fellowship Team / Ministry */}
-            <Text style={[styles.fieldLabel, { color: textColor, marginTop: 14 }]}>Fellowship Ministry Team</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.teamPillsScroll}>
-              {FELLOWSHIP_TEAMS.map((teamName) => {
-                const isSelected = editTeam === teamName;
-                return (
-                  <TouchableOpacity
-                    key={teamName}
-                    onPress={() => {
-                      Haptics.selectionAsync().catch(() => {});
-                      setEditTeam(teamName);
-                    }}
-                    style={[
-                      styles.teamPill,
-                      {
-                        backgroundColor: isSelected ? PRIMARY : cardBg,
-                        borderColor: isSelected ? PRIMARY : borderColor,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.teamPillText,
-                        { color: isSelected ? "#ffffff" : textColor, fontWeight: isSelected ? "700" : "500" },
-                      ]}
-                    >
-                      {teamName}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-
-            {/* Department */}
-            <Text style={[styles.fieldLabel, { color: textColor, marginTop: 14 }]}>Department / Faculty</Text>
-            <TextInput
-              value={editDept}
-              onChangeText={setEditDept}
-              placeholder="e.g. Software Engineering"
-              placeholderTextColor={mutedColor}
-              style={[styles.inputField, { backgroundColor: inputBg, color: textColor, borderColor }]}
-            />
-
-            {/* Academic Year */}
-            <Text style={[styles.fieldLabel, { color: textColor, marginTop: 14 }]}>Academic Year</Text>
-            <TextInput
-              value={editYear}
-              onChangeText={setEditYear}
-              placeholder="e.g. 4th Year"
-              placeholderTextColor={mutedColor}
-              style={[styles.inputField, { backgroundColor: inputBg, color: textColor, borderColor }]}
-            />
-
-            {/* Bio */}
-            <Text style={[styles.fieldLabel, { color: textColor, marginTop: 14 }]}>Bio & Favorite Scripture</Text>
-            <TextInput
-              value={editBio}
-              onChangeText={setEditBio}
-              multiline
-              numberOfLines={3}
-              placeholder="Rooted in Christ, walking in faith together..."
-              placeholderTextColor={mutedColor}
-              style={[styles.textAreaField, { backgroundColor: inputBg, color: textColor, borderColor }]}
-            />
-
-            {/* Location */}
-            <Text style={[styles.fieldLabel, { color: textColor, marginTop: 14 }]}>Campus Location</Text>
-            <TextInput
-              value={editLocation}
-              onChangeText={setEditLocation}
-              placeholder="e.g. AAU 4 Kilo Campus, Addis Ababa"
-              placeholderTextColor={mutedColor}
-              style={[styles.inputField, { backgroundColor: inputBg, color: textColor, borderColor }]}
-            />
-
-            {/* Telegram Username */}
-            <Text style={[styles.fieldLabel, { color: textColor, marginTop: 14 }]}>Telegram Handle</Text>
-            <View style={[styles.inputWithPrefix, { backgroundColor: inputBg, borderColor }]}>
-              <Text style={{ color: mutedColor, fontSize: 15, fontWeight: "600" }}>@</Text>
-              <TextInput
-                value={editTelegram}
-                onChangeText={setEditTelegram}
-                placeholder="telegram_username"
-                placeholderTextColor={mutedColor}
-                autoCapitalize="none"
-                style={[styles.inputFieldInner, { color: textColor }]}
-              />
-            </View>
-
-            <View style={{ height: 40 }} />
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </Modal>
     </View>
   );
 }

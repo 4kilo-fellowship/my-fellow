@@ -53,6 +53,7 @@ export default function CommunitySearchScreen() {
   >([]);
   const [apiPosts, setApiPosts] = useState<CommunityPost[]>([]);
   const [apiMembers, setApiMembers] = useState<MemberProfile[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
   // A term arriving from the feed's inline search belongs in history too.
@@ -86,10 +87,12 @@ export default function CommunitySearchScreen() {
     if (!q) {
       setApiPosts([]);
       setApiMembers([]);
+      setHasSearched(false);
       setIsSearching(false);
       return;
     }
 
+    let isLatest = true;
     const timer = setTimeout(() => {
       setIsSearching(true);
       const searchType =
@@ -97,13 +100,15 @@ export default function CommunitySearchScreen() {
           ? "people"
           : activeTab === "posts"
             ? "posts"
-            : "all";
+            : activeTab === "media"
+              ? "media"
+              : "all";
       const cacheKey = `community-search:${searchType}:${q.toLowerCase()}`;
       socialApi
-        .searchSocial(q, searchType)
+        .searchSocial(q, searchType as any)
         .then(async (result) => {
-          // Always replace, never merge — otherwise results from a previous
-          // keystroke linger and the list looks stale while typing.
+          if (!isLatest) return;
+          setHasSearched(true);
           setApiPosts((result.posts || []).map(apiPostToCommunityPost));
           setApiMembers(
             (result.people || []).map((u) => ({
@@ -138,6 +143,7 @@ export default function CommunitySearchScreen() {
           );
         })
         .catch(async () => {
+          if (!isLatest) return;
           const cached = await AsyncStorage.getItem(cacheKey);
           if (!cached) return;
           try {
@@ -149,6 +155,7 @@ export default function CommunitySearchScreen() {
             if (!parsed.savedAt || Date.now() - parsed.savedAt > 24 * 60 * 60 * 1000) {
               return;
             }
+            setHasSearched(true);
             setApiPosts((parsed.posts || []).map(apiPostToCommunityPost));
             setApiMembers(parsed.people || []);
           } catch {
@@ -156,18 +163,24 @@ export default function CommunitySearchScreen() {
           }
         })
         .finally(() => {
-          setIsSearching(false);
+          if (isLatest) {
+            setIsSearching(false);
+          }
         });
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () => {
+      isLatest = false;
+      clearTimeout(timer);
+    };
   }, [query, activeTab]);
 
   const textColor = isDark ? "#ffffff" : "#0f172a";
   const mutedColor = isDark ? "#94a3b8" : "#64748b";
   const borderColor = isDark ? "#27272a" : "#e2e8f0";
   const bg = isDark ? "#09090b" : "#ffffff";
-  const searchInputBg = isDark ? "#202327" : "#eff3f4";
+  const searchInputBg = isDark ? "#202327" : "#edf0f3";
+  const searchPlaceholderColor = isDark ? "#71767b" : "#536471";
   const cardBg = isDark ? "#18181b" : "#f8fafc";
 
   // Filtered members list
@@ -175,19 +188,46 @@ export default function CommunitySearchScreen() {
 
   const matchingPosts = useMemo(() => {
     if (!query.trim()) return [];
-    if (apiPosts.length > 0) return apiPosts;
-    const q = query.toLowerCase().trim();
-    return posts.filter(
-      (p) =>
-        p.content.toLowerCase().includes(q) ||
-        p.authorName.toLowerCase().includes(q) ||
-        p.authorHandle.toLowerCase().includes(q)
-    );
-  }, [apiPosts, posts, query]);
+    const liveMap = new Map(posts.map((p) => [p.id, p]));
+    let list: CommunityPost[] = [];
+    if (hasSearched) {
+      list = apiPosts.map((p) => {
+        const live = liveMap.get(p.id);
+        return live
+          ? {
+              ...p,
+              isLiked: live.isLiked,
+              likesCount: live.likesCount,
+              repliesCount: live.repliesCount,
+              isBookmarked: live.isBookmarked,
+              comments: live.comments,
+            }
+          : p;
+      });
+    } else {
+      const q = query.toLowerCase().trim();
+      list = posts.filter(
+        (p) =>
+          p.content.toLowerCase().includes(q) ||
+          p.authorName.toLowerCase().includes(q) ||
+          p.authorHandle.toLowerCase().includes(q)
+      );
+    }
+
+    if (activeTab === "media") {
+      return list.filter((p) => Boolean(p.image));
+    }
+    return list;
+  }, [activeTab, apiPosts, hasSearched, posts, query]);
 
   const matchingMembers = useMemo(() => {
     if (!query.trim()) return [];
-    if (apiMembers.length > 0) return apiMembers;
+    if (hasSearched) {
+      return apiMembers.map((m) => ({
+        ...m,
+        isFollowing: members[m.id]?.isFollowing ?? m.isFollowing,
+      }));
+    }
     const q = query.toLowerCase().trim();
     return memberList.filter(
       (m) =>
@@ -196,7 +236,7 @@ export default function CommunitySearchScreen() {
         m.department.toLowerCase().includes(q) ||
         m.team.toLowerCase().includes(q)
     );
-  }, [apiMembers, memberList, query]);
+  }, [apiMembers, hasSearched, memberList, members, query]);
 
   const handleSelectTag = (tag: string) => {
     Haptics.selectionAsync().catch(() => {});
@@ -236,14 +276,24 @@ export default function CommunitySearchScreen() {
           <Ionicons name="arrow-back" size={24} color={textColor} />
         </TouchableOpacity>
 
-        <View style={[styles.searchInputWrapper, { backgroundColor: searchInputBg }]}>
-          <Ionicons name="search" size={18} color={mutedColor} />
+        <View
+          style={[
+            styles.searchInputWrapper,
+            {
+              backgroundColor: searchInputBg,
+              borderColor: isDark
+                ? "rgba(255, 255, 255, 0.08)"
+                : "rgba(0, 0, 0, 0.05)",
+            },
+          ]}
+        >
+          <Ionicons name="search-outline" size={19} color={searchPlaceholderColor} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             onSubmitEditing={handleSubmitSearch}
             placeholder="Search posts, people, tags..."
-            placeholderTextColor={mutedColor}
+            placeholderTextColor={searchPlaceholderColor}
             autoFocus
             returnKeyType="search"
             autoCorrect={false}
@@ -422,7 +472,7 @@ export default function CommunitySearchScreen() {
                       onPress={(e) => {
                         e.stopPropagation();
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                        toggleFollowMember(member.id);
+                        toggleFollowMember(member.id, member);
                       }}
                       style={[
                         styles.followBtn,
@@ -465,7 +515,9 @@ export default function CommunitySearchScreen() {
                 <Ionicons name="search-outline" size={48} color={mutedColor} />
                 <Text style={[styles.emptyTitle, { color: textColor }]}>No results found</Text>
                 <Text style={[styles.emptySubtitle, { color: mutedColor }]}>
-                  {`We couldn't find any fellowship posts or members matching "${query}". Try checking spelling or searching for a different keyword or hashtag.`}
+                  {activeTab === "media"
+                    ? `No photos or media posts found matching "${query}".`
+                    : `We couldn't find any fellowship posts or members matching "${query}". Try checking spelling or searching for a different keyword or hashtag.`}
                 </Text>
               </View>
             }
@@ -574,14 +626,17 @@ export default function CommunitySearchScreen() {
                       </Text>
                     </View>
                     <View style={styles.resultMetricItem}>
-                      <Ionicons name="repeat-outline" size={16} color={mutedColor} />
-                      <Text style={[styles.resultMetricText, { color: mutedColor }]}>
-                        {post.repostsCount}
-                      </Text>
-                    </View>
-                    <View style={styles.resultMetricItem}>
-                      <Ionicons name="heart-outline" size={15} color={mutedColor} />
-                      <Text style={[styles.resultMetricText, { color: mutedColor }]}>
+                      <Ionicons
+                        name={post.isLiked ? "heart" : "heart-outline"}
+                        size={15}
+                        color={post.isLiked ? "#f91880" : mutedColor}
+                      />
+                      <Text
+                        style={[
+                          styles.resultMetricText,
+                          { color: post.isLiked ? "#f91880" : mutedColor },
+                        ]}
+                      >
                         {post.likesCount}
                       </Text>
                     </View>
@@ -615,14 +670,15 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    height: 38,
-    borderRadius: 19,
-    paddingHorizontal: 12,
-    gap: 8,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    gap: 10,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14.5,
+    fontSize: 15,
     includeFontPadding: false,
   },
   tabsRow: {

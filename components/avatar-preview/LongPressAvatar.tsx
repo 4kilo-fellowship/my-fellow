@@ -39,6 +39,7 @@ export function LongPressAvatar({
   const outerRef = useRef<React.ComponentRef<typeof View>>(null); // Unscaled wrapper measured via measureInWindow
   const rectRef = useRef<Rect | null>(null);
   const pressed = useSharedValue(0);
+  const hidden = useSharedValue(0);
 
   const resolvedHiResUri = hiResUri ?? getHiResAvatarUrl(uri);
 
@@ -49,23 +50,38 @@ export function LongPressAvatar({
   }, []);
 
   const open = useCallback(() => {
-    const rect = rectRef.current;
     const photo = resolvedHiResUri ?? uri;
-    if (!rect || !photo) return;
+    if (!photo) return;
 
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {
-      // Haptics may not be supported on all environments
+    const triggerOpen = (rect: Rect) => {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      } catch {
+        // Haptics may not be supported on all environments
+      }
+
+      hidden.value = 1;
+      openAvatarPreview({
+        uri: photo,
+        placeholderUri: uri,
+        rect,
+        label: name ? `${name}'s profile photo` : undefined,
+        onClose: () => {
+          hidden.value = 0;
+        },
+      });
+    };
+
+    if (rectRef.current) {
+      triggerOpen(rectRef.current);
+    } else {
+      outerRef.current?.measureInWindow((x: number, y: number, width: number, height: number) => {
+        const measured = { x, y, width, height };
+        rectRef.current = measured;
+        triggerOpen(measured);
+      });
     }
-
-    openAvatarPreview({
-      uri: photo,
-      placeholderUri: uri,
-      rect,
-      label: name ? `${name}'s profile photo` : undefined,
-    });
-  }, [name, resolvedHiResUri, uri]);
+  }, [hidden, name, resolvedHiResUri, uri]);
 
   const gesture = useMemo(() => {
     const longPress = Gesture.LongPress()
@@ -84,22 +100,29 @@ export function LongPressAvatar({
         pressed.value = withTiming(0, { duration: 150 });
       });
 
-    if (onPress) {
-      const tap = Gesture.Tap()
-        .runOnJS(true)
-        .maxDuration(300)
-        .onEnd(() => {
+    const tap = Gesture.Tap()
+      .runOnJS(true)
+      .maxDuration(300)
+      .onBegin(() => {
+        measure();
+        if (resolvedHiResUri) {
+          Image.prefetch(resolvedHiResUri, 'memory-disk');
+        }
+      })
+      .onEnd(() => {
+        if (onPress) {
           onPress();
-        });
-      return Gesture.Exclusive(longPress, tap);
-    }
+        } else {
+          open();
+        }
+      });
 
-    return longPress;
+    return Gesture.Exclusive(longPress, tap);
   }, [measure, open, onPress, pressed, resolvedHiResUri]);
 
   const feedback = useAnimatedStyle(() => ({
     transform: [{ scale: 1 - pressed.value * 0.04 }],
-    opacity: 1 - pressed.value * 0.1,
+    opacity: hidden.value ? 0 : 1 - pressed.value * 0.1,
   }));
 
   // Edge case: if no photo URI is available, render placeholder without gesture

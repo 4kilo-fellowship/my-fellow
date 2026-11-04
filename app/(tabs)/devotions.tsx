@@ -57,9 +57,9 @@ const formatDuration = (item: Devotion) => {
   if (item.content) {
     const words = item.content.trim().split(/\s+/).filter(Boolean).length;
     const minutes = Math.max(1, Math.round(words / 150));
-    return `0${minutes}:00`.slice(-5);
+    return `${minutes} min read`;
   }
-  return "01:40";
+  return item.type === "voice" ? "01:40" : "3 min read";
 };
 
 const isNewDevotion = (dateStr?: string) => {
@@ -121,18 +121,28 @@ const CompactArticleCard = React.memo<CompactArticleCardProps>(
               </View>
             )}
 
-            {/* Center: White Play Button Icon */}
-            <View style={styles.compactCenterPlay}>
-              <Ionicons
-                name="play"
-                size={26}
-                color="#ffffff"
-                style={{ marginLeft: 3 }}
-              />
-            </View>
+            {/* Center: Play Button Icon for voice / audio devotionals only */}
+            {item.type === "voice" && (
+              <View style={styles.compactCenterPlay}>
+                <Ionicons
+                  name="play"
+                  size={26}
+                  color="#ffffff"
+                  style={{ marginLeft: 3 }}
+                />
+              </View>
+            )}
 
-            {/* Bottom-Left: Duration Badge ("01:40") */}
+            {/* Bottom-Left: Duration Badge */}
             <View style={styles.compactDurationBadge}>
+              {item.type === "voice" && (
+                <Ionicons
+                  name="volume-medium"
+                  size={11}
+                  color="#ffffff"
+                  style={{ marginRight: 3.5 }}
+                />
+              )}
               <Text style={styles.compactDurationText}>
                 {formatDuration(item)}
               </Text>
@@ -504,24 +514,68 @@ export default function Devotions() {
   const allScene = (
     <View style={styles.page}>
       {loading && devotions.length === 0 ? (
-        <View style={styles.skeletonContainer}>
-          <Placeholder
-            width="100%"
-            height={170}
-            borderRadius={4}
-            style={{ marginBottom: 20 }}
-          />
-          <Placeholder
-            width="60%"
-            height={22}
-            borderRadius={6}
-            style={{ marginBottom: 14 }}
-          />
-          <View style={{ flexDirection: "row", gap: 12, marginBottom: 24 }}>
-            <Placeholder width={160} height={210} borderRadius={4} />
-            <Placeholder width={160} height={210} borderRadius={4} />
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollPageContent}
+        >
+          {/* Hero Banner skeleton */}
+          <View style={styles.heroOuter}>
+            <Placeholder width="100%" height={180} borderRadius={0} />
+            <View style={styles.heroContent}>
+              <Placeholder width="85%" height={20} borderRadius={6} style={{ marginBottom: 8 }} />
+              <Placeholder width="55%" height={16} borderRadius={6} style={{ marginBottom: 14 }} />
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <Placeholder width={22} height={22} borderRadius={11} />
+                  <Placeholder width={90} height={14} borderRadius={6} />
+                </View>
+                <Placeholder width={60} height={26} borderRadius={8} />
+              </View>
+            </View>
           </View>
-        </View>
+
+          {/* Recent Carousel skeleton */}
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+              <Placeholder width={140} height={20} borderRadius={6} />
+            </View>
+            <View style={[styles.horizontalScrollContent, { flexDirection: "row" }]}>
+              {[0, 1, 2].map((i) => (
+                <View key={`skel-card-${i}`} style={{ width: cardWidth }}>
+                  <Placeholder
+                    width={cardWidth}
+                    height={cardImageHeight}
+                    borderRadius={16}
+                    style={{ marginBottom: 8 }}
+                  />
+                  <Placeholder width="90%" height={15} borderRadius={4} style={{ marginBottom: 6 }} />
+                  <Placeholder width="60%" height={13} borderRadius={4} />
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Article items skeleton */}
+          <View style={[styles.allDevotionsSection, { paddingHorizontal: 16 }]}>
+            <Placeholder width={120} height={20} borderRadius={6} style={{ marginBottom: 16 }} />
+            {[0, 1].map((i) => (
+              <View key={`skel-art-${i}`} style={styles.articleCardOuter}>
+                <View style={{ padding: 16, backgroundColor: "#ffffff", borderRadius: 16, borderWidth: 1, borderColor: "#f4f4f5" }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                    <Placeholder width={38} height={38} borderRadius={19} />
+                    <View style={{ gap: 6, flex: 1 }}>
+                      <Placeholder width="40%" height={14} borderRadius={4} />
+                      <Placeholder width="25%" height={12} borderRadius={4} />
+                    </View>
+                  </View>
+                  <Placeholder width="95%" height={18} borderRadius={5} style={{ marginBottom: 8 }} />
+                  <Placeholder width="80%" height={14} borderRadius={4} style={{ marginBottom: 14 }} />
+                  <Placeholder width="100%" height={170} borderRadius={12} />
+                </View>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
       ) : devotions.length === 0 ? (
         renderAllEmptyState()
       ) : (
@@ -654,7 +708,29 @@ export default function Devotions() {
             </View>
           )}
 
-          {/* 4. CTA: Apply to Write */}
+          {/* 4. ALL DEVOTIONS (Full Vertical Feed - Nothing Hidden) */}
+          {devotions.length > 0 && (
+            <View style={styles.allDevotionsSection}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>All Devotions</Text>
+              </View>
+              <View style={styles.allDevotionsList}>
+                {devotions.map((item: Devotion) => (
+                  <MinimalDevotionCard
+                    key={`all-${item._id}`}
+                    item={item}
+                    isSaved={isDevotionSaved(item._id)}
+                    isRead={isDevotionRead(item._id)}
+                    onPress={() => router.push(`/devotion/${item._id}`)}
+                    onToggleSave={() => handleToggleSave(item)}
+                    onShare={() => handleShare(item)}
+                  />
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* 5. CTA: Apply to Write */}
           <View style={styles.ctaContainer}>
             <View style={styles.ctaIconCircle}>
               <Ionicons name="create-outline" size={24} color={PRIMARY} />
@@ -664,36 +740,38 @@ export default function Devotions() {
               Share your devotional insights and encourage the fellowship
               community through writing.
             </Text>
-            <TouchableOpacity
-              activeOpacity={0.85}
-              style={styles.ctaButton}
-              onPress={() => {
-                try {
-                  Haptics.selectionAsync();
-                } catch {}
-                setWriterModalVisible(true);
-              }}
-            >
-              <Ionicons
-                name={
-                  myWriterRequest?.status === "pending"
-                    ? "time-outline"
+            <View style={styles.ctaButtonWrapper}>
+              <Pressable
+                android_ripple={{ color: "rgba(255, 255, 255, 0.25)" }}
+                style={styles.ctaButton}
+                onPress={() => {
+                  try {
+                    Haptics.selectionAsync();
+                  } catch {}
+                  setWriterModalVisible(true);
+                }}
+              >
+                <Ionicons
+                  name={
+                    myWriterRequest?.status === "pending"
+                      ? "time-outline"
+                      : myWriterRequest?.status === "approved"
+                      ? "checkmark-circle-outline"
+                      : "create-outline"
+                  }
+                  size={18}
+                  color="#ffffff"
+                  style={{ marginRight: 8 }}
+                />
+                <Text style={styles.ctaButtonText}>
+                  {myWriterRequest?.status === "pending"
+                    ? "Application Pending"
                     : myWriterRequest?.status === "approved"
-                    ? "checkmark-circle-outline"
-                    : "create-outline"
-                }
-                size={18}
-                color="#ffffff"
-                style={{ marginRight: 8 }}
-              />
-              <Text style={styles.ctaButtonText}>
-                {myWriterRequest?.status === "pending"
-                  ? "Application Pending"
-                  : myWriterRequest?.status === "approved"
-                  ? "Writer Status Active"
-                  : "Apply to Write"}
-              </Text>
-            </TouchableOpacity>
+                    ? "Writer Status Active"
+                    : "Apply to Write"}
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </ScrollView>
       )}
@@ -920,7 +998,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 14,
     marginBottom: 24,
-    borderRadius: 4,
+    borderRadius: 16,
     backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: "#eff3f4",
@@ -1057,7 +1135,7 @@ const styles = StyleSheet.create({
   },
   compactImageWrapper: {
     width: "100%",
-    borderRadius: 4,
+    borderRadius: 16,
     overflow: "hidden",
     position: "relative",
     backgroundColor: "#e4e4e7",
@@ -1112,7 +1190,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 9,
     left: 9,
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
     paddingHorizontal: 6,
     paddingVertical: 2.5,
     borderRadius: 5,
@@ -1173,7 +1253,7 @@ const styles = StyleSheet.create({
   // Editorial Article-Style Card
   articleCardOuter: {
     marginBottom: 16,
-    borderRadius: 4,
+    borderRadius: 16,
     backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: "#eff3f4",
@@ -1280,7 +1360,7 @@ const styles = StyleSheet.create({
   imageWrapper: {
     width: "100%",
     height: 165,
-    borderRadius: 4,
+    borderRadius: 14,
     overflow: "hidden",
     backgroundColor: "#f4f4f5",
     marginBottom: 14,
@@ -1376,6 +1456,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 18,
   },
+  allDevotionsSection: {
+    marginBottom: 28,
+  },
+  allDevotionsList: {
+    paddingHorizontal: 16,
+  },
   // CTA Section
   ctaContainer: {
     marginHorizontal: 16,
@@ -1414,26 +1500,20 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     maxWidth: 260,
   },
+  ctaButtonWrapper: {
+    borderRadius: 24,
+    overflow: "hidden",
+    backgroundColor: PRIMARY,
+    minWidth: 200,
+    height: 48,
+  },
   ctaButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: PRIMARY,
-    minWidth: 200,
-    height: 48,
+    width: "100%",
+    height: "100%",
     paddingHorizontal: 28,
-    borderRadius: 24,
-    ...Platform.select({
-      ios: {
-        shadowColor: PRIMARY,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.35,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
   },
   ctaButtonText: {
     color: "#ffffff",

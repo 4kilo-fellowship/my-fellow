@@ -46,7 +46,7 @@ The application modernizes fellowship communication by replacing fragmented chan
 - **Event Management**: View upcoming events, register for participation, and share event details easily.
 - **Daily Devotionals**: Access spiritual content and daily readings directly within the app.
 - **Ministry Teams**: Explore various fellowship teams, their meeting locations, and membership details.
-- **Digital Giving**: Securely contribute through integrated Chapa payment support for banks and mobile wallets.
+- **Digital Giving**: Securely contribute through integrated Jami payment support for banks and mobile wallets.
 - **Marketplace**: Browse and access fellowship-related products and resources.
 - **Interactive Tools**: Features like event sharing, reminder notifications, and simple onboarding for new members.
 - **Theming**: Full support for Dark and Light modes based on system preferences.
@@ -74,7 +74,7 @@ The application modernizes fellowship communication by replacing fragmented chan
 ### Marketplace and Payments
 
 - **Marketplace Module**: A curated list of resources or products relevant to the student fellowship.
-- **Payment Integration**: Secure transaction processing via Chapa, supporting local Ethiopian banking and mobile wallets.
+- **Payment Integration**: Secure transaction processing via Jami, supporting local Ethiopian banking and mobile wallets.
 
 ## Tech Stack
 
@@ -86,12 +86,12 @@ The application modernizes fellowship communication by replacing fragmented chan
 - **Networking**: Axios for robust API requests and interceptors.
 - **Form Handling**: React Hook Form with Zod validation for complex user inputs.
 - **Storage**: AsyncStorage for general data and Expo SecureStore for sensitive credentials.
-- **Payment Gateway**: Chapa Integration for seamless digital contributions.
+- **Payment Gateway**: Jami Integration for seamless digital contributions.
 
 ## External Integrations
 
 - **Telegram Bot**: Integration with the `I4U_TEAM_bot` for specialized guidance and member support.
-- **Payment Providers**: Connectivity with Ethiopian banks and mobile money platforms (CBE, Telebirr, etc.) via Chapa.
+- **Payment Providers**: Connectivity with Ethiopian banks and mobile money platforms (Telebirr, CBE Birr, M-Pesa, etc.) via Jami.
 - **Notification Services**: Push notification system to keep users engaged with live events.
 
 ## Project Structure

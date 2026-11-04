@@ -4,6 +4,7 @@ import { MainTabHeader } from "@/components/MainTabHeader";
 import { ProfileLink } from "@/components/profile/ProfileLink";
 import { PRIMARY } from "@/constants/colors";
 import { useTheme } from "@/context/ThemeContext";
+import { useUserStore } from "@/stores/user.store";
 import {
   CommunityPost,
   useCommunityStore,
@@ -12,10 +13,11 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Dimensions,
   FlatList,
   Image,
@@ -33,11 +35,130 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
+function CommunityFeedSkeleton({
+  isDark,
+  borderColor,
+}: {
+  isDark: boolean;
+  borderColor: string;
+}) {
+  const pulseAnim = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 0.85,
+          duration: 750,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0.4,
+          duration: 750,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [pulseAnim]);
+
+  const blockBg = isDark ? "#27272a" : "#e5e7eb";
+
+  const cards = [
+    { lines: ["94%", "78%"], hasMedia: false },
+    { lines: ["90%", "62%"], hasMedia: true },
+    { lines: ["96%", "82%", "52%"], hasMedia: false },
+    { lines: ["88%", "70%"], hasMedia: false },
+  ];
+
+  return (
+    <View style={styles.skeletonFeedContainer}>
+      {cards.map((card, idx) => (
+        <Animated.View
+          key={idx}
+          style={[
+            styles.skeletonCard,
+            {
+              borderBottomColor: borderColor,
+              opacity: pulseAnim,
+            },
+          ]}
+        >
+          {/* Left Avatar */}
+          <View style={[styles.skeletonAvatar, { backgroundColor: blockBg }]} />
+
+          {/* Right Body */}
+          <View style={styles.skeletonBody}>
+            {/* Header: Name, Handle, Time */}
+            <View style={styles.skeletonHeaderRow}>
+              <View
+                style={[
+                  styles.skeletonNameBar,
+                  { backgroundColor: blockBg, width: idx % 2 === 0 ? 110 : 135 },
+                ]}
+              />
+              <View style={[styles.skeletonHandleBar, { backgroundColor: blockBg }]} />
+              <View style={[styles.skeletonTimeBar, { backgroundColor: blockBg }]} />
+            </View>
+
+            {/* Post Lines */}
+            <View style={styles.skeletonLinesCol}>
+              {card.lines.map((w, lIdx) => (
+                <View
+                  key={lIdx}
+                  style={[
+                    styles.skeletonLine,
+                    { backgroundColor: blockBg, width: w as any },
+                  ]}
+                />
+              ))}
+            </View>
+
+            {/* Media Image Box for photo tweets */}
+            {card.hasMedia && (
+              <View
+                style={[
+                  styles.skeletonMediaBox,
+                  { backgroundColor: blockBg },
+                ]}
+              />
+            )}
+
+            {/* Bottom Part: Action Bar (Reply, Repost, Like, Bookmark) */}
+            <View style={styles.skeletonActionBar}>
+              <View style={styles.skeletonActionItem}>
+                <View style={[styles.skeletonActionIcon, { backgroundColor: blockBg }]} />
+                <View style={[styles.skeletonActionText, { backgroundColor: blockBg, width: 20 }]} />
+              </View>
+
+              <View style={styles.skeletonActionItem}>
+                <View style={[styles.skeletonActionIcon, { backgroundColor: blockBg }]} />
+                <View style={[styles.skeletonActionText, { backgroundColor: blockBg, width: 18 }]} />
+              </View>
+
+              <View style={styles.skeletonActionItem}>
+                <View style={[styles.skeletonActionIcon, { backgroundColor: blockBg }]} />
+                <View style={[styles.skeletonActionText, { backgroundColor: blockBg, width: 24 }]} />
+              </View>
+
+              <View style={styles.skeletonActionItem}>
+                <View style={[styles.skeletonActionIcon, { backgroundColor: blockBg }]} />
+              </View>
+            </View>
+          </View>
+        </Animated.View>
+      ))}
+    </View>
+  );
+}
+
 export default function CommunityScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const { user } = useUserStore();
 
   const posts = useCommunityStore((s) => s.posts);
   const forYouPosts = useCommunityStore((s) => s.forYouPosts);
@@ -50,8 +171,8 @@ export default function CommunityScreen() {
   const setFeedType = useCommunityStore((s) => s.setFeedType);
   const fetchFeed = useCommunityStore((s) => s.fetchFeed);
   const toggleLike = useCommunityStore((s) => s.toggleLike);
-  const toggleRepost = useCommunityStore((s) => s.toggleRepost);
   const toggleBookmark = useCommunityStore((s) => s.toggleBookmark);
+  const deletePost = useCommunityStore((s) => s.deletePost);
 
   const [activeTab, setActiveTab] = useState<0 | 1>(feedType === "following" ? 1 : 0);
   const [refreshingForYou, setRefreshingForYou] = useState<boolean>(false);
@@ -112,13 +233,6 @@ export default function CommunityScreen() {
     toggleLike(id);
   };
 
-  const handleToggleRepost = (id: string) => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    } catch {}
-    toggleRepost(id);
-  };
-
   const handleToggleBookmark = (id: string) => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -136,39 +250,6 @@ export default function CommunityScreen() {
       // ignore
     }
   };
-
-  const renderLoadingSkeleton = (
-    <View style={styles.skeletonCard} accessibilityLabel="Loading post">
-      <View
-        style={[
-          styles.skeletonAvatar,
-          { backgroundColor: isDark ? "#27272a" : "#e5e7eb" },
-        ]}
-      />
-      <View style={styles.skeletonBody}>
-        <View
-          style={[
-            styles.skeletonLine,
-            styles.skeletonLineShort,
-            { backgroundColor: isDark ? "#27272a" : "#e5e7eb" },
-          ]}
-        />
-        <View
-          style={[
-            styles.skeletonLine,
-            { backgroundColor: isDark ? "#27272a" : "#e5e7eb" },
-          ]}
-        />
-        <View
-          style={[
-            styles.skeletonLine,
-            styles.skeletonLineMedium,
-            { backgroundColor: isDark ? "#27272a" : "#e5e7eb" },
-          ]}
-        />
-      </View>
-    </View>
-  );
 
   const toggleExpand = (id: string) => {
     setExpandedPostIds((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -219,6 +300,200 @@ export default function CommunityScreen() {
     { key: "following", title: "Following" },
   ];
 
+  const renderPostItem = ({ item }: { item: CommunityPost }) => {
+    const isExpanded = !!expandedPostIds[item.id];
+
+    return (
+      <View
+        style={[
+          styles.tweetRow,
+          {
+            borderBottomColor: borderColor,
+          },
+        ]}
+      >
+        {/* Left Column: Author Avatar -> Navigates to Member Profile */}
+        <View style={styles.tweetAvatarWrap}>
+          <ProfileLink
+            user={{
+              id: item.authorId || "user-fellowship",
+              name: item.authorName,
+              username: item.authorHandle,
+              avatarUrl: item.authorAvatar,
+              team: item.authorTeam,
+            }}
+            size={42}
+          />
+        </View>
+
+        {/* Right Column: Tweet Content & Actions */}
+        <View style={styles.tweetBodyCol}>
+          {/* Header: Author Name, Verified Badge, Handle, Middot, Time, More */}
+          <View style={styles.tweetHeaderRow}>
+            <ProfileLink
+              user={{
+                id: item.authorId || "user-fellowship",
+                name: item.authorName,
+                username: item.authorHandle,
+                avatarUrl: item.authorAvatar,
+                team: item.authorTeam,
+              }}
+              showAvatar={false}
+              style={styles.tweetAuthorInfo}
+            >
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.tweetAuthorName,
+                  { color: isDark ? "#f7f9f9" : "#0f1419" },
+                ]}
+              >
+                {item.authorName}
+              </Text>
+
+              {item.isVerified && (
+                <Ionicons
+                  name="checkmark-circle"
+                  size={15}
+                  color={PRIMARY}
+                  style={{ marginLeft: 3 }}
+                />
+              )}
+
+              <Text style={[styles.tweetMiddot, { color: mutedColor }]}>
+                ·
+              </Text>
+
+              <Text style={[styles.tweetTime, { color: mutedColor }]}>
+                {item.timestamp}
+              </Text>
+            </ProfileLink>
+
+            {/* Three-dots Menu Trigger */}
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setActivePostForSheet(item);
+                setSheetVisible(true);
+              }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={styles.tweetMoreBtn}
+            >
+              <Ionicons
+                name="ellipsis-horizontal"
+                size={16}
+                color={mutedColor}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Body Content -> Navigates to Post Details */}
+          <TouchableOpacity
+            activeOpacity={0.96}
+            onPress={() => {
+              router.push(`/community/${item.id}` as any);
+            }}
+            style={styles.tweetContentWrap}
+          >
+            {renderFormattedText(item.content, isExpanded, item.id)}
+          </TouchableOpacity>
+
+          {/* Attached Image -> Opens Lightbox */}
+          {item.image && (
+            <TouchableOpacity
+              activeOpacity={0.92}
+              onPress={() =>
+                setLightboxImage({
+                  uri: item.image,
+                  caption: item.content,
+                  author: item.authorName,
+                })
+              }
+              style={[
+                styles.tweetMediaCard,
+                {
+                  borderColor: isDark ? "#27272a" : "#e2e8f0",
+                  backgroundColor: isDark ? "#18181b" : "#f8fafc",
+                },
+              ]}
+            >
+              <Image
+                source={
+                  typeof item.image === "string"
+                    ? { uri: item.image }
+                    : item.image
+                }
+                style={styles.tweetMediaImg}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
+          )}
+
+          {/* Action Row: Reply, Like, Bookmark */}
+          <View style={styles.tweetActionBar}>
+            {/* Reply / Comment */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => {
+                Haptics.selectionAsync().catch(() => {});
+                router.push(`/community/${item.id}` as any);
+              }}
+              style={styles.tweetActionBtn}
+            >
+              <Ionicons
+                name="chatbubble-outline"
+                size={17}
+                color={mutedColor}
+              />
+              <Text
+                style={[styles.tweetActionCount, { color: mutedColor }]}
+              >
+                {item.repliesCount}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Like */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => handleToggleLike(item.id)}
+              style={styles.tweetActionBtn}
+            >
+              <Ionicons
+                name={item.isLiked ? "heart" : "heart-outline"}
+                size={18}
+                color={item.isLiked ? "#f91880" : mutedColor}
+              />
+              <Text
+                style={[
+                  styles.tweetActionCount,
+                  {
+                    color: item.isLiked ? "#f91880" : mutedColor,
+                    fontWeight: item.isLiked ? "700" : "500",
+                  },
+                ]}
+              >
+                {item.likesCount}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Bookmark */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => handleToggleBookmark(item.id)}
+              style={styles.tweetActionBtn}
+            >
+              <Ionicons
+                name={item.isBookmarked ? "bookmark" : "bookmark-outline"}
+                size={18}
+                color={item.isBookmarked ? PRIMARY : mutedColor}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   const renderForYouScene = () => {
     return (
       <FlatList
@@ -243,7 +518,7 @@ export default function CommunityScreen() {
           ) : undefined}
         ListEmptyComponent={
           isForYouLoading ? (
-            renderLoadingSkeleton
+            <CommunityFeedSkeleton isDark={isDark} borderColor={borderColor} />
           ) : (
             <View
               style={{
@@ -290,222 +565,9 @@ export default function CommunityScreen() {
             colors={[PRIMARY]}
           />
         }
-        renderItem={({ item }) => {
-          const isExpanded = !!expandedPostIds[item.id];
-
-          return (
-            <View
-              style={[
-                styles.tweetRow,
-                {
-                  borderBottomColor: borderColor,
-                },
-              ]}
-            >
-              {/* Left Column: Author Avatar -> Navigates to Member Profile */}
-              <View style={styles.tweetAvatarWrap}>
-                <ProfileLink
-                  user={{
-                    id: item.authorId || "user-fellowship",
-                    name: item.authorName,
-                    username: item.authorHandle,
-                    avatarUrl: item.authorAvatar,
-                  }}
-                  size={42}
-                />
-              </View>
-
-              {/* Right Column: Tweet Content & Actions */}
-              <View style={styles.tweetBodyCol}>
-                {/* Header: Author Name, Verified Badge, Handle, Middot, Time, More */}
-                <View style={styles.tweetHeaderRow}>
-                  <ProfileLink
-                    user={{
-                      id: item.authorId || "user-fellowship",
-                      name: item.authorName,
-                      username: item.authorHandle,
-                      avatarUrl: item.authorAvatar,
-                    }}
-                    showAvatar={false}
-                    style={styles.tweetAuthorInfo}
-                  >
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.tweetAuthorName,
-                        { color: isDark ? "#f7f9f9" : "#0f1419" },
-                      ]}
-                    >
-                      {item.authorName}
-                    </Text>
-
-                    {item.isVerified && (
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={15}
-                        color={PRIMARY}
-                        style={{ marginLeft: 3 }}
-                      />
-                    )}
-
-                    <Text style={[styles.tweetMiddot, { color: mutedColor }]}>
-                      ·
-                    </Text>
-
-                    <Text style={[styles.tweetTime, { color: mutedColor }]}>
-                      {item.timestamp}
-                    </Text>
-                  </ProfileLink>
-
-                  {/* Three-dots Menu Trigger */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                      setActivePostForSheet(item);
-                      setSheetVisible(true);
-                    }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    style={styles.tweetMoreBtn}
-                  >
-                    <Ionicons
-                      name="ellipsis-horizontal"
-                      size={16}
-                      color={mutedColor}
-                    />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Body Content -> Navigates to Post Details */}
-                <TouchableOpacity
-                  activeOpacity={0.96}
-                  onPress={() => {
-                    router.push(`/community/${item.id}` as any);
-                  }}
-                  style={styles.tweetContentWrap}
-                >
-                  {renderFormattedText(item.content, isExpanded, item.id)}
-                </TouchableOpacity>
-
-                {/* Attached Image -> Opens Lightbox */}
-                {item.image && (
-                  <TouchableOpacity
-                    activeOpacity={0.92}
-                    onPress={() =>
-                      setLightboxImage({
-                        uri: item.image,
-                        caption: item.content,
-                        author: item.authorName,
-                      })
-                    }
-                    style={[
-                      styles.tweetMediaCard,
-                      {
-                        borderColor: isDark ? "#27272a" : "#e2e8f0",
-                        backgroundColor: isDark ? "#18181b" : "#f8fafc",
-                      },
-                    ]}
-                  >
-                    <Image
-                      source={
-                        typeof item.image === "string"
-                          ? { uri: item.image }
-                          : item.image
-                      }
-                      style={styles.tweetMediaImg}
-                      resizeMode="cover"
-                    />
-                  </TouchableOpacity>
-                )}
-
-                {/* Action Row: Reply, Repost, Like, Bookmark */}
-                <View style={styles.tweetActionBar}>
-                  {/* Reply / Comment */}
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => {
-                      Haptics.selectionAsync().catch(() => {});
-                      router.push(`/community/${item.id}` as any);
-                    }}
-                    style={styles.tweetActionBtn}
-                  >
-                    <Ionicons
-                      name="chatbubble-outline"
-                      size={17}
-                      color={mutedColor}
-                    />
-                    <Text
-                      style={[styles.tweetActionCount, { color: mutedColor }]}
-                    >
-                      {item.repliesCount}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {/* Repost */}
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => handleToggleRepost(item.id)}
-                    style={styles.tweetActionBtn}
-                  >
-                    <Ionicons
-                      name="repeat-outline"
-                      size={19}
-                      color={item.isReposted ? "#00ba7c" : mutedColor}
-                    />
-                    <Text
-                      style={[
-                        styles.tweetActionCount,
-                        {
-                          color: item.isReposted ? "#00ba7c" : mutedColor,
-                          fontWeight: item.isReposted ? "700" : "500",
-                        },
-                      ]}
-                    >
-                      {item.repostsCount}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {/* Like */}
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => handleToggleLike(item.id)}
-                    style={styles.tweetActionBtn}
-                  >
-                    <Ionicons
-                      name={item.isLiked ? "heart" : "heart-outline"}
-                      size={18}
-                      color={item.isLiked ? "#f91880" : mutedColor}
-                    />
-                    <Text
-                      style={[
-                        styles.tweetActionCount,
-                        {
-                          color: item.isLiked ? "#f91880" : mutedColor,
-                          fontWeight: item.isLiked ? "700" : "500",
-                        },
-                      ]}
-                    >
-                      {item.likesCount}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {/* Bookmark */}
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => handleToggleBookmark(item.id)}
-                    style={styles.tweetActionBtn}
-                  >
-                    <Ionicons
-                      name={item.isBookmarked ? "bookmark" : "bookmark-outline"}
-                      size={18}
-                      color={item.isBookmarked ? PRIMARY : mutedColor}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          );
-        }}
-      />    );
+        renderItem={renderPostItem}
+      />
+    );
   };
 
   const renderFollowingScene = () => {
@@ -532,7 +594,7 @@ export default function CommunityScreen() {
           ) : undefined}
         ListEmptyComponent={
           isFollowingLoading ? (
-            renderLoadingSkeleton
+            <CommunityFeedSkeleton isDark={isDark} borderColor={borderColor} />
           ) : (
             <View
               style={{
@@ -578,221 +640,7 @@ export default function CommunityScreen() {
             colors={[PRIMARY]}
           />
         }
-        renderItem={({ item }) => {
-          const isExpanded = !!expandedPostIds[item.id];
-
-          return (
-            <View
-              style={[
-                styles.tweetRow,
-                {
-                  borderBottomColor: borderColor,
-                },
-              ]}
-            >
-              {/* Left Column: Author Avatar -> Navigates to Member Profile */}
-              <View style={styles.tweetAvatarWrap}>
-                <ProfileLink
-                  user={{
-                    id: item.authorId || "user-fellowship",
-                    name: item.authorName,
-                    username: item.authorHandle,
-                    avatarUrl: item.authorAvatar,
-                  }}
-                  size={42}
-                />
-              </View>
-
-              {/* Right Column: Tweet Content & Actions */}
-              <View style={styles.tweetBodyCol}>
-                {/* Header: Author Name, Verified Badge, Handle, Middot, Time, More */}
-                <View style={styles.tweetHeaderRow}>
-                  <ProfileLink
-                    user={{
-                      id: item.authorId || "user-fellowship",
-                      name: item.authorName,
-                      username: item.authorHandle,
-                      avatarUrl: item.authorAvatar,
-                    }}
-                    showAvatar={false}
-                    style={styles.tweetAuthorInfo}
-                  >
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.tweetAuthorName,
-                        { color: isDark ? "#f7f9f9" : "#0f1419" },
-                      ]}
-                    >
-                      {item.authorName}
-                    </Text>
-
-                    {item.isVerified && (
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={15}
-                        color={PRIMARY}
-                        style={{ marginLeft: 3 }}
-                      />
-                    )}
-
-                    <Text style={[styles.tweetMiddot, { color: mutedColor }]}>
-                      ·
-                    </Text>
-
-                    <Text style={[styles.tweetTime, { color: mutedColor }]}>
-                      {item.timestamp}
-                    </Text>
-                  </ProfileLink>
-
-                  {/* Three-dots Menu Trigger */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                      setActivePostForSheet(item);
-                      setSheetVisible(true);
-                    }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    style={styles.tweetMoreBtn}
-                  >
-                    <Ionicons
-                      name="ellipsis-horizontal"
-                      size={16}
-                      color={mutedColor}
-                    />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Body Content -> Navigates to Post Details */}
-                <TouchableOpacity
-                  activeOpacity={0.96}
-                  onPress={() => {
-                    router.push(`/community/${item.id}` as any);
-                  }}
-                  style={styles.tweetContentWrap}
-                >
-                  {renderFormattedText(item.content, isExpanded, item.id)}
-                </TouchableOpacity>
-
-                {/* Attached Image -> Opens Lightbox */}
-                {item.image && (
-                  <TouchableOpacity
-                    activeOpacity={0.92}
-                    onPress={() =>
-                      setLightboxImage({
-                        uri: item.image,
-                        caption: item.content,
-                        author: item.authorName,
-                      })
-                    }
-                    style={[
-                      styles.tweetMediaCard,
-                      {
-                        borderColor: isDark ? "#27272a" : "#e2e8f0",
-                        backgroundColor: isDark ? "#18181b" : "#f8fafc",
-                      },
-                    ]}
-                  >
-                    <Image
-                      source={
-                        typeof item.image === "string"
-                          ? { uri: item.image }
-                          : item.image
-                      }
-                      style={styles.tweetMediaImg}
-                      resizeMode="cover"
-                    />
-                  </TouchableOpacity>
-                )}
-
-                {/* Action Row: Reply, Repost, Like, Bookmark */}
-                <View style={styles.tweetActionBar}>
-                  {/* Reply / Comment */}
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => {
-                      Haptics.selectionAsync().catch(() => {});
-                      router.push(`/community/${item.id}` as any);
-                    }}
-                    style={styles.tweetActionBtn}
-                  >
-                    <Ionicons
-                      name="chatbubble-outline"
-                      size={17}
-                      color={mutedColor}
-                    />
-                    <Text
-                      style={[styles.tweetActionCount, { color: mutedColor }]}
-                    >
-                      {item.repliesCount}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {/* Repost */}
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => handleToggleRepost(item.id)}
-                    style={styles.tweetActionBtn}
-                  >
-                    <Ionicons
-                      name="repeat-outline"
-                      size={19}
-                      color={item.isReposted ? "#00ba7c" : mutedColor}
-                    />
-                    <Text
-                      style={[
-                        styles.tweetActionCount,
-                        {
-                          color: item.isReposted ? "#00ba7c" : mutedColor,
-                          fontWeight: item.isReposted ? "700" : "500",
-                        },
-                      ]}
-                    >
-                      {item.repostsCount}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {/* Like */}
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => handleToggleLike(item.id)}
-                    style={styles.tweetActionBtn}
-                  >
-                    <Ionicons
-                      name={item.isLiked ? "heart" : "heart-outline"}
-                      size={18}
-                      color={item.isLiked ? "#f91880" : mutedColor}
-                    />
-                    <Text
-                      style={[
-                        styles.tweetActionCount,
-                        {
-                          color: item.isLiked ? "#f91880" : mutedColor,
-                          fontWeight: item.isLiked ? "700" : "500",
-                        },
-                      ]}
-                    >
-                      {item.likesCount}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {/* Bookmark */}
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => handleToggleBookmark(item.id)}
-                    style={styles.tweetActionBtn}
-                  >
-                    <Ionicons
-                      name={item.isBookmarked ? "bookmark" : "bookmark-outline"}
-                      size={18}
-                      color={item.isBookmarked ? PRIMARY : mutedColor}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          );
-        }}
+        renderItem={renderPostItem}
       />
     );
   };
@@ -817,39 +665,42 @@ export default function CommunityScreen() {
         ]}
       >
         <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-              router.push("/community/search");
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Search"
-            android_ripple={{
-              color: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
-              borderless: false,
-            }}
-            style={({ pressed }) => [
-              styles.searchPillWrapper,
-              { backgroundColor: isDark ? "#202327" : "#f0f2f5" },
-              pressed && Platform.OS === "ios" && { opacity: 0.7 },
-            ]}
-          >
-            <View style={styles.searchCenterContent}>
-              <Ionicons
-                name="search-outline"
-                size={18}
-                color={isDark ? "#8e9196" : "#5f6368"}
-                style={styles.searchIcon}
-              />
-              <Text
-                style={[
-                  styles.searchCenteredText,
-                  { color: isDark ? "#8e9196" : "#5f6368" },
-                ]}
-              >
-                Search
-              </Text>
-            </View>
-          </Pressable>
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+            router.push("/community/search");
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Search"
+          android_ripple={{
+            color: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+            borderless: false,
+          }}
+          style={({ pressed }) => [
+            styles.searchPillWrapper,
+            {
+              backgroundColor: isDark ? "#202327" : "#edf0f3",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)",
+            },
+            pressed && Platform.OS === "ios" && { opacity: 0.75 },
+          ]}
+        >
+          <View style={styles.searchCenterContent}>
+            <Ionicons
+              name="search-outline"
+              size={20}
+              color={isDark ? "#71767b" : "#536471"}
+              style={styles.searchIcon}
+            />
+            <Text
+              style={[
+                styles.searchCenteredText,
+                { color: isDark ? "#71767b" : "#536471" },
+              ]}
+            >
+              Search
+            </Text>
+          </View>
+        </Pressable>
       </View>
 
       {/* Feed Tabs: For you / Following - smooth animated TabView (AI Poster Studio style) */}
@@ -872,8 +723,9 @@ export default function CommunityScreen() {
           <TabBar
             {...props}
             indicatorStyle={{
-              backgroundColor: isDark ? "#ffffff" : "#000000",
-              height: 2.5,
+              backgroundColor: PRIMARY,
+              height: 3,
+              borderRadius: 1.5,
             }}
             style={{
               backgroundColor: bg,
@@ -882,9 +734,9 @@ export default function CommunityScreen() {
               elevation: 0,
               shadowOpacity: 0,
             }}
-            activeColor={textColor}
+            activeColor={PRIMARY}
             inactiveColor={mutedColor}
-            pressColor={isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)"}
+            pressColor={isDark ? "rgba(255, 103, 25, 0.12)" : "rgba(255, 103, 25, 0.08)"}
           />
         )}
       />
@@ -1008,6 +860,44 @@ export default function CommunityScreen() {
             </Text>
           </TouchableOpacity>
 
+          {/* Author Delete Option */}
+          {activePostForSheet && (activePostForSheet.authorId === user?.id || !activePostForSheet.authorId) && (
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => {
+                const targetId = activePostForSheet.id;
+                Alert.alert(
+                  "Delete Post",
+                  "Are you sure you want to delete this reflection? This cannot be undone.",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Delete",
+                      style: "destructive",
+                      onPress: async () => {
+                        setSheetVisible(false);
+                        try {
+                          await deletePost(targetId);
+                          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+                        } catch {
+                          Alert.alert("Error", "Could not delete post. Please try again.");
+                        }
+                      },
+                    },
+                  ]
+                );
+              }}
+              style={styles.sheetActionItem}
+            >
+              <View style={[styles.sheetActionIcon, { backgroundColor: isDark ? "#27272a" : "#fef2f2" }]}>
+                <Ionicons name="trash-outline" size={20} color="#ef4444" />
+              </View>
+              <Text style={[styles.sheetActionLabel, { color: "#ef4444", fontWeight: "600" }]}>
+                Delete post
+              </Text>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => {
@@ -1050,18 +940,13 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   searchPillWrapper: {
-    height: 40,
-    borderRadius: 20,
+    width: "100%",
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1,
     overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
-  },
-  searchPressableInner: {
-    flex: 1,
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
   },
   searchCenterContent: {
     flexDirection: "row",
@@ -1069,21 +954,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 10,
+    marginTop: Platform.OS === "android" ? 0 : 0.5,
   },
   searchCenteredText: {
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: 16,
     fontWeight: "400",
-    letterSpacing: -0.2,
+    letterSpacing: -0.1,
     includeFontPadding: false,
     textAlignVertical: "center",
+  },
+  skeletonFeedContainer: {
+    width: "100%",
   },
   skeletonCard: {
     flexDirection: "row",
     gap: 12,
     paddingHorizontal: 16,
-    paddingVertical: 18,
+    paddingTop: 14,
+    paddingBottom: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   skeletonAvatar: {
     width: 42,
@@ -1094,16 +984,58 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 10,
   },
+  skeletonHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  skeletonNameBar: {
+    height: 13,
+    borderRadius: 6,
+  },
+  skeletonHandleBar: {
+    width: 68,
+    height: 11,
+    borderRadius: 6,
+  },
+  skeletonTimeBar: {
+    width: 32,
+    height: 11,
+    borderRadius: 6,
+  },
+  skeletonLinesCol: {
+    gap: 8,
+  },
   skeletonLine: {
-    width: "92%",
     height: 12,
     borderRadius: 6,
   },
-  skeletonLineShort: {
-    width: "38%",
+  skeletonMediaBox: {
+    width: "100%",
+    height: 160,
+    borderRadius: 14,
+    marginTop: 4,
   },
-  skeletonLineMedium: {
-    width: "68%",
+  skeletonActionBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 8,
+    paddingRight: 24,
+  },
+  skeletonActionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  skeletonActionIcon: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+  },
+  skeletonActionText: {
+    height: 10,
+    borderRadius: 5,
   },
   tweetRow: {
     flexDirection: "row",

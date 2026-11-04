@@ -72,15 +72,15 @@ export default function UserConnectionsScreen() {
       isFollowing: !!u.isFollowing,
     });
 
-    Promise.all([
+      Promise.all([
       socialApi.getUserFollowers(id),
       socialApi.getUserFollowing(id),
     ])
       .then(([followers, following]) => {
-        if (Array.isArray(followers) && followers.length > 0) {
+        if (Array.isArray(followers)) {
           setApiFollowers(followers.map(adaptUser));
         }
-        if (Array.isArray(following) && following.length > 0) {
+        if (Array.isArray(following)) {
           setApiFollowing(following.map(adaptUser));
         }
       })
@@ -90,20 +90,20 @@ export default function UserConnectionsScreen() {
       });
   }, [id]);
 
-  // Derived follower/following lists (API first, falling back to cache)
+  // Derived follower/following lists synced with live follow state in store
   const followersList = useMemo(() => {
-    return apiFollowers.length > 0
-      ? apiFollowers
-      : allMembers.filter((m) => m.id !== id);
-  }, [apiFollowers, allMembers, id]);
+    return apiFollowers.map((m) => ({
+      ...m,
+      isFollowing: membersMap[m.id]?.isFollowing ?? m.isFollowing,
+    }));
+  }, [apiFollowers, membersMap]);
 
   const followingList = useMemo(() => {
-    return apiFollowing.length > 0
-      ? apiFollowing
-      : allMembers.filter(
-          (m) => m.id !== id && (m.isFollowing || m.followersCount > 100),
-        );
-  }, [apiFollowing, allMembers, id]);
+    return apiFollowing.map((m) => ({
+      ...m,
+      isFollowing: membersMap[m.id]?.isFollowing ?? m.isFollowing,
+    }));
+  }, [apiFollowing, membersMap]);
 
   const activeList = activeTab === "followers" ? followersList : followingList;
 
@@ -261,7 +261,17 @@ export default function UserConnectionsScreen() {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 } catch {}
               }
-              router.push(`/community/user/${item.id}` as any);
+              router.push({
+                pathname: "/community/user/[id]",
+                params: {
+                  id: item.id,
+                  name: item.fullName,
+                  username: item.handle,
+                  avatar: typeof item.avatar === "string" ? item.avatar : "",
+                  team: item.team,
+                  department: item.department,
+                },
+              } as any);
             }}
             android_ripple={{
               color: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
@@ -302,7 +312,7 @@ export default function UserConnectionsScreen() {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   } catch {}
                 }
-                toggleFollowMember(item.id);
+                toggleFollowMember(item.id, item);
               }}
               style={[
                 styles.followBtn,

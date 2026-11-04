@@ -1,11 +1,13 @@
 import { PRIMARY } from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
+import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -106,13 +108,46 @@ export const ReasonModal = ({
                   />
                 </View>
 
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={handleSubmit}
-                  style={[styles.button, { backgroundColor: PRIMARY }]}
-                >
-                  <Text style={styles.buttonText}>Continue</Text>
-                </TouchableOpacity>
+                <View style={styles.buttonOuter}>
+                  <Pressable
+                    onPress={() => {
+                      if (Platform.OS !== "web") {
+                        Haptics.impactAsync(
+                          Haptics.ImpactFeedbackStyle.Light,
+                        ).catch(() => {});
+                      }
+                      handleSubmit();
+                    }}
+                    unstable_pressDelay={0}
+                    accessibilityRole="button"
+                    accessibilityLabel="Continue to payment"
+                    android_ripple={{
+                      color: "rgba(255, 255, 255, 0.28)",
+                      borderless: false,
+                      foreground: true,
+                    }}
+                    style={({ pressed }) => [
+                      styles.button,
+                      { backgroundColor: PRIMARY },
+                      Platform.OS === "ios" &&
+                        pressed && {
+                          opacity: 0.88,
+                          transform: [{ scale: 0.99 }],
+                        },
+                    ]}
+                  >
+                    <View
+                      style={{
+                        width: "100%",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Text style={styles.buttonText}>Continue</Text>
+                    </View>
+                  </Pressable>
+                </View>
               </View>
             </TouchableWithoutFeedback>
           </KeyboardAvoidingView>
@@ -169,10 +204,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
   },
+  buttonOuter: {
+    width: "100%",
+    borderRadius: 9999,
+    overflow: "hidden",
+  },
   button: {
     width: "100%",
     height: 56,
-    borderRadius: 20,
+    borderRadius: 9999,
     justifyContent: "center",
     alignItems: "center",
   },

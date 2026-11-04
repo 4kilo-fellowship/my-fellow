@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -21,6 +20,7 @@ import {
   WriterRequest,
 } from "@/services/devotionWriterService";
 import { router } from "expo-router";
+import { AppBottomSheet } from "@/components/AppBottomSheet";
 
 interface DevotionWriterModalProps {
   visible: boolean;
@@ -151,196 +151,189 @@ export function DevotionWriterModal({
   };
 
   return (
-    <Modal
+    <AppBottomSheet
       visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-      statusBarTranslucent
+      onClose={onClose}
+      snapPoints={["full"]}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.overlay}
+        style={styles.sheetContentInner}
       >
-        <Pressable style={styles.backdrop} onPress={onClose} />
-
-        <View style={styles.sheetContainer}>
-          {/* Header handle indicator */}
-          <View style={styles.sheetHandle} />
-
-          {/* Top Title & Close Button */}
-          <View style={styles.sheetHeader}>
-            <View style={styles.sheetTitleRow}>
-              <View style={styles.headerIconCircle}>
-                <Ionicons name="create" size={18} color={PRIMARY} />
-              </View>
-              <Text style={styles.sheetTitle}>Apply to Write Devotions</Text>
+        {/* Top Title & Close Button */}
+        <View style={styles.sheetHeader}>
+          <View style={styles.sheetTitleRow}>
+            <View style={styles.headerIconCircle}>
+              <Ionicons name="create" size={18} color={PRIMARY} />
             </View>
-            <Pressable
-              hitSlop={10}
-              onPress={onClose}
-              style={styles.closeButton}
-            >
-              <Ionicons name="close" size={20} color="#71717a" />
-            </Pressable>
+            <Text style={styles.sheetTitle}>Apply to Write Devotions</Text>
           </View>
-
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
+          <Pressable
+            hitSlop={10}
+            onPress={onClose}
+            style={styles.closeButton}
           >
-            {/* If user already has a pending application */}
-            {existingRequest?.status === "pending" ? (
-              <View style={styles.statusBox}>
-                <View style={styles.statusBadgePending}>
-                  <Ionicons name="time-outline" size={16} color="#d97706" />
-                  <Text style={styles.statusBadgePendingText}>
-                    Application Pending Review
-                  </Text>
-                </View>
-                <Text style={styles.statusDescription}>
-                  Your application to write devotions has been received. Our
-                  fellowship editorial team is reviewing it and will reach out to
-                  you via Telegram at{" "}
-                  <Text style={{ fontWeight: "700", color: "#09090b" }}>
-                    {existingRequest.telegramHandle}
-                  </Text>
-                  .
-                </Text>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Sample Topic:</Text>
-                  <Text style={styles.detailValue}>
-                    {existingRequest.sampleTopic}
-                  </Text>
-                </View>
-                <Pressable
-                  android_ripple={{ color: "rgba(0,0,0,0.06)" }}
-                  style={styles.secondaryDoneBtn}
-                  onPress={onClose}
-                >
-                  <Text style={styles.secondaryDoneBtnText}>Got It</Text>
-                </Pressable>
-              </View>
-            ) : existingRequest?.status === "approved" ? (
-              <View style={styles.statusBox}>
-                <View style={styles.statusBadgeApproved}>
-                  <Ionicons name="checkmark-circle" size={16} color="#16a34a" />
-                  <Text style={styles.statusBadgeApprovedText}>
-                    Approved Fellowship Writer
-                  </Text>
-                </View>
-                <Text style={styles.statusDescription}>
-                  You are an approved devotional contributor! Contact the
-                  fellowship editorial team on Telegram to submit your drafts.
-                </Text>
-                <Pressable
-                  android_ripple={{ color: "rgba(0,0,0,0.06)" }}
-                  style={styles.secondaryDoneBtn}
-                  onPress={onClose}
-                >
-                  <Text style={styles.secondaryDoneBtnText}>Close</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <>
-                <Text style={styles.sheetSubtitle}>
-                  Encourage fellow students through your written reflections,
-                  scriptural insights, and testimony.
-                </Text>
+            <Ionicons name="close" size={20} color="#71717a" />
+          </Pressable>
+        </View>
 
-                {/* Form Inputs */}
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Full Name *</Text>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* If user already has a pending application */}
+          {existingRequest?.status === "pending" ? (
+            <View style={styles.statusBox}>
+              <View style={styles.statusBadgePending}>
+                <Ionicons name="time-outline" size={16} color="#d97706" />
+                <Text style={styles.statusBadgePendingText}>
+                  Application Pending Review
+                </Text>
+              </View>
+              <Text style={styles.statusDescription}>
+                Your application to write devotions has been received. Our
+                fellowship editorial team is reviewing it and will reach out to
+                you via Telegram at{" "}
+                <Text style={{ fontWeight: "700", color: "#09090b" }}>
+                  {existingRequest.telegramHandle}
+                </Text>
+                .
+              </Text>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Sample Topic:</Text>
+                <Text style={styles.detailValue}>
+                  {existingRequest.sampleTopic}
+                </Text>
+              </View>
+              <Pressable
+                android_ripple={{ color: "rgba(0,0,0,0.06)" }}
+                style={styles.secondaryDoneBtn}
+                onPress={onClose}
+              >
+                <Text style={styles.secondaryDoneBtnText}>Got It</Text>
+              </Pressable>
+            </View>
+          ) : existingRequest?.status === "approved" ? (
+            <View style={styles.statusBox}>
+              <View style={styles.statusBadgeApproved}>
+                <Ionicons name="checkmark-circle" size={16} color="#16a34a" />
+                <Text style={styles.statusBadgeApprovedText}>
+                  Approved Fellowship Writer
+                </Text>
+              </View>
+              <Text style={styles.statusDescription}>
+                You are an approved devotional contributor! Contact the
+                fellowship editorial team on Telegram to submit your drafts.
+              </Text>
+              <Pressable
+                android_ripple={{ color: "rgba(0,0,0,0.06)" }}
+                style={styles.secondaryDoneBtn}
+                onPress={onClose}
+              >
+                <Text style={styles.secondaryDoneBtnText}>Close</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.sheetSubtitle}>
+                Encourage fellow students through your written reflections,
+                scriptural insights, and testimony.
+              </Text>
+
+              {/* Form Inputs */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Full Name *</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Your Full Name"
+                  placeholderTextColor="#a1a1aa"
+                  value={fullName}
+                  onChangeText={setFullName}
+                />
+              </View>
+
+              <View style={styles.inputRow}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.inputLabel}>Phone *</Text>
                   <TextInput
                     style={styles.textInput}
-                    placeholder="Your Full Name"
+                    placeholder="09..."
                     placeholderTextColor="#a1a1aa"
-                    value={fullName}
-                    onChangeText={setFullName}
+                    keyboardType="phone-pad"
+                    value={phoneNumber}
+                    onChangeText={setPhoneNumber}
                   />
                 </View>
 
-                <View style={styles.inputRow}>
-                  <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                    <Text style={styles.inputLabel}>Phone *</Text>
-                    <TextInput
-                      style={styles.textInput}
-                      placeholder="09..."
-                      placeholderTextColor="#a1a1aa"
-                      keyboardType="phone-pad"
-                      value={phoneNumber}
-                      onChangeText={setPhoneNumber}
-                    />
-                  </View>
-
-                  <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                    <Text style={styles.inputLabel}>Telegram Username *</Text>
-                    <TextInput
-                      style={styles.textInput}
-                      placeholder="@username"
-                      placeholderTextColor="#a1a1aa"
-                      autoCapitalize="none"
-                      value={telegramHandle}
-                      onChangeText={setTelegramHandle}
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.inputRow}>
-                  <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                    <Text style={styles.inputLabel}>Department</Text>
-                    <TextInput
-                      style={styles.textInput}
-                      placeholder="e.g. Electrical Eng"
-                      placeholderTextColor="#a1a1aa"
-                      value={department}
-                      onChangeText={setDepartment}
-                    />
-                  </View>
-
-                  <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                    <Text style={styles.inputLabel}>Academic Year</Text>
-                    <TextInput
-                      style={styles.textInput}
-                      placeholder="e.g. 3rd Year"
-                      placeholderTextColor="#a1a1aa"
-                      value={year}
-                      onChangeText={setYear}
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>
-                    Sample Devotion Topic / Passage *
-                  </Text>
+                <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                  <Text style={styles.inputLabel}>Telegram Username *</Text>
                   <TextInput
                     style={styles.textInput}
-                    placeholder="e.g. Walking in Grace on Campus (Romans 8:1)"
+                    placeholder="@username"
                     placeholderTextColor="#a1a1aa"
-                    value={sampleTopic}
-                    onChangeText={setSampleTopic}
+                    autoCapitalize="none"
+                    value={telegramHandle}
+                    onChangeText={setTelegramHandle}
                   />
                 </View>
+              </View>
 
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>
-                    Personal Notes / Why you&apos;d like to write (Optional)
-                  </Text>
+              <View style={styles.inputRow}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.inputLabel}>Department</Text>
                   <TextInput
-                    style={[styles.textInput, styles.textArea]}
-                    placeholder="Share a brief note about what God has put on your heart..."
+                    style={styles.textInput}
+                    placeholder="e.g. Electrical Eng"
                     placeholderTextColor="#a1a1aa"
-                    multiline
-                    numberOfLines={3}
-                    textAlignVertical="top"
-                    value={message}
-                    onChangeText={setMessage}
+                    value={department}
+                    onChangeText={setDepartment}
                   />
                 </View>
 
-                {/* Submit Primary Native Button */}
+                <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                  <Text style={styles.inputLabel}>Academic Year</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="e.g. 3rd Year"
+                    placeholderTextColor="#a1a1aa"
+                    value={year}
+                    onChangeText={setYear}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>
+                  Sample Devotion Topic / Passage *
+                </Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="e.g. Walking in Grace on Campus (Romans 8:1)"
+                  placeholderTextColor="#a1a1aa"
+                  value={sampleTopic}
+                  onChangeText={setSampleTopic}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>
+                  Personal Notes / Why you&apos;d like to write (Optional)
+                </Text>
+                <TextInput
+                  style={[styles.textInput, styles.textArea]}
+                  placeholder="Share a brief note about what God has put on your heart..."
+                  placeholderTextColor="#a1a1aa"
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                  value={message}
+                  onChangeText={setMessage}
+                />
+              </View>
+
+              {/* Submit Primary Native Button */}
+              <View style={styles.submitButtonWrapper}>
                 <Pressable
                   android_ripple={{
                     color: "rgba(255, 255, 255, 0.25)",
@@ -349,7 +342,7 @@ export function DevotionWriterModal({
                   style={({ pressed }) => [
                     styles.submitButton,
                     submitting && { opacity: 0.7 },
-                    Platform.OS === "ios" && pressed && { opacity: 0.9 },
+                    Platform.OS === "ios" && pressed && { opacity: 0.88 },
                   ]}
                   onPress={handleSubmit}
                   disabled={submitting}
@@ -370,45 +363,19 @@ export function DevotionWriterModal({
                     </>
                   )}
                 </Pressable>
-              </>
-            )}
-          </ScrollView>
-        </View>
+              </View>
+            </>
+          )}
+        </ScrollView>
       </KeyboardAvoidingView>
-    </Modal>
+    </AppBottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  sheetContentInner: {
     flex: 1,
-    justifyContent: "flex-end",
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(0, 0, 0, 0.45)",
-  },
-  sheetContainer: {
-    backgroundColor: "#ffffff",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: "88%",
-    paddingTop: 12,
-    paddingBottom: Platform.OS === "ios" ? 36 : 24,
-    paddingHorizontal: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 16,
-  },
-  sheetHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#e4e4e7",
-    alignSelf: "center",
-    marginBottom: 12,
+    paddingTop: 4,
   },
   sheetHeader: {
     flexDirection: "row",
@@ -479,20 +446,19 @@ const styles = StyleSheet.create({
     height: 80,
     paddingTop: 10,
   },
+  submitButtonWrapper: {
+    borderRadius: 14,
+    overflow: "hidden",
+    marginTop: 10,
+    marginBottom: 8,
+    backgroundColor: PRIMARY,
+  },
   submitButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: PRIMARY,
-    borderRadius: 14,
     paddingVertical: 14,
-    marginTop: 10,
-    marginBottom: 8,
-    shadowColor: PRIMARY,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
   },
   submitButtonText: {
     color: "#ffffff",

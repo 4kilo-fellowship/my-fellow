@@ -8,6 +8,7 @@ import { useSignupStore } from "@/stores/signup.store";
 import { useUserStore } from "@/stores/user.store";
 import { getPrefilledAvatar } from "@/utils/avatar";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -1267,13 +1268,26 @@ export default function PersonalizationScreen() {
                     },
                   ]}
                 >
-                  <View style={styles.atBadge}>
-                    <Text style={styles.atText}>@</Text>
+                  <View
+                    style={[
+                      styles.telegramIconBadge,
+                      {
+                        backgroundColor: isDark
+                          ? "rgba(56, 189, 248, 0.12)"
+                          : "rgba(34, 158, 217, 0.10)",
+                      },
+                    ]}
+                  >
+                    <FontAwesome5
+                      name="telegram-plane"
+                      size={18}
+                      color="#229ED9"
+                    />
                   </View>
                   <TextInput
                     value={telegram}
                     onChangeText={(val) => setTelegram(val.replace(/^@/, ""))}
-                    placeholder="username"
+                    placeholder="@username"
                     placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -1898,18 +1912,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     gap: 10,
   },
-  atBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: PRIMARY,
+  telegramIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-  },
-  atText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
   },
   telegramInput: {
     flex: 1,

@@ -39,7 +39,6 @@ export default function PostDetailScreen() {
   const post = useCommunityStore((s) => s.getPostById(id as string));
   const fetchPostThread = useCommunityStore((s) => s.fetchPostThread);
   const toggleLike = useCommunityStore((s) => s.toggleLike);
-  const toggleRepost = useCommunityStore((s) => s.toggleRepost);
   const toggleBookmark = useCommunityStore((s) => s.toggleBookmark);
   const addComment = useCommunityStore((s) => s.addComment);
   const toggleLikeComment = useCommunityStore((s) => s.toggleLikeComment);
@@ -328,10 +327,6 @@ export default function PostDetailScreen() {
               {/* Engagement Stats Bar */}
               <View style={[styles.metricsBar, { borderTopColor: borderColor, borderBottomColor: borderColor }]}>
                 <Text style={[styles.metricStat, { color: textColor }]}>
-                  <Text style={styles.metricBold}>{post.repostsCount}</Text>{" "}
-                  <Text style={{ color: mutedColor }}>Reposts</Text>
-                </Text>
-                <Text style={[styles.metricStat, { color: textColor }]}>
                   <Text style={styles.metricBold}>{post.likesCount}</Text>{" "}
                   <Text style={{ color: mutedColor }}>Likes</Text>
                 </Text>
@@ -351,21 +346,6 @@ export default function PostDetailScreen() {
                   style={styles.actionBtn}
                 >
                   <Ionicons name="chatbubble-outline" size={20} color={mutedColor} />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-                    toggleRepost(post.id);
-                  }}
-                  style={styles.actionBtn}
-                >
-                  <Ionicons
-                    name="repeat-outline"
-                    size={22}
-                    color={post.isReposted ? "#00ba7c" : mutedColor}
-                  />
                 </TouchableOpacity>
 
                 <TouchableOpacity
