@@ -3,6 +3,7 @@ import ProductCard from "@/components/Marketplace/ProductCard";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { ProductBottomSheet } from "@/components/Modals/ProductBottomSheet";
 import { ReasonModal } from "@/components/Modals/ReasonModal";
+import { API_URL } from "@/constants/api";
 import { useTheme } from "@/context/ThemeContext";
 import api from "@/services/api";
 import { useMarketplaceStore } from "@/stores/marketplace.store";
@@ -13,6 +14,7 @@ import { donationSchema } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -23,6 +25,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   Text,
   TextInput,
@@ -107,25 +110,37 @@ const Gifts = () => {
   const selectedAmount = watch("amount");
 
   useEffect(() => {
-    const loadSavedEmail = async () => {
+    const loadSavedEmailAndAmount = async () => {
       const savedEmail = await AsyncStorage.getItem("last_donation_email");
       if (savedEmail) {
         setValue("email", savedEmail);
       } else if (user?.email) {
         setValue("email", user.email);
       }
+
+      const savedAmount = await AsyncStorage.getItem("last_donation_amount");
+      if (savedAmount) {
+        const parsed = parseFloat(savedAmount);
+        if (!isNaN(parsed) && parsed > 0) {
+          setValue("amount", parsed);
+        }
+      }
     };
-    loadSavedEmail();
+    loadSavedEmailAndAmount();
   }, [user, setValue]);
 
   // Handle deep linking for payment return
   useEffect(() => {
     const handleDeepLink = (event: { url: string }) => {
-      const { path } = Linking.parse(event.url);
+      const { path, queryParams } = Linking.parse(event.url);
       if (path === "payment-status" || event.url.includes("payment-status")) {
         WebBrowser.dismissBrowser();
-        if (txRef) {
-          verifyPayment(txRef);
+        const refToVerify =
+          (typeof queryParams?.sessionId === "string" &&
+            queryParams.sessionId) ||
+          txRef;
+        if (refToVerify) {
+          verifyPayment(refToVerify);
         }
       }
     };
@@ -137,11 +152,9 @@ const Gifts = () => {
   const verifyPayment = async (ref: string) => {
     setLoading(true);
     try {
-      const endpoint = ref.startsWith("fellow-tx-")
-        ? `/payments/chapa/verify/${ref}`
-        : `/payments/jami/verify/${ref}`;
-      const response = await api.get(endpoint);
-      const status = response.data.status || response.data.data?.status;
+      const response = await api.get(`/payments/jami/verify/${ref}`);
+      const data = response.data.data || response.data;
+      const status = data?.status || response.data.status;
       if (status === "success" || status === "completed") {
         showInfoModal(
           "Payment Successful",
@@ -150,11 +163,10 @@ const Gifts = () => {
         );
         fetchMyGivings();
       } else {
-        showInfoModal(
-          "Payment Incomplete",
-          "The payment was not completed or was cancelled. Please try again.",
-          "error",
-        );
+        const failureMsg =
+          data?.failure?.message ||
+          "The payment was not completed or was cancelled. Please try again.";
+        showInfoModal("Payment Incomplete", failureMsg, "error");
       }
     } catch (error) {
       showInfoModal(
@@ -199,12 +211,14 @@ const Gifts = () => {
         email: data.email.trim(),
         phone: user?.phoneNumber,
         reason: reason,
-        returnUrl: "https://my-fellow-api-6v2i.onrender.com/api/payments/success",
+        returnUrl: `${API_URL}/payments/success`,
       };
 
       const response = await api.post("/payments/jami/init", payload);
       const checkout_url =
-        response.data.data?.checkout_url || response.data.checkout_url;
+        response.data.data?.checkout_url ||
+        response.data.data?.checkoutUrl ||
+        response.data.checkout_url;
       const sessionOrRef =
         response.data.data?.sessionId ||
         response.data.sessionId ||
@@ -217,9 +231,12 @@ const Gifts = () => {
 
       setTxRef(sessionOrRef);
 
-      // Persist email for future use since it's not in the account
+      // Persist email and amount for future use
       if (data.email) {
         await AsyncStorage.setItem("last_donation_email", data.email);
+      }
+      if (data.amount) {
+        await AsyncStorage.setItem("last_donation_amount", String(data.amount));
       }
 
       // openAuthSessionAsync catches redirect back to my-fellow://payment-status and auto-dismisses
@@ -293,61 +310,85 @@ const Gifts = () => {
             </View>
 
             {/* Total Givings Native Button */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => router.push("/givings" as any)}
-              accessibilityRole="button"
-              accessibilityLabel="View your total givings"
-              className={`mx-5 mb-8 p-4 rounded-2xl flex-row items-center justify-between border ${
-                isDark
-                  ? "bg-zinc-900/60 border-zinc-800"
-                  : "bg-white border-zinc-200"
-              }`}
+            <View
+              style={{
+                marginHorizontal: 16,
+                marginBottom: 24,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: isDark ? "#27272a" : "#e4e4e7",
+                backgroundColor: isDark ? "rgba(24, 24, 27, 0.7)" : "#ffffff",
+                overflow: "hidden",
+              }}
             >
-              <View className="flex-row items-center gap-3.5">
-                <View className="w-12 h-12 rounded-xl bg-orange-500/10 items-center justify-center">
-                  <Ionicons name="gift" size={24} color="#ff6719" />
-                </View>
-                <View>
-                  <Text
-                    className={`text-[11px] font-bold uppercase tracking-wider mb-0.5 ${
-                      isDark ? "text-zinc-400" : "text-zinc-500"
-                    }`}
-                  >
-                    Your Total Givings
-                  </Text>
-                  <Text
-                    className={`text-xl font-black ${
-                      isDark ? "text-white" : "text-black"
-                    }`}
-                  >
-                    {totalGivingsAmount.toLocaleString()} ETB
-                  </Text>
-                </View>
-              </View>
-              <View
-                className={`w-9 h-9 rounded-full items-center justify-center border ${
-                  isDark
-                    ? "bg-zinc-800/80 border-zinc-700/60"
-                    : "bg-zinc-100 border-zinc-200/80"
-                }`}
+              <Pressable
+                onPress={() => {
+                  if (Platform.OS !== "web") {
+                    Haptics.impactAsync(
+                      Haptics.ImpactFeedbackStyle.Light,
+                    ).catch(() => {});
+                  }
+                  router.push("/givings" as any);
+                }}
+                unstable_pressDelay={0}
+                accessibilityRole="button"
+                accessibilityLabel="View your total givings"
+                android_ripple={{
+                  color: isDark
+                    ? "rgba(255, 255, 255, 0.14)"
+                    : "rgba(0, 0, 0, 0.08)",
+                  borderless: false,
+                  foreground: true,
+                }}
               >
-                <Ionicons
-                  name="chevron-forward"
-                  size={18}
-                  color={isDark ? "#d4d4d8" : "#52525b"}
-                />
-              </View>
-            </TouchableOpacity>
+                {({ pressed }) => (
+                  <View
+                    style={{
+                      width: "100%",
+                      minHeight: 84,
+                      paddingVertical: 20,
+                      paddingHorizontal: 20,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 14,
+                      opacity: Platform.OS === "ios" && pressed ? 0.7 : 1,
+                    }}
+                  >
+                    <Ionicons name="gift" size={28} color="#ff6719" />
+                    <View style={{ flex: 1, justifyContent: "center" }}>
+                      <Text
+                        className={`text-xs font-bold uppercase tracking-wider mb-1 ${
+                          isDark ? "text-zinc-400" : "text-zinc-500"
+                        }`}
+                      >
+                        Your Total Givings
+                      </Text>
+                      <Text
+                        className={`text-2xl font-black ${
+                          isDark ? "text-white" : "text-black"
+                        }`}
+                      >
+                        {totalGivingsAmount.toLocaleString()} ETB
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={22}
+                      color={isDark ? "#a1a1aa" : "#71717a"}
+                    />
+                  </View>
+                )}
+              </Pressable>
+            </View>
 
             {/* gifts section */}
             <View className="px-5 mb-12">
               <View>
                 {/* form  */}
-                <View className="gap-8">
+                <View className="gap-5">
                   <View>
                     <Text
-                      className={`text-[11px] font-black uppercase tracking-widest mb-3 ml-1 ${
+                      className={`text-[11px] font-black uppercase tracking-widest mb-2 ml-1 ${
                         isDark ? "text-zinc-500" : "text-zinc-400"
                       }`}
                     >
@@ -357,14 +398,38 @@ const Gifts = () => {
                       control={control}
                       name="amount"
                       render={({ field: { onChange, onBlur, value } }) => (
-                        <View className="relative">
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            height: 54,
+                            paddingHorizontal: 16,
+                            gap: 10,
+                            borderRadius: 16,
+                            borderWidth: 1,
+                            borderColor: errors.amount
+                              ? "#ef4444"
+                              : isDark
+                                ? "#27272a"
+                                : "#e4e4e7",
+                            backgroundColor: isDark ? "#18181b" : "#fafafa",
+                          }}
+                        >
+                          <Ionicons
+                            name="cash-outline"
+                            size={20}
+                            color={isDark ? "#71717a" : "#a1a1aa"}
+                          />
                           <TextInput
-                            className={`px-6 py-5 rounded-[24px] border-[1.5px] text-2xl font-black ${
-                              isDark
-                                ? "bg-zinc-900 border-zinc-800 text-white"
-                                : "bg-zinc-50 border-zinc-200 text-black"
-                            } ${errors.amount ? "border-red-500" : ""}`}
-                            placeholder="0.00 Birr"
+                            style={{
+                              flex: 1,
+                              height: "100%",
+                              fontSize: 17,
+                              fontWeight: "700",
+                              color: isDark ? "#ffffff" : "#09090b",
+                              paddingVertical: 0,
+                            }}
+                            placeholder="0.00"
                             placeholderTextColor={
                               isDark ? "#52525b" : "#a1a1aa"
                             }
@@ -376,18 +441,20 @@ const Gifts = () => {
                             }}
                             value={value === 0 ? "" : value.toString()}
                           />
-                          <View className="absolute right-6 top-5">
-                            <Ionicons
-                              name="cash-outline"
-                              size={28}
-                              color="#ff6719"
-                            />
-                          </View>
+                          <Text
+                            style={{
+                              fontSize: 14,
+                              fontWeight: "700",
+                              color: isDark ? "#71717a" : "#a1a1aa",
+                            }}
+                          >
+                            ETB
+                          </Text>
                         </View>
                       )}
                     />
                     {errors.amount && (
-                      <Text className="text-red-500 text-xs mt-2 ml-2 font-bold">
+                      <Text className="text-red-500 text-xs mt-1.5 ml-2 font-bold">
                         {errors.amount.message}
                       </Text>
                     )}
@@ -395,7 +462,7 @@ const Gifts = () => {
 
                   <View>
                     <Text
-                      className={`text-[11px] font-black uppercase tracking-widest mb-3 ml-1 ${
+                      className={`text-[11px] font-black uppercase tracking-widest mb-2 ml-1 ${
                         isDark ? "text-zinc-500" : "text-zinc-400"
                       }`}
                     >
@@ -405,54 +472,131 @@ const Gifts = () => {
                       control={control}
                       name="email"
                       render={({ field: { onChange, onBlur, value } }) => (
-                        <TextInput
-                          className={`px-6 py-5 rounded-[24px] border-[1.5px] font-bold ${
-                            isDark
-                              ? "bg-zinc-900 border-zinc-800 text-white"
-                              : "bg-zinc-50 border-zinc-200 text-black"
-                          } ${errors.email ? "border-red-500" : ""}`}
-                          placeholder="natnaletamiru98@gmail.com"
-                          placeholderTextColor={isDark ? "#52525b" : "#a1a1aa"}
-                          keyboardType="email-address"
-                          autoCapitalize="none"
-                          onBlur={onBlur}
-                          onChangeText={onChange}
-                          defaultValue={user?.email || ""}
-                          value={value}
-                        />
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            height: 54,
+                            paddingHorizontal: 16,
+                            gap: 10,
+                            borderRadius: 16,
+                            borderWidth: 1,
+                            borderColor: errors.email
+                              ? "#ef4444"
+                              : isDark
+                                ? "#27272a"
+                                : "#e4e4e7",
+                            backgroundColor: isDark ? "#18181b" : "#fafafa",
+                          }}
+                        >
+                          <Ionicons
+                            name="mail-outline"
+                            size={20}
+                            color={isDark ? "#71717a" : "#a1a1aa"}
+                          />
+                          <TextInput
+                            style={{
+                              flex: 1,
+                              height: "100%",
+                              fontSize: 15,
+                              fontWeight: "500",
+                              color: isDark ? "#ffffff" : "#09090b",
+                              paddingVertical: 0,
+                            }}
+                            placeholder="Enter your email"
+                            placeholderTextColor={
+                              isDark ? "#52525b" : "#a1a1aa"
+                            }
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            onBlur={onBlur}
+                            onChangeText={onChange}
+                            value={value}
+                          />
+                        </View>
                       )}
                     />
                     {errors.email && (
-                      <Text className="text-red-500 text-xs mt-2 ml-2 font-bold">
+                      <Text className="text-red-500 text-xs mt-1.5 ml-2 font-bold">
                         {errors.email.message}
                       </Text>
                     )}
                   </View>
                 </View>
 
-                <TouchableOpacity
-                  onPress={() => handleSubmit(onGivePress)()}
-                  disabled={loading}
-                  activeOpacity={0.9}
-                  className={`mt-12 py-5 rounded-3xl flex-row items-center justify-center ${
-                    loading ? "bg-zinc-400" : "bg-primary"
-                  }`}
+                <View
+                  style={{
+                    width: "100%",
+                    borderRadius: 9999,
+                    overflow: "hidden",
+                    marginTop: 32,
+                    backgroundColor: loading ? "#a1a1aa" : "#ff6719",
+                  }}
                 >
-                  {loading ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <>
-                      <Text className="text-white font-black text-xl mr-3">
-                        Give {selectedAmount || 0} ETB
-                      </Text>
-                      <Ionicons
-                        name="arrow-forward-circle"
-                        size={28}
-                        color="#fff"
-                      />
-                    </>
-                  )}
-                </TouchableOpacity>
+                  <Pressable
+                    onPress={() => {
+                      if (Platform.OS !== "web") {
+                        Haptics.impactAsync(
+                          Haptics.ImpactFeedbackStyle.Light,
+                        ).catch(() => {});
+                      }
+                      handleSubmit(onGivePress)();
+                    }}
+                    disabled={loading}
+                    unstable_pressDelay={0}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Give ${selectedAmount || 0} ETB`}
+                    android_ripple={
+                      !loading
+                        ? {
+                            color: "rgba(255, 255, 255, 0.28)",
+                            borderless: false,
+                            foreground: true,
+                          }
+                        : undefined
+                    }
+                  >
+                    {({ pressed }) => (
+                      <View
+                        style={{
+                          width: "100%",
+                          height: 56,
+                          paddingHorizontal: 24,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 8,
+                          opacity:
+                            Platform.OS === "ios" && pressed && !loading
+                              ? 0.8
+                              : 1,
+                        }}
+                      >
+                        {loading ? (
+                          <ActivityIndicator color="#fff" />
+                        ) : (
+                          <>
+                            <Text
+                              style={{
+                                color: "#ffffff",
+                                fontWeight: "700",
+                                fontSize: 17,
+                              }}
+                            >
+                              Give {selectedAmount || 0} ETB
+                            </Text>
+                            <Ionicons
+                              name="arrow-forward"
+                              size={20}
+                              color="#fff"
+                            />
+                          </>
+                        )}
+                      </View>
+                    )}
+                  </Pressable>
+                </View>
               </View>
             </View>
 

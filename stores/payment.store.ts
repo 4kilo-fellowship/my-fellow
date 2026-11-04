@@ -7,6 +7,9 @@ export interface GivingRecord {
   _id: string;
   userId: string;
   tx_ref: string;
+  sessionId?: string;
+  orderId?: string;
+  provider?: "jami";
   amount: number;
   reason: string;
   status: string;

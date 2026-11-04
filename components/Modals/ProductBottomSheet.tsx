@@ -6,8 +6,17 @@ import {
 } from "@/types/marketplace.types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ProductBottomSheetProps {
@@ -201,37 +210,92 @@ export const ProductBottomSheet = ({
 
             {/* Action Buttons */}
             <View style={styles.actionSection}>
-              <TouchableOpacity
-                onPress={() => {
-                  onAddToCart(product, quantity);
-                  onClose();
-                }}
+              <View
                 style={[
-                  styles.addToCartBtn,
+                  styles.nativeButtonOuter,
                   {
                     backgroundColor: cardBg,
                     borderColor: borderColor,
+                    borderWidth: 1.5,
                   },
                 ]}
-                activeOpacity={0.8}
               >
-                <Ionicons name="cart-outline" size={22} color={PRIMARY} />
-                <Text style={[styles.addToCartText, { color: textColor }]}>
-                  Add to Cart
-                </Text>
-              </TouchableOpacity>
+                <Pressable
+                  onPress={() => {
+                    if (Platform.OS !== "web") {
+                      Haptics.impactAsync(
+                        Haptics.ImpactFeedbackStyle.Light,
+                      ).catch(() => {});
+                    }
+                    onAddToCart(product, quantity);
+                    onClose();
+                  }}
+                  unstable_pressDelay={0}
+                  accessibilityRole="button"
+                  accessibilityLabel="Add to Cart"
+                  android_ripple={{
+                    color: isDark
+                      ? "rgba(255, 255, 255, 0.12)"
+                      : "rgba(0, 0, 0, 0.08)",
+                    borderless: false,
+                    foreground: true,
+                  }}
+                  style={({ pressed }) => [
+                    styles.nativeButtonInner,
+                    Platform.OS === "ios" &&
+                      pressed && {
+                        opacity: 0.85,
+                        transform: [{ scale: 0.99 }],
+                      },
+                  ]}
+                >
+                  <Ionicons name="cart-outline" size={20} color={PRIMARY} />
+                  <Text style={[styles.addToCartText, { color: textColor }]}>
+                    Add to Cart
+                  </Text>
+                </Pressable>
+              </View>
 
-              <TouchableOpacity
-                onPress={() => {
-                  onBuyNow(product, quantity);
-                  onClose();
-                }}
-                style={styles.buyNowBtn}
-                activeOpacity={0.8}
+              <View
+                style={[
+                  styles.nativeButtonOuter,
+                  {
+                    backgroundColor: PRIMARY,
+                  },
+                  styles.buyNowShadow,
+                ]}
               >
-                <Ionicons name="flash" size={20} color="#FFFFFF" />
-                <Text style={styles.buyNowText}>Buy Now</Text>
-              </TouchableOpacity>
+                <Pressable
+                  onPress={() => {
+                    if (Platform.OS !== "web") {
+                      Haptics.impactAsync(
+                        Haptics.ImpactFeedbackStyle.Light,
+                      ).catch(() => {});
+                    }
+                    onBuyNow(product, quantity);
+                    onClose();
+                  }}
+                  unstable_pressDelay={0}
+                  accessibilityRole="button"
+                  accessibilityLabel="Buy Now"
+                  android_ripple={{
+                    color: "rgba(255, 255, 255, 0.28)",
+                    borderless: false,
+                    foreground: true,
+                  }}
+                  style={({ pressed }) => [
+                    styles.nativeButtonInner,
+                    Platform.OS === "ios" &&
+                      pressed && {
+                        opacity: 0.88,
+                        transform: [{ scale: 0.99 }],
+                      },
+                  ]}
+                >
+                  <Ionicons name="flash" size={18} color="#FFFFFF" />
+                  <Text style={styles.buyNowText}>Buy Now</Text>
+                </Pressable>
+              </View>
             </View>
           </View>
         </View>
@@ -374,34 +438,38 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
   },
-  addToCartBtn: {
+  nativeButtonOuter: {
     flex: 1,
+    borderRadius: 9999,
+    overflow: "hidden",
+  },
+  nativeButtonInner: {
+    width: "100%",
+    minHeight: 52,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 16,
-    borderRadius: 18,
-    borderWidth: 1.5,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 9999,
     gap: 8,
+  },
+  buyNowShadow: {
+    ...Platform.select({
+      ios: {
+        shadowColor: PRIMARY,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   addToCartText: {
     fontSize: 15,
     fontWeight: "800",
-  },
-  buyNowBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    borderRadius: 18,
-    backgroundColor: PRIMARY,
-    gap: 8,
-    elevation: 4,
-    shadowColor: PRIMARY,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
   },
   buyNowText: {
     fontSize: 15,
