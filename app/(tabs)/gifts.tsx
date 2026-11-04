@@ -612,18 +612,31 @@ const Gifts = () => {
                 >
                   Fellowship Store
                 </Text>
-                <TouchableOpacity
-                  onPress={() => router.push("/marketplace" as any)}
-                  activeOpacity={0.7}
+                <Pressable
+                  onPress={() => {
+                    if (Platform.OS !== "web") {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                    }
+                    router.push("/marketplace" as any);
+                  }}
+                  unstable_pressDelay={0}
                   accessibilityRole="button"
                   accessibilityLabel="View all store items"
-                  style={{
+                  android_ripple={{
+                    color: isDark
+                      ? "rgba(255, 255, 255, 0.16)"
+                      : "rgba(0, 0, 0, 0.1)",
+                    borderless: false,
+                    foreground: true,
+                  }}
+                  style={({ pressed }) => ({
                     flexDirection: "row",
                     alignItems: "center",
                     justifyContent: "center",
                     paddingHorizontal: 10,
                     paddingVertical: 4,
                     borderRadius: 9999,
+                    overflow: "hidden",
                     backgroundColor: isDark
                       ? "rgba(255, 255, 255, 0.08)"
                       : "rgba(0, 0, 0, 0.05)",
@@ -631,7 +644,8 @@ const Gifts = () => {
                     borderColor: isDark
                       ? "rgba(255, 255, 255, 0.08)"
                       : "rgba(0, 0, 0, 0.05)",
-                  }}
+                    opacity: Platform.OS === "ios" && pressed ? 0.7 : 1,
+                  })}
                 >
                   <Text
                     style={{
@@ -649,7 +663,7 @@ const Gifts = () => {
                     color={isDark ? "#e2e8f0" : "#334155"}
                     style={{ marginLeft: 3 }}
                   />
-                </TouchableOpacity>
+                </Pressable>
               </View>
 
               <ScrollView
@@ -663,43 +677,73 @@ const Gifts = () => {
                   gap: 8,
                 }}
               >
-                {CATEGORIES.map((cat) => (
-                  <TouchableOpacity
-                    key={cat.value}
-                    onPress={() => setSelectedCategory(cat.value)}
-                    activeOpacity={0.8}
-                    className={`px-5 py-2.5 rounded-full border ${
-                      selectedCategory === cat.value
-                        ? "bg-[#ff6719] border-[#ff6719]"
-                        : isDark
-                          ? "bg-zinc-900 border-zinc-800"
-                          : "bg-white border-zinc-100"
-                    }`}
-                  >
-                    <View className="flex-row items-center gap-1.5">
-                      <Text
-                        className={`text-sm font-bold ${
-                          selectedCategory === cat.value
-                            ? "text-white"
+                {CATEGORIES.map((cat) => {
+                  const isSelected = selectedCategory === cat.value;
+                  return (
+                    <Pressable
+                      key={cat.value}
+                      onPress={() => {
+                        if (Platform.OS !== "web") {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                        }
+                        setSelectedCategory(cat.value);
+                      }}
+                      unstable_pressDelay={0}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
+                      android_ripple={{
+                        color: isSelected
+                          ? "rgba(255, 255, 255, 0.28)"
+                          : isDark
+                            ? "rgba(255, 255, 255, 0.12)"
+                            : "rgba(0, 0, 0, 0.08)",
+                        borderless: false,
+                        foreground: true,
+                      }}
+                      style={({ pressed }) => [
+                        {
+                          paddingHorizontal: 20,
+                          paddingVertical: 10,
+                          borderRadius: 9999,
+                          overflow: "hidden",
+                          borderWidth: 1,
+                          opacity: Platform.OS === "ios" && pressed ? 0.8 : 1,
+                          backgroundColor: isSelected
+                            ? "#ff6719"
                             : isDark
-                              ? "text-zinc-400"
-                              : "text-zinc-600"
-                        }`}
-                      >
-                        {cat.label}
-                      </Text>
-                      {cat.value === "new" && (
-                        <View
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            selectedCategory === "new"
-                              ? "bg-white"
-                              : "bg-primary"
+                              ? "#18181b"
+                              : "#ffffff",
+                          borderColor: isSelected
+                            ? "#ff6719"
+                            : isDark
+                              ? "#27272a"
+                              : "#f4f4f5",
+                        },
+                      ]}
+                    >
+                      <View className="flex-row items-center gap-1.5">
+                        <Text
+                          className={`text-sm font-bold ${
+                            isSelected
+                              ? "text-white"
+                              : isDark
+                                ? "text-zinc-400"
+                                : "text-zinc-600"
                           }`}
-                        />
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                ))}
+                        >
+                          {cat.label}
+                        </Text>
+                        {cat.value === "new" && (
+                          <View
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              isSelected ? "bg-white" : "bg-primary"
+                            }`}
+                          />
+                        )}
+                      </View>
+                    </Pressable>
+                  );
+                })}
               </ScrollView>
 
               {productsLoading && products.length === 0 ? (
