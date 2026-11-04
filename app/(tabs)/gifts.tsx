@@ -1,4 +1,5 @@
 import { MainTabHeader } from "@/components/MainTabHeader";
+import { NativeViewAllButton } from "@/components/NativeViewAllButton";
 import ProductCard from "@/components/Marketplace/ProductCard";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { ProductBottomSheet } from "@/components/Modals/ProductBottomSheet";
@@ -608,62 +609,15 @@ const Gifts = () => {
                   className={`text-lg font-extrabold ${
                     isDark ? "text-white" : "text-gray-900"
                   }`}
-                  style={{ includeFontPadding: false }}
+                  style={{ includeFontPadding: false, flexShrink: 1, marginRight: 8 }}
                 >
                   Fellowship Store
                 </Text>
-                <Pressable
-                  onPress={() => {
-                    if (Platform.OS !== "web") {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                    }
-                    router.push("/marketplace" as any);
-                  }}
-                  unstable_pressDelay={0}
-                  accessibilityRole="button"
+                <NativeViewAllButton
+                  onPress={() => router.push("/marketplace" as any)}
+                  isDark={isDark}
                   accessibilityLabel="View all store items"
-                  android_ripple={{
-                    color: isDark
-                      ? "rgba(255, 255, 255, 0.16)"
-                      : "rgba(0, 0, 0, 0.1)",
-                    borderless: false,
-                    foreground: true,
-                  }}
-                  style={({ pressed }) => ({
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    paddingHorizontal: 10,
-                    paddingVertical: 4,
-                    borderRadius: 9999,
-                    overflow: "hidden",
-                    backgroundColor: isDark
-                      ? "rgba(255, 255, 255, 0.08)"
-                      : "rgba(0, 0, 0, 0.05)",
-                    borderWidth: 1,
-                    borderColor: isDark
-                      ? "rgba(255, 255, 255, 0.08)"
-                      : "rgba(0, 0, 0, 0.05)",
-                    opacity: Platform.OS === "ios" && pressed ? 0.7 : 1,
-                  })}
-                >
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      fontWeight: "700",
-                      color: isDark ? "#e2e8f0" : "#334155",
-                      includeFontPadding: false,
-                    }}
-                  >
-                    View all
-                  </Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={12}
-                    color={isDark ? "#e2e8f0" : "#334155"}
-                    style={{ marginLeft: 3 }}
-                  />
-                </Pressable>
+                />
               </View>
 
               <ScrollView
