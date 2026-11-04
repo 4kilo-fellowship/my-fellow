@@ -20,19 +20,25 @@ import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  LayoutAnimation,
   Platform,
   Pressable,
   ScrollView,
+  type ScrollViewInstance,
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
+import PagerView, {
+  type PagerViewOnPageSelectedEvent,
+} from "react-native-pager-view";
 import * as z from "zod";
 
 type DonationForm = z.infer<typeof donationSchema>;
@@ -65,18 +71,109 @@ const Gifts = () => {
     type: "success" | "error" | "info";
   }>({ visible: false, title: "", message: "", type: "info" });
 
+  const { width: screenWidth } = useWindowDimensions();
+  const pagerRef = useRef<PagerView>(null);
+  const categoryScrollRef = useRef<ScrollViewInstance>(null);
+  const pillLayouts = useRef<{ [key: number]: { x: number; width: number } }>({});
+  const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
+
   const {
     products,
     loading: productsLoading,
     fetchProducts,
-    selectedCategory,
     setSelectedCategory,
     addToCart,
   } = useMarketplaceStore();
 
   useEffect(() => {
-    fetchProducts(true, 6); // Fetch only 6 for the preview
+    setSelectedCategory("All");
+    fetchProducts(true, 30);
   }, []);
+
+  const categoryProductsMap = useMemo(() => {
+    return CATEGORIES.map((cat) => {
+      const filtered = products.filter((p) => {
+        if (cat.value === "All") return true;
+
+        const isRecentlyCreated = () => {
+          if (!p.createdAt) return false;
+          const createdDate = new Date(p.createdAt);
+          const now = new Date();
+          const diffTime = Math.abs(now.getTime() - createdDate.getTime());
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          return diffDays <= 7;
+        };
+
+        if (cat.value === "new") {
+          return p.isNew || isRecentlyCreated();
+        }
+
+        const pCat = p.category?.toLowerCase() || "";
+        const mainCategories = [
+          "t-shirt",
+          "hoddy",
+          "stickers",
+          "accessories",
+        ];
+        if (cat.value === "others") {
+          return !mainCategories.includes(pCat);
+        }
+        return pCat === cat.value.toLowerCase();
+      });
+
+      return {
+        cat,
+        items: filtered.slice(0, 4),
+        totalCount: filtered.length,
+      };
+    });
+  }, [products]);
+
+  const activeCategoryData =
+    categoryProductsMap[activeCategoryIndex] || categoryProductsMap[0];
+  const activeItemsCount = activeCategoryData?.items.length ?? 0;
+  const pagerHeight =
+    productsLoading && products.length === 0
+      ? 220
+      : activeItemsCount === 0
+      ? 200
+      : activeItemsCount <= 2
+      ? 310
+      : 600;
+
+  const scrollToCategoryPill = (index: number) => {
+    const layout = pillLayouts.current[index];
+    if (layout && categoryScrollRef.current) {
+      const targetX = Math.max(
+        0,
+        layout.x - screenWidth / 2 + layout.width / 2,
+      );
+      categoryScrollRef.current.scrollTo({ x: targetX, animated: true });
+    }
+  };
+
+  const handleSelectCategory = (index: number) => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
+    if (Platform.OS === "ios" || Platform.OS === "android") {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    }
+    setActiveCategoryIndex(index);
+    pagerRef.current?.setPage(index);
+    scrollToCategoryPill(index);
+  };
+
+  const handlePageSelected = (e: PagerViewOnPageSelectedEvent) => {
+    const index = e.nativeEvent.position;
+    if (index !== activeCategoryIndex) {
+      if (Platform.OS === "ios" || Platform.OS === "android") {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      }
+      setActiveCategoryIndex(index);
+      scrollToCategoryPill(index);
+    }
+  };
 
   const showInfoModal = (
     title: string,
@@ -621,181 +718,166 @@ const Gifts = () => {
               </View>
 
               <ScrollView
+                ref={categoryScrollRef}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 overScrollMode="never"
                 bounces={true}
-                className="mb-2"
+                className="mb-3"
                 contentContainerStyle={{
                   paddingHorizontal: 20,
                   gap: 8,
                 }}
               >
-                {CATEGORIES.map((cat) => {
-                  const isSelected = selectedCategory === cat.value;
+                {CATEGORIES.map((cat, index) => {
+                  const isSelected = activeCategoryIndex === index;
                   return (
-                    <Pressable
+                    <View
                       key={cat.value}
-                      onPress={() => {
-                        if (Platform.OS !== "web") {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                        }
-                        setSelectedCategory(cat.value);
+                      onLayout={(e) => {
+                        pillLayouts.current[index] = {
+                          x: e.nativeEvent.layout.x,
+                          width: e.nativeEvent.layout.width,
+                        };
                       }}
-                      unstable_pressDelay={0}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: isSelected }}
-                      android_ripple={{
-                        color: isSelected
-                          ? "rgba(255, 255, 255, 0.28)"
-                          : isDark
-                            ? "rgba(255, 255, 255, 0.12)"
-                            : "rgba(0, 0, 0, 0.08)",
-                        borderless: false,
-                        foreground: true,
-                      }}
-                      style={({ pressed }) => [
-                        {
-                          paddingHorizontal: 20,
-                          paddingVertical: 10,
-                          borderRadius: 9999,
-                          overflow: "hidden",
-                          borderWidth: 1,
-                          opacity: Platform.OS === "ios" && pressed ? 0.8 : 1,
-                          backgroundColor: isSelected
-                            ? "#ff6719"
-                            : isDark
-                              ? "#18181b"
-                              : "#ffffff",
-                          borderColor: isSelected
-                            ? "#ff6719"
-                            : isDark
-                              ? "#27272a"
-                              : "#f4f4f5",
-                        },
-                      ]}
                     >
-                      <View className="flex-row items-center gap-1.5">
-                        <Text
-                          className={`text-sm font-bold ${
-                            isSelected
-                              ? "text-white"
+                      <Pressable
+                        onPress={() => handleSelectCategory(index)}
+                        unstable_pressDelay={0}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: isSelected }}
+                        android_ripple={{
+                          color: isSelected
+                            ? "rgba(255, 255, 255, 0.28)"
+                            : isDark
+                              ? "rgba(255, 255, 255, 0.12)"
+                              : "rgba(0, 0, 0, 0.08)",
+                          borderless: false,
+                          foreground: true,
+                        }}
+                        style={({ pressed }) => [
+                          {
+                            paddingHorizontal: 18,
+                            paddingVertical: 8,
+                            borderRadius: 9999,
+                            overflow: "hidden",
+                            borderWidth: 1,
+                            opacity: Platform.OS === "ios" && pressed ? 0.8 : 1,
+                            backgroundColor: isSelected
+                              ? "#ff6719"
                               : isDark
-                                ? "text-zinc-400"
-                                : "text-zinc-600"
-                          }`}
-                        >
-                          {cat.label}
-                        </Text>
-                        {cat.value === "new" && (
-                          <View
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              isSelected ? "bg-white" : "bg-primary"
+                                ? "#18181b"
+                                : "#ffffff",
+                            borderColor: isSelected
+                              ? "#ff6719"
+                              : isDark
+                                ? "#27272a"
+                                : "#f4f4f5",
+                          },
+                        ]}
+                      >
+                        <View className="flex-row items-center gap-1.5">
+                          <Text
+                            className={`text-sm font-bold ${
+                              isSelected
+                                ? "text-white"
+                                : isDark
+                                  ? "text-zinc-400"
+                                  : "text-zinc-600"
                             }`}
-                          />
-                        )}
-                      </View>
-                    </Pressable>
+                          >
+                            {cat.label}
+                          </Text>
+                          {cat.value === "new" && (
+                            <View
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                isSelected ? "bg-white" : "bg-primary"
+                              }`}
+                            />
+                          )}
+                        </View>
+                      </Pressable>
+                    </View>
                   );
                 })}
               </ScrollView>
 
               {productsLoading && products.length === 0 ? (
-                <View className="py-6 items-center">
+                <View className="py-12 items-center justify-center">
                   <ActivityIndicator color="#ff6719" />
+                  <Text
+                    className={`text-xs mt-3 font-medium ${
+                      isDark ? "text-zinc-500" : "text-zinc-400"
+                    }`}
+                  >
+                    Loading store items...
+                  </Text>
                 </View>
               ) : (
-                <View className="px-3 flex-row flex-wrap">
-                  {products
-                    .filter((p) => {
-                      if (selectedCategory === "All") return true;
-
-                      const isRecentlyCreated = () => {
-                        if (!p.createdAt) return false;
-                        const createdDate = new Date(p.createdAt);
-                        const now = new Date();
-                        const diffTime = Math.abs(
-                          now.getTime() - createdDate.getTime(),
-                        );
-                        const diffDays = Math.ceil(
-                          diffTime / (1000 * 60 * 60 * 24),
-                        );
-                        return diffDays <= 7;
-                      };
-
-                      if (selectedCategory === "new") {
-                        return p.isNew || isRecentlyCreated();
-                      }
-
-                      const cat = p.category?.toLowerCase() || "";
-                      const mainCategories = [
-                        "t-shirt",
-                        "hoddy",
-                        "stickers",
-                        "accessories",
-                      ];
-                      if (selectedCategory === "others") {
-                        return !mainCategories.includes(cat);
-                      }
-                      return cat === selectedCategory.toLowerCase();
-                    })
-                    .slice(0, 6)
-                    .map((item) => (
-                      <View key={item.id} style={{ width: "50%" }}>
-                        <ProductCard
-                          product={item}
-                          isDark={isDark}
-                          onPress={() =>
-                            router.push(`/marketplace/${item.id}` as any)
-                          }
-                          onBuy={() => {
-                            setSelectedProduct(item);
-                            setBottomSheetVisible(true);
-                          }}
-                        />
-                      </View>
-                    ))}
-                  {products.filter((p) => {
-                    if (selectedCategory === "All") return true;
-
-                    const isRecentlyCreated = () => {
-                      if (!p.createdAt) return false;
-                      const createdDate = new Date(p.createdAt);
-                      const now = new Date();
-                      const diffTime = Math.abs(
-                        now.getTime() - createdDate.getTime(),
-                      );
-                      const diffDays = Math.ceil(
-                        diffTime / (1000 * 60 * 60 * 24),
-                      );
-                      return diffDays <= 7;
-                    };
-
-                    if (selectedCategory === "new") {
-                      return p.isNew || isRecentlyCreated();
-                    }
-
-                    const cat = p.category?.toLowerCase() || "";
-                    const mainCategories = [
-                      "t-shirt",
-                      "hoddy",
-                      "stickers",
-                      "accessories",
-                    ];
-                    if (selectedCategory === "others") {
-                      return !mainCategories.includes(cat);
-                    }
-                    return cat === selectedCategory.toLowerCase();
-                  }).length === 0 && (
-                    <View className="px-5 py-6 w-full">
-                      <Text
-                        className={`text-sm italic ${isDark ? "text-zinc-500" : "text-zinc-400"}`}
-                      >
-                        No items found in this category.
-                      </Text>
+                <PagerView
+                  ref={pagerRef}
+                  initialPage={0}
+                  onPageSelected={handlePageSelected}
+                  style={{ width: "100%", height: pagerHeight }}
+                >
+                  {categoryProductsMap.map(({ cat, items }) => (
+                    <View key={cat.value} style={{ width: "100%" }}>
+                      {items.length === 0 ? (
+                        <View className="py-10 px-6 items-center justify-center">
+                          <View
+                            className={`w-14 h-14 rounded-full items-center justify-center mb-3 ${
+                              isDark ? "bg-zinc-800" : "bg-orange-50"
+                            }`}
+                          >
+                            <Ionicons
+                              name={
+                                cat.value === "t-shirt"
+                                  ? "shirt-outline"
+                                  : cat.value === "stickers"
+                                  ? "pricetag-outline"
+                                  : "bag-handle-outline"
+                              }
+                              size={26}
+                              color="#ff6719"
+                            />
+                          </View>
+                          <Text
+                            className={`text-sm font-bold ${
+                              isDark ? "text-zinc-200" : "text-zinc-800"
+                            }`}
+                          >
+                            No {cat.label} available yet
+                          </Text>
+                          <Text
+                            className={`text-xs text-center mt-1 max-w-[220px] ${
+                              isDark ? "text-zinc-500" : "text-zinc-400"
+                            }`}
+                          >
+                            New fellowship items are added regularly. Check back soon!
+                          </Text>
+                        </View>
+                      ) : (
+                        <View className="px-3 flex-row flex-wrap">
+                          {items.map((item) => (
+                            <View key={item.id} style={{ width: "50%" }}>
+                              <ProductCard
+                                product={item}
+                                isDark={isDark}
+                                onPress={() =>
+                                  router.push(`/marketplace/${item.id}` as any)
+                                }
+                                onBuy={() => {
+                                  setSelectedProduct(item);
+                                  setBottomSheetVisible(true);
+                                }}
+                              />
+                            </View>
+                          ))}
+                        </View>
+                      )}
                     </View>
-                  )}
-                </View>
+                  ))}
+                </PagerView>
               )}
             </View>
           </ScrollView>
