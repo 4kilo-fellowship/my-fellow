@@ -620,24 +620,24 @@ const Gifts = () => {
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    height: 28,
+                    justifyContent: "center",
                     paddingHorizontal: 10,
-                    borderRadius: 14,
+                    paddingVertical: 4,
+                    borderRadius: 9999,
+                    backgroundColor: isDark
+                      ? "rgba(255, 255, 255, 0.08)"
+                      : "rgba(0, 0, 0, 0.05)",
                     borderWidth: 1,
                     borderColor: isDark
-                      ? "rgba(255, 255, 255, 0.14)"
-                      : "rgba(0, 0, 0, 0.08)",
-                    backgroundColor: isDark
-                      ? "rgba(255, 255, 255, 0.06)"
-                      : "#f4f4f5",
+                      ? "rgba(255, 255, 255, 0.08)"
+                      : "rgba(0, 0, 0, 0.05)",
                   }}
                 >
                   <Text
                     style={{
                       fontSize: 12,
-                      fontWeight: "600",
-                      letterSpacing: -0.1,
-                      color: isDark ? "#ffffff" : "#09090b",
+                      fontWeight: "700",
+                      color: isDark ? "#e2e8f0" : "#334155",
                       includeFontPadding: false,
                     }}
                   >
@@ -645,8 +645,8 @@ const Gifts = () => {
                   </Text>
                   <Ionicons
                     name="chevron-forward"
-                    size={13}
-                    color={isDark ? "#a1a1aa" : "#71717a"}
+                    size={12}
+                    color={isDark ? "#e2e8f0" : "#334155"}
                     style={{ marginLeft: 3 }}
                   />
                 </TouchableOpacity>
