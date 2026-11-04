@@ -29,13 +29,13 @@ export const NativeViewAllButton: React.FC<NativeViewAllButtonProps> = ({
   };
 
   const borderColor = isDark
-    ? "rgba(255, 255, 255, 0.14)"
-    : "rgba(0, 0, 0, 0.1)";
+    ? "rgba(255, 255, 255, 0.08)"
+    : "rgba(0, 0, 0, 0.06)";
   const pillBg = isDark
     ? "rgba(255, 255, 255, 0.08)"
-    : "#f4f4f5";
-  const textColor = isDark ? "#ffffff" : "#18181b";
-  const chevronColor = isDark ? "#a1a1aa" : "#52525b";
+    : "rgba(0, 0, 0, 0.05)";
+  const textColor = isDark ? "#e2e8f0" : "#334155";
+  const chevronColor = isDark ? "#94a3b8" : "#64748b";
   const rippleColor = isDark
     ? "rgba(255, 255, 255, 0.12)"
     : "rgba(0, 0, 0, 0.08)";
@@ -59,7 +59,7 @@ export const NativeViewAllButton: React.FC<NativeViewAllButtonProps> = ({
           </Text>
           <Ionicons
             name="chevron-forward"
-            size={13}
+            size={12}
             color={chevronColor}
             style={styles.chevronIcon}
           />
@@ -71,8 +71,7 @@ export const NativeViewAllButton: React.FC<NativeViewAllButtonProps> = ({
 
 const styles = StyleSheet.create({
   outerContainer: {
-    height: 30,
-    borderRadius: 15,
+    borderRadius: 9999,
     borderWidth: 1,
     overflow: "hidden",
     alignSelf: "center",
@@ -81,9 +80,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   pressableInner: {
-    width: "100%",
-    height: "100%",
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     alignItems: "center",
     justifyContent: "center",
   },
