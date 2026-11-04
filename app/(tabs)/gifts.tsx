@@ -602,9 +602,13 @@ const Gifts = () => {
 
             {/* FELLOWSHIP STORE SECTION */}
             <View className="mb-12">
-              <View className="px-5 mb-5 flex-row items-end justify-between">
+              <View className="px-5 mb-5 flex-row items-center justify-between">
                 <Text
-                  className={`text-[22px] font-black tracking-tight ${isDark ? "text-white" : "text-zinc-900"}`}
+                  numberOfLines={1}
+                  className={`text-lg font-extrabold ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                  style={{ includeFontPadding: false }}
                 >
                   Fellowship Store
                 </Text>
