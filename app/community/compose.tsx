@@ -187,16 +187,11 @@ export default function ComposePostScreen() {
           disabled={!hasContent || submitting}
           accessibilityRole="button"
           accessibilityLabel="Publish post"
-          android_ripple={
-            hasContent && !submitting
-              ? {
-                  color: "rgba(255, 255, 255, 0.28)",
-                  borderless: false,
-                  foreground: true,
-                }
-              : undefined
-          }
-          style={({ pressed }) => [
+          android_ripple={{
+            color: "rgba(255, 255, 255, 0.3)",
+            borderless: false,
+          }}
+          style={[
             styles.postBtn,
             {
               backgroundColor: hasContent
@@ -205,7 +200,6 @@ export default function ComposePostScreen() {
                   ? "rgba(255, 103, 25, 0.35)"
                   : "rgba(255, 103, 25, 0.45)",
             },
-            Platform.OS === "ios" && pressed && hasContent && { opacity: 0.85 },
           ]}
         >
           {submitting ? (
@@ -524,7 +518,6 @@ const styles = StyleSheet.create({
     minWidth: 68,
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
   },
   postBtnText: {
     color: "#ffffff",
