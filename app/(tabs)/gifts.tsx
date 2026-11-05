@@ -21,7 +21,7 @@ import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
@@ -29,6 +29,7 @@ import {
   LayoutAnimation,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -66,6 +67,9 @@ const Gifts = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
   const [reasonModalVisible, setReasonModalVisible] = useState(false);
+  const [isAmountFocused, setIsAmountFocused] = useState(false);
+  const [isEmailFocused, setIsEmailFocused] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [pendingDonationData, setPendingDonationData] =
     useState<DonationForm | null>(null);
 
@@ -89,8 +93,8 @@ const Gifts = () => {
 
   useEffect(() => {
     setSelectedCategory("All");
-    fetchProducts(true, 30);
-  }, []);
+    fetchProducts(true, 50, "All");
+  }, [fetchProducts, setSelectedCategory]);
 
   const categoryProductsMap = useMemo(() => {
     return CATEGORIES.reduce<
@@ -180,12 +184,28 @@ const Gifts = () => {
   const activeItemsCount = activeCategoryData?.items.length ?? 0;
   const storeTabViewHeight =
     productsLoading && products.length === 0
-      ? 260
+      ? 580
       : activeItemsCount === 0
       ? 280
       : activeItemsCount <= 2
       ? 340
       : 580;
+
+  const { user } = useUserStore();
+  const { txRef, setTxRef, totalGivingsAmount, fetchMyGivings } =
+    usePaymentStore();
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        fetchMyGivings(),
+        fetchProducts(true, 50, "All"),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchMyGivings, fetchProducts]);
 
   const handleTabChange = (index: number) => {
     if (Platform.OS !== "web") {
@@ -204,10 +224,6 @@ const Gifts = () => {
   ) => {
     setInfoModal({ visible: true, title, message, type });
   };
-
-  const { user } = useUserStore();
-  const { txRef, setTxRef, totalGivingsAmount, fetchMyGivings } =
-    usePaymentStore();
 
   useEffect(() => {
     fetchMyGivings();
@@ -522,6 +538,14 @@ const Gifts = () => {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 140 }}
             keyboardShouldPersistTaps="handled"
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={PRIMARY}
+                colors={[PRIMARY]}
+              />
+            }
           >
             {/* donation header section */}
             <View className="px-5 mb-10 pt-4 items-center">
@@ -649,19 +673,29 @@ const Gifts = () => {
                             paddingHorizontal: 16,
                             gap: 10,
                             borderRadius: 16,
-                            borderWidth: 1,
+                            borderWidth: isAmountFocused ? 1.5 : 1,
                             borderColor: errors.amount
                               ? "#ef4444"
-                              : isDark
-                                ? "#27272a"
-                                : "#e4e4e7",
+                              : isAmountFocused
+                                ? PRIMARY
+                                : isDark
+                                  ? "#27272a"
+                                  : "#e4e4e7",
                             backgroundColor: isDark ? "#18181b" : "#fafafa",
                           }}
                         >
                           <Ionicons
                             name="cash-outline"
                             size={20}
-                            color={isDark ? "#71717a" : "#a1a1aa"}
+                            color={
+                              errors.amount
+                                ? "#ef4444"
+                                : isAmountFocused
+                                  ? PRIMARY
+                                  : isDark
+                                    ? "#71717a"
+                                    : "#a1a1aa"
+                            }
                           />
                           <TextInput
                             style={{
@@ -676,11 +710,29 @@ const Gifts = () => {
                             placeholderTextColor={
                               isDark ? "#52525b" : "#a1a1aa"
                             }
+                            selectionColor={PRIMARY}
                             keyboardType="numeric"
-                            onBlur={onBlur}
+                            onFocus={() => setIsAmountFocused(true)}
+                            onBlur={() => {
+                              setIsAmountFocused(false);
+                              onBlur();
+                              if (value) {
+                                AsyncStorage.setItem(
+                                  "last_donation_amount",
+                                  String(value),
+                                ).catch(() => {});
+                              }
+                            }}
                             onChangeText={(text) => {
                               const num = parseFloat(text);
-                              onChange(isNaN(num) ? 0 : num);
+                              const finalVal = isNaN(num) ? 0 : num;
+                              onChange(finalVal);
+                              if (text) {
+                                AsyncStorage.setItem(
+                                  "last_donation_amount",
+                                  text,
+                                ).catch(() => {});
+                              }
                             }}
                             value={value === 0 ? "" : value.toString()}
                           />
@@ -688,7 +740,11 @@ const Gifts = () => {
                             style={{
                               fontSize: 14,
                               fontWeight: "700",
-                              color: isDark ? "#71717a" : "#a1a1aa",
+                              color: isAmountFocused
+                                ? PRIMARY
+                                : isDark
+                                  ? "#71717a"
+                                  : "#a1a1aa",
                             }}
                           >
                             ETB
@@ -723,19 +779,29 @@ const Gifts = () => {
                             paddingHorizontal: 16,
                             gap: 10,
                             borderRadius: 16,
-                            borderWidth: 1,
+                            borderWidth: isEmailFocused ? 1.5 : 1,
                             borderColor: errors.email
                               ? "#ef4444"
-                              : isDark
-                                ? "#27272a"
-                                : "#e4e4e7",
+                              : isEmailFocused
+                                ? PRIMARY
+                                : isDark
+                                  ? "#27272a"
+                                  : "#e4e4e7",
                             backgroundColor: isDark ? "#18181b" : "#fafafa",
                           }}
                         >
                           <Ionicons
                             name="mail-outline"
                             size={20}
-                            color={isDark ? "#71717a" : "#a1a1aa"}
+                            color={
+                              errors.email
+                                ? "#ef4444"
+                                : isEmailFocused
+                                  ? PRIMARY
+                                  : isDark
+                                    ? "#71717a"
+                                    : "#a1a1aa"
+                            }
                           />
                           <TextInput
                             style={{
@@ -750,11 +816,30 @@ const Gifts = () => {
                             placeholderTextColor={
                               isDark ? "#52525b" : "#a1a1aa"
                             }
+                            selectionColor={PRIMARY}
                             keyboardType="email-address"
                             autoCapitalize="none"
                             autoCorrect={false}
-                            onBlur={onBlur}
-                            onChangeText={onChange}
+                            onFocus={() => setIsEmailFocused(true)}
+                            onBlur={() => {
+                              setIsEmailFocused(false);
+                              onBlur();
+                              if (value) {
+                                AsyncStorage.setItem(
+                                  "last_donation_email",
+                                  value,
+                                ).catch(() => {});
+                              }
+                            }}
+                            onChangeText={(text) => {
+                              onChange(text);
+                              if (text) {
+                                AsyncStorage.setItem(
+                                  "last_donation_email",
+                                  text,
+                                ).catch(() => {});
+                              }
+                            }}
                             value={value}
                           />
                         </View>

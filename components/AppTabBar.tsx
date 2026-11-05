@@ -9,6 +9,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   Dimensions,
   Image,
+  Keyboard,
   LayoutChangeEvent,
   Platform,
   Pressable,
@@ -229,6 +230,24 @@ export default function AppTabBar(props: any) {
     }
   }, []);
 
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      () => setIsKeyboardVisible(true),
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setIsKeyboardVisible(false),
+    );
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
   const currentIndex = state?.index ?? 0;
 
   // Compute initial position for the sliding active indicator
@@ -255,7 +274,7 @@ export default function AppTabBar(props: any) {
     transform: [{ translateX: translateX.value }],
   }));
 
-  if (!state || !routes.length) {
+  if (isKeyboardVisible || !state || !routes.length) {
     return null;
   }
 

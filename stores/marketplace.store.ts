@@ -46,7 +46,11 @@ type MarketplaceState = {
   error: string | null;
 
   // Product actions
-  fetchProducts: (reset?: boolean, limit?: number) => Promise<void>;
+  fetchProducts: (
+    reset?: boolean,
+    limit?: number,
+    categoryOverride?: string,
+  ) => Promise<void>;
   fetchProductById: (id: string) => Promise<void>;
   loadMore: () => Promise<void>;
   setSelectedCategory: (category: string) => void;
@@ -101,7 +105,11 @@ export const useMarketplaceStore = create<MarketplaceState>()(
 
       error: null,
 
-      fetchProducts: async (reset = false, limit = 20) => {
+      fetchProducts: async (
+        reset = false,
+        limit = 20,
+        categoryOverride?: string,
+      ) => {
         const currentPage = reset ? 1 : get().page;
         set({
           loading: reset ? true : get().loading,
@@ -110,10 +118,14 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         });
 
         try {
+          const categoryToFetch =
+            categoryOverride !== undefined
+              ? categoryOverride
+              : get().selectedCategory;
           const response = await fetchProductsApi(
             currentPage,
             limit,
-            get().selectedCategory,
+            categoryToFetch,
           );
           const newProducts = response.data?.products || [];
           const pagination = response.data?.pagination;

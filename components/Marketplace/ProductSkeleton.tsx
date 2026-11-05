@@ -45,7 +45,7 @@ const SkeletonBox = ({
           width: width as any,
           height,
           borderRadius,
-          backgroundColor: isDark ? "#3f3f46" : "#e4e4e7",
+          backgroundColor: isDark ? "#2c2c2e" : "#f0f2f5",
         },
         animatedStyle,
         style,
@@ -66,26 +66,29 @@ const ProductSkeleton = ({ isDark }: ProductSkeletonProps) => {
         <SkeletonBox
           width="75%"
           height={14}
+          borderRadius={6}
           isDark={isDark}
           style={{ marginBottom: 8 }}
         />
         <SkeletonBox
           width="100%"
           height={10}
+          borderRadius={4}
           isDark={isDark}
           style={{ marginBottom: 4 }}
         />
         <SkeletonBox
           width="60%"
           height={10}
+          borderRadius={4}
           isDark={isDark}
           style={{ marginBottom: 12 }}
         />
         <View style={styles.footer}>
-          <SkeletonBox width={70} height={16} isDark={isDark} />
+          <SkeletonBox width={70} height={16} borderRadius={6} isDark={isDark} />
           <SkeletonBox
-            width={32}
-            height={32}
+            width={34}
+            height={34}
             borderRadius={10}
             isDark={isDark}
           />
@@ -98,18 +101,19 @@ const ProductSkeleton = ({ isDark }: ProductSkeletonProps) => {
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    margin: 6,
-    borderRadius: 20,
-    borderWidth: 1,
+    marginVertical: 8,
+    marginHorizontal: 4,
+    borderRadius: 24,
+    borderWidth: 1.5,
     overflow: "hidden",
   },
   cardLight: {
     backgroundColor: "#fff",
-    borderColor: "#f4f4f5",
+    borderColor: "#f1f1f1",
   },
   cardDark: {
-    backgroundColor: "#262626",
-    borderColor: "#3f3f46",
+    backgroundColor: "#1c1c1e",
+    borderColor: "#2c2c2e",
   },
   content: {
     padding: 12,
