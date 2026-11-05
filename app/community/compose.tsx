@@ -1,4 +1,5 @@
 import { PRIMARY } from "@/constants";
+import { AppBottomSheet } from "@/components/AppBottomSheet";
 import { useConfirmUnsavedChanges } from "@/hooks/useConfirmUnsavedChanges";
 import { useTheme } from "@/context/ThemeContext";
 import { useCommunityStore } from "@/stores/community.store";
@@ -16,7 +17,6 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -271,15 +271,15 @@ export default function ComposePostScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Switch author identity"
                     android_ripple={{
-                      color: isDark ? "rgba(255, 103, 25, 0.2)" : "rgba(255, 103, 25, 0.12)",
+                      color: isDark ? "rgba(255, 103, 25, 0.25)" : "rgba(255, 103, 25, 0.16)",
                       borderless: false,
-                      radius: 14,
                     }}
-                    style={[
+                    style={({ pressed }) => [
                       styles.actorPill,
                       {
-                        borderColor: isDark ? "rgba(255, 103, 25, 0.45)" : "#fed7aa",
+                        borderColor: isDark ? "rgba(255, 103, 25, 0.5)" : "#fed7aa",
                         backgroundColor: isDark ? "rgba(255, 103, 25, 0.15)" : "#fff7ed",
+                        opacity: pressed ? (Platform.OS === "ios" ? 0.75 : 0.95) : 1,
                       },
                     ]}
                   >
@@ -291,29 +291,23 @@ export default function ComposePostScreen() {
                   </Pressable>
                 )}
 
-                {/* Audience Pill */}
-                <Pressable
-                  onPress={showComingSoonToast}
-                  accessibilityRole="button"
-                  accessibilityLabel="Audience selector, coming soon"
-                  android_ripple={{
-                    color: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
-                    borderless: false,
-                    radius: 14,
-                  }}
+                {/* Audience Pill (Disabled, Static, No Ripple) */}
+                <View
+                  accessibilityRole="text"
+                  accessibilityLabel="Audience: Everyone"
                   style={[
                     styles.audiencePill,
                     {
-                      borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#cbd5e1",
-                      backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#f1f5f9",
+                      borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0",
+                      backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
                     },
                   ]}
                 >
+                  <Ionicons name="globe-outline" size={12} color={mutedColor} />
                   <Text style={[styles.audienceText, { color: mutedColor }]}>
                     {currentAudienceObj.label}
                   </Text>
-                  <Ionicons name="chevron-down" size={12} color={mutedColor} />
-                </Pressable>
+                </View>
               </View>
             </View>
           </View>
@@ -557,123 +551,139 @@ export default function ComposePostScreen() {
         </View>
       </KeyboardAvoidingView>
 
-      {/* Designer-grade Actor Selection Modal */}
-      <Modal
+      {/* Native Actor Selection Bottom Sheet */}
+      <AppBottomSheet
         visible={actorPickerVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setActorPickerVisible(false)}
+        onClose={() => setActorPickerVisible(false)}
+        isDark={isDark}
+        snapPoints={["half", "full"]}
       >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setActorPickerVisible(false)}
+        <View style={styles.sheetHeader}>
+          <Text style={[styles.sheetTitle, { color: textColor }]}>Post Reflection As</Text>
+          <Text style={[styles.sheetSubtitle, { color: mutedColor }]}>
+            Select your personal voice, fellowship team, or official account
+          </Text>
+        </View>
+
+        <ScrollView
+          style={styles.actorList}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 24 }}
         >
-          <Pressable
-            style={[
-              styles.modalSheet,
-              {
-                backgroundColor: isDark ? "#18181b" : "#ffffff",
-                borderColor: borderColor,
-              },
-            ]}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <View style={styles.modalHeader}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.modalTitle, { color: textColor }]}>Post Reflection As</Text>
-                <Text style={[styles.modalSubtitle, { color: mutedColor }]}>
-                  Select your personal identity, fellowship team, or official voice
-                </Text>
-              </View>
+          {postableActors.map((actor) => {
+            const isSelected =
+              selectedActor?.id === actor.id ||
+              (!selectedActor && actor.id === "me");
+            const isOfficial = actor.type === "official";
+            const isTeam = actor.type === "team";
+
+            return (
               <Pressable
-                onPress={() => setActorPickerVisible(false)}
-                hitSlop={8}
-                style={styles.modalCloseBtn}
+                key={actor.id}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+                  setSelectedActor(actor);
+                  setActorPickerVisible(false);
+                }}
+                android_ripple={{
+                  color: isDark ? "rgba(255, 103, 25, 0.25)" : "rgba(255, 103, 25, 0.15)",
+                  borderless: false,
+                }}
+                style={({ pressed }) => [
+                  styles.actorOption,
+                  {
+                    borderColor: isSelected ? PRIMARY : borderColor,
+                    backgroundColor: isSelected
+                      ? isDark
+                        ? "rgba(255, 103, 25, 0.15)"
+                        : "#fff7ed"
+                      : isDark
+                        ? "#27272a"
+                        : "#f8fafc",
+                    opacity: pressed ? (Platform.OS === "ios" ? 0.75 : 0.95) : 1,
+                  },
+                ]}
               >
-                <Ionicons name="close" size={20} color={textColor} />
-              </Pressable>
-            </View>
-
-            <ScrollView style={styles.actorList} showsVerticalScrollIndicator={false}>
-              {postableActors.map((actor) => {
-                const isSelected =
-                  selectedActor?.id === actor.id ||
-                  (!selectedActor && actor.id === "me");
-                const isOfficial = actor.type === "official";
-                const isTeam = actor.type === "team";
-
-                return (
-                  <Pressable
-                    key={actor.id}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-                      setSelectedActor(actor);
-                      setActorPickerVisible(false);
-                    }}
-                    style={[
-                      styles.actorOption,
-                      {
-                        borderColor: isSelected ? PRIMARY : borderColor,
-                        backgroundColor: isSelected
-                          ? isDark
-                            ? "rgba(255, 103, 25, 0.15)"
-                            : "#fff7ed"
-                          : isDark
-                            ? "#27272a"
-                            : "#f8fafc",
-                      },
-                    ]}
-                  >
-                    <ExpoImage
-                      source={{ uri: actor.avatarUrl || userAvatar }}
-                      style={styles.actorOptionAvatar}
-                      contentFit="cover"
-                    />
-                    <View style={styles.actorOptionTextCol}>
-                      <View style={styles.actorOptionNameRow}>
+                <ExpoImage
+                  source={{ uri: actor.avatarUrl || userAvatar }}
+                  style={styles.actorOptionAvatar}
+                  contentFit="cover"
+                />
+                <View style={styles.actorOptionTextCol}>
+                  <View style={styles.actorOptionNameRow}>
+                    <Text
+                      style={[
+                        styles.actorOptionName,
+                        { color: textColor, fontWeight: isSelected ? "700" : "600" },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {actor.displayName}
+                    </Text>
+                    {actor.isVerified && (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={14}
+                        color={PRIMARY}
+                        style={{ marginLeft: 4 }}
+                      />
+                    )}
+                    {isOfficial && (
+                      <View
+                        style={[
+                          styles.actorPillBadge,
+                          {
+                            backgroundColor: isDark
+                              ? "rgba(255, 103, 25, 0.25)"
+                              : "#ffedd5",
+                          },
+                        ]}
+                      >
                         <Text
                           style={[
-                            styles.actorOptionName,
-                            { color: textColor, fontWeight: isSelected ? "700" : "600" },
+                            styles.actorPillBadgeText,
+                            { color: PRIMARY },
                           ]}
-                          numberOfLines={1}
                         >
-                          {actor.displayName}
+                          OFFICIAL
                         </Text>
-                        {actor.isVerified && (
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={14}
-                            color={PRIMARY}
-                            style={{ marginLeft: 4 }}
-                          />
-                        )}
-                        {isOfficial && (
-                          <View style={[styles.actorPillBadge, { backgroundColor: isDark ? "rgba(255, 103, 25, 0.25)" : "#ffedd5" }]}>
-                            <Text style={[styles.actorPillBadgeText, { color: PRIMARY }]}>OFFICIAL</Text>
-                          </View>
-                        )}
-                        {isTeam && (
-                          <View style={[styles.actorPillBadge, { backgroundColor: isDark ? "rgba(59, 130, 246, 0.25)" : "#dbeafe" }]}>
-                            <Text style={[styles.actorPillBadgeText, { color: "#3b82f6" }]}>TEAM</Text>
-                          </View>
-                        )}
                       </View>
-                      <Text style={[styles.actorOptionHandle, { color: mutedColor }]}>
-                        @{actor.handle.replace(/^@/, "")}
-                      </Text>
-                    </View>
-
-                    {isSelected && (
-                      <Ionicons name="checkmark-circle" size={22} color={PRIMARY} />
                     )}
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
+                    {isTeam && (
+                      <View
+                        style={[
+                          styles.actorPillBadge,
+                          {
+                            backgroundColor: isDark
+                              ? "rgba(59, 130, 246, 0.25)"
+                              : "#dbeafe",
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.actorPillBadgeText,
+                            { color: "#3b82f6" },
+                          ]}
+                        >
+                          TEAM
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={[styles.actorOptionHandle, { color: mutedColor }]}>
+                    @{actor.handle.replace(/^@/, "")}
+                  </Text>
+                </View>
+
+                {isSelected && (
+                  <Ionicons name="checkmark-circle" size={22} color={PRIMARY} />
+                )}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </AppBottomSheet>
     </SafeAreaView>
   );
 }
@@ -765,10 +775,11 @@ const styles = StyleSheet.create({
   actorPill: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 14,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderRadius: 16,
     borderWidth: 1,
+    overflow: "hidden",
     gap: 4,
   },
   actorPillText: {
@@ -782,7 +793,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 14,
     borderWidth: 1,
     gap: 4,
@@ -885,40 +896,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "flex-end",
-  },
-  modalSheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    paddingTop: 16,
-    paddingBottom: 36,
-    paddingHorizontal: 20,
-    maxHeight: "80%",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingBottom: 16,
+  sheetHeader: {
+    paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(150,150,150,0.2)",
-    marginBottom: 12,
+    borderBottomColor: "rgba(150, 150, 150, 0.2)",
+    marginBottom: 8,
   },
-  modalTitle: {
+  sheetTitle: {
     fontSize: 18,
     fontWeight: "800",
   },
-  modalSubtitle: {
+  sheetSubtitle: {
     fontSize: 12,
     marginTop: 2,
-  },
-  modalCloseBtn: {
-    padding: 6,
   },
   actorList: {
     marginTop: 6,
@@ -930,6 +920,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1.5,
     marginBottom: 10,
+    overflow: "hidden",
     gap: 12,
   },
   actorOptionAvatar: {

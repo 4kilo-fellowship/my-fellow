@@ -446,20 +446,41 @@ export function apiPostToCommunityPost(p: ApiPost): CommunityPost {
       p.author.avatar.urls.lg;
   }
 
+  const actor = p.authorActor;
+  const authorName =
+    actor?.displayName ||
+    (p.author?.displayName && p.author.displayName !== "Unknown Member"
+      ? p.author.displayName
+      : p.author?.username && p.author.username !== "unknown"
+        ? p.author.username
+        : "Fellowship Member");
+
+  const authorHandle =
+    actor?.handle
+      ? (actor.handle.startsWith("@") ? actor.handle : `@${actor.handle}`)
+      : p.author?.username && p.author.username !== "unknown"
+        ? (p.author.username.startsWith("@") ? p.author.username : `@${p.author.username}`)
+        : "@fellow";
+
+  const authorAvatar = actor?.avatarUrl || avatarUrl;
+  const authorTeam =
+    actor?.type === "official"
+      ? "Official Fellowship"
+      : actor?.displayName ||
+        p.author?.fellowshipRole ||
+        p.author?.ministryBadge ||
+        "Campus Ministry";
+
+  const isVerified = Boolean(actor?.isVerified || p.author?.isVerified);
+
   return {
     id: p.id,
-    authorId: p.author?.id || "user-unknown",
-    authorName:
-      p.author?.displayName || p.author?.username || "Fellowship Member",
-    authorHandle: p.author?.username?.startsWith("@")
-      ? p.author.username
-      : `@${p.author?.username || "fellow"}`,
-    authorAvatar: avatarUrl,
-    authorTeam:
-      p.author?.fellowshipRole ||
-      p.author?.ministryBadge ||
-      "Campus Ministry",
-    isVerified: !!p.author?.isVerified,
+    authorId: actor?.id || p.author?.id || "user-unknown",
+    authorName,
+    authorHandle,
+    authorAvatar,
+    authorTeam,
+    isVerified,
     timestamp: formatRelativeTime(p.createdAt),
     content: p.body || "",
     image: mediaImage,
@@ -1149,10 +1170,32 @@ export const useCommunityStore = create<CommunityStore>()(
             realPost.authorAvatar = optimisticPost.authorAvatar;
           }
           if (
-            (!realPost.authorName || realPost.authorName === "Fellowship Member") &&
+            (!realPost.authorName ||
+              realPost.authorName === "Fellowship Member" ||
+              realPost.authorName === "Unknown Member") &&
             optimisticPost.authorName
           ) {
             realPost.authorName = optimisticPost.authorName;
+          }
+          if (
+            (!realPost.authorHandle ||
+              realPost.authorHandle === "@fellow" ||
+              realPost.authorHandle === "@unknown") &&
+            optimisticPost.authorHandle
+          ) {
+            realPost.authorHandle = optimisticPost.authorHandle;
+          }
+          if (payload.authorActor && payload.authorActor.id !== "me") {
+            realPost.authorName = payload.authorActor.displayName;
+            realPost.authorHandle = payload.authorActor.handle.startsWith("@")
+              ? payload.authorActor.handle
+              : `@${payload.authorActor.handle}`;
+            realPost.authorAvatar = payload.authorActor.avatarUrl || realPost.authorAvatar;
+            realPost.authorTeam =
+              payload.authorActor.type === "official"
+                ? "Official Fellowship"
+                : payload.authorActor.displayName;
+            realPost.isVerified = Boolean(payload.authorActor.isVerified);
           }
 
           // Replace optimistic post with real server post across all feeds
