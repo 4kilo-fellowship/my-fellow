@@ -58,6 +58,8 @@ const CATEGORIES: CategoryRoute[] = [
   { key: "others", title: "Others", value: "others" },
 ];
 
+const PRESET_AMOUNTS = [50, 100, 250, 500, 1000];
+
 const Gifts = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -66,6 +68,8 @@ const Gifts = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
   const [reasonModalVisible, setReasonModalVisible] = useState(false);
+  const [isAmountFocused, setIsAmountFocused] = useState(false);
+  const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [pendingDonationData, setPendingDonationData] =
     useState<DonationForm | null>(null);
 
@@ -228,6 +232,13 @@ const Gifts = () => {
   });
 
   const selectedAmount = watch("amount");
+
+  const handleSelectPreset = (preset: number) => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
+    setValue("amount", preset, { shouldValidate: true });
+  };
 
   useEffect(() => {
     const loadSavedEmailAndAmount = async () => {
@@ -625,221 +636,345 @@ const Gifts = () => {
             </View>
 
             {/* gifts section */}
-            <View className="px-5 mb-12">
-              <View>
-                {/* form  */}
-                <View className="gap-5">
-                  <View>
-                    <Text
-                      className={`text-[11px] font-black uppercase tracking-widest mb-2 ml-1 ${
-                        isDark ? "text-zinc-500" : "text-zinc-400"
-                      }`}
-                    >
-                      Amount to Give (ETB)
-                    </Text>
-                    <Controller
-                      control={control}
-                      name="amount"
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            height: 54,
-                            paddingHorizontal: 16,
-                            gap: 10,
-                            borderRadius: 16,
-                            borderWidth: 1,
-                            borderColor: errors.amount
-                              ? "#ef4444"
-                              : isDark
-                                ? "#27272a"
-                                : "#e4e4e7",
-                            backgroundColor: isDark ? "#18181b" : "#fafafa",
-                          }}
-                        >
-                          <Ionicons
-                            name="cash-outline"
-                            size={20}
-                            color={isDark ? "#71717a" : "#a1a1aa"}
-                          />
-                          <TextInput
-                            style={{
-                              flex: 1,
-                              height: "100%",
-                              fontSize: 17,
-                              fontWeight: "700",
-                              color: isDark ? "#ffffff" : "#09090b",
-                              paddingVertical: 0,
-                            }}
-                            placeholder="0.00"
-                            placeholderTextColor={
-                              isDark ? "#52525b" : "#a1a1aa"
-                            }
-                            keyboardType="numeric"
-                            onBlur={onBlur}
-                            onChangeText={(text) => {
-                              const num = parseFloat(text);
-                              onChange(isNaN(num) ? 0 : num);
-                            }}
-                            value={value === 0 ? "" : value.toString()}
-                          />
-                          <Text
-                            style={{
-                              fontSize: 14,
-                              fontWeight: "700",
-                              color: isDark ? "#71717a" : "#a1a1aa",
-                            }}
-                          >
-                            ETB
-                          </Text>
-                        </View>
-                      )}
-                    />
-                    {errors.amount && (
-                      <Text className="text-red-500 text-xs mt-1.5 ml-2 font-bold">
-                        {errors.amount.message}
-                      </Text>
-                    )}
-                  </View>
-
-                  <View>
-                    <Text
-                      className={`text-[11px] font-black uppercase tracking-widest mb-2 ml-1 ${
-                        isDark ? "text-zinc-500" : "text-zinc-400"
-                      }`}
-                    >
-                      Confirmation Email
-                    </Text>
-                    <Controller
-                      control={control}
-                      name="email"
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            height: 54,
-                            paddingHorizontal: 16,
-                            gap: 10,
-                            borderRadius: 16,
-                            borderWidth: 1,
-                            borderColor: errors.email
-                              ? "#ef4444"
-                              : isDark
-                                ? "#27272a"
-                                : "#e4e4e7",
-                            backgroundColor: isDark ? "#18181b" : "#fafafa",
-                          }}
-                        >
-                          <Ionicons
-                            name="mail-outline"
-                            size={20}
-                            color={isDark ? "#71717a" : "#a1a1aa"}
-                          />
-                          <TextInput
-                            style={{
-                              flex: 1,
-                              height: "100%",
-                              fontSize: 15,
-                              fontWeight: "500",
-                              color: isDark ? "#ffffff" : "#09090b",
-                              paddingVertical: 0,
-                            }}
-                            placeholder="Enter your email"
-                            placeholderTextColor={
-                              isDark ? "#52525b" : "#a1a1aa"
-                            }
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                            onBlur={onBlur}
-                            onChangeText={onChange}
-                            value={value}
-                          />
-                        </View>
-                      )}
-                    />
-                    {errors.email && (
-                      <Text className="text-red-500 text-xs mt-1.5 ml-2 font-bold">
-                        {errors.email.message}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-
-                <View
-                  style={{
-                    width: "100%",
-                    borderRadius: 9999,
-                    overflow: "hidden",
-                    marginTop: 32,
-                    backgroundColor: loading ? "#a1a1aa" : "#ff6719",
-                  }}
-                >
-                  <Pressable
-                    onPress={() => {
-                      if (Platform.OS !== "web") {
-                        Haptics.impactAsync(
-                          Haptics.ImpactFeedbackStyle.Light,
-                        ).catch(() => {});
-                      }
-                      handleSubmit(onGivePress)();
+            <View
+              style={{
+                marginHorizontal: 16,
+                marginBottom: 36,
+                borderRadius: 24,
+                borderWidth: 1,
+                borderColor: isDark ? "#27272a" : "#e4e4e7",
+                backgroundColor: isDark ? "rgba(24, 24, 27, 0.75)" : "#ffffff",
+                padding: 20,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: isDark ? 0.3 : 0.05,
+                shadowRadius: 12,
+                elevation: 3,
+              }}
+            >
+              {/* form  */}
+              <View className="gap-5">
+                <View>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "800",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.8,
+                      marginBottom: 8,
+                      marginLeft: 2,
+                      color: isDark ? "#f4f4f5" : "#18181b",
                     }}
-                    disabled={loading}
-                    unstable_pressDelay={0}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Give ${selectedAmount || 0} ETB`}
-                    android_ripple={
-                      !loading
-                        ? {
-                            color: "rgba(255, 255, 255, 0.28)",
-                            borderless: false,
-                            foreground: true,
-                          }
-                        : undefined
-                    }
                   >
-                    {({ pressed }) => (
+                    Amount to Give (ETB)
+                  </Text>
+                  <Controller
+                    control={control}
+                    name="amount"
+                    render={({ field: { onChange, onBlur, value } }) => (
                       <View
                         style={{
-                          width: "100%",
-                          height: 56,
-                          paddingHorizontal: 24,
                           flexDirection: "row",
                           alignItems: "center",
-                          justifyContent: "center",
-                          gap: 8,
-                          opacity:
-                            Platform.OS === "ios" && pressed && !loading
-                              ? 0.8
-                              : 1,
+                          height: 56,
+                          paddingHorizontal: 16,
+                          gap: 12,
+                          borderRadius: 16,
+                          borderWidth: 1.5,
+                          borderColor: errors.amount
+                            ? "#ef4444"
+                            : isAmountFocused
+                              ? PRIMARY
+                              : isDark
+                                ? "#3f3f46"
+                                : "#cbd5e1",
+                          backgroundColor: isDark ? "#202023" : "#f8fafc",
                         }}
                       >
-                        {loading ? (
-                          <ActivityIndicator color="#fff" />
-                        ) : (
-                          <>
-                            <Text
-                              style={{
-                                color: "#ffffff",
-                                fontWeight: "700",
-                                fontSize: 17,
-                              }}
-                            >
-                              Give {selectedAmount || 0} ETB
-                            </Text>
-                            <Ionicons
-                              name="arrow-forward"
-                              size={20}
-                              color="#fff"
-                            />
-                          </>
-                        )}
+                        <Ionicons
+                          name="cash-outline"
+                          size={22}
+                          color={
+                            errors.amount
+                              ? "#ef4444"
+                              : isAmountFocused
+                                ? PRIMARY
+                                : isDark
+                                  ? "#a1a1aa"
+                                  : "#64748b"
+                          }
+                        />
+                        <TextInput
+                          style={{
+                            flex: 1,
+                            height: "100%",
+                            fontSize: 18,
+                            fontWeight: "700",
+                            color: isDark ? "#ffffff" : "#09090b",
+                            paddingVertical: 0,
+                          }}
+                          placeholder="0.00"
+                          placeholderTextColor={isDark ? "#71717a" : "#94a3b8"}
+                          selectionColor={PRIMARY}
+                          keyboardType="numeric"
+                          onFocus={() => setIsAmountFocused(true)}
+                          onBlur={() => {
+                            setIsAmountFocused(false);
+                            onBlur();
+                          }}
+                          onChangeText={(text) => {
+                            const num = parseFloat(text);
+                            onChange(isNaN(num) ? 0 : num);
+                          }}
+                          value={value === 0 ? "" : value.toString()}
+                        />
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            fontWeight: "800",
+                            letterSpacing: 0.5,
+                            color: isAmountFocused
+                              ? PRIMARY
+                              : isDark
+                                ? "#a1a1aa"
+                                : "#64748b",
+                          }}
+                        >
+                          ETB
+                        </Text>
                       </View>
                     )}
-                  </Pressable>
+                  />
+                  {errors.amount && (
+                    <Text className="text-red-500 text-xs mt-1.5 ml-2 font-bold">
+                      {errors.amount.message}
+                    </Text>
+                  )}
+
+                  {/* Preset Amount Chips */}
+                  <View style={{ marginTop: 10 }}>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={{ gap: 8 }}
+                    >
+                      {PRESET_AMOUNTS.map((preset) => {
+                        const isSelected = selectedAmount === preset;
+                        return (
+                          <Pressable
+                            key={preset}
+                            onPress={() => handleSelectPreset(preset)}
+                            unstable_pressDelay={0}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Select ${preset} ETB`}
+                            android_ripple={{
+                              color: isSelected
+                                ? "rgba(255, 255, 255, 0.2)"
+                                : isDark
+                                  ? "rgba(255, 255, 255, 0.1)"
+                                  : "rgba(0, 0, 0, 0.08)",
+                              borderless: false,
+                              foreground: true,
+                            }}
+                            style={({ pressed }) => ({
+                              paddingHorizontal: 14,
+                              paddingVertical: 8,
+                              borderRadius: 12,
+                              borderWidth: 1.5,
+                              borderColor: isSelected
+                                ? PRIMARY
+                                : isDark
+                                  ? "#3f3f46"
+                                  : "#e2e8f0",
+                              backgroundColor: isSelected
+                                ? PRIMARY
+                                : isDark
+                                  ? "#27272a"
+                                  : "#f1f5f9",
+                              opacity:
+                                Platform.OS === "ios" && pressed ? 0.75 : 1,
+                            })}
+                          >
+                            <Text
+                              style={{
+                                fontSize: 13,
+                                fontWeight: isSelected ? "800" : "600",
+                                color: isSelected
+                                  ? "#ffffff"
+                                  : isDark
+                                    ? "#e4e4e7"
+                                    : "#334155",
+                              }}
+                            >
+                              {preset.toLocaleString()} ETB
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
                 </View>
+
+                <View>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "800",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.8,
+                      marginBottom: 8,
+                      marginLeft: 2,
+                      color: isDark ? "#f4f4f5" : "#18181b",
+                    }}
+                  >
+                    Confirmation Email
+                  </Text>
+                  <Controller
+                    control={control}
+                    name="email"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          height: 56,
+                          paddingHorizontal: 16,
+                          gap: 12,
+                          borderRadius: 16,
+                          borderWidth: 1.5,
+                          borderColor: errors.email
+                            ? "#ef4444"
+                            : isEmailFocused
+                              ? PRIMARY
+                              : isDark
+                                ? "#3f3f46"
+                                : "#cbd5e1",
+                          backgroundColor: isDark ? "#202023" : "#f8fafc",
+                        }}
+                      >
+                        <Ionicons
+                          name="mail-outline"
+                          size={22}
+                          color={
+                            errors.email
+                              ? "#ef4444"
+                              : isEmailFocused
+                                ? PRIMARY
+                                : isDark
+                                  ? "#a1a1aa"
+                                  : "#64748b"
+                          }
+                        />
+                        <TextInput
+                          style={{
+                            flex: 1,
+                            height: "100%",
+                            fontSize: 15,
+                            fontWeight: "500",
+                            color: isDark ? "#ffffff" : "#09090b",
+                            paddingVertical: 0,
+                          }}
+                          placeholder="Enter your email"
+                          placeholderTextColor={isDark ? "#71717a" : "#94a3b8"}
+                          selectionColor={PRIMARY}
+                          keyboardType="email-address"
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          onFocus={() => setIsEmailFocused(true)}
+                          onBlur={() => {
+                            setIsEmailFocused(false);
+                            onBlur();
+                          }}
+                          onChangeText={onChange}
+                          value={value}
+                        />
+                      </View>
+                    )}
+                  />
+                  {errors.email && (
+                    <Text className="text-red-500 text-xs mt-1.5 ml-2 font-bold">
+                      {errors.email.message}
+                    </Text>
+                  )}
+                </View>
+              </View>
+
+              <View
+                style={{
+                  width: "100%",
+                  borderRadius: 9999,
+                  overflow: "hidden",
+                  marginTop: 24,
+                  backgroundColor: loading ? "#a1a1aa" : PRIMARY,
+                  shadowColor: PRIMARY,
+                  shadowOffset: { width: 0, height: 6 },
+                  shadowOpacity: loading ? 0 : 0.35,
+                  shadowRadius: 10,
+                  elevation: loading ? 0 : 4,
+                }}
+              >
+                <Pressable
+                  onPress={() => {
+                    if (Platform.OS !== "web") {
+                      Haptics.impactAsync(
+                        Haptics.ImpactFeedbackStyle.Light,
+                      ).catch(() => {});
+                    }
+                    handleSubmit(onGivePress)();
+                  }}
+                  disabled={loading}
+                  unstable_pressDelay={0}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Give ${selectedAmount || 0} ETB`}
+                  android_ripple={
+                    !loading
+                      ? {
+                          color: "rgba(255, 255, 255, 0.28)",
+                          borderless: false,
+                          foreground: true,
+                        }
+                      : undefined
+                  }
+                >
+                  {({ pressed }) => (
+                    <View
+                      style={{
+                        width: "100%",
+                        height: 56,
+                        paddingHorizontal: 24,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        opacity:
+                          Platform.OS === "ios" && pressed && !loading
+                            ? 0.8
+                            : 1,
+                      }}
+                    >
+                      {loading ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <>
+                          <Text
+                            style={{
+                              color: "#ffffff",
+                              fontWeight: "700",
+                              fontSize: 17,
+                            }}
+                          >
+                            Give {selectedAmount || 0} ETB
+                          </Text>
+                          <Ionicons
+                            name="arrow-forward"
+                            size={20}
+                            color="#fff"
+                          />
+                        </>
+                      )}
+                    </View>
+                  )}
+                </Pressable>
               </View>
             </View>
 
