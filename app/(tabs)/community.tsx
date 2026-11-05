@@ -664,43 +664,53 @@ export default function CommunityScreen() {
           },
         ]}
       >
-        <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-            router.push("/community/search");
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Search"
-          android_ripple={{
-            color: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
-            borderless: false,
-          }}
-          style={({ pressed }) => [
+        <View
+          style={[
             styles.searchPillWrapper,
             {
-              backgroundColor: isDark ? "#202327" : "#edf0f3",
-              borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)",
+              backgroundColor: isDark ? "#202327" : "#e2e8f0",
+              borderColor: isDark
+                ? "rgba(255, 255, 255, 0.08)"
+                : "rgba(0, 0, 0, 0.06)",
             },
-            pressed && Platform.OS === "ios" && { opacity: 0.75 },
           ]}
         >
-          <View style={styles.searchCenterContent}>
-            <Ionicons
-              name="search-outline"
-              size={20}
-              color={isDark ? "#71767b" : "#536471"}
-              style={styles.searchIcon}
-            />
-            <Text
-              style={[
-                styles.searchCenteredText,
-                { color: isDark ? "#71767b" : "#536471" },
-              ]}
-            >
-              Search
-            </Text>
-          </View>
-        </Pressable>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              router.push("/community/search");
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Search"
+            android_ripple={{
+              color: isDark
+                ? "rgba(255, 255, 255, 0.16)"
+                : "rgba(0, 0, 0, 0.12)",
+              borderless: false,
+            }}
+            style={({ pressed }) => [
+              styles.searchPressableInner,
+              pressed && Platform.OS === "ios" && { opacity: 0.75 },
+            ]}
+          >
+            <View style={styles.searchCenterContent}>
+              <Ionicons
+                name="search-outline"
+                size={19}
+                color={isDark ? "#71767b" : "#536471"}
+                style={styles.searchIcon}
+              />
+              <Text
+                style={[
+                  styles.searchCenteredText,
+                  { color: isDark ? "#71767b" : "#536471" },
+                ]}
+              >
+                Search
+              </Text>
+            </View>
+          </Pressable>
+        </View>
       </View>
 
       {/* Feed Tabs: For you / Following - smooth animated TabView (AI Poster Studio style) */}
@@ -945,8 +955,15 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     borderWidth: 1,
     overflow: "hidden",
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
+  },
+  searchPressableInner: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
   searchCenterContent: {
     flexDirection: "row",
@@ -954,14 +971,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   searchIcon: {
-    marginRight: 10,
-    marginTop: Platform.OS === "android" ? 0 : 0.5,
+    marginRight: 8,
   },
   searchCenteredText: {
-    fontSize: 16,
+    fontSize: 15,
+    lineHeight: 20,
     fontWeight: "400",
     letterSpacing: -0.1,
     includeFontPadding: false,
+    textAlign: "center",
     textAlignVertical: "center",
   },
   skeletonFeedContainer: {
