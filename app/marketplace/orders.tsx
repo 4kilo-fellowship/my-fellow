@@ -1,3 +1,4 @@
+import { AdminGuardFallback } from "@/components/Admin/AdminGuardFallback";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import OrderCard from "@/components/Marketplace/OrderCard";
 import { ConfirmModal } from "@/components/Modals/ConfirmModal";
@@ -99,6 +100,10 @@ export default function OrdersScreen() {
   };
 
   const STATIC_HEADER_HEIGHT = top + 64;
+
+  if (!isAdmin) {
+    return <AdminGuardFallback title="Fellowship Orders" />;
+  }
 
   const currentList = activeTab === "admin" ? adminOrders : orders;
   const currentLoading =

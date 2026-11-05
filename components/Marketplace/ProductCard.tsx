@@ -6,7 +6,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 interface ProductCardProps {
   product: Product;
@@ -31,74 +31,96 @@ const ProductCard = ({ product, isDark, onPress, onBuy }: ProductCardProps) => {
   const showNewBadge = product.isNew || isRecentlyCreated();
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      onPress={onPress}
-      style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}
-    >
-      {showNewBadge && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>NEW</Text>
-        </View>
-      )}
-
-      <View style={styles.imageContainer}>
-        <Image
-          source={{ uri: imageUri }}
-          style={styles.image}
-          contentFit="cover"
-          transition={400}
-        />
-      </View>
-
-      <View style={styles.content}>
-        <Text
-          numberOfLines={1}
-          style={[styles.name, isDark ? styles.textDark : styles.textLight]}
-        >
-          {product.title || product.name || "Product"}
-        </Text>
-
-        <View style={styles.ratingRow}>
-          <Ionicons name="star" size={12} color="#ffb800" />
-          <Text
-            style={[
-              styles.ratingText,
-              { color: isDark ? "#a1a1aa" : "#71717a" },
-            ]}
-          >
-            {(4.5 + Math.random() * 0.5).toFixed(1)}
-          </Text>
-        </View>
-
-        {product.shortDescription && (
-          <Text
-            numberOfLines={2}
-            style={[
-              styles.description,
-              { color: isDark ? "#a1a1aa" : "#71717a" },
-            ]}
-          >
-            {product.shortDescription}
-          </Text>
+    <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+      <Pressable
+        onPress={onPress}
+        android_ripple={{
+          color: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
+          foreground: true,
+        }}
+        style={({ pressed }) => [
+          styles.pressableInner,
+          Platform.OS === "ios" && pressed && { opacity: 0.88 },
+        ]}
+      >
+        {showNewBadge && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>NEW</Text>
+          </View>
         )}
 
-        <View style={styles.footer}>
-          <Text style={styles.price}>{price.toFixed(2)} ETB</Text>
-          <TouchableOpacity
-            style={styles.buyButton}
-            onPress={(e) => {
-              e.stopPropagation?.();
-              onBuy();
-            }}
-            activeOpacity={0.8}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="cart" size={20} color="#fff" />
-          </TouchableOpacity>
+        <View
+          style={[
+            styles.imageContainer,
+            { backgroundColor: isDark ? "#27272a" : "#f4f4f5" },
+          ]}
+        >
+          <Image
+            source={{ uri: imageUri }}
+            style={styles.image}
+            contentFit="cover"
+            transition={300}
+          />
         </View>
-      </View>
-    </TouchableOpacity>
+
+        <View style={styles.content}>
+          <Text
+            numberOfLines={1}
+            style={[styles.name, isDark ? styles.textDark : styles.textLight]}
+          >
+            {product.title || product.name || "Product"}
+          </Text>
+
+          <View style={styles.ratingRow}>
+            <Ionicons name="star" size={12} color="#ffb800" />
+            <Text
+              style={[
+                styles.ratingText,
+                { color: isDark ? "#a1a1aa" : "#71717a" },
+              ]}
+            >
+              4.9
+            </Text>
+          </View>
+
+          {product.shortDescription && (
+            <Text
+              numberOfLines={2}
+              style={[
+                styles.description,
+                { color: isDark ? "#a1a1aa" : "#71717a" },
+              ]}
+            >
+              {product.shortDescription}
+            </Text>
+          )}
+
+          <View style={styles.footer}>
+            <Text style={styles.price}>{price.toFixed(2)} ETB</Text>
+            <Pressable
+              style={({ pressed }) => [
+                styles.buyButton,
+                Platform.OS === "ios" && pressed && { opacity: 0.8 },
+              ]}
+              onPress={(e) => {
+                e.stopPropagation?.();
+                onBuy();
+              }}
+              android_ripple={{
+                color: "rgba(255, 255, 255, 0.3)",
+                borderless: true,
+                radius: 20,
+              }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={`Add ${product.title || "product"} to cart`}
+            >
+              <Ionicons name="cart" size={20} color="#fff" />
+            </Pressable>
+          </View>
+        </View>
+      </Pressable>
+    </View>
   );
 };
 
@@ -110,6 +132,9 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1.5,
     overflow: "hidden",
+  },
+  pressableInner: {
+    flex: 1,
   },
   cardLight: {
     backgroundColor: "#fff",
@@ -141,7 +166,6 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: "100%",
     height: 150,
-    backgroundColor: "#f9f9f9",
   },
   image: {
     width: "100%",
@@ -191,6 +215,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ff6719",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
 });
 

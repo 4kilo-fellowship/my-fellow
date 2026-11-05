@@ -1,4 +1,3 @@
-import { AdminActionButton } from "@/components/Admin/AdminActionButton";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import CartBadge from "@/components/Marketplace/CartBadge";
 import CartSheet from "@/components/Marketplace/CartSheet";
@@ -6,11 +5,13 @@ import ProductCard from "@/components/Marketplace/ProductCard";
 import ProductSkeleton from "@/components/Marketplace/ProductSkeleton";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { ProductBottomSheet } from "@/components/Modals/ProductBottomSheet";
+import { PRIMARY } from "@/constants/colors";
 import { useTheme } from "@/context/ThemeContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useMarketplaceStore } from "@/stores/marketplace.store";
 import { Product } from "@/types/marketplace.types";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, {
@@ -25,8 +26,10 @@ import {
   Animated,
   FlatList,
   LayoutAnimation,
+  Platform,
   RefreshControl,
   ScrollView,
+  StyleSheet,
   Text,
   TouchableOpacity,
   View,
@@ -36,21 +39,36 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const CATEGORIES = [
   { label: "All", value: "All" },
   { label: "New", value: "new" },
-  { label: "T-shirt", value: "t-shirt" },
-  { label: "Hoddy", value: "hoddy" },
+  { label: "T-Shirts", value: "t-shirt" },
+  { label: "Hoodies", value: "hoodie" },
   { label: "Stickers", value: "stickers" },
   { label: "Accessories", value: "accessories" },
   { label: "Others", value: "others" },
 ];
 
-const MAIN_CATEGORIES = ["t-shirt", "hoddy", "stickers", "accessories"];
+const MAIN_CATEGORIES = [
+  "t-shirt",
+  "t-shirts",
+  "tshirt",
+  "tshirts",
+  "shirt",
+  "hoodie",
+  "hoodies",
+  "hoddy",
+  "sweatshirt",
+  "stickers",
+  "sticker",
+  "accessories",
+  "accessory",
+];
 
 export default function MarketplaceScreen() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const { top } = useSafeAreaInsets();
+  const { top, bottom } = useSafeAreaInsets();
   const router = useRouter();
   const isAdmin = useIsAdmin();
+  const cartCount = useMarketplaceStore((s) => s.getCartCount());
 
   const [cartVisible, setCartVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -95,9 +113,36 @@ export default function MarketplaceScreen() {
         return diffDays <= 7;
       }
 
-      const cat = p.category?.toLowerCase() || "";
+      const cat = p.category?.toLowerCase().trim() || "";
       if (selectedCategory === "others") {
         return !MAIN_CATEGORIES.includes(cat);
+      }
+
+      if (selectedCategory === "t-shirt") {
+        return (
+          cat === "t-shirt" ||
+          cat === "t-shirts" ||
+          cat === "tshirt" ||
+          cat === "tshirts" ||
+          cat === "shirt"
+        );
+      }
+
+      if (selectedCategory === "hoodie") {
+        return (
+          cat === "hoodie" ||
+          cat === "hoodies" ||
+          cat === "hoddy" ||
+          cat === "sweatshirt"
+        );
+      }
+
+      if (selectedCategory === "stickers") {
+        return cat === "stickers" || cat === "sticker";
+      }
+
+      if (selectedCategory === "accessories") {
+        return cat === "accessories" || cat === "accessory";
       }
 
       return cat === selectedCategory.toLowerCase();
@@ -286,17 +331,13 @@ export default function MarketplaceScreen() {
       <ScreenHeader
         title="Fellowship Store"
         rightAction={
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            {isAdmin && (
-              <AdminActionButton
-                label="Add"
-                onPress={() => router.push("/marketplace/manage")}
-              />
-            )}
+          isAdmin ? (
             <TouchableOpacity
               onPress={() => router.push("/marketplace/orders" as any)}
               activeOpacity={0.8}
               className="w-10 h-10 rounded-full items-center justify-center"
+              accessibilityRole="button"
+              accessibilityLabel="View Orders"
             >
               <Ionicons
                 name="receipt-outline"
@@ -304,7 +345,7 @@ export default function MarketplaceScreen() {
                 color={isDark ? "white" : "#0f172a"}
               />
             </TouchableOpacity>
-          </View>
+          ) : undefined
         }
         containerStyle={{
           position: "absolute",
@@ -343,62 +384,100 @@ export default function MarketplaceScreen() {
           showsHorizontalScrollIndicator={false}
           overScrollMode="never"
           bounces={true}
-          className="mt-4"
+          className="mt-3"
           contentContainerStyle={{
-            paddingHorizontal: 20,
-            paddingBottom: 10,
+            paddingHorizontal: 16,
+            alignItems: "center",
           }}
         >
-          {CATEGORIES.map((cat) => (
-            <TouchableOpacity
-              key={cat.value}
-              onPress={() => {
-                LayoutAnimation.configureNext(
-                  LayoutAnimation.Presets.easeInEaseOut,
-                );
-                setSelectedCategory(cat.value);
-                // Scroll to top when category changes
-                flatListRef.current?.scrollToOffset({
-                  offset: 0,
-                  animated: true,
-                });
-              }}
-              activeOpacity={0.7}
-              className={`px-5 py-2 mr-3 rounded-xl border flex-row items-center h-[42px] ${
-                selectedCategory === cat.value
-                  ? "bg-orange-500 border-orange-500"
-                  : isDark
-                    ? "bg-[#1C1C1E] border-gray-800"
-                    : "bg-white border-gray-200"
-              }`}
-            >
-              <View className="flex-row items-center gap-1.5">
-                <Text
-                  className={`font-semibold ${
-                    selectedCategory === cat.value
-                      ? "text-white"
-                      : isDark
-                        ? "text-gray-400"
-                        : "text-gray-600"
-                  }`}
-                >
-                  {cat.label}
-                </Text>
-                {cat.value === "new" && (
-                  <View
-                    className={`ml-1 w-1.5 h-1.5 rounded-full ${
-                      selectedCategory === "new" ? "bg-white" : "bg-[#ff6719]"
-                    }`}
-                  />
-                )}
-              </View>
-            </TouchableOpacity>
-          ))}
+          {CATEGORIES.map((cat) => {
+            const isSelected = selectedCategory === cat.value;
+            return (
+              <TouchableOpacity
+                key={cat.value}
+                onPress={() => {
+                  if (Platform.OS !== "web") {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+                      () => {},
+                    );
+                  }
+                  LayoutAnimation.configureNext(
+                    LayoutAnimation.Presets.easeInEaseOut,
+                  );
+                  setSelectedCategory(cat.value);
+                  flatListRef.current?.scrollToOffset({
+                    offset: 0,
+                    animated: true,
+                  });
+                }}
+                activeOpacity={0.7}
+                style={[
+                  styles.tabItem,
+                  {
+                    borderBottomColor: isSelected ? PRIMARY : "transparent",
+                    borderBottomWidth: isSelected ? 3 : 0,
+                  },
+                ]}
+              >
+                <View style={styles.tabLabelRow}>
+                  <Text
+                    style={[
+                      styles.tabLabelText,
+                      {
+                        color: isSelected
+                          ? PRIMARY
+                          : isDark
+                            ? "#71767b"
+                            : "#71717a",
+                        fontWeight: isSelected ? "700" : "600",
+                      },
+                    ]}
+                  >
+                    {cat.label}
+                  </Text>
+                  {cat.value === "new" && (
+                    <View
+                      style={[
+                        styles.tabNewDot,
+                        { backgroundColor: PRIMARY },
+                      ]}
+                    />
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       </Animated.View>
 
       {/* Cart FAB */}
       <CartBadge isDark={isDark} onPress={() => setCartVisible(true)} />
+
+      {/* Floating Action Button (+) for Admins/Leaders */}
+      {isAdmin && (
+        <TouchableOpacity
+          activeOpacity={0.88}
+          onPress={() => {
+            if (Platform.OS !== "web") {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(
+                () => {},
+              );
+            }
+            router.push("/marketplace/manage");
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Add New Product"
+          style={[
+            styles.fabBtn,
+            {
+              backgroundColor: PRIMARY,
+              bottom: Math.max(bottom, 12) + (cartCount > 0 ? 92 : 24),
+            },
+          ]}
+        >
+          <Ionicons name="add" size={32} color="#ffffff" />
+        </TouchableOpacity>
+      )}
 
       {/* Cart Sheet */}
       <CartSheet
@@ -433,3 +512,49 @@ export default function MarketplaceScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  tabItem: {
+    paddingHorizontal: 14,
+    paddingBottom: 8,
+    paddingTop: 4,
+    marginRight: 6,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tabLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  tabLabelText: {
+    fontSize: 14,
+    letterSpacing: -0.2,
+  },
+  tabNewDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  fabBtn: {
+    position: "absolute",
+    right: 18,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+    zIndex: 60,
+  },
+});

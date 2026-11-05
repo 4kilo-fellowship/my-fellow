@@ -1,3 +1,4 @@
+import { AppBottomSheet } from "@/components/AppBottomSheet";
 import { PRIMARY } from "@/constants/colors";
 import {
   Product,
@@ -9,7 +10,6 @@ import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";
 import {
-  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -17,7 +17,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ProductBottomSheetProps {
   visible: boolean;
@@ -36,7 +35,6 @@ export const ProductBottomSheet = ({
   onAddToCart,
   onBuyNow,
 }: ProductBottomSheetProps) => {
-  const { bottom } = useSafeAreaInsets();
   const [quantity, setQuantity] = useState(1);
 
   const textColor = isDark ? "#FAFAFA" : "#18181B";
@@ -61,289 +59,216 @@ export const ProductBottomSheet = ({
   const totalPrice = unitPrice * quantity;
 
   return (
-    <>
-      {/* Backdrop — fades in independently */}
-      <Modal
-        visible={visible}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-        onRequestClose={onClose}
-      >
-        <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={onClose}
-        />
-      </Modal>
-
-      {/* Sheet — slides up from bottom */}
-      <Modal
-        visible={visible}
-        transparent
-        animationType="slide"
-        statusBarTranslucent
-        onRequestClose={onClose}
-      >
-        <View style={styles.overlay}>
-          <TouchableOpacity
-            style={{ flex: 1 }}
-            activeOpacity={1}
-            onPress={onClose}
-          />
-          <View
-            style={[
-              styles.sheet,
-              isDark ? styles.sheetDark : styles.sheetLight,
-              { paddingBottom: bottom > 0 ? bottom + 8 : 24 },
-            ]}
-          >
-            {/* Handle Bar */}
-            <View style={styles.handleContainer}>
-              <View
-                style={[
-                  styles.handle,
-                  { backgroundColor: isDark ? "#52525B" : "#D4D4D8" },
-                ]}
-              />
-            </View>
-
-            {/* Product Info Row */}
-            <View
-              style={[styles.productRow, { borderBottomColor: borderColor }]}
+    <AppBottomSheet
+      visible={visible}
+      onClose={onClose}
+      isDark={isDark}
+      snapPoints={["half", "full"]}
+    >
+      <View style={styles.sheetContainer}>
+        {/* Product Info Row */}
+        <View style={[styles.productRow, { borderBottomColor: borderColor }]}>
+          <View style={[styles.imageWrapper, { backgroundColor: cardBg }]}>
+            <Image
+              source={{ uri: imageUri }}
+              style={styles.productImage}
+              contentFit="cover"
+              transition={300}
+            />
+          </View>
+          <View style={styles.productInfo}>
+            <Text
+              numberOfLines={2}
+              style={[styles.productName, { color: textColor }]}
             >
-              <View style={[styles.imageWrapper, { backgroundColor: cardBg }]}>
-                <Image
-                  source={{ uri: imageUri }}
-                  style={styles.productImage}
-                  contentFit="cover"
-                  transition={300}
-                />
-              </View>
-              <View style={styles.productInfo}>
-                <Text
-                  numberOfLines={2}
-                  style={[styles.productName, { color: textColor }]}
-                >
-                  {product.title || product.name || "Product"}
-                </Text>
-                {product.category && (
-                  <Text style={[styles.categoryText, { color: subTextColor }]}>
-                    {product.category}
-                  </Text>
-                )}
-                <Text style={styles.unitPrice}>{unitPrice.toFixed(2)} ETB</Text>
-              </View>
+              {product.title || product.name || "Product"}
+            </Text>
+            {product.category && (
+              <Text style={[styles.categoryText, { color: subTextColor }]}>
+                {product.category}
+              </Text>
+            )}
+            <Text style={styles.unitPrice}>{unitPrice.toFixed(2)} ETB</Text>
+          </View>
+          <TouchableOpacity
+            onPress={onClose}
+            style={[styles.closeBtn, { backgroundColor: cardBg }]}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="close" size={18} color={subTextColor} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Quantity Controller */}
+        <View
+          style={[styles.quantitySection, { borderBottomColor: borderColor }]}
+        >
+          <Text style={[styles.sectionLabel, { color: subTextColor }]}>
+            QUANTITY
+          </Text>
+          <View style={styles.quantityRow}>
+            <View style={styles.quantityControls}>
               <TouchableOpacity
-                onPress={onClose}
-                style={[styles.closeBtn, { backgroundColor: cardBg }]}
+                onPress={decrementQty}
+                style={[
+                  styles.qtyBtn,
+                  {
+                    backgroundColor:
+                      quantity <= 1
+                        ? isDark
+                          ? "#27272A"
+                          : "#F4F4F5"
+                        : qtyBtnBg,
+                    opacity: quantity <= 1 ? 0.5 : 1,
+                  },
+                ]}
                 activeOpacity={0.7}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                disabled={quantity <= 1}
               >
-                <Ionicons name="close" size={18} color={subTextColor} />
+                <Ionicons
+                  name="remove"
+                  size={20}
+                  color={quantity <= 1 ? subTextColor : textColor}
+                />
+              </TouchableOpacity>
+
+              <View style={[styles.qtyDisplay, { backgroundColor: cardBg }]}>
+                <Text style={[styles.qtyText, { color: textColor }]}>
+                  {quantity}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={incrementQty}
+                style={[styles.qtyBtn, { backgroundColor: PRIMARY }]}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="add" size={20} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
 
-            {/* Quantity Controller */}
-            <View
-              style={[
-                styles.quantitySection,
-                { borderBottomColor: borderColor },
-              ]}
-            >
-              <Text style={[styles.sectionLabel, { color: subTextColor }]}>
-                QUANTITY
+            <View style={styles.totalPriceContainer}>
+              <Text style={[styles.totalLabel, { color: subTextColor }]}>
+                Total
               </Text>
-              <View style={styles.quantityRow}>
-                <View style={styles.quantityControls}>
-                  <TouchableOpacity
-                    onPress={decrementQty}
-                    style={[
-                      styles.qtyBtn,
-                      {
-                        backgroundColor:
-                          quantity <= 1
-                            ? isDark
-                              ? "#27272A"
-                              : "#F4F4F5"
-                            : qtyBtnBg,
-                        opacity: quantity <= 1 ? 0.5 : 1,
-                      },
-                    ]}
-                    activeOpacity={0.7}
-                    disabled={quantity <= 1}
-                  >
-                    <Ionicons
-                      name="remove"
-                      size={20}
-                      color={quantity <= 1 ? subTextColor : textColor}
-                    />
-                  </TouchableOpacity>
-
-                  <View
-                    style={[styles.qtyDisplay, { backgroundColor: cardBg }]}
-                  >
-                    <Text style={[styles.qtyText, { color: textColor }]}>
-                      {quantity}
-                    </Text>
-                  </View>
-
-                  <TouchableOpacity
-                    onPress={incrementQty}
-                    style={[styles.qtyBtn, { backgroundColor: PRIMARY }]}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="add" size={20} color="#FFFFFF" />
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.totalPriceContainer}>
-                  <Text style={[styles.totalLabel, { color: subTextColor }]}>
-                    Total
-                  </Text>
-                  <Text style={[styles.totalPrice, { color: textColor }]}>
-                    {totalPrice.toFixed(2)} ETB
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Action Buttons */}
-            <View style={styles.actionSection}>
-              <View
-                style={[
-                  styles.nativeButtonOuter,
-                  {
-                    backgroundColor: cardBg,
-                    borderColor: borderColor,
-                    borderWidth: 1.5,
-                  },
-                ]}
-              >
-                <Pressable
-                  onPress={() => {
-                    if (Platform.OS !== "web") {
-                      Haptics.impactAsync(
-                        Haptics.ImpactFeedbackStyle.Light,
-                      ).catch(() => {});
-                    }
-                    onAddToCart(product, quantity);
-                    onClose();
-                  }}
-                  unstable_pressDelay={0}
-                  accessibilityRole="button"
-                  accessibilityLabel="Add to Cart"
-                  android_ripple={{
-                    color: isDark
-                      ? "rgba(255, 255, 255, 0.12)"
-                      : "rgba(0, 0, 0, 0.08)",
-                    borderless: false,
-                    foreground: true,
-                  }}
-                  style={({ pressed }) => [
-                    styles.nativeButtonInner,
-                    Platform.OS === "ios" &&
-                      pressed && {
-                        opacity: 0.85,
-                        transform: [{ scale: 0.99 }],
-                      },
-                  ]}
-                >
-                  <Ionicons name="cart-outline" size={20} color={PRIMARY} />
-                  <Text style={[styles.addToCartText, { color: textColor }]}>
-                    Add to Cart
-                  </Text>
-                </Pressable>
-              </View>
-
-              <View
-                style={[
-                  styles.nativeButtonOuter,
-                  {
-                    backgroundColor: PRIMARY,
-                  },
-                  styles.buyNowShadow,
-                ]}
-              >
-                <Pressable
-                  onPress={() => {
-                    if (Platform.OS !== "web") {
-                      Haptics.impactAsync(
-                        Haptics.ImpactFeedbackStyle.Light,
-                      ).catch(() => {});
-                    }
-                    onBuyNow(product, quantity);
-                    onClose();
-                  }}
-                  unstable_pressDelay={0}
-                  accessibilityRole="button"
-                  accessibilityLabel="Buy Now"
-                  android_ripple={{
-                    color: "rgba(255, 255, 255, 0.28)",
-                    borderless: false,
-                    foreground: true,
-                  }}
-                  style={({ pressed }) => [
-                    styles.nativeButtonInner,
-                    Platform.OS === "ios" &&
-                      pressed && {
-                        opacity: 0.88,
-                        transform: [{ scale: 0.99 }],
-                      },
-                  ]}
-                >
-                  <Ionicons name="flash" size={18} color="#FFFFFF" />
-                  <Text style={styles.buyNowText}>Buy Now</Text>
-                </Pressable>
-              </View>
+              <Text style={[styles.totalPrice, { color: textColor }]}>
+                {totalPrice.toFixed(2)} ETB
+              </Text>
             </View>
           </View>
         </View>
-      </Modal>
-    </>
+
+        {/* Action Buttons */}
+        <View style={styles.actionSection}>
+          <View
+            style={[
+              styles.nativeButtonOuter,
+              {
+                backgroundColor: cardBg,
+                borderColor: borderColor,
+                borderWidth: 1.5,
+              },
+            ]}
+          >
+            <Pressable
+              onPress={() => {
+                if (Platform.OS !== "web") {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+                    () => {},
+                  );
+                }
+                onAddToCart(product, quantity);
+                onClose();
+              }}
+              unstable_pressDelay={0}
+              accessibilityRole="button"
+              accessibilityLabel="Add to Cart"
+              android_ripple={{
+                color: isDark
+                  ? "rgba(255, 255, 255, 0.12)"
+                  : "rgba(0, 0, 0, 0.08)",
+                borderless: false,
+                foreground: true,
+              }}
+              style={({ pressed }) => [
+                styles.nativeButtonInner,
+                Platform.OS === "ios" &&
+                  pressed && {
+                    opacity: 0.85,
+                    transform: [{ scale: 0.99 }],
+                  },
+              ]}
+            >
+              <Ionicons name="cart-outline" size={20} color={PRIMARY} />
+              <Text style={[styles.addToCartText, { color: textColor }]}>
+                Add to Cart
+              </Text>
+            </Pressable>
+          </View>
+
+          <View
+            style={[
+              styles.nativeButtonOuter,
+              {
+                backgroundColor: PRIMARY,
+              },
+              styles.buyNowShadow,
+            ]}
+          >
+            <Pressable
+              onPress={() => {
+                if (Platform.OS !== "web") {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+                    () => {},
+                  );
+                }
+                onBuyNow(product, quantity);
+                onClose();
+              }}
+              unstable_pressDelay={0}
+              accessibilityRole="button"
+              accessibilityLabel="Buy Now"
+              android_ripple={{
+                color: "rgba(255, 255, 255, 0.28)",
+                borderless: false,
+                foreground: true,
+              }}
+              style={({ pressed }) => [
+                styles.nativeButtonInner,
+                Platform.OS === "ios" &&
+                  pressed && {
+                    opacity: 0.88,
+                    transform: [{ scale: 0.99 }],
+                  },
+              ]}
+            >
+              <Ionicons name="flash" size={18} color="#FFFFFF" />
+              <Text style={styles.buyNowText}>Buy Now</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </AppBottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  sheet: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 20,
-  },
-  sheetLight: {
-    backgroundColor: "#fff",
-  },
-  sheetDark: {
-    backgroundColor: "#1A1A1B",
-  },
-  handleContainer: {
-    alignItems: "center",
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  handle: {
-    width: 40,
-    height: 4.5,
-    borderRadius: 3,
+  sheetContainer: {
+    width: "100%",
+    paddingBottom: Platform.OS === "ios" ? 16 : 8,
   },
   productRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    paddingVertical: 18,
-    borderBottomWidth: 1,
+    alignItems: "center",
+    paddingBottom: 16,
+    marginBottom: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   imageWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 18,
+    width: 68,
+    height: 68,
+    borderRadius: 16,
     overflow: "hidden",
   },
   productImage: {
@@ -353,43 +278,43 @@ const styles = StyleSheet.create({
   productInfo: {
     flex: 1,
     marginLeft: 14,
-    paddingTop: 2,
+    justifyContent: "center",
   },
   productName: {
-    fontSize: 18,
-    fontWeight: "800",
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 2,
     letterSpacing: -0.3,
-    marginBottom: 4,
-    lineHeight: 22,
   },
   categoryText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
-    textTransform: "capitalize",
-    marginBottom: 6,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
   unitPrice: {
-    fontSize: 17,
-    fontWeight: "900",
-    color: PRIMARY,
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#ff6719",
   },
   closeBtn: {
     width: 32,
     height: 32,
-    borderRadius: 10,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 8,
   },
   quantitySection: {
-    paddingVertical: 20,
-    borderBottomWidth: 1,
+    paddingBottom: 16,
+    marginBottom: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   sectionLabel: {
     fontSize: 11,
     fontWeight: "800",
-    letterSpacing: 1.5,
-    marginBottom: 14,
+    letterSpacing: 1,
+    marginBottom: 10,
   },
   quantityRow: {
     flexDirection: "row",
@@ -399,67 +324,72 @@ const styles = StyleSheet.create({
   quantityControls: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 8,
   },
   qtyBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   qtyDisplay: {
-    minWidth: 56,
-    height: 44,
-    borderRadius: 14,
+    width: 44,
+    height: 38,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 12,
   },
   qtyText: {
-    fontSize: 20,
-    fontWeight: "900",
+    fontSize: 16,
+    fontWeight: "700",
   },
   totalPriceContainer: {
     alignItems: "flex-end",
   },
   totalLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
     marginBottom: 2,
   },
   totalPrice: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "900",
-    letterSpacing: -0.5,
   },
   actionSection: {
-    paddingTop: 20,
     flexDirection: "row",
     gap: 12,
+    marginTop: 4,
   },
   nativeButtonOuter: {
     flex: 1,
-    borderRadius: 9999,
+    height: 52,
+    borderRadius: 16,
     overflow: "hidden",
   },
   nativeButtonInner: {
-    width: "100%",
-    minHeight: 52,
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 9999,
     gap: 8,
+    paddingHorizontal: 16,
+  },
+  addToCartText: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  buyNowText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
   },
   buyNowShadow: {
     ...Platform.select({
       ios: {
-        shadowColor: PRIMARY,
+        shadowColor: "#ff6719",
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.35,
         shadowRadius: 8,
       },
       android: {
@@ -467,13 +397,6 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  addToCartText: {
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  buyNowText: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
 });
+
+export default ProductBottomSheet;
