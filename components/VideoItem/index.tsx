@@ -36,6 +36,18 @@ const VideoItem: React.FC<VideoItemProps> = ({
     ? "rgba(255, 255, 255, 0.12)"
     : "rgba(0, 0, 0, 0.08)";
 
+  const cleanTitle = (item.title || "")
+    .replace(/‼️/g, "")
+    .replace(/!!/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  const cleanDesc = (item.desc || "")
+    .replace(/‼️/g, "")
+    .replace(/!!/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
   return (
     <View
       style={[
@@ -48,7 +60,7 @@ const VideoItem: React.FC<VideoItemProps> = ({
     >
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Watch video: ${item.title}`}
+        accessibilityLabel={`Watch video: ${cleanTitle}`}
         onPress={handlePress}
         unstable_pressDelay={0}
         android_ripple={{
@@ -100,7 +112,7 @@ const VideoItem: React.FC<VideoItemProps> = ({
                 { color: isDark ? "#ffffff" : "#0f172a" },
               ]}
             >
-              {item.title}
+              {cleanTitle}
             </Text>
 
             <Text
@@ -110,7 +122,7 @@ const VideoItem: React.FC<VideoItemProps> = ({
                 { color: isDark ? "#94a3b8" : "#64748b" },
               ]}
             >
-              {item.desc}
+              {cleanDesc}
             </Text>
 
             <View style={styles.durationWrap}>

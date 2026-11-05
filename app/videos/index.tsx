@@ -1,6 +1,6 @@
 import { VideoItem, VideoPlayerModal } from "@/components";
 import { PRIMARY } from "@/constants";
-import { Video } from "@/constants/videos";
+import { Video, DEFAULT_VIDEOS } from "@/constants/videos";
 import { useTheme } from "@/context/ThemeContext";
 import { useCanPublishVideos } from "@/hooks/useCanPublishVideos";
 import { socialApi } from "@/services/socialApi";
@@ -23,14 +23,17 @@ export default function VideosScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const canPublish = useCanPublishVideos();
-  const [videos, setVideos] = useState<Video[]>([]);
+  const [videos, setVideos] = useState<Video[]>(DEFAULT_VIDEOS);
   const [selected, setSelected] = useState<Video | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      setVideos(await socialApi.getContentVideos());
+      const res = await socialApi.getContentVideos();
+      setVideos(res && res.length > 0 ? res : DEFAULT_VIDEOS);
+    } catch {
+      setVideos(DEFAULT_VIDEOS);
     } finally {
       setLoading(false);
       setRefreshing(false);
