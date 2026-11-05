@@ -682,9 +682,16 @@ export default function CommunityScreen() {
             }}
             accessibilityRole="button"
             accessibilityLabel="Search"
+            android_ripple={{
+              color: isDark
+                ? "rgba(255, 255, 255, 0.16)"
+                : "rgba(0, 0, 0, 0.12)",
+              borderless: false,
+              foreground: true,
+            }}
             style={({ pressed }) => [
               styles.searchPressableInner,
-              pressed && { opacity: 0.75 },
+              Platform.OS === "ios" && pressed && { opacity: 0.75 },
             ]}
           >
             <View style={styles.searchCenterContent}>
@@ -949,8 +956,6 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     borderWidth: 1,
     overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
   },
   searchPressableInner: {
     flex: 1,
