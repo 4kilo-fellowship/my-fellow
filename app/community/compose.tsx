@@ -13,7 +13,6 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
 import {
-  ActionSheetIOS,
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
@@ -43,7 +42,7 @@ export default function ComposePostScreen() {
 
   const [content, setContent] = useState("");
   const [pickedImageUri, setPickedImageUri] = useState<string | null>(null);
-  const [selectedAudience, setSelectedAudience] = useState<string>("everyone");
+  const [selectedAudience] = useState<string>("everyone");
   const [hasLocation, setHasLocation] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -119,36 +118,6 @@ export default function ComposePostScreen() {
       Alert.alert("Error", "Could not publish post. Please check your connection and try again.");
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleAudiencePicker = () => {
-    Haptics.selectionAsync().catch(() => {});
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          title: "Choose Audience",
-          options: [...AUDIENCES.map((a) => a.label), "Cancel"],
-          cancelButtonIndex: AUDIENCES.length,
-        },
-        (buttonIndex) => {
-          if (buttonIndex < AUDIENCES.length) {
-            setSelectedAudience(AUDIENCES[buttonIndex].id);
-          }
-        }
-      );
-    } else {
-      Alert.alert(
-        "Who can see this post?",
-        "Select who has access to view this fellowship post in their feed:",
-        [
-          ...AUDIENCES.map((a) => ({
-            text: a.label,
-            onPress: () => setSelectedAudience(a.id),
-          })),
-          { text: "Cancel", style: "cancel" as const },
-        ]
-      );
     }
   };
 

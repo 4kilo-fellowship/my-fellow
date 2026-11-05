@@ -22,7 +22,6 @@ import {
   FlatList,
   Image,
   Platform,
-  Pressable,
   RefreshControl,
   Share,
   StyleSheet,
