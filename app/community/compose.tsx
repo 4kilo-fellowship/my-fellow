@@ -1,6 +1,5 @@
 import { PRIMARY } from "@/constants";
 import { useConfirmUnsavedChanges } from "@/hooks/useConfirmUnsavedChanges";
-import { useNativeConfirmation } from "@/components/NativeConfirmationDialog";
 import { useTheme } from "@/context/ThemeContext";
 import { useCommunityStore } from "@/stores/community.store";
 import { useUserStore } from "@/stores/user.store";
@@ -143,8 +142,6 @@ export default function ComposePostScreen() {
   const hasContent = (!!content.trim() || !!pickedImageUri) && !isOverLimit;
   const hasUnsavedChanges = content.trim().length > 0 || !!pickedImageUri;
 
-  const { confirmDiscardOrContinue } = useNativeConfirmation();
-
   useConfirmUnsavedChanges(hasUnsavedChanges, {
     title: "Discard draft?",
     message: "You have an unsaved fellowship post that will be lost.",
@@ -153,14 +150,7 @@ export default function ComposePostScreen() {
   });
 
   const handleDismiss = () => {
-    if (hasUnsavedChanges) {
-      confirmDiscardOrContinue(
-        () => router.back(),
-        () => {},
-      );
-    } else {
-      router.back();
-    }
+    router.back();
   };
 
   return (
