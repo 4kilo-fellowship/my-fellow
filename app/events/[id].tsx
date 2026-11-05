@@ -929,6 +929,36 @@ export default function EventDetails() {
               </View>
             )}
 
+            {/* Non-admin Expired / Ended Notice */}
+            {!isAdmin && isExpired && (
+              <View
+                style={{
+                  padding: 14,
+                  borderRadius: 14,
+                  marginBottom: 16,
+                  backgroundColor: isDark ? "rgba(239, 68, 68, 0.12)" : "#fee2e2",
+                  borderWidth: 1,
+                  borderColor: isDark ? "rgba(239, 68, 68, 0.25)" : "#fecaca",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <Ionicons name="information-circle" size={20} color="#ef4444" />
+                <Text
+                  style={{
+                    flex: 1,
+                    fontSize: 13,
+                    fontWeight: "600",
+                    color: isDark ? "#fca5a5" : "#b91c1c",
+                    lineHeight: 18,
+                  }}
+                >
+                  This event has ended and is no longer accepting new registrations.
+                </Text>
+              </View>
+            )}
+
             {/* Non-admin Capacity / Closed Notice */}
             {!isAdmin && isCapacityFull && !isRegisteredForThisEvent && (
               <View
