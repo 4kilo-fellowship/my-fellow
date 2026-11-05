@@ -655,49 +655,6 @@ export default function CommunityScreen() {
       {/* Top Main Tab Header */}
       <MainTabHeader borderBottom={false} />
 
-      {/* Minimalist Native Search Bar */}
-      <View style={[styles.searchBarWrapper, { backgroundColor: bg }]}>
-        <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-            router.push("/community/search");
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Search reflections, topics, and members"
-          android_ripple={{
-            color: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
-            borderless: false,
-            foreground: true,
-          }}
-          style={({ pressed }) => [
-            styles.minimalistSearchBar,
-            {
-              backgroundColor: isDark ? "#1c1f24" : "#f0f2f5",
-              borderColor: isDark
-                ? "rgba(255, 255, 255, 0.08)"
-                : "rgba(0, 0, 0, 0.05)",
-            },
-            Platform.OS === "ios" && pressed && { opacity: 0.75 },
-          ]}
-        >
-          <Ionicons
-            name="search-outline"
-            size={18}
-            color={isDark ? "#8e939d" : "#64748b"}
-            style={styles.searchIcon}
-          />
-          <Text
-            numberOfLines={1}
-            style={[
-              styles.searchHint,
-              { color: isDark ? "#8e939d" : "#64748b" },
-            ]}
-          >
-            Search reflections, topics, members...
-          </Text>
-        </Pressable>
-      </View>
-
       {/* Feed Tabs: For you / Following - smooth animated TabView (AI Poster Studio style) */}
       <TabView
         navigationState={{ index: activeTab, routes: feedRoutes }}
@@ -928,33 +885,6 @@ export default function CommunityScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-  },
-  searchBarWrapper: {
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 8,
-  },
-  minimalistSearchBar: {
-    width: "100%",
-    height: 42,
-    borderRadius: 21,
-    borderWidth: 1,
-    overflow: "hidden",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-  },
-  searchIcon: {
-    marginRight: 9,
-  },
-  searchHint: {
-    flex: 1,
-    fontSize: 14.5,
-    lineHeight: 20,
-    fontWeight: "400",
-    letterSpacing: -0.1,
-    includeFontPadding: false,
-    textAlignVertical: "center",
   },
   skeletonFeedContainer: {
     width: "100%",
