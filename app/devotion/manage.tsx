@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -20,6 +20,11 @@ import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
+import {
+  RecordingPresets,
+  requestRecordingPermissionsAsync,
+  useAudioRecorder,
+} from "expo-audio";
 
 import { AdminGuardFallback } from "@/components/Admin/AdminGuardFallback";
 import { ScreenHeader } from "@/components/ScreenHeader";
@@ -33,9 +38,7 @@ import { Devotion, DevotionType } from "@/types/devotion.types";
 
 const DEVOTION_TYPES: { type: DevotionType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { type: "text", label: "Text Article", icon: "document-text-outline" },
-  { type: "voice", label: "Voice / Audio", icon: "mic-outline" },
-  { type: "pdf", label: "PDF Document", icon: "reader-outline" },
-  { type: "book", label: "Book / eBook", icon: "book-outline" },
+  { type: "voice", label: "Voice / Audio (with Caption)", icon: "mic-outline" },
 ];
 
 export default function ManageDevotionScreen() {
@@ -77,14 +80,18 @@ export default function ManageDevotionScreen() {
   const [content, setContent] = useState<string>("");
   const [duration, setDuration] = useState<string>("5 min read");
   const [caption, setCaption] = useState<string>("");
-  const [pageCount, setPageCount] = useState<string>("");
-  const [bookFormat, setBookFormat] = useState<string>("EPUB / PDF");
 
-  // Media file (audio, pdf, or book)
+  // Media file (audio only)
   const [mediaUri, setMediaUri] = useState<string | null>(null);
   const [mediaName, setMediaName] = useState<string | null>(null);
   const [mediaMime, setMediaMime] = useState<string | null>(null);
   const [isLocalMedia, setIsLocalMedia] = useState<boolean>(false);
+
+  // Audio recording state
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [recordingSeconds, setRecordingSeconds] = useState<number>(0);
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [infoModal, setInfoModal] = useState<{
     visible: boolean;
@@ -92,6 +99,12 @@ export default function ManageDevotionScreen() {
     message: string;
     type: "success" | "error" | "info";
   }>({ visible: false, title: "", message: "", type: "info" });
+
+  useEffect(() => {
+    return () => {
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isEditing || !id) {
@@ -113,14 +126,12 @@ export default function ManageDevotionScreen() {
     setTitle(item.title || "");
     setAuthor(item.author || "");
     setDate(item.date || new Date().toISOString().split("T")[0]);
-    setType(item.type || "text");
+    setType(item.type === "voice" ? "voice" : "text");
     setTags(Array.isArray(item.tags) ? item.tags.join(", ") : "");
     setFeatured(Boolean(item.featured));
     setContent(item.content || "");
     setDuration(item.duration || "");
     setCaption(item.caption || "");
-    setPageCount(item.pageCount ? String(item.pageCount) : "");
-    setBookFormat(item.bookFormat || "EPUB / PDF");
 
     if (item.image) {
       setImageUri(item.image);
@@ -129,15 +140,7 @@ export default function ManageDevotionScreen() {
 
     if (item.audioUrl) {
       setMediaUri(item.audioUrl);
-      setMediaName("Existing Audio");
-      setIsLocalMedia(false);
-    } else if (item.pdfUrl) {
-      setMediaUri(item.pdfUrl);
-      setMediaName("Existing PDF Document");
-      setIsLocalMedia(false);
-    } else if (item.bookUrl) {
-      setMediaUri(item.bookUrl);
-      setMediaName("Existing eBook");
+      setMediaName("Existing Audio Devotion");
       setIsLocalMedia(false);
     }
   };
@@ -179,19 +182,78 @@ export default function ManageDevotionScreen() {
     }
   };
 
-  const pickMediaDocument = async () => {
+  const startRecording = async () => {
     try {
-      let mimeTypes: string[] = ["*/*"];
-      if (type === "voice") {
-        mimeTypes = ["audio/*"];
-      } else if (type === "pdf") {
-        mimeTypes = ["application/pdf"];
-      } else if (type === "book") {
-        mimeTypes = ["application/pdf", "application/epub+zip"];
+      const { granted } = await requestRecordingPermissionsAsync();
+      if (!granted) {
+        setInfoModal({
+          visible: true,
+          title: "Microphone Access Required",
+          message: "Please allow microphone permissions to record voice devotions.",
+          type: "error",
+        });
+        return;
       }
 
+      await recorder.prepareToRecordAsync();
+      recorder.record();
+      setIsRecording(true);
+      setRecordingSeconds(0);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingSeconds((prev) => prev + 1);
+      }, 1000);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    } catch (err: any) {
+      setInfoModal({
+        visible: true,
+        title: "Recording Error",
+        message: err.message || "Failed to start audio recording.",
+        type: "error",
+      });
+    }
+  };
+
+  const stopRecording = async () => {
+    try {
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      await recorder.stop();
+      setIsRecording(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+
+      if (recorder.uri) {
+        setMediaUri(recorder.uri);
+        const mins = Math.floor(recordingSeconds / 60);
+        const secs = recordingSeconds % 60;
+        const durFormatted = `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+        setMediaName(`Voice Note (${durFormatted})`);
+        setMediaMime("audio/m4a");
+        setIsLocalMedia(true);
+        if (!duration || duration === "5 min read") {
+          setDuration(durFormatted);
+        }
+      }
+    } catch (err: any) {
+      setInfoModal({
+        visible: true,
+        title: "Recording Error",
+        message: err.message || "Failed to stop recording.",
+        type: "error",
+      });
+    }
+  };
+
+  const discardRecording = () => {
+    setMediaUri(null);
+    setMediaName(null);
+    setMediaMime(null);
+    setIsLocalMedia(false);
+    setRecordingSeconds(0);
+  };
+
+  const pickMediaDocument = async () => {
+    try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: mimeTypes,
+        type: ["audio/*"],
         copyToCacheDirectory: true,
       });
 
@@ -199,7 +261,7 @@ export default function ManageDevotionScreen() {
         const asset = result.assets[0];
         setMediaUri(asset.uri);
         setMediaName(asset.name);
-        setMediaMime(asset.mimeType || "application/octet-stream");
+        setMediaMime(asset.mimeType || "audio/mpeg");
         setIsLocalMedia(true);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       }
@@ -207,7 +269,7 @@ export default function ManageDevotionScreen() {
       setInfoModal({
         visible: true,
         title: "Document Error",
-        message: "Failed to pick file. Please try again.",
+        message: "Failed to pick audio file. Please try again.",
         type: "error",
       });
     }
@@ -226,14 +288,13 @@ export default function ManageDevotionScreen() {
     if (type === "text" && (!content.trim() || content.trim().length < 10)) {
       return "Devotion content must be at least 10 characters.";
     }
-    if (type === "voice" && !mediaUri) {
-      return "Please attach an audio recording for voice devotion.";
-    }
-    if (type === "pdf" && !mediaUri) {
-      return "Please attach a PDF document.";
-    }
-    if (type === "book" && !mediaUri) {
-      return "Please attach the book/eBook file.";
+    if (type === "voice") {
+      if (!mediaUri) {
+        return "Please record or attach an audio file for the voice devotion.";
+      }
+      if (!caption.trim() && !content.trim()) {
+        return "Voice devotions require a caption or transcript text.";
+      }
     }
     return null;
   };
@@ -276,15 +337,11 @@ export default function ManageDevotionScreen() {
           formData.append("content", content.trim());
           if (duration.trim()) formData.append("duration", duration.trim());
         } else if (type === "voice") {
-          if (caption.trim()) formData.append("caption", caption.trim());
+          const voiceCaption = caption.trim() || content.trim();
+          formData.append("caption", voiceCaption);
+          formData.append("content", voiceCaption);
           if (duration.trim()) formData.append("duration", duration.trim());
           if (!isLocalMedia && mediaUri) formData.append("audioUrl", mediaUri);
-        } else if (type === "pdf") {
-          if (pageCount) formData.append("pageCount", pageCount);
-          if (!isLocalMedia && mediaUri) formData.append("pdfUrl", mediaUri);
-        } else if (type === "book") {
-          if (bookFormat) formData.append("bookFormat", bookFormat);
-          if (!isLocalMedia && mediaUri) formData.append("bookUrl", mediaUri);
         }
 
         if (isLocalImage && imageUri) {
@@ -304,16 +361,17 @@ export default function ManageDevotionScreen() {
           const filename =
             mediaName ||
             mediaUri.split("/").pop() ||
-            (type === "voice" ? "audio.mp3" : "document.pdf");
+            "audio.mp3";
           formData.append("media", {
             uri: mediaUri,
             name: filename,
-            type: mediaMime || "application/octet-stream",
+            type: mediaMime || "audio/mpeg",
           } as any);
         }
 
         payload = formData;
       } else {
+        const voiceCaption = type === "voice" ? (caption.trim() || content.trim()) : undefined;
         payload = {
           title: title.trim(),
           author: author.trim(),
@@ -322,14 +380,10 @@ export default function ManageDevotionScreen() {
           tags: parsedTags,
           featured,
           image: imageUri || "",
-          content: type === "text" ? content.trim() : undefined,
+          content: type === "text" ? content.trim() : voiceCaption,
           duration: duration.trim() || undefined,
-          caption: type === "voice" ? caption.trim() : undefined,
+          caption: voiceCaption,
           audioUrl: type === "voice" ? mediaUri || undefined : undefined,
-          pdfUrl: type === "pdf" ? mediaUri || undefined : undefined,
-          pageCount: type === "pdf" && pageCount ? parseInt(pageCount) : undefined,
-          bookUrl: type === "book" ? mediaUri || undefined : undefined,
-          bookFormat: type === "book" ? bookFormat : undefined,
         };
       }
 
@@ -742,7 +796,7 @@ export default function ManageDevotionScreen() {
             </View>
           )}
 
-          {type !== "text" && (
+          {type === "voice" && (
             <View
               style={[
                 styles.section,
@@ -756,115 +810,185 @@ export default function ManageDevotionScreen() {
                   isDark ? styles.textLight : styles.textDark,
                 ]}
               >
-                {type === "voice"
-                  ? "Audio Recording File"
-                  : type === "pdf"
-                    ? "PDF Document Attachment"
-                    : "eBook File Attachment"}
+                Voice Recording & Audio
               </Text>
-
-              <TouchableOpacity
-                onPress={pickMediaDocument}
+              <Text
                 style={[
-                  styles.mediaPickerBtn,
-                  isDark ? styles.inputDark : styles.inputLight,
+                  styles.cardBoxDesc,
+                  isDark ? styles.descDark : styles.descLight,
+                  { marginBottom: 14 },
                 ]}
               >
-                <Ionicons
-                  name={
-                    type === "voice"
-                      ? "mic"
-                      : type === "pdf"
-                        ? "document-attach"
-                        : "book"
-                  }
-                  size={24}
-                  color={PRIMARY}
-                />
+                Record your voice devotion live or attach an audio file (.mp3, .m4a, .wav).
+              </Text>
+
+              {/* Record Live Voice Note */}
+              <View style={{ marginBottom: 12 }}>
+                {!isRecording ? (
+                  <TouchableOpacity
+                    onPress={startRecording}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: PRIMARY,
+                      paddingVertical: 12,
+                      borderRadius: 12,
+                      gap: 8,
+                    }}
+                  >
+                    <Ionicons name="mic" size={20} color="#fff" />
+                    <Text style={{ color: "#fff", fontWeight: "700", fontSize: 14 }}>
+                      Start Voice Recording
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      backgroundColor: isDark ? "#2a1515" : "#fee2e2",
+                      borderWidth: 1,
+                      borderColor: "#ef4444",
+                      paddingVertical: 10,
+                      paddingHorizontal: 14,
+                      borderRadius: 12,
+                    }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <View
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: 5,
+                          backgroundColor: "#ef4444",
+                        }}
+                      />
+                      <Text
+                        style={{
+                          color: "#ef4444",
+                          fontWeight: "700",
+                          fontSize: 14,
+                        }}
+                      >
+                        Recording: {Math.floor(recordingSeconds / 60)}:
+                        {recordingSeconds % 60 < 10 ? "0" : ""}
+                        {recordingSeconds % 60}
+                      </Text>
+                    </View>
+
+                    <TouchableOpacity
+                      onPress={stopRecording}
+                      style={{
+                        backgroundColor: "#ef4444",
+                        paddingHorizontal: 16,
+                        paddingVertical: 6,
+                        borderRadius: 8,
+                      }}
+                    >
+                      <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>
+                        Stop & Save
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+
+              {/* Attached / Recorded Audio Status */}
+              {mediaUri ? (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: 12,
+                    borderRadius: 10,
+                    marginBottom: 14,
+                    backgroundColor: isDark ? "#1f1f23" : "#f1f5f9",
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", flex: 1, gap: 10 }}>
+                    <Ionicons name="musical-notes" size={22} color={PRIMARY} />
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={[
+                          { fontSize: 13, fontWeight: "700" },
+                          isDark ? styles.textLight : styles.textDark,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {mediaName || "Audio attached"}
+                      </Text>
+                      <Text style={{ fontSize: 11, color: "#10b981", fontWeight: "600" }}>
+                        Ready for playback
+                      </Text>
+                    </View>
+                  </View>
+
+                  <TouchableOpacity onPress={discardRecording} hitSlop={8}>
+                    <Ionicons name="close-circle" size={22} color="#ef4444" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                /* Pick audio file from device */
+                <TouchableOpacity
+                  onPress={pickMediaDocument}
+                  style={[
+                    styles.mediaPickerBtn,
+                    isDark ? styles.inputDark : styles.inputLight,
+                  ]}
+                >
+                  <Ionicons name="folder-open-outline" size={22} color={PRIMARY} />
+                  <Text
+                    style={[
+                      styles.mediaPickerText,
+                      isDark ? styles.textLight : styles.textDark,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    Or select audio file (.mp3, .m4a) from device
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Mandatory Voice Caption / Transcript */}
+              <View style={{ marginTop: 14 }}>
                 <Text
                   style={[
-                    styles.mediaPickerText,
+                    styles.label,
                     isDark ? styles.textLight : styles.textDark,
                   ]}
-                  numberOfLines={1}
                 >
-                  {mediaName ||
-                    `Tap to attach ${type === "voice" ? "audio (.mp3, .m4a)" : type === "pdf" ? "PDF (.pdf)" : "eBook (.epub, .pdf)"}`}
+                  Voice Caption & Message (Required) <Text style={styles.required}>*</Text>
                 </Text>
-              </TouchableOpacity>
-
-              {type === "voice" && (
-                <View style={{ marginTop: 12 }}>
-                  <Text
-                    style={[
-                      styles.label,
-                      isDark ? styles.textLight : styles.textDark,
-                    ]}
-                  >
-                    Audio Caption / Voice Description
-                  </Text>
-                  <TextInput
-                    value={caption}
-                    onChangeText={setCaption}
-                    placeholder="Short sermon overview or prayer note..."
-                    placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
-                    style={[
-                      styles.input,
-                      isDark ? styles.inputDark : styles.inputLight,
-                      isDark ? styles.textLight : styles.textDark,
-                    ]}
-                  />
-                </View>
-              )}
-
-              {type === "pdf" && (
-                <View style={{ marginTop: 12 }}>
-                  <Text
-                    style={[
-                      styles.label,
-                      isDark ? styles.textLight : styles.textDark,
-                    ]}
-                  >
-                    Page Count
-                  </Text>
-                  <TextInput
-                    value={pageCount}
-                    onChangeText={setPageCount}
-                    keyboardType="numeric"
-                    placeholder="e.g., 14"
-                    placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
-                    style={[
-                      styles.input,
-                      isDark ? styles.inputDark : styles.inputLight,
-                      isDark ? styles.textLight : styles.textDark,
-                    ]}
-                  />
-                </View>
-              )}
-
-              {type === "book" && (
-                <View style={{ marginTop: 12 }}>
-                  <Text
-                    style={[
-                      styles.label,
-                      isDark ? styles.textLight : styles.textDark,
-                    ]}
-                  >
-                    Book Format
-                  </Text>
-                  <TextInput
-                    value={bookFormat}
-                    onChangeText={setBookFormat}
-                    placeholder="e.g., EPUB, PDF"
-                    placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
-                    style={[
-                      styles.input,
-                      isDark ? styles.inputDark : styles.inputLight,
-                      isDark ? styles.textLight : styles.textDark,
-                    ]}
-                  />
-                </View>
-              )}
+                <Text
+                  style={[
+                    styles.cardBoxDesc,
+                    isDark ? styles.descDark : styles.descLight,
+                    { marginBottom: 8 },
+                  ]}
+                >
+                  This caption and scripture transcript will always be displayed with the voice player.
+                </Text>
+                <TextInput
+                  value={caption}
+                  onChangeText={setCaption}
+                  placeholder="Voice message transcript, bible verse, devotional summary..."
+                  placeholderTextColor={isDark ? "#64748b" : "#94a3b8"}
+                  multiline
+                  numberOfLines={5}
+                  onFocus={() => setFocusedField("caption")}
+                  onBlur={() => setFocusedField(null)}
+                  style={[
+                    styles.input,
+                    styles.textAreaContent,
+                    isDark ? styles.inputDark : styles.inputLight,
+                    focusedField === "caption" && styles.inputFocused,
+                    isDark ? styles.textLight : styles.textDark,
+                  ]}
+                />
+              </View>
             </View>
           )}
 

@@ -121,32 +121,15 @@ const CompactArticleCard = React.memo<CompactArticleCardProps>(
               </View>
             )}
 
-            {/* Center: Play Button Icon for voice / audio devotionals only */}
+            {/* Bottom-Left Audio/Voice Badge */}
             {item.type === "voice" && (
-              <View style={styles.compactCenterPlay}>
-                <Ionicons
-                  name="play"
-                  size={26}
-                  color="#ffffff"
-                  style={{ marginLeft: 3 }}
-                />
+              <View style={styles.compactVoiceBadge}>
+                <Ionicons name="musical-notes" size={11} color="#ffffff" />
+                <Text style={styles.compactVoiceText}>
+                  {item.duration || "Audio"}
+                </Text>
               </View>
             )}
-
-            {/* Bottom-Left: Duration Badge */}
-            <View style={styles.compactDurationBadge}>
-              {item.type === "voice" && (
-                <Ionicons
-                  name="volume-medium"
-                  size={11}
-                  color="#ffffff"
-                  style={{ marginRight: 3.5 }}
-                />
-              )}
-              <Text style={styles.compactDurationText}>
-                {formatDuration(item)}
-              </Text>
-            </View>
           </View>
 
           {/* Article Info Container */}
@@ -298,21 +281,27 @@ const MinimalDevotionCard = React.memo<MinimalDevotionCardProps>(
               />
               {item.type === "voice" && (
                 <View style={styles.typeBadge}>
-                  <Ionicons name="mic" size={11} color="#ffffff" />
+                  <Ionicons name="musical-notes" size={12} color="#ffffff" />
                   <Text style={styles.typeBadgeText}>
-                    {item.duration || "Audio"}
+                    Voice & Caption · {item.duration || "Audio"}
                   </Text>
                 </View>
               )}
             </View>
           ) : null}
 
-          {/* Article Footer: "Read Article" action button + metrics & share */}
+          {/* Article Footer: "Read Article" / "Listen & Read" action button + metrics & share */}
           <View style={styles.articleFooter}>
-            {/* Direct "Read Article" Call to Action */}
+            {/* Direct Call to Action */}
             <View style={styles.readButton}>
-              <Text style={styles.readButtonText}>Read Article</Text>
-              <Ionicons name="arrow-forward" size={14} color="#000000" />
+              <Text style={styles.readButtonText}>
+                {item.type === "voice" ? "Listen & Read" : "Read Article"}
+              </Text>
+              <Ionicons
+                name={item.type === "voice" ? "play" : "arrow-forward"}
+                size={item.type === "voice" ? 11 : 14}
+                color="#000000"
+              />
             </View>
 
             {/* Right side stats: views, likes, and share */}
@@ -357,6 +346,8 @@ MinimalDevotionCard.displayName = "MinimalDevotionCard";
 
 const TAB_ROUTES = [
   { key: "all", title: "All" },
+  { key: "articles", title: "Articles" },
+  { key: "voice", title: "Voice & Audio" },
   { key: "saved", title: "Saved" },
 ];
 
@@ -469,6 +460,16 @@ export default function Devotions() {
     [devotions],
   );
 
+  const textDevotions = useMemo(
+    () => devotions.filter((d) => d.type === "text"),
+    [devotions],
+  );
+
+  const voiceDevotions = useMemo(
+    () => devotions.filter((d) => d.type === "voice"),
+    [devotions],
+  );
+
   const renderSavedItem = useCallback(
     ({ item }: { item: Devotion }) => (
       <MinimalDevotionCard
@@ -553,27 +554,6 @@ export default function Devotions() {
                 </View>
               ))}
             </View>
-          </View>
-
-          {/* Article items skeleton */}
-          <View style={[styles.allDevotionsSection, { paddingHorizontal: 16 }]}>
-            <Placeholder width={120} height={20} borderRadius={6} style={{ marginBottom: 16 }} />
-            {[0, 1].map((i) => (
-              <View key={`skel-art-${i}`} style={styles.articleCardOuter}>
-                <View style={{ padding: 16, backgroundColor: "#ffffff", borderRadius: 16, borderWidth: 1, borderColor: "#f4f4f5" }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                    <Placeholder width={38} height={38} borderRadius={19} />
-                    <View style={{ gap: 6, flex: 1 }}>
-                      <Placeholder width="40%" height={14} borderRadius={4} />
-                      <Placeholder width="25%" height={12} borderRadius={4} />
-                    </View>
-                  </View>
-                  <Placeholder width="95%" height={18} borderRadius={5} style={{ marginBottom: 8 }} />
-                  <Placeholder width="80%" height={14} borderRadius={4} style={{ marginBottom: 14 }} />
-                  <Placeholder width="100%" height={170} borderRadius={12} />
-                </View>
-              </View>
-            ))}
           </View>
         </ScrollView>
       ) : devotions.length === 0 ? (
@@ -680,7 +660,39 @@ export default function Devotions() {
             </View>
           )}
 
-          {/* 3. POPULAR DEVOTIONS (Horizontal Scroll / Grid) */}
+          {/* 3. VOICE & AUDIO DEVOTIONS SPOTLIGHT */}
+          {voiceDevotions.length > 0 && (
+            <View style={styles.sectionContainer}>
+              <View style={styles.sectionHeader}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Ionicons name="musical-notes" size={17} color={PRIMARY} />
+                  <Text style={styles.sectionTitle}>Voice & Audio Devotions</Text>
+                </View>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalScrollContent}
+                nestedScrollEnabled={true}
+                overScrollMode="never"
+                keyboardShouldPersistTaps="handled"
+              >
+                {voiceDevotions.map((item: Devotion) => (
+                  <CompactArticleCard
+                    key={`voice-${item._id}`}
+                    item={item}
+                    isSaved={isDevotionSaved(item._id)}
+                    width={cardWidth}
+                    imageHeight={cardImageHeight}
+                    onPress={() => router.push(`/devotion/${item._id}`)}
+                    onToggleSave={() => handleToggleSave(item)}
+                  />
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* 4. POPULAR DEVOTIONS (Horizontal Scroll / Grid) */}
           {popularDevotions.length > 0 && (
             <View style={styles.sectionContainer}>
               <View style={styles.sectionHeader}>
@@ -708,68 +720,56 @@ export default function Devotions() {
             </View>
           )}
 
-          {/* 4. ALL DEVOTIONS (Full Vertical Feed - Nothing Hidden) */}
-          {devotions.length > 0 && (
-            <View style={styles.allDevotionsSection}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>All Devotions</Text>
-              </View>
-              <View style={styles.allDevotionsList}>
-                {devotions.map((item: Devotion) => (
-                  <MinimalDevotionCard
-                    key={`all-${item._id}`}
-                    item={item}
-                    isSaved={isDevotionSaved(item._id)}
-                    isRead={isDevotionRead(item._id)}
-                    onPress={() => router.push(`/devotion/${item._id}`)}
-                    onToggleSave={() => handleToggleSave(item)}
-                    onShare={() => handleShare(item)}
-                  />
-                ))}
-              </View>
-            </View>
-          )}
-
-          {/* 5. CTA: Apply to Write */}
+          {/* 4. CTA: Apply to Write */}
           <View style={styles.ctaContainer}>
             <View style={styles.ctaIconCircle}>
-              <Ionicons name="create-outline" size={24} color={PRIMARY} />
+              <Ionicons name="create-outline" size={22} color={PRIMARY} />
             </View>
             <Text style={styles.ctaTitle}>Want to Share Your Faith?</Text>
             <Text style={styles.ctaSubtitle}>
               Share your devotional insights and encourage the fellowship
               community through writing.
             </Text>
+
             <View style={styles.ctaButtonWrapper}>
               <Pressable
-                android_ripple={{ color: "rgba(255, 255, 255, 0.25)" }}
-                style={styles.ctaButton}
                 onPress={() => {
                   try {
                     Haptics.selectionAsync();
                   } catch {}
                   setWriterModalVisible(true);
                 }}
+                android_ripple={{
+                  color: "rgba(255, 255, 255, 0.28)",
+                  borderless: false,
+                  foreground: true,
+                }}
+                style={styles.ctaButtonInner}
               >
-                <Ionicons
-                  name={
-                    myWriterRequest?.status === "pending"
-                      ? "time-outline"
+                <View style={styles.ctaButtonContent}>
+                  <Text
+                    numberOfLines={1}
+                    style={styles.ctaButtonText}
+                  >
+                    {myWriterRequest?.status === "pending"
+                      ? "Application Pending"
                       : myWriterRequest?.status === "approved"
-                      ? "checkmark-circle-outline"
-                      : "create-outline"
-                  }
-                  size={18}
-                  color="#ffffff"
-                  style={{ marginRight: 8 }}
-                />
-                <Text style={styles.ctaButtonText}>
-                  {myWriterRequest?.status === "pending"
-                    ? "Application Pending"
-                    : myWriterRequest?.status === "approved"
-                    ? "Writer Status Active"
-                    : "Apply to Write"}
-                </Text>
+                      ? "Writer Status Active"
+                      : "Apply to Write"}
+                  </Text>
+                  <Ionicons
+                    name={
+                      myWriterRequest?.status === "pending"
+                        ? "time-outline"
+                        : myWriterRequest?.status === "approved"
+                        ? "checkmark-circle-outline"
+                        : "create-outline"
+                    }
+                    size={17}
+                    color="#ffffff"
+                    style={{ flexShrink: 0 }}
+                  />
+                </View>
               </Pressable>
             </View>
           </View>
@@ -805,6 +805,90 @@ export default function Devotions() {
     </View>
   );
 
+  /* ── Page 1: Articles (Text devotions) ── */
+  const articlesScene = (
+    <View style={styles.page}>
+      <FlatList
+        data={textDevotions}
+        keyExtractor={(item) => item._id}
+        renderItem={({ item }) => (
+          <MinimalDevotionCard
+            item={item}
+            isSaved={isDevotionSaved(item._id)}
+            isRead={isDevotionRead(item._id)}
+            onPress={() => router.push(`/devotion/${item._id}`)}
+            onToggleSave={() => handleToggleSave(item)}
+            onShare={() => handleShare(item)}
+          />
+        )}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={PRIMARY}
+            colors={[PRIMARY]}
+          />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconCircle}>
+              <Ionicons name="document-text-outline" size={36} color="#a1a1aa" />
+            </View>
+            <Text style={styles.emptyTitle}>No text articles</Text>
+            <Text style={styles.emptySubtitle}>
+              Check back soon for newly published devotional articles.
+            </Text>
+          </View>
+        }
+      />
+    </View>
+  );
+
+  /* ── Page 2: Voice & Audio Devotions ── */
+  const voiceScene = (
+    <View style={styles.page}>
+      <FlatList
+        data={voiceDevotions}
+        keyExtractor={(item) => item._id}
+        renderItem={({ item }) => (
+          <MinimalDevotionCard
+            item={item}
+            isSaved={isDevotionSaved(item._id)}
+            isRead={isDevotionRead(item._id)}
+            onPress={() => router.push(`/devotion/${item._id}`)}
+            onToggleSave={() => handleToggleSave(item)}
+            onShare={() => handleShare(item)}
+          />
+        )}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={PRIMARY}
+            colors={[PRIMARY]}
+          />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconCircle}>
+              <Ionicons name="musical-notes-outline" size={36} color="#a1a1aa" />
+            </View>
+            <Text style={styles.emptyTitle}>No voice devotions yet</Text>
+            <Text style={styles.emptySubtitle}>
+              Voice and audio devotions with captions will appear here.
+            </Text>
+          </View>
+        }
+      />
+    </View>
+  );
+
   const renderTabLabel = ({
     route,
     color,
@@ -836,6 +920,18 @@ export default function Devotions() {
           </Text>
         </View>
       )}
+      {route.key === "voice" && voiceDevotions.length > 0 && (
+        <View style={[styles.tabBadge, focused && styles.tabBadgeActive]}>
+          <Text
+            style={[
+              styles.tabBadgeText,
+              focused && styles.tabBadgeTextActive,
+            ]}
+          >
+            {voiceDevotions.length}
+          </Text>
+        </View>
+      )}
     </View>
   );
 
@@ -850,11 +946,22 @@ export default function Devotions() {
         showStreak={true}
       />
 
-      {/* All / Saved — native finger-tracking TabView (AI Poster Studio pattern) */}
+      {/* 4 Tabs: All / Articles / Voice & Audio / Saved */}
       <TabView
         navigationState={{ index: tabIndex, routes: TAB_ROUTES }}
         onIndexChange={handleTabChange}
-        renderScene={({ route }) => (route.key === "saved" ? savedScene : allScene)}
+        renderScene={({ route }) => {
+          switch (route.key) {
+            case "articles":
+              return articlesScene;
+            case "voice":
+              return voiceScene;
+            case "saved":
+              return savedScene;
+            default:
+              return allScene;
+          }
+        }}
         initialLayout={{ width: viewportWidth }}
         lazy
         lazyPreloadDistance={1}
@@ -866,9 +973,11 @@ export default function Devotions() {
             activeColor="#000000"
             inactiveColor="#71717a"
             pressColor="rgba(0, 0, 0, 0.05)"
-            scrollEnabled={false}
+            scrollEnabled={viewportWidth < 380}
             options={{
               all: { label: renderTabLabel },
+              articles: { label: renderTabLabel },
+              voice: { label: renderTabLabel },
               saved: { label: renderTabLabel },
             }}
           />
@@ -1173,18 +1282,22 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 0.2,
   },
-  compactCenterPlay: {
+  compactVoiceBadge: {
     position: "absolute",
-    top: "50%",
-    left: "50%",
-    marginTop: -18,
-    marginLeft: -18,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(0, 0, 0, 0.28)",
+    bottom: 9,
+    left: 9,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.72)",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 4,
+  },
+  compactVoiceText: {
+    color: "#ffffff",
+    fontSize: 10.5,
+    fontWeight: "700",
   },
   compactDurationBadge: {
     position: "absolute",
@@ -1464,29 +1577,24 @@ const styles = StyleSheet.create({
   },
   // CTA Section
   ctaContainer: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 28,
-    paddingVertical: 28,
-    paddingHorizontal: 24,
-    alignItems: "center",
-    backgroundColor: "#fafafa",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#f0f0f0",
-  },
-  ctaIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255, 103, 25, 0.12)",
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 40,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 14,
+  },
+  ctaIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 103, 25, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
   },
   ctaTitle: {
-    fontSize: 16,
-    fontWeight: "800",
+    fontSize: 17,
+    fontWeight: "700",
     color: "#09090b",
     marginBottom: 6,
     textAlign: "center",
@@ -1496,29 +1604,45 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#71717a",
     textAlign: "center",
-    lineHeight: 18,
+    lineHeight: 19,
     marginBottom: 18,
-    maxWidth: 260,
+    maxWidth: 280,
   },
   ctaButtonWrapper: {
-    borderRadius: 24,
-    overflow: "hidden",
+    height: 40,
+    minHeight: 40,
+    minWidth: 160,
+    borderRadius: 20,
     backgroundColor: PRIMARY,
-    minWidth: 200,
-    height: 48,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#ff6719",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 2,
   },
-  ctaButton: {
+  ctaButtonInner: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+  },
+  ctaButtonContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 6,
     width: "100%",
-    height: "100%",
-    paddingHorizontal: 28,
   },
   ctaButtonText: {
     color: "#ffffff",
-    fontSize: 15,
+    fontSize: 13.5,
     fontWeight: "700",
-    letterSpacing: -0.2,
+    letterSpacing: 0.1,
+    includeFontPadding: false,
+    textAlignVertical: "center",
   },
 });

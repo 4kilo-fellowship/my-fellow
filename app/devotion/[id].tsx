@@ -1,4 +1,5 @@
 import SignInPromptModal from "@/components/SignInPromptModal";
+import { Placeholder } from "@/components";
 import { PRIMARY } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -8,15 +9,19 @@ import { useDevotionsStore } from "@/stores/devotions.store";
 import { useStreakStore } from "@/stores/streak.store";
 import { Devotion } from "@/types/devotion.types";
 import { Ionicons } from "@expo/vector-icons";
-import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
+import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
+import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  GestureResponderEvent,
   Image,
+  Platform,
+  Pressable,
   ScrollView,
   Share,
   Text,
@@ -45,6 +50,7 @@ const DevotionDetail = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [showSignInModal, setShowSignInModal] = useState(false);
+  const [progressBarWidth, setProgressBarWidth] = useState(1);
   const { authState } = useAuth();
 
   const cachedDevotion = useMemo(() => getCachedDevotion(id), [id]);
@@ -59,11 +65,19 @@ const DevotionDetail = () => {
     }
   }, [cachedDevotion]);
 
+  // Configure Expo SDK 58 native audio session mode
+  useEffect(() => {
+    setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: true,
+    }).catch((err) => console.log("Audio mode set error:", err));
+  }, []);
+
   const player = useAudioPlayer(devotion?.audioUrl || "");
   const status = useAudioPlayerStatus(player);
 
   useEffect(() => {
-    if (devotion && player) {
+    if (devotion && player && devotion.type === "voice") {
       player.setActiveForLockScreen(true, {
         title: devotion.title,
         artist: devotion.author,
@@ -71,8 +85,31 @@ const DevotionDetail = () => {
       });
     }
 
-    return () => player.clearLockScreenControls();
+    return () => {
+      try {
+        player.clearLockScreenControls();
+      } catch {}
+    };
   }, [devotion, player]);
+
+  const togglePlayPause = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    if (status.playing) {
+      player.pause();
+    } else {
+      player.play();
+    }
+  };
+
+  const handleSeekPress = (e: GestureResponderEvent) => {
+    if (status.duration > 0 && progressBarWidth > 0) {
+      const clickX = e.nativeEvent.locationX;
+      const ratio = Math.max(0, Math.min(1, clickX / progressBarWidth));
+      player.seekTo(ratio * status.duration);
+    }
+  };
 
   useEffect(() => {
     const loadDevotion = async () => {
@@ -97,7 +134,7 @@ const DevotionDetail = () => {
             }
           });
 
-          if (response.data.type !== "text") {
+          if (response.data.type === "voice" && response.data.audioUrl) {
             downloadForOffline(response.data);
           }
         }
@@ -124,10 +161,9 @@ const DevotionDetail = () => {
       const folder = `${FileSystem.documentDirectory}devotions/${item._id}/`;
       await FileSystem.makeDirectoryAsync(folder, { intermediates: true });
 
-      const downloads = [];
       let totalFiles = 0;
       if (item.image) totalFiles++;
-      const mediaUrl = item.audioUrl || item.pdfUrl || item.bookUrl;
+      const mediaUrl = item.audioUrl;
       if (mediaUrl) totalFiles++;
 
       let completedFiles = 0;
@@ -136,12 +172,14 @@ const DevotionDetail = () => {
         totalBytesWritten: number;
         totalBytesExpectedToWrite: number;
       }) => {
-        const progress =
-          downloadProgress.totalBytesWritten /
-          downloadProgress.totalBytesExpectedToWrite;
-        const overallProgress =
-          (completedFiles / totalFiles + progress / totalFiles) * 100;
-        setDownloadProgress(Math.min(overallProgress, 100));
+        if (downloadProgress.totalBytesExpectedToWrite > 0) {
+          const progress =
+            downloadProgress.totalBytesWritten /
+            downloadProgress.totalBytesExpectedToWrite;
+          const overallProgress =
+            (completedFiles / totalFiles + progress / totalFiles) * 100;
+          setDownloadProgress(Math.min(overallProgress, 100));
+        }
       };
 
       if (item.image) {
@@ -161,8 +199,7 @@ const DevotionDetail = () => {
       }
 
       if (mediaUrl) {
-        const ext = item.audioUrl ? "mp3" : item.pdfUrl ? "pdf" : "epub";
-        const mediaFile = folder + `media.${ext}`;
+        const mediaFile = folder + "audio.mp3";
         const mediaInfo = await FileSystem.getInfoAsync(mediaFile);
         if (!mediaInfo.exists) {
           const downloadResumable = FileSystem.createDownloadResumable(
@@ -243,10 +280,76 @@ const DevotionDetail = () => {
 
   if (loading && !devotion) {
     return (
-      <View
-        className={`flex-1 items-center justify-center ${isDark ? "bg-zinc-950" : "bg-gray-50"}`}
-      >
-        <ActivityIndicator size="large" color={PRIMARY} />
+      <View className={`flex-1 ${isDark ? "bg-[#0a0a0a]" : "bg-white"}`}>
+        <StatusBar style={isDark ? "light" : "dark"} />
+
+        {/* Minimal Header Skeleton */}
+        <View
+          className={`flex-row items-center justify-between px-5 ${
+            isDark ? "bg-[#0a0a0a]" : "bg-white"
+          }`}
+          style={{
+            paddingTop: top + 6,
+            paddingBottom: 12,
+          }}
+        >
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-9 h-9 rounded-full items-center justify-center"
+          >
+            <Ionicons
+              name="arrow-back"
+              size={22}
+              color={isDark ? "#fff" : "#111"}
+            />
+          </TouchableOpacity>
+          <Placeholder width={140} height={18} borderRadius={6} />
+          <View style={{ width: 36 }} />
+        </View>
+
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingTop: 8 }}
+        >
+          {/* Cover Image Placeholder */}
+          <View className="w-full h-[260px]">
+            <Placeholder width="100%" height={260} borderRadius={0} />
+          </View>
+
+          {/* Article Info Placeholder */}
+          <View className="px-5 pt-6">
+            <Placeholder width="90%" height={26} borderRadius={6} style={{ marginBottom: 10 }} />
+            <Placeholder width="65%" height={24} borderRadius={6} style={{ marginBottom: 20 }} />
+
+            {/* Author Row Placeholder */}
+            <View
+              className={`flex-row items-center justify-between pb-5 mb-6 border-b ${
+                isDark ? "border-[#1a1a1a]" : "border-gray-100"
+              }`}
+            >
+              <View className="flex-row items-center flex-1">
+                <Placeholder width={40} height={40} borderRadius={20} />
+                <View style={{ marginLeft: 10, flex: 1, gap: 6 }}>
+                  <Placeholder width={110} height={14} borderRadius={4} />
+                  <Placeholder width={75} height={12} borderRadius={4} />
+                </View>
+              </View>
+              <Placeholder width={80} height={16} borderRadius={4} />
+            </View>
+
+            {/* Body Text Lines Placeholder */}
+            <Placeholder width="100%" height={14} borderRadius={4} style={{ marginBottom: 10 }} />
+            <Placeholder width="96%" height={14} borderRadius={4} style={{ marginBottom: 10 }} />
+            <Placeholder width="92%" height={14} borderRadius={4} style={{ marginBottom: 10 }} />
+            <Placeholder width="98%" height={14} borderRadius={4} style={{ marginBottom: 10 }} />
+            <Placeholder width="80%" height={14} borderRadius={4} style={{ marginBottom: 24 }} />
+
+            <Placeholder width="100%" height={14} borderRadius={4} style={{ marginBottom: 10 }} />
+            <Placeholder width="94%" height={14} borderRadius={4} style={{ marginBottom: 10 }} />
+            <Placeholder width="88%" height={14} borderRadius={4} style={{ marginBottom: 10 }} />
+          </View>
+        </ScrollView>
       </View>
     );
   }
@@ -442,91 +545,159 @@ const DevotionDetail = () => {
             <View
               className={`mb-6 p-5 rounded-2xl border ${
                 isDark
-                  ? "bg-[#111] border-[#1a1a1a]"
-                  : "bg-[#fafafa] border-gray-100"
+                  ? "bg-[#141416] border-[#222]"
+                  : "bg-[#f8f9fa] border-gray-200"
               }`}
             >
-              <View className="flex-row items-center">
+              {/* Audio Player Header */}
+              <View className="flex-row items-center justify-between mb-4">
+                <View className="flex-row items-center">
+                  <View className="w-8 h-8 rounded-full bg-primary/10 items-center justify-center mr-2.5">
+                    <Ionicons name="musical-notes" size={16} color={PRIMARY} />
+                  </View>
+                  <View>
+                    <Text
+                      className={`text-[13px] font-bold ${
+                        isDark ? "text-white" : "text-gray-900"
+                      }`}
+                    >
+                      Audio Devotion & Message
+                    </Text>
+                    <Text
+                      className={`text-[11px] ${
+                        isDark ? "text-gray-400" : "text-gray-500"
+                      }`}
+                    >
+                      {devotion.duration || "Voice with Caption"}
+                    </Text>
+                  </View>
+                </View>
+
+                {status.playing && (
+                  <View className="flex-row items-center bg-primary/15 px-2.5 py-1 rounded-full">
+                    <Ionicons name="volume-high" size={13} color={PRIMARY} />
+                    <Text className="text-[10px] font-bold text-primary ml-1">
+                      Playing
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Progress Bar (Scrubbable) */}
+              <View
+                className="w-full mb-3"
+                onLayout={(e) => setProgressBarWidth(e.nativeEvent.layout.width)}
+              >
+                <Pressable
+                  hitSlop={12}
+                  onPress={handleSeekPress}
+                  className={`h-2.5 w-full rounded-full overflow-hidden ${
+                    isDark ? "bg-[#252528]" : "bg-gray-200"
+                  } justify-center`}
+                >
+                  <View
+                    style={{
+                      width:
+                        status.duration > 0
+                          ? `${Math.min(100, Math.max(0, (status.currentTime / status.duration) * 100))}%`
+                          : "0%",
+                    }}
+                    className="h-full bg-primary rounded-full"
+                  />
+                </Pressable>
+                <View className="flex-row justify-between mt-1.5">
+                  <Text
+                    className={`text-[11px] font-medium ${
+                      isDark ? "text-gray-400" : "text-gray-500"
+                    }`}
+                  >
+                    {formatTime(status.currentTime)}
+                  </Text>
+                  <Text
+                    className={`text-[11px] font-medium ${
+                      isDark ? "text-gray-400" : "text-gray-500"
+                    }`}
+                  >
+                    {devotion.duration || formatTime(status.duration)}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Player Controls */}
+              <View className="flex-row items-center justify-center pt-1" style={{ gap: 24 }}>
                 <TouchableOpacity
-                  activeOpacity={1}
-                  onPress={() =>
-                    status.playing ? player.pause() : player.play()
-                  }
-                  className="w-12 h-12 bg-primary rounded-full items-center justify-center"
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    try {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    } catch {}
+                    player.seekTo(Math.max(0, status.currentTime - 10));
+                  }}
+                  className={`w-10 h-10 rounded-full items-center justify-center ${
+                    isDark ? "bg-[#222]" : "bg-gray-100"
+                  }`}
                 >
                   <Ionicons
-                    name={status.playing ? "pause" : "play"}
-                    size={22}
-                    color="white"
+                    name="play-back"
+                    size={18}
+                    color={isDark ? "#ccc" : "#555"}
                   />
                 </TouchableOpacity>
 
-                <View className="flex-1 ml-4">
-                  <View
-                    className={`h-1.5 w-full rounded-full overflow-hidden ${
-                      isDark ? "bg-[#222]" : "bg-gray-200"
-                    }`}
-                  >
-                    <View
-                      style={{
-                        width:
-                          status.duration > 0
-                            ? `${(status.currentTime / status.duration) * 100}%`
-                            : "0%",
-                      }}
-                      className="h-full bg-primary rounded-full"
-                    />
-                  </View>
-                  <View className="flex-row justify-between mt-1.5">
-                    <Text
-                      className={`text-[10px] font-medium ${
-                        isDark ? "text-gray-600" : "text-gray-400"
-                      }`}
-                    >
-                      {formatTime(status.currentTime)}
-                    </Text>
-                    <Text
-                      className={`text-[10px] font-medium ${
-                        isDark ? "text-gray-600" : "text-gray-400"
-                      }`}
-                    >
-                      {devotion.duration || formatTime(status.duration)}
-                    </Text>
-                  </View>
-                </View>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={togglePlayPause}
+                  className="w-14 h-14 bg-primary rounded-full items-center justify-center shadow-md shadow-primary/30"
+                >
+                  <Ionicons
+                    name={status.playing ? "pause" : "play"}
+                    size={26}
+                    color="white"
+                    style={!status.playing ? { marginLeft: 3 } : undefined}
+                  />
+                </TouchableOpacity>
 
-                <View className="flex-row items-center ml-3" style={{ gap: 8 }}>
-                  <TouchableOpacity
-                    onPress={() =>
-                      player.seekTo(Math.max(0, status.currentTime - 10))
-                    }
-                  >
-                    <Ionicons
-                      name="play-back"
-                      size={18}
-                      color={isDark ? "#555" : "#999"}
-                    />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() =>
-                      player.seekTo(
-                        Math.min(status.duration, status.currentTime + 10),
-                      )
-                    }
-                  >
-                    <Ionicons
-                      name="play-forward"
-                      size={18}
-                      color={isDark ? "#555" : "#999"}
-                    />
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    try {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    } catch {}
+                    player.seekTo(
+                      Math.min(status.duration, status.currentTime + 10),
+                    );
+                  }}
+                  className={`w-10 h-10 rounded-full items-center justify-center ${
+                    isDark ? "bg-[#222]" : "bg-gray-100"
+                  }`}
+                >
+                  <Ionicons
+                    name="play-forward"
+                    size={18}
+                    color={isDark ? "#ccc" : "#555"}
+                  />
+                </TouchableOpacity>
               </View>
             </View>
           )}
 
+          {/* Devotion Content & Caption */}
           <View className="mb-8">
-            {devotion.content && (
+            {devotion.type === "voice" && (
+              <View className="flex-row items-center mb-3">
+                <Ionicons name="chatbox-ellipses-outline" size={17} color={PRIMARY} />
+                <Text
+                  className={`text-[15px] font-bold ml-2 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Voice Caption & Message
+                </Text>
+              </View>
+            )}
+
+            {/* Display voice caption or article text */}
+            {(devotion.caption || devotion.content) && (
               <Markdown
                 style={{
                   body: {
@@ -562,7 +733,7 @@ const DevotionDetail = () => {
                     color: isDark ? "#d1d5db" : "#4b5563",
                   },
                   blockquote: {
-                    backgroundColor: isDark ? "#111" : "#f9fafb",
+                    backgroundColor: isDark ? "#141416" : "#f9fafb",
                     borderLeftColor: PRIMARY,
                     borderLeftWidth: 3,
                     paddingHorizontal: 16,
@@ -586,164 +757,29 @@ const DevotionDetail = () => {
                   },
                 }}
               >
-                {devotion.content}
+                {devotion.caption || devotion.content || ""}
               </Markdown>
             )}
 
-            {devotion.type === "voice" && devotion.caption && (
-              <Markdown
-                style={{
-                  body: {
-                    color: isDark ? "#d1d5db" : "#374151",
-                    fontSize: 16,
-                    lineHeight: 28,
-                  },
-                  paragraph: {
-                    marginBottom: 16,
-                  },
-                  heading2: {
-                    color: isDark ? "#f9fafb" : "#111827",
-                    fontSize: 22,
-                    fontWeight: "800",
-                    marginTop: 28,
-                    marginBottom: 12,
-                    lineHeight: 30,
-                  },
-                  heading3: {
-                    color: isDark ? "#e5e7eb" : "#1f2937",
-                    fontSize: 18,
-                    fontWeight: "700",
-                    marginTop: 24,
-                    marginBottom: 10,
-                    lineHeight: 26,
-                  },
-                  strong: {
-                    fontWeight: "700",
-                    color: isDark ? "#f3f4f6" : "#111827",
-                  },
-                  em: {
-                    fontStyle: "italic",
-                    color: isDark ? "#d1d5db" : "#4b5563",
-                  },
-                  blockquote: {
-                    backgroundColor: isDark ? "#111" : "#f9fafb",
-                    borderLeftColor: PRIMARY,
-                    borderLeftWidth: 3,
-                    paddingHorizontal: 16,
-                    paddingVertical: 14,
-                    borderRadius: 8,
-                    marginVertical: 16,
-                  },
-                  hr: {
-                    backgroundColor: isDark ? "#1a1a1a" : "#e5e7eb",
-                    height: 1,
-                    marginVertical: 24,
-                  },
-                  list_item: {
-                    marginBottom: 6,
-                  },
-                  bullet_list: {
-                    marginBottom: 16,
-                  },
-                  ordered_list: {
-                    marginBottom: 16,
-                  },
-                }}
-              >
-                {devotion.caption}
-              </Markdown>
-            )}
-
-            {devotion.type === "pdf" && (
-              <View
-                className={`p-6 rounded-2xl items-center border ${
-                  isDark
-                    ? "bg-[#111] border-[#1a1a1a]"
-                    : "bg-[#fafafa] border-gray-100"
-                }`}
-              >
-                <Ionicons name="document-text" size={44} color="#ef4444" />
-                <Text
-                  className={`text-[16px] font-bold mt-3 ${
-                    isDark ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  PDF Devotional
-                </Text>
-                <Text
-                  className={`text-[12px] text-center mt-1 mb-5 ${
-                    isDark ? "text-gray-500" : "text-gray-400"
-                  }`}
-                >
-                  {devotion.pageCount} Pages • Document Study Guide
-                </Text>
-                <TouchableOpacity
-                  className={`px-6 py-2.5 rounded-lg flex-row items-center border ${
-                    isDark
-                      ? "bg-[#1a1a1a] border-[#333]"
-                      : "bg-white border-gray-200"
-                  }`}
-                  onPress={() => devotion.pdfUrl && openLink(devotion.pdfUrl)}
-                >
-                  <Ionicons name="eye-outline" size={16} color={PRIMARY} />
-                  <Text
-                    className={`font-bold ml-2 text-[13px] ${
-                      isDark ? "text-white" : "text-gray-800"
-                    }`}
+            {/* If devotion has both distinct content and caption */}
+            {devotion.type === "voice" &&
+              devotion.content &&
+              devotion.caption &&
+              devotion.content !== devotion.caption && (
+                <View className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-800">
+                  <Markdown
+                    style={{
+                      body: {
+                        color: isDark ? "#d1d5db" : "#374151",
+                        fontSize: 16,
+                        lineHeight: 28,
+                      },
+                    }}
                   >
-                    View Document
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {devotion.type === "book" && (
-              <View
-                className={`p-6 rounded-2xl items-center border ${
-                  isDark
-                    ? "bg-[#111] border-[#1a1a1a]"
-                    : "bg-[#fafafa] border-gray-100"
-                }`}
-              >
-                <Ionicons name="book" size={44} color={PRIMARY} />
-                <Text
-                  className={`text-[16px] font-bold mt-3 ${
-                    isDark ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  Study Book
-                </Text>
-                <Text
-                  className={`text-[12px] text-center mt-1 mb-5 ${
-                    isDark ? "text-gray-500" : "text-gray-400"
-                  }`}
-                >
-                  Format: {devotion.bookFormat?.toUpperCase() || "EPUB"}
-                </Text>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  className={`px-6 py-2.5 rounded-lg flex-row items-center border ${
-                    isDark
-                      ? "bg-[#1a1a1a] border-[#333]"
-                      : "bg-white border-gray-200"
-                  }`}
-                  onPress={() => devotion.bookUrl && openLink(devotion.bookUrl)}
-                >
-                  <Ionicons
-                    name="cloud-download-outline"
-                    size={16}
-                    color={PRIMARY}
-                  />
-                  <Text
-                    className={`font-bold ml-2 text-[13px] ${
-                      isDark ? "text-white" : "text-gray-800"
-                    }`}
-                  >
-                    Download Book
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
+                    {devotion.content}
+                  </Markdown>
+                </View>
+              )}
           </View>
 
           {relatedDevotions.length > 0 && (
@@ -762,39 +798,48 @@ const DevotionDetail = () => {
                 className="-mx-5 px-5"
               >
                 {relatedDevotions.map((item) => (
-                  <TouchableOpacity
-                    activeOpacity={0.8}
+                  <View
                     key={item._id}
-                    onPress={() => router.push(`/devotion/${item._id}`)}
-                    className="mr-3 w-52"
+                    className="mr-3 w-52 rounded-2xl overflow-hidden"
                   >
-                    <View
-                      className={`h-32 w-full rounded-xl overflow-hidden mb-2 border ${
-                        isDark ? "border-[#1a1a1a]" : "border-gray-100"
-                      }`}
+                    <Pressable
+                      android_ripple={{
+                        color: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+                        foreground: true,
+                      }}
+                      style={({ pressed }) => [
+                        Platform.OS === "ios" && pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+                      ]}
+                      onPress={() => router.push(`/devotion/${item._id}`)}
                     >
-                      <Image
-                        source={{ uri: item.image }}
-                        className="w-full h-full"
-                        resizeMode="cover"
-                      />
-                    </View>
-                    <Text
-                      numberOfLines={2}
-                      className={`text-[14px] font-bold leading-tight ${
-                        isDark ? "text-white" : "text-gray-900"
-                      }`}
-                    >
-                      {item.title}
-                    </Text>
-                    <Text
-                      className={`text-[11px] mt-1 ${
-                        isDark ? "text-gray-500" : "text-gray-400"
-                      }`}
-                    >
-                      {item.author}
-                    </Text>
-                  </TouchableOpacity>
+                      <View
+                        className={`h-32 w-full rounded-xl overflow-hidden mb-2 border ${
+                          isDark ? "border-[#1a1a1a] bg-[#141414]" : "border-gray-100 bg-gray-50"
+                        }`}
+                      >
+                        <Image
+                          source={{ uri: item.image }}
+                          className="w-full h-full"
+                          resizeMode="cover"
+                        />
+                      </View>
+                      <Text
+                        numberOfLines={2}
+                        className={`text-[14px] font-bold leading-tight ${
+                          isDark ? "text-white" : "text-gray-900"
+                        }`}
+                      >
+                        {item.title}
+                      </Text>
+                      <Text
+                        className={`text-[11px] mt-1 ${
+                          isDark ? "text-gray-500" : "text-gray-400"
+                        }`}
+                      >
+                        {item.author}
+                      </Text>
+                    </Pressable>
+                  </View>
                 ))}
               </ScrollView>
             </View>

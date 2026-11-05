@@ -1,4 +1,4 @@
-export type DevotionType = "text" | "voice" | "pdf" | "book";
+export type DevotionType = "text" | "voice";
 
 export type Devotion = {
   id: string;

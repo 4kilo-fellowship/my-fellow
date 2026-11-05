@@ -14,11 +14,11 @@ export interface Devotion {
   content?: string;
   audioUrl?: string;
   duration?: string;
-  caption?: string;
-  pdfUrl?: string;
+  caption?: string; // Voice caption / transcript or devotional text snippet
   pageCount?: number;
-  bookUrl?: string;
   bookFormat?: string;
+  pdfUrl?: string;
+  bookUrl?: string;
   isLiked?: boolean;
   isSaved?: boolean;
   likesFormatted?: string;
