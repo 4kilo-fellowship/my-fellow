@@ -681,10 +681,10 @@ export default function CommunityScreen() {
           style={({ pressed }) => [
             styles.searchPillWrapper,
             {
-              backgroundColor: isDark ? "#202327" : "#e2e8f0",
+              backgroundColor: isDark ? "#202327" : "#edf0f3",
               borderColor: isDark
                 ? "rgba(255, 255, 255, 0.08)"
-                : "rgba(0, 0, 0, 0.06)",
+                : "rgba(0, 0, 0, 0.05)",
             },
             Platform.OS === "ios" && pressed && { opacity: 0.75 },
           ]}
