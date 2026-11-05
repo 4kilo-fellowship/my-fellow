@@ -71,7 +71,8 @@
       [
         "expo-audio",
         {
-          "enableBackgroundPlayback": true
+          "enableBackgroundPlayback": true,
+          "enableBackgroundRecording": false
         }
       ],
       "expo-asset",

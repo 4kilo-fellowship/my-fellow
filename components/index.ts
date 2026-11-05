@@ -26,6 +26,7 @@ export { Placeholder } from "./Placeholder";
 export { default as QuickAction } from "./QuickAction/HomeQuickActions";
 export { default as QuickActions } from "./QuickAction/TeamsQuickActions";
 export { default as RegistrationModal } from "./RegistrationModal";
+export { NativeDialog } from "./ui/dialog";
 export { default as SignInPromptModal } from "./SignInPromptModal";
 export { default as UserProfileMenu } from "./UserProfileMenu";
 export { default as VideoItem } from "./VideoItem";
