@@ -1,6 +1,7 @@
 import { MainTabHeader } from "@/components/MainTabHeader";
 import { NativeViewAllButton } from "@/components/NativeViewAllButton";
 import ProductCard from "@/components/Marketplace/ProductCard";
+import ProductSkeleton from "@/components/Marketplace/ProductSkeleton";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { ProductBottomSheet } from "@/components/Modals/ProductBottomSheet";
 import { ReasonModal } from "@/components/Modals/ReasonModal";
@@ -20,7 +21,7 @@ import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
@@ -29,28 +30,32 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  type ScrollViewInstance,
+  StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
-import PagerView, {
-  type PagerViewOnPageSelectedEvent,
-} from "react-native-pager-view";
+import { PRIMARY } from "@/constants/colors";
+import { Route, TabBar, TabView } from "react-native-tab-view";
 import * as z from "zod";
 
 type DonationForm = z.infer<typeof donationSchema>;
 
-const CATEGORIES = [
-  { label: "All", value: "All" },
-  { label: "New", value: "new" },
-  { label: "T-shirt", value: "t-shirt" },
-  { label: "Hoddy", value: "hoddy" },
-  { label: "Stickers", value: "stickers" },
-  { label: "Accessories", value: "accessories" },
-  { label: "Others", value: "others" },
+interface CategoryRoute extends Route {
+  key: string;
+  title: string;
+  value: string;
+}
+
+const CATEGORIES: CategoryRoute[] = [
+  { key: "all", title: "All", value: "All" },
+  { key: "new", title: "New", value: "new" },
+  { key: "t-shirt", title: "T-Shirts", value: "t-shirt" },
+  { key: "hoodie", title: "Hoodies", value: "hoodie" },
+  { key: "stickers", title: "Stickers", value: "stickers" },
+  { key: "accessories", title: "Accessories", value: "accessories" },
+  { key: "others", title: "Others", value: "others" },
 ];
 
 const Gifts = () => {
@@ -72,9 +77,6 @@ const Gifts = () => {
   }>({ visible: false, title: "", message: "", type: "info" });
 
   const { width: screenWidth } = useWindowDimensions();
-  const pagerRef = useRef<PagerView>(null);
-  const categoryScrollRef = useRef<ScrollViewInstance>(null);
-  const pillLayouts = useRef<{ [key: number]: { x: number; width: number } }>({});
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
 
   const {
@@ -91,7 +93,12 @@ const Gifts = () => {
   }, []);
 
   const categoryProductsMap = useMemo(() => {
-    return CATEGORIES.map((cat) => {
+    return CATEGORIES.reduce<
+      Record<
+        string,
+        { cat: CategoryRoute; items: Product[]; totalCount: number }
+      >
+    >((acc, cat) => {
       const filtered = products.filter((p) => {
         if (cat.value === "All") return true;
 
@@ -108,51 +115,79 @@ const Gifts = () => {
           return p.isNew || isRecentlyCreated();
         }
 
-        const pCat = p.category?.toLowerCase() || "";
+        const pCat = p.category?.toLowerCase().trim() || "";
         const mainCategories = [
           "t-shirt",
+          "t-shirts",
+          "tshirt",
+          "tshirts",
+          "shirt",
+          "hoodie",
+          "hoodies",
           "hoddy",
+          "sweatshirt",
           "stickers",
+          "sticker",
           "accessories",
+          "accessory",
         ];
+
         if (cat.value === "others") {
           return !mainCategories.includes(pCat);
         }
+
+        if (cat.value === "t-shirt") {
+          return (
+            pCat === "t-shirt" ||
+            pCat === "t-shirts" ||
+            pCat === "tshirt" ||
+            pCat === "tshirts" ||
+            pCat === "shirt"
+          );
+        }
+
+        if (cat.value === "hoodie") {
+          return (
+            pCat === "hoodie" ||
+            pCat === "hoodies" ||
+            pCat === "hoddy" ||
+            pCat === "sweatshirt"
+          );
+        }
+
+        if (cat.value === "stickers") {
+          return pCat === "stickers" || pCat === "sticker";
+        }
+
+        if (cat.value === "accessories") {
+          return pCat === "accessories" || pCat === "accessory";
+        }
+
         return pCat === cat.value.toLowerCase();
       });
 
-      return {
+      acc[cat.key] = {
         cat,
         items: filtered.slice(0, 4),
         totalCount: filtered.length,
       };
-    });
+      return acc;
+    }, {});
   }, [products]);
 
-  const activeCategoryData =
-    categoryProductsMap[activeCategoryIndex] || categoryProductsMap[0];
+  const activeRouteKey = CATEGORIES[activeCategoryIndex]?.key || "all";
+  const activeCategoryData = categoryProductsMap[activeRouteKey];
   const activeItemsCount = activeCategoryData?.items.length ?? 0;
-  const pagerHeight =
+  const storeTabViewHeight =
     productsLoading && products.length === 0
-      ? 220
+      ? 260
       : activeItemsCount === 0
-      ? 200
+      ? 280
       : activeItemsCount <= 2
-      ? 310
-      : 600;
+      ? 340
+      : 580;
 
-  const scrollToCategoryPill = (index: number) => {
-    const layout = pillLayouts.current[index];
-    if (layout && categoryScrollRef.current) {
-      const targetX = Math.max(
-        0,
-        layout.x - screenWidth / 2 + layout.width / 2,
-      );
-      categoryScrollRef.current.scrollTo({ x: targetX, animated: true });
-    }
-  };
-
-  const handleSelectCategory = (index: number) => {
+  const handleTabChange = (index: number) => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
@@ -160,19 +195,6 @@ const Gifts = () => {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     }
     setActiveCategoryIndex(index);
-    pagerRef.current?.setPage(index);
-    scrollToCategoryPill(index);
-  };
-
-  const handlePageSelected = (e: PagerViewOnPageSelectedEvent) => {
-    const index = e.nativeEvent.position;
-    if (index !== activeCategoryIndex) {
-      if (Platform.OS === "ios" || Platform.OS === "android") {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      }
-      setActiveCategoryIndex(index);
-      scrollToCategoryPill(index);
-    }
   };
 
   const showInfoModal = (
@@ -360,6 +382,129 @@ const Gifts = () => {
       setLoading(false);
     }
   };
+
+  const renderStoreScene = ({ route }: { route: CategoryRoute }) => {
+    if (productsLoading && products.length === 0) {
+      return (
+        <View style={styles.storeGridContainer}>
+          {[1, 2, 3, 4].map((key) => (
+            <View key={key} style={styles.storeGridItem}>
+              <ProductSkeleton isDark={isDark} />
+            </View>
+          ))}
+        </View>
+      );
+    }
+
+    const data = categoryProductsMap[route.key];
+    const items = data?.items || [];
+    const cat = data?.cat || route;
+
+    if (items.length === 0) {
+      return (
+        <View style={styles.storeEmptyContainer}>
+          <View
+            style={[
+              styles.storeEmptyIconWrap,
+              { backgroundColor: isDark ? "#27272a" : "#fff7ed" },
+            ]}
+          >
+            <Ionicons
+              name={
+                cat.value === "t-shirt"
+                  ? "shirt-outline"
+                  : cat.value === "stickers"
+                  ? "pricetag-outline"
+                  : "bag-handle-outline"
+              }
+              size={26}
+              color={PRIMARY}
+            />
+          </View>
+          <Text
+            style={[
+              styles.storeEmptyTitle,
+              { color: isDark ? "#f4f4f5" : "#18181b" },
+            ]}
+          >
+            No {cat.title} available yet
+          </Text>
+          <Text
+            style={[
+              styles.storeEmptySubtitle,
+              { color: isDark ? "#71767b" : "#71717a" },
+            ]}
+          >
+            New fellowship items are added regularly. Check back soon!
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.storeGridContainer}>
+        {items.map((item) => (
+          <View key={item.id} style={styles.storeGridItem}>
+            <ProductCard
+              product={item}
+              isDark={isDark}
+              onPress={() => router.push(`/marketplace/${item.id}` as any)}
+              onBuy={() => {
+                setSelectedProduct(item);
+                setBottomSheetVisible(true);
+              }}
+            />
+          </View>
+        ))}
+      </View>
+    );
+  };
+
+  const renderTabBar = (props: any) => (
+    <TabBar
+      {...props}
+      scrollEnabled
+      bounces={true}
+      contentContainerStyle={{ paddingHorizontal: 16 }}
+      tabStyle={styles.storeTabItem}
+      indicatorStyle={styles.storeTabIndicator}
+      style={[
+        styles.storeTabBar,
+        {
+          backgroundColor: isDark ? "#1A1A1B" : "#ffffff",
+          borderBottomColor: isDark ? "#27272a" : "#eff3f4",
+        },
+      ]}
+      activeColor={PRIMARY}
+      inactiveColor={isDark ? "#71767b" : "#71717a"}
+      pressColor={
+        isDark ? "rgba(255, 103, 25, 0.12)" : "rgba(255, 103, 25, 0.08)"
+      }
+      renderLabel={({ route, focused, color }: any) => (
+        <View style={styles.storeTabLabelRow}>
+          <Text
+            style={[
+              styles.storeTabLabelText,
+              {
+                color,
+                fontWeight: focused ? "700" : "600",
+              },
+            ]}
+          >
+            {route.title}
+          </Text>
+          {route.key === "new" && (
+            <View
+              style={[
+                styles.storeTabNewDot,
+                { backgroundColor: PRIMARY },
+              ]}
+            />
+          )}
+        </View>
+      )}
+    />
+  );
 
   return (
     <View className={`flex-1 ${isDark ? "bg-dark" : "bg-background"}`}>
@@ -700,7 +845,7 @@ const Gifts = () => {
 
             {/* FELLOWSHIP STORE SECTION */}
             <View className="mb-12">
-              <View className="px-5 mb-5 flex-row items-center justify-between">
+              <View className="px-5 mb-3 flex-row items-center justify-between">
                 <Text
                   numberOfLines={1}
                   className={`text-lg font-extrabold ${
@@ -717,168 +862,22 @@ const Gifts = () => {
                 />
               </View>
 
-              <ScrollView
-                ref={categoryScrollRef}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                overScrollMode="never"
-                bounces={true}
-                className="mb-3"
-                contentContainerStyle={{
-                  paddingHorizontal: 20,
-                  gap: 8,
+              <TabView
+                navigationState={{
+                  index: activeCategoryIndex,
+                  routes: CATEGORIES,
                 }}
-              >
-                {CATEGORIES.map((cat, index) => {
-                  const isSelected = activeCategoryIndex === index;
-                  return (
-                    <View
-                      key={cat.value}
-                      onLayout={(e) => {
-                        pillLayouts.current[index] = {
-                          x: e.nativeEvent.layout.x,
-                          width: e.nativeEvent.layout.width,
-                        };
-                      }}
-                    >
-                      <Pressable
-                        onPress={() => handleSelectCategory(index)}
-                        unstable_pressDelay={0}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: isSelected }}
-                        android_ripple={{
-                          color: isSelected
-                            ? "rgba(255, 255, 255, 0.28)"
-                            : isDark
-                              ? "rgba(255, 255, 255, 0.12)"
-                              : "rgba(0, 0, 0, 0.08)",
-                          borderless: false,
-                          foreground: true,
-                        }}
-                        style={({ pressed }) => [
-                          {
-                            paddingHorizontal: 18,
-                            paddingVertical: 8,
-                            borderRadius: 9999,
-                            overflow: "hidden",
-                            borderWidth: 1,
-                            opacity: Platform.OS === "ios" && pressed ? 0.8 : 1,
-                            backgroundColor: isSelected
-                              ? "#ff6719"
-                              : isDark
-                                ? "#18181b"
-                                : "#ffffff",
-                            borderColor: isSelected
-                              ? "#ff6719"
-                              : isDark
-                                ? "#27272a"
-                                : "#f4f4f5",
-                          },
-                        ]}
-                      >
-                        <View className="flex-row items-center gap-1.5">
-                          <Text
-                            className={`text-sm font-bold ${
-                              isSelected
-                                ? "text-white"
-                                : isDark
-                                  ? "text-zinc-400"
-                                  : "text-zinc-600"
-                            }`}
-                          >
-                            {cat.label}
-                          </Text>
-                          {cat.value === "new" && (
-                            <View
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                isSelected ? "bg-white" : "bg-primary"
-                              }`}
-                            />
-                          )}
-                        </View>
-                      </Pressable>
-                    </View>
-                  );
-                })}
-              </ScrollView>
-
-              {productsLoading && products.length === 0 ? (
-                <View className="py-12 items-center justify-center">
-                  <ActivityIndicator color="#ff6719" />
-                  <Text
-                    className={`text-xs mt-3 font-medium ${
-                      isDark ? "text-zinc-500" : "text-zinc-400"
-                    }`}
-                  >
-                    Loading store items...
-                  </Text>
-                </View>
-              ) : (
-                <PagerView
-                  ref={pagerRef}
-                  initialPage={0}
-                  onPageSelected={handlePageSelected}
-                  style={{ width: "100%", height: pagerHeight }}
-                >
-                  {categoryProductsMap.map(({ cat, items }) => (
-                    <View key={cat.value} style={{ width: "100%" }}>
-                      {items.length === 0 ? (
-                        <View className="py-10 px-6 items-center justify-center">
-                          <View
-                            className={`w-14 h-14 rounded-full items-center justify-center mb-3 ${
-                              isDark ? "bg-zinc-800" : "bg-orange-50"
-                            }`}
-                          >
-                            <Ionicons
-                              name={
-                                cat.value === "t-shirt"
-                                  ? "shirt-outline"
-                                  : cat.value === "stickers"
-                                  ? "pricetag-outline"
-                                  : "bag-handle-outline"
-                              }
-                              size={26}
-                              color="#ff6719"
-                            />
-                          </View>
-                          <Text
-                            className={`text-sm font-bold ${
-                              isDark ? "text-zinc-200" : "text-zinc-800"
-                            }`}
-                          >
-                            No {cat.label} available yet
-                          </Text>
-                          <Text
-                            className={`text-xs text-center mt-1 max-w-[220px] ${
-                              isDark ? "text-zinc-500" : "text-zinc-400"
-                            }`}
-                          >
-                            New fellowship items are added regularly. Check back soon!
-                          </Text>
-                        </View>
-                      ) : (
-                        <View className="px-3 flex-row flex-wrap">
-                          {items.map((item) => (
-                            <View key={item.id} style={{ width: "50%" }}>
-                              <ProductCard
-                                product={item}
-                                isDark={isDark}
-                                onPress={() =>
-                                  router.push(`/marketplace/${item.id}` as any)
-                                }
-                                onBuy={() => {
-                                  setSelectedProduct(item);
-                                  setBottomSheetVisible(true);
-                                }}
-                              />
-                            </View>
-                          ))}
-                        </View>
-                      )}
-                    </View>
-                  ))}
-                </PagerView>
-              )}
+                renderScene={renderStoreScene}
+                onIndexChange={handleTabChange}
+                initialLayout={{ width: screenWidth }}
+                lazy
+                lazyPreloadDistance={1}
+                renderTabBar={renderTabBar}
+                style={{
+                  height: storeTabViewHeight,
+                  minHeight: storeTabViewHeight,
+                }}
+              />
             </View>
           </ScrollView>
         </View>
@@ -921,5 +920,75 @@ const Gifts = () => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  storeTabBar: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    elevation: 0,
+    shadowOpacity: 0,
+    marginBottom: 8,
+  },
+  storeTabItem: {
+    width: "auto",
+    minWidth: 64,
+    paddingHorizontal: 16,
+    minHeight: 44,
+  },
+  storeTabIndicator: {
+    backgroundColor: PRIMARY,
+    height: 3,
+    borderRadius: 1.5,
+  },
+  storeTabLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  storeTabLabelText: {
+    fontSize: 14,
+    letterSpacing: -0.2,
+    textTransform: "none",
+  },
+  storeTabNewDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  storeGridContainer: {
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  storeGridItem: {
+    width: "50%",
+  },
+  storeEmptyContainer: {
+    paddingVertical: 36,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  storeEmptyIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  storeEmptyTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  storeEmptySubtitle: {
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 4,
+    maxWidth: 220,
+    lineHeight: 18,
+  },
+});
 
 export default Gifts;
