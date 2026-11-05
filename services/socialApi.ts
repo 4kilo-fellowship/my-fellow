@@ -13,7 +13,7 @@ import {
   UserMinistry,
   UserSummary,
 } from "@/types/social.types";
-import { Video } from "@/constants/videos";
+import { Video, DEFAULT_VIDEOS } from "@/constants/videos";
 
 /**
  * Helper to unwrap responses whether wrapped in ApiResponse ({ success, data })
@@ -445,15 +445,25 @@ export const socialApi = {
       const res = await api.get("/v1/content/videos");
       const data = unwrap<any>(res);
       const items = Array.isArray(data) ? data : data?.videos || data?.items || [];
-      return items.map(normalizeContentVideo);
+      const normalized = items.map(normalizeContentVideo);
+      if (normalized.length === 0) return DEFAULT_VIDEOS;
+      const hasLivingHope = normalized.some((v: Video) => v.id === "living-hope" || v.title?.toLowerCase().includes("living hope"));
+      return hasLivingHope ? normalized : [DEFAULT_VIDEOS[0], ...normalized];
     } catch (err: any) {
       if (err?.response?.status === 404) {
-        const fallback = await api.get("/content/videos");
-        const data = unwrap<any>(fallback);
-        const items = Array.isArray(data) ? data : data?.videos || data?.items || [];
-        return items.map(normalizeContentVideo);
+        try {
+          const fallback = await api.get("/content/videos");
+          const data = unwrap<any>(fallback);
+          const items = Array.isArray(data) ? data : data?.videos || data?.items || [];
+          const normalized = items.map(normalizeContentVideo);
+          if (normalized.length === 0) return DEFAULT_VIDEOS;
+          const hasLivingHope = normalized.some((v: Video) => v.id === "living-hope" || v.title?.toLowerCase().includes("living hope"));
+          return hasLivingHope ? normalized : [DEFAULT_VIDEOS[0], ...normalized];
+        } catch {
+          return DEFAULT_VIDEOS;
+        }
       }
-      throw err;
+      return DEFAULT_VIDEOS;
     }
   },
 

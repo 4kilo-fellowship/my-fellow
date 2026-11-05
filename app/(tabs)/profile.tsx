@@ -480,6 +480,12 @@ export default function ProfileScreen() {
   const academicYear =
     user?.yearOfStudy?.trim() || currentMember?.academicYear?.trim() || "";
 
+  const displayAcademicYear = academicYear
+    ? /^\d+$/.test(academicYear)
+      ? `Year ${academicYear}`
+      : academicYear
+    : "";
+
   const formattedPhone = formatEthiopianPhone(user?.phoneNumber) || "";
 
   const systemHandle = user?.username
@@ -507,6 +513,15 @@ export default function ProfileScreen() {
   const joinedDate = formatJoinedDate(user?.createdAt || currentMember?.joinedDate);
   const location =
     currentMember?.location?.trim() || (user as any)?.location?.trim() || "";
+
+  const hasMetadata = Boolean(
+    department ||
+    displayAcademicYear ||
+    location ||
+    joinedDate ||
+    telegramHandle ||
+    formattedPhone
+  );
 
   // Palette matching design system
   const bgColor = isDark ? "#09090b" : "#f8fafc";
@@ -560,17 +575,21 @@ export default function ProfileScreen() {
                 name="checkmark-circle"
                 size={14}
                 color={PRIMARY}
-                style={{ marginLeft: 3 }}
+                style={{ marginLeft: 3, flexShrink: 0 }}
               />
-              <Text
-                style={[styles.postHandleText, { color: textSecondary }]}
-                numberOfLines={1}
-              >
-                {item.authorHandle}
-              </Text>
-              <Text style={[styles.postTimeText, { color: textTertiary }]}>
-                · {item.timestamp}
-              </Text>
+              {item.authorHandle ? (
+                <Text
+                  style={[styles.postHandleText, { color: textSecondary }]}
+                  numberOfLines={1}
+                >
+                  {item.authorHandle}
+                </Text>
+              ) : null}
+              {item.timestamp ? (
+                <Text style={[styles.postTimeText, { color: textTertiary }]}>
+                  · {item.timestamp}
+                </Text>
+              ) : null}
             </View>
 
             <Pressable
@@ -740,6 +759,16 @@ export default function ProfileScreen() {
           <Text style={[styles.emptySubtitle, { color: textSecondary }]}>
             Photos and images you share with your reflections will appear here.
           </Text>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              router.push("/community/compose" as any);
+            }}
+            style={[styles.emptyCtaBtn, { backgroundColor: PRIMARY }]}
+          >
+            <Ionicons name="camera-outline" size={17} color="#ffffff" />
+            <Text style={styles.emptyCtaText}>Share Media Reflection</Text>
+          </Pressable>
         </View>
       );
     }
@@ -1026,17 +1055,27 @@ export default function ProfileScreen() {
           ]}
         >
           <Ionicons
-            name="heart-dislike-outline"
+            name="heart-outline"
             size={42}
             color={PRIMARY}
           />
           <Text style={[styles.emptyTitle, { color: textPrimary }]}>
-            No Liked Reflections
+            No Liked Reflections Yet
           </Text>
           <Text style={[styles.emptySubtitle, { color: textSecondary }]}>
             Reflections you like in the fellowship community feed will appear
             here for quick access.
           </Text>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              router.push("/(tabs)/community" as any);
+            }}
+            style={[styles.emptyCtaBtn, { backgroundColor: PRIMARY }]}
+          >
+            <Ionicons name="sparkles-outline" size={16} color="#ffffff" />
+            <Text style={styles.emptyCtaText}>Explore Community Feed</Text>
+          </Pressable>
         </View>
       );
     }
@@ -1239,6 +1278,10 @@ export default function ProfileScreen() {
           }}
           accessibilityRole="button"
           accessibilityLabel="Sign Out of Account"
+          android_ripple={{
+            color: "rgba(239, 68, 68, 0.15)",
+            borderless: false,
+          }}
           style={({ pressed }) => [
             styles.signOutBtn,
             {
@@ -1248,13 +1291,23 @@ export default function ProfileScreen() {
               borderColor: isDark
                 ? "rgba(239, 68, 68, 0.3)"
                 : "#fecaca",
-              opacity: pressed ? 0.75 : 1,
+              opacity: Platform.OS === "ios" && pressed ? 0.75 : 1,
             },
           ]}
         >
           <Ionicons name="log-out-outline" size={18} color="#ef4444" />
           <Text style={styles.signOutText}>Sign Out</Text>
         </Pressable>
+
+        {/* App Version Info Footer */}
+        <View style={styles.accountFooter}>
+          <Text style={[styles.footerFellowshipText, { color: textTertiary }]}>
+            4 Kilo Christian Students Fellowship
+          </Text>
+          <Text style={[styles.footerVersionText, { color: textTertiary }]}>
+            AAU ECSF · Version 1.0.0
+          </Text>
+        </View>
       </View>
     );
   };
@@ -1294,9 +1347,19 @@ export default function ProfileScreen() {
           borderTopColor: cardBorder,
         },
       ]}
-      activeColor={textPrimary}
-      inactiveColor={textTertiary}
-      labelStyle={styles.tabBarLabel}
+      renderLabel={({ route, focused }: { route: any; focused: boolean }) => (
+        <Text
+          style={[
+            styles.tabBarLabel,
+            {
+              color: focused ? PRIMARY : textTertiary,
+              fontWeight: focused ? "800" : "600",
+            },
+          ]}
+        >
+          {route.title}
+        </Text>
+      )}
       pressColor={isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"}
     />
   );
@@ -1345,12 +1408,12 @@ export default function ProfileScreen() {
             <View
               style={[
                 styles.bannerEmptyDoom,
-                { backgroundColor: isDark ? "#18181b" : "#cbd5e1" },
+                { backgroundColor: isDark ? "#18181b" : "#e2e8f0" },
               ]}
             />
           )}
 
-          <View style={styles.bannerOverlay} />
+          {bannerUri ? <View style={styles.bannerOverlay} /> : null}
 
           {/* Floating 'Edit Cover' Button on Banner */}
           <Pressable
@@ -1360,11 +1423,20 @@ export default function ProfileScreen() {
               );
               setImageSheetTarget("banner");
             }}
+            hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel="Change profile header banner"
             style={({ pressed }) => [
               styles.bannerEditBtn,
-              { opacity: pressed ? 0.75 : 1 },
+              {
+                backgroundColor: isDark
+                  ? "rgba(24, 24, 27, 0.85)"
+                  : "rgba(0, 0, 0, 0.65)",
+                borderColor: isDark
+                  ? "rgba(255, 255, 255, 0.2)"
+                  : "rgba(255, 255, 255, 0.35)",
+                opacity: pressed ? 0.75 : 1,
+              },
             ]}
           >
             <Ionicons name="camera-outline" size={14} color="#ffffff" />
@@ -1409,6 +1481,10 @@ export default function ProfileScreen() {
                   uri={user.profileImage}
                   name={user?.fullName || "Member"}
                   imageStyle={styles.avatarImage}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                    setImageSheetTarget("avatar");
+                  }}
                 />
               ) : (
                 <View
@@ -1517,13 +1593,15 @@ export default function ProfileScreen() {
               name="checkmark-circle"
               size={19}
               color={PRIMARY}
-              style={{ marginLeft: 5 }}
+              style={{ marginLeft: 5, flexShrink: 0 }}
             />
           </View>
 
-          <Text style={[styles.handleLine, { color: textSecondary }]}>
-            {systemHandle}
-          </Text>
+          {systemHandle ? (
+            <Text style={[styles.handleLine, { color: textSecondary }]}>
+              {systemHandle}
+            </Text>
+          ) : null}
 
           {/* Status Badges Strip: Active Member, Team, Streak (Dynamic) */}
           <View style={styles.badgesWrap}>
@@ -1543,7 +1621,9 @@ export default function ProfileScreen() {
                   { color: isDark ? "#4ade80" : "#16a34a" },
                 ]}
               >
-                {user?.role ? user.role.toUpperCase() : "Active Member"}
+                {user?.role && !["user", "member"].includes(user.role.toLowerCase())
+                  ? user.role.toUpperCase()
+                  : "Active Member"}
               </Text>
             </View>
 
@@ -1610,82 +1690,89 @@ export default function ProfileScreen() {
                 Haptics.selectionAsync().catch(() => {});
                 router.push("/edit-profile" as any);
               }}
-              style={styles.bioPlaceholderBtn}
+              style={({ pressed }) => [
+                styles.bioPlaceholderBtn,
+                {
+                  backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f1f5f9",
+                  borderColor: isDark ? "#27272a" : "#e2e8f0",
+                  opacity: pressed ? 0.75 : 1,
+                },
+              ]}
             >
-              <Ionicons name="create-outline" size={13} color={textTertiary} />
-              <Text style={[styles.bioPlaceholderText, { color: textTertiary }]}>
-                Add a bio to your profile...
+              <Ionicons name="create-outline" size={14} color={PRIMARY} />
+              <Text style={[styles.bioPlaceholderText, { color: textSecondary }]}>
+                Add a bio to your fellowship profile...
               </Text>
             </Pressable>
           )}
 
           {/* Dynamic Metadata Strip with Icons (render only existing attributes) */}
-          <View style={styles.metadataList}>
-            {Boolean(teamName || department) && (
-              <View style={styles.metaRow}>
-                <Ionicons name="briefcase-outline" size={14} color={iconMuted} />
-                <Text style={[styles.metaText, { color: textSecondary }]}>
-                  {teamName && department
-                    ? `${teamName} · ${department}`
-                    : teamName || department}
-                </Text>
-              </View>
-            )}
+          {hasMetadata && (
+            <View style={styles.metadataList}>
+              {Boolean(department) && (
+                <View style={styles.metaRow}>
+                  <Ionicons name="school-outline" size={14} color={iconMuted} />
+                  <Text style={[styles.metaText, { color: textSecondary }]}>
+                    {department}
+                  </Text>
+                </View>
+              )}
 
-            {Boolean(academicYear) && (
-              <View style={styles.metaRow}>
-                <Ionicons name="school-outline" size={14} color={iconMuted} />
-                <Text style={[styles.metaText, { color: textSecondary }]}>
-                  Academic Year: {academicYear}
-                </Text>
-              </View>
-            )}
+              {Boolean(displayAcademicYear) && (
+                <View style={styles.metaRow}>
+                  <Ionicons name="ribbon-outline" size={14} color={iconMuted} />
+                  <Text style={[styles.metaText, { color: textSecondary }]}>
+                    {displayAcademicYear}
+                  </Text>
+                </View>
+              )}
 
-            {Boolean(location) && (
-              <View style={styles.metaRow}>
-                <Ionicons name="location-outline" size={14} color={iconMuted} />
-                <Text style={[styles.metaText, { color: textSecondary }]}>
-                  {location}
-                </Text>
-              </View>
-            )}
+              {Boolean(location) && (
+                <View style={styles.metaRow}>
+                  <Ionicons name="location-outline" size={14} color={iconMuted} />
+                  <Text style={[styles.metaText, { color: textSecondary }]}>
+                    {location}
+                  </Text>
+                </View>
+              )}
 
-            {Boolean(joinedDate) && (
-              <View style={styles.metaRow}>
-                <Ionicons name="calendar-outline" size={14} color={iconMuted} />
-                <Text style={[styles.metaText, { color: textSecondary }]}>
-                  {joinedDate}
-                </Text>
-              </View>
-            )}
+              {Boolean(joinedDate) && (
+                <View style={styles.metaRow}>
+                  <Ionicons name="calendar-outline" size={14} color={iconMuted} />
+                  <Text style={[styles.metaText, { color: textSecondary }]}>
+                    {joinedDate}
+                  </Text>
+                </View>
+              )}
 
-            {Boolean(telegramHandle) && (
-              <Pressable onPress={handleTelegramPress} style={styles.metaRow}>
-                <Ionicons name="paper-plane" size={13} color={PRIMARY} />
-                <Text
-                  style={[
-                    styles.metaText,
-                    { color: PRIMARY, fontWeight: "600" },
-                  ]}
-                >
-                  {telegramHandle}
-                </Text>
-                <Ionicons name="open-outline" size={12} color={PRIMARY} />
-              </Pressable>
-            )}
+              {Boolean(telegramHandle) && (
+                <Pressable onPress={handleTelegramPress} style={styles.metaRow}>
+                  <Ionicons name="paper-plane" size={13} color={PRIMARY} />
+                  <Text
+                    style={[
+                      styles.metaText,
+                      { color: PRIMARY, fontWeight: "600" },
+                    ]}
+                  >
+                    {telegramHandle}
+                  </Text>
+                  <Ionicons name="open-outline" size={12} color={PRIMARY} />
+                </Pressable>
+              )}
 
-            {Boolean(formattedPhone) && (
-              <View style={styles.metaRow}>
-                <Ionicons name="call-outline" size={13} color={iconMuted} />
-                <Text style={[styles.metaText, { color: textSecondary }]}>
-                  {formattedPhone}
-                </Text>
-              </View>
-            )}
-          </View>
+              {Boolean(formattedPhone) && (
+                <View style={styles.metaRow}>
+                  <Ionicons name="call-outline" size={13} color={iconMuted} />
+                  <Text style={[styles.metaText, { color: textSecondary }]}>
+                    {formattedPhone}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
 
           {/* Twitter Social & Devotional Stats Row */}
-          <View style={styles.statsStripRow}>
+          <View style={[styles.statsStripRow, { borderTopColor: cardBorder }]}>
             <Pressable
               onPress={() => {
                 Haptics.selectionAsync().catch(() => {});
@@ -1932,18 +2019,30 @@ export default function ProfileScreen() {
                     />
                   </TouchableOpacity>
 
-                  {/* View Full Photo (Avatar only) */}
-                  {imageSheetTarget === "avatar" && user?.profileImage && (
+                  {/* View Full Photo (Avatar or Cover Banner) */}
+                  {((imageSheetTarget === "avatar" && Boolean(user?.profileImage)) ||
+                    (imageSheetTarget === "banner" && Boolean(bannerUri))) && (
                     <TouchableOpacity
                       activeOpacity={0.7}
                       onPress={() => {
-                        const img = user.profileImage;
+                        const targetImg =
+                          imageSheetTarget === "avatar"
+                            ? user?.profileImage
+                            : bannerUri;
                         setImageSheetTarget(null);
-                        setLightboxImage({
-                          uri: img!,
-                          caption: user.fullName,
-                          author: user.fullName,
-                        });
+                        if (targetImg) {
+                          setLightboxImage({
+                            uri:
+                              typeof targetImg === "string"
+                                ? targetImg
+                                : (targetImg as any)?.uri,
+                            caption:
+                              imageSheetTarget === "avatar"
+                                ? user?.fullName || "Profile Photo"
+                                : "Fellowship Profile Banner",
+                            author: user?.fullName,
+                          });
+                        }
                       }}
                       style={[
                         styles.sheetOptionBtn,
@@ -1974,7 +2073,9 @@ export default function ProfileScreen() {
                             { color: textPrimary },
                           ]}
                         >
-                          View Profile Photo
+                          {imageSheetTarget === "avatar"
+                            ? "View Profile Photo"
+                            : "View Cover Photo"}
                         </Text>
                         <Text
                           style={[
@@ -1982,7 +2083,9 @@ export default function ProfileScreen() {
                             { color: textSecondary },
                           ]}
                         >
-                          Preview full-resolution avatar
+                          {imageSheetTarget === "avatar"
+                            ? "Preview full-resolution avatar"
+                            : "Preview full-resolution banner"}
                         </Text>
                       </View>
                       <Ionicons
@@ -2164,35 +2267,47 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 2,
     right: 2,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: PRIMARY,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 2,
+    borderWidth: 2.5,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.25,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   topActionBtnsGroup: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     paddingBottom: 4,
+    flexShrink: 0,
   },
   secondaryPillBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     height: 38,
-    borderRadius: 20,
+    borderRadius: 19,
     borderWidth: 1.5,
     overflow: "hidden",
     ...Platform.select({
       ios: {
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 1.5 },
-        shadowOpacity: 0.12,
+        shadowOpacity: 0.1,
         shadowRadius: 3,
       },
       android: {
@@ -2210,9 +2325,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
     height: 38,
-    borderRadius: 20,
+    borderRadius: 19,
     borderWidth: 1.5,
     overflow: "hidden",
     ...Platform.select({
@@ -2245,6 +2360,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "800",
     letterSpacing: -0.4,
+    flexShrink: 1,
   },
   handleLine: {
     fontSize: 14,
@@ -2287,22 +2403,30 @@ const styles = StyleSheet.create({
   bioPlaceholderBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingVertical: 6,
+    gap: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 4,
     marginBottom: 8,
   },
   bioPlaceholderText: {
     fontSize: 13,
-    fontStyle: "italic",
+    fontWeight: "500",
   },
   metadataList: {
-    gap: 6,
-    marginBottom: 14,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    columnGap: 14,
+    rowGap: 7,
+    marginTop: 4,
+    marginBottom: 12,
   },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
+    gap: 5,
   },
   metaText: {
     fontSize: 13,
@@ -2315,7 +2439,6 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingVertical: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "rgba(150, 150, 150, 0.2)",
   },
   statCounterItem: {
     flexDirection: "row",
@@ -2343,7 +2466,6 @@ const styles = StyleSheet.create({
   },
   tabBarLabel: {
     fontSize: 13,
-    fontWeight: "700",
     textTransform: "capitalize",
   },
   postsList: {
@@ -2378,19 +2500,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 4,
-    flexWrap: "wrap",
   },
   postAuthorName: {
     fontSize: 14,
     fontWeight: "700",
+    flexShrink: 1,
   },
   postHandleText: {
     fontSize: 12,
     marginLeft: 4,
+    flexShrink: 2,
   },
   postTimeText: {
     fontSize: 12,
     marginLeft: 2,
+    flexShrink: 0,
   },
   postContentText: {
     fontSize: 14,
@@ -2713,5 +2837,19 @@ const styles = StyleSheet.create({
   sheetCancelText: {
     fontSize: 14,
     fontWeight: "700",
+  },
+  accountFooter: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
+    marginTop: 8,
+  },
+  footerFellowshipText: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  footerVersionText: {
+    fontSize: 12,
   },
 });

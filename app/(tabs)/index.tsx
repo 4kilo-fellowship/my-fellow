@@ -14,7 +14,7 @@ import {
   WhoToFollowSection,
 } from "@/components";
 import { PRIMARY, QUICK_ACTIONS } from "@/constants";
-import { Video } from "@/constants/videos";
+import { Video, DEFAULT_VIDEOS } from "@/constants/videos";
 import { useTheme } from "@/context/ThemeContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useCanPublishVideos } from "@/hooks/useCanPublishVideos";
@@ -427,7 +427,7 @@ const Home = () => {
     likes: d.likes,
   }));
 
-  const [videos, setVideos] = useState<any[]>([]);
+  const [videos, setVideos] = useState<Video[]>(DEFAULT_VIDEOS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -445,9 +445,9 @@ const Home = () => {
 
       try {
         const videosData = await socialApi.getContentVideos();
-        setVideos(Array.isArray(videosData) ? videosData : []);
+        setVideos(Array.isArray(videosData) && videosData.length > 0 ? videosData : DEFAULT_VIDEOS);
       } catch {
-        setVideos([]);
+        setVideos(DEFAULT_VIDEOS);
       }
 
       // Sync streak and notification badges in the background
