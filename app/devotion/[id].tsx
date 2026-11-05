@@ -9,6 +9,7 @@ import { useDevotionsStore } from "@/stores/devotions.store";
 import { useStreakStore } from "@/stores/streak.store";
 import { Devotion } from "@/types/devotion.types";
 import { Ionicons } from "@expo/vector-icons";
+import { Image as ExpoImage } from "expo-image";
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Haptics from "expo-haptics";
@@ -278,6 +279,45 @@ const DevotionDetail = () => {
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
+  const handleAuthorPress = () => {
+    if (!devotion) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+
+    const authorLower = devotion.author.toLowerCase();
+    const isOfficial =
+      !devotion.authorId ||
+      authorLower.includes("fellowship") ||
+      authorLower.includes("counseling") ||
+      authorLower.includes("team") ||
+      devotion.authorRole?.toLowerCase().includes("leadership");
+
+    const targetAuthorId =
+      devotion.authorId || (isOfficial ? "4kilofellowship" : "fellowship-author");
+    const targetName = devotion.author || "4 Kilo Fellowship";
+    const targetHandle =
+      devotion.authorUsername ||
+      (isOfficial ? "aau4kilofellowship" : targetName.toLowerCase().replace(/\s+/g, "_"));
+    const targetAvatar =
+      devotion.authorAvatar ||
+      (isOfficial
+        ? "https://images.unsplash.com/photo-1544427920-c49ccfb85579?auto=format&fit=crop&w=400&q=80"
+        : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80");
+    const targetRole =
+      devotion.authorRole || (isOfficial ? "Counseling & Fellowship Leadership" : "Devotional Writer");
+
+    router.push({
+      pathname: `/community/user/${targetAuthorId}`,
+      params: {
+        id: targetAuthorId,
+        name: targetName,
+        username: targetHandle,
+        avatar: targetAvatar,
+        team: targetRole,
+        department: isOfficial ? "Campus Ministry & Counseling" : "Addis Ababa University",
+      },
+    });
+  };
+
   if (loading && !devotion) {
     return (
       <View className={`flex-1 ${isDark ? "bg-[#0a0a0a]" : "bg-white"}`}>
@@ -455,36 +495,86 @@ const DevotionDetail = () => {
               isDark ? "border-[#1a1a1a]" : "border-gray-100"
             }`}
           >
-            <View className="flex-row items-center flex-1">
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleAuthorPress}
+              accessibilityRole="button"
+              accessibilityLabel={`View ${devotion.author}'s profile`}
+              className="flex-row items-center flex-1 mr-3"
+            >
               <View
-                className={`w-10 h-10 rounded-full items-center justify-center ${
-                  isDark ? "bg-[#1a1a1a]" : "bg-gray-100"
+                className={`w-11 h-11 rounded-full overflow-hidden items-center justify-center border ${
+                  isDark
+                    ? "bg-[#18181b] border-[#27272a]"
+                    : "bg-gray-100 border-gray-200"
                 }`}
               >
-                <Ionicons name="person" size={18} color={PRIMARY} />
+                {devotion.authorAvatar ? (
+                  <ExpoImage
+                    source={{ uri: devotion.authorAvatar }}
+                    style={{ width: "100%", height: "100%" }}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                ) : (
+                  <Ionicons name="person" size={20} color={PRIMARY} />
+                )}
               </View>
+
               <View style={{ marginLeft: 10, flex: 1 }}>
-                <Text
-                  className={`text-[14px] font-bold ${
-                    isDark ? "text-white" : "text-gray-900"
-                  }`}
-                  numberOfLines={1}
-                >
-                  {devotion.author}
-                </Text>
-                <Text
-                  className={`text-[11px] ${
-                    isDark ? "text-gray-500" : "text-gray-400"
-                  }`}
-                >
-                  {new Date(devotion.date).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </Text>
+                <View className="flex-row items-center">
+                  <Text
+                    className={`text-[14px] font-bold ${
+                      isDark ? "text-white" : "text-gray-900"
+                    }`}
+                    numberOfLines={1}
+                  >
+                    {devotion.author}
+                  </Text>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={13}
+                    color={PRIMARY}
+                    style={{ marginLeft: 4 }}
+                  />
+                </View>
+                <View className="flex-row items-center mt-0.5">
+                  <Text
+                    className={`text-[11px] font-medium ${
+                      isDark ? "text-primary" : "text-primary"
+                    }`}
+                    numberOfLines={1}
+                  >
+                    {devotion.authorRole || "Fellowship Leadership"}
+                  </Text>
+                  <Text
+                    className={`text-[11px] mx-1 ${
+                      isDark ? "text-gray-500" : "text-gray-400"
+                    }`}
+                  >
+                    •
+                  </Text>
+                  <Text
+                    className={`text-[11px] ${
+                      isDark ? "text-gray-500" : "text-gray-400"
+                    }`}
+                  >
+                    {new Date(devotion.date).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </Text>
+                </View>
               </View>
-            </View>
+
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={isDark ? "#71717a" : "#a1a1aa"}
+                style={{ marginLeft: 2 }}
+              />
+            </TouchableOpacity>
 
             <View className="flex-row items-center" style={{ gap: 14 }}>
               <TouchableOpacity

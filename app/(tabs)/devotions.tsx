@@ -7,6 +7,7 @@ import { devotionWriterService, WriterRequest } from "@/services/devotionWriterS
 import { useDevotionsStore } from "@/stores/devotions.store";
 import { Devotion } from "@/types/devotion.types";
 import { Ionicons } from "@expo/vector-icons";
+import { Image as ExpoImage } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -189,13 +190,14 @@ interface MinimalDevotionCardProps {
   isSaved: boolean;
   isRead: boolean;
   onPress: () => void;
+  onAuthorPress?: () => void;
   onToggleSave: () => void;
   onShare: () => void;
 }
 
 // Elegant editorial article-style card for fellowship devotions (memoized)
 const MinimalDevotionCard = React.memo<MinimalDevotionCardProps>(
-  ({ item, isSaved, isRead, onPress, onToggleSave, onShare }) => {
+  ({ item, isSaved, isRead, onPress, onAuthorPress, onToggleSave, onShare }) => {
     return (
       <View style={styles.articleCardOuter}>
         <Pressable
@@ -208,38 +210,67 @@ const MinimalDevotionCard = React.memo<MinimalDevotionCardProps>(
         >
           {/* Top Byline: Author monogram + name, fellowship role / badge, date, bookmark */}
           <View style={styles.articleHeader}>
-            <View style={styles.authorAvatar}>
-              <Text style={styles.authorAvatarText}>
-                {item.author?.charAt(0)?.toUpperCase() || "F"}
-              </Text>
-            </View>
-
-            <View style={styles.authorMeta}>
-              <View style={styles.authorNameRow}>
-                <Text style={styles.authorName} numberOfLines={1}>
-                  {item.author}
-                </Text>
-                <View style={styles.fellowBadge}>
-                  <Text style={styles.fellowBadgeText}>Fellowship</Text>
-                </View>
-              </View>
-              <View style={styles.metaSubRow}>
-                <Text style={styles.authorDate}>{formatDate(item.date)}</Text>
-                <Text style={styles.authorDot}>·</Text>
-                <Text style={styles.readTimeText}>
-                  {item.duration || "4 min read"}
-                </Text>
-                {isRead && (
-                  <>
-                    <Text style={styles.authorDot}>·</Text>
-                    <View style={styles.readBadge}>
-                      <Ionicons name="checkmark-done" size={12} color="#10b981" />
-                      <Text style={styles.readText}>Read</Text>
-                    </View>
-                  </>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={(e) => {
+                e.stopPropagation();
+                if (onAuthorPress) {
+                  onAuthorPress();
+                } else {
+                  onPress();
+                }
+              }}
+              style={{ flexDirection: "row", alignItems: "center", flex: 1, marginRight: 8 }}
+            >
+              <View style={styles.authorAvatar}>
+                {item.authorAvatar ? (
+                  <ExpoImage
+                    source={{ uri: item.authorAvatar }}
+                    style={{ width: "100%", height: "100%", borderRadius: 14 }}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <Text style={styles.authorAvatarText}>
+                    {item.author?.charAt(0)?.toUpperCase() || "F"}
+                  </Text>
                 )}
               </View>
-            </View>
+
+              <View style={styles.authorMeta}>
+                <View style={styles.authorNameRow}>
+                  <Text style={styles.authorName} numberOfLines={1}>
+                    {item.author}
+                  </Text>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={12}
+                    color={PRIMARY}
+                    style={{ marginLeft: 3, marginRight: 4 }}
+                  />
+                  <View style={styles.fellowBadge}>
+                    <Text style={styles.fellowBadgeText}>
+                      {item.authorRole ? (item.authorRole.includes("Counseling") ? "Counseling" : "Fellowship") : "Fellowship"}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.metaSubRow}>
+                  <Text style={styles.authorDate}>{formatDate(item.date)}</Text>
+                  <Text style={styles.authorDot}>·</Text>
+                  <Text style={styles.readTimeText}>
+                    {item.duration || "4 min read"}
+                  </Text>
+                  {isRead && (
+                    <>
+                      <Text style={styles.authorDot}>·</Text>
+                      <View style={styles.readBadge}>
+                        <Ionicons name="checkmark-done" size={12} color="#10b981" />
+                        <Text style={styles.readText}>Read</Text>
+                      </View>
+                    </>
+                  )}
+                </View>
+              </View>
+            </TouchableOpacity>
 
             {/* Bookmark button */}
             <Pressable
@@ -448,6 +479,43 @@ export default function Devotions() {
     }
   }, []);
 
+  const handleAuthorPress = useCallback((item: Devotion) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    const authorLower = (item.author || "").toLowerCase();
+    const isOfficial =
+      !item.authorId ||
+      authorLower.includes("fellowship") ||
+      authorLower.includes("counseling") ||
+      authorLower.includes("team") ||
+      item.authorRole?.toLowerCase().includes("leadership");
+
+    const targetAuthorId =
+      item.authorId || (isOfficial ? "4kilofellowship" : "fellowship-author");
+    const targetName = item.author || "4 Kilo Fellowship";
+    const targetHandle =
+      item.authorUsername ||
+      (isOfficial ? "aau4kilofellowship" : targetName.toLowerCase().replace(/\s+/g, "_"));
+    const targetAvatar =
+      item.authorAvatar ||
+      (isOfficial
+        ? "https://images.unsplash.com/photo-1544427920-c49ccfb85579?auto=format&fit=crop&w=400&q=80"
+        : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80");
+    const targetRole =
+      item.authorRole || (isOfficial ? "Counseling & Fellowship Leadership" : "Devotional Writer");
+
+    router.push({
+      pathname: `/community/user/${targetAuthorId}`,
+      params: {
+        id: targetAuthorId,
+        name: targetName,
+        username: targetHandle,
+        avatar: targetAvatar,
+        team: targetRole,
+        department: isOfficial ? "Campus Ministry & Counseling" : "Addis Ababa University",
+      },
+    });
+  }, []);
+
   const latestDevotion = useMemo(() => (devotions.length > 0 ? devotions[0] : null), [devotions]);
   const recentDevotions = useMemo(() => devotions.slice(1, 7), [devotions]);
   const popularDevotions = useMemo(
@@ -465,11 +533,12 @@ export default function Devotions() {
         isSaved={isDevotionSaved(item._id)}
         isRead={isDevotionRead(item._id)}
         onPress={() => router.push(`/devotion/${item._id}`)}
+        onAuthorPress={() => handleAuthorPress(item)}
         onToggleSave={() => handleToggleSave(item)}
         onShare={() => handleShare(item)}
       />
     ),
-    [isDevotionSaved, isDevotionRead, handleToggleSave, handleShare],
+    [isDevotionSaved, isDevotionRead, handleToggleSave, handleShare, handleAuthorPress],
   );
 
   const savedEmptyComponent = useMemo(
@@ -594,20 +663,41 @@ export default function Devotions() {
                   </Text>
 
                   <View style={styles.heroFooter}>
-                    <View style={styles.heroAuthorRow}>
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        handleAuthorPress(latestDevotion);
+                      }}
+                      style={styles.heroAuthorRow}
+                    >
                       <View style={styles.heroAuthorAvatar}>
-                        <Text style={styles.heroAuthorAvatarText}>
-                          {latestDevotion.author?.charAt(0)?.toUpperCase() || "F"}
-                        </Text>
+                        {latestDevotion.authorAvatar ? (
+                          <ExpoImage
+                            source={{ uri: latestDevotion.authorAvatar }}
+                            style={{ width: "100%", height: "100%", borderRadius: 10 }}
+                            contentFit="cover"
+                          />
+                        ) : (
+                          <Text style={styles.heroAuthorAvatarText}>
+                            {latestDevotion.author?.charAt(0)?.toUpperCase() || "F"}
+                          </Text>
+                        )}
                       </View>
                       <Text style={styles.heroAuthor} numberOfLines={1}>
                         {latestDevotion.author}
                       </Text>
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={11}
+                        color={PRIMARY}
+                        style={{ marginLeft: 3 }}
+                      />
                       <Text style={styles.heroDot}>·</Text>
                       <Text style={styles.heroDate}>
                         {formatDate(latestDevotion.date)}
                       </Text>
-                    </View>
+                    </TouchableOpacity>
 
                     <View style={styles.heroButton}>
                       <Text style={styles.heroButtonText}>Read</Text>
@@ -676,7 +766,33 @@ export default function Devotions() {
             </View>
           )}
 
-          {/* 4. CTA: Apply to Write */}
+          {/* 4. ALL ARTICLES & DEVOTIONS (Vertical Feed) */}
+          {devotions.length > 0 && (
+            <View style={styles.allDevotionsSection}>
+              <View style={[styles.sectionHeader, { paddingHorizontal: 16, marginBottom: 14 }]}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Ionicons name="reader-outline" size={17} color={PRIMARY} />
+                  <Text style={styles.sectionTitle}>All Articles & Devotions</Text>
+                </View>
+              </View>
+              <View style={styles.allDevotionsList}>
+                {devotions.map((item: Devotion) => (
+                  <MinimalDevotionCard
+                    key={`feed-${item._id}`}
+                    item={item}
+                    isSaved={isDevotionSaved(item._id)}
+                    isRead={isDevotionRead(item._id)}
+                    onPress={() => router.push(`/devotion/${item._id}`)}
+                    onAuthorPress={() => handleAuthorPress(item)}
+                    onToggleSave={() => handleToggleSave(item)}
+                    onShare={() => handleShare(item)}
+                  />
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* 5. CTA: Apply to Write */}
           <View style={styles.ctaContainer}>
             <View style={styles.ctaIconCircle}>
               <Ionicons name="create-outline" size={22} color={PRIMARY} />

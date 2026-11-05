@@ -1,9 +1,13 @@
-export type DevotionType = "text" | "voice" | "pdf" | "book";
+export type DevotionType = "text" | "voice";
 
 export interface Devotion {
   _id: string;
   title: string;
   author: string;
+  authorId?: string;
+  authorAvatar?: string;
+  authorRole?: string;
+  authorUsername?: string;
   date: string;
   type: DevotionType;
   image: string;
@@ -15,10 +19,6 @@ export interface Devotion {
   audioUrl?: string;
   duration?: string;
   caption?: string; // Voice caption / transcript or devotional text snippet
-  pageCount?: number;
-  bookFormat?: string;
-  pdfUrl?: string;
-  bookUrl?: string;
   isLiked?: boolean;
   isSaved?: boolean;
   likesFormatted?: string;
