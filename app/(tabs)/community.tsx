@@ -682,15 +682,9 @@ export default function CommunityScreen() {
             }}
             accessibilityRole="button"
             accessibilityLabel="Search"
-            android_ripple={{
-              color: isDark
-                ? "rgba(255, 255, 255, 0.16)"
-                : "rgba(0, 0, 0, 0.12)",
-              borderless: false,
-            }}
             style={({ pressed }) => [
               styles.searchPressableInner,
-              pressed && Platform.OS === "ios" && { opacity: 0.75 },
+              pressed && { opacity: 0.75 },
             ]}
           >
             <View style={styles.searchCenterContent}>
