@@ -113,8 +113,12 @@ export default function ComposePostScreen() {
       });
 
       router.back();
-    } catch {
-      Alert.alert("Error", "Could not publish post. Please check your connection and try again.");
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Could not publish post. Please check your connection and try again.";
+      Alert.alert("Unable to Post", message);
     } finally {
       setSubmitting(false);
     }
