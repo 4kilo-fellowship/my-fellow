@@ -346,8 +346,6 @@ MinimalDevotionCard.displayName = "MinimalDevotionCard";
 
 const TAB_ROUTES = [
   { key: "all", title: "All" },
-  { key: "articles", title: "Articles" },
-  { key: "voice", title: "Voice & Audio" },
   { key: "saved", title: "Saved" },
 ];
 
@@ -457,16 +455,6 @@ export default function Devotions() {
       [...devotions]
         .sort((a, b) => (b.views || 0) + (b.likes || 0) * 2 - ((a.views || 0) + (a.likes || 0) * 2))
         .slice(0, 6),
-    [devotions],
-  );
-
-  const textDevotions = useMemo(
-    () => devotions.filter((d) => d.type === "text"),
-    [devotions],
-  );
-
-  const voiceDevotions = useMemo(
-    () => devotions.filter((d) => d.type === "voice"),
     [devotions],
   );
 
@@ -660,39 +648,7 @@ export default function Devotions() {
             </View>
           )}
 
-          {/* 3. VOICE & AUDIO DEVOTIONS SPOTLIGHT */}
-          {voiceDevotions.length > 0 && (
-            <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeader}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                  <Ionicons name="musical-notes" size={17} color={PRIMARY} />
-                  <Text style={styles.sectionTitle}>Voice & Audio Devotions</Text>
-                </View>
-              </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.horizontalScrollContent}
-                nestedScrollEnabled={true}
-                overScrollMode="never"
-                keyboardShouldPersistTaps="handled"
-              >
-                {voiceDevotions.map((item: Devotion) => (
-                  <CompactArticleCard
-                    key={`voice-${item._id}`}
-                    item={item}
-                    isSaved={isDevotionSaved(item._id)}
-                    width={cardWidth}
-                    imageHeight={cardImageHeight}
-                    onPress={() => router.push(`/devotion/${item._id}`)}
-                    onToggleSave={() => handleToggleSave(item)}
-                  />
-                ))}
-              </ScrollView>
-            </View>
-          )}
-
-          {/* 4. POPULAR DEVOTIONS (Horizontal Scroll / Grid) */}
+          {/* 3. POPULAR DEVOTIONS (Horizontal Scroll / Grid) */}
           {popularDevotions.length > 0 && (
             <View style={styles.sectionContainer}>
               <View style={styles.sectionHeader}>
@@ -805,90 +761,6 @@ export default function Devotions() {
     </View>
   );
 
-  /* ── Page 1: Articles (Text devotions) ── */
-  const articlesScene = (
-    <View style={styles.page}>
-      <FlatList
-        data={textDevotions}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => (
-          <MinimalDevotionCard
-            item={item}
-            isSaved={isDevotionSaved(item._id)}
-            isRead={isDevotionRead(item._id)}
-            onPress={() => router.push(`/devotion/${item._id}`)}
-            onToggleSave={() => handleToggleSave(item)}
-            onShare={() => handleShare(item)}
-          />
-        )}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={PRIMARY}
-            colors={[PRIMARY]}
-          />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <View style={styles.emptyIconCircle}>
-              <Ionicons name="document-text-outline" size={36} color="#a1a1aa" />
-            </View>
-            <Text style={styles.emptyTitle}>No text articles</Text>
-            <Text style={styles.emptySubtitle}>
-              Check back soon for newly published devotional articles.
-            </Text>
-          </View>
-        }
-      />
-    </View>
-  );
-
-  /* ── Page 2: Voice & Audio Devotions ── */
-  const voiceScene = (
-    <View style={styles.page}>
-      <FlatList
-        data={voiceDevotions}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => (
-          <MinimalDevotionCard
-            item={item}
-            isSaved={isDevotionSaved(item._id)}
-            isRead={isDevotionRead(item._id)}
-            onPress={() => router.push(`/devotion/${item._id}`)}
-            onToggleSave={() => handleToggleSave(item)}
-            onShare={() => handleShare(item)}
-          />
-        )}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={PRIMARY}
-            colors={[PRIMARY]}
-          />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <View style={styles.emptyIconCircle}>
-              <Ionicons name="musical-notes-outline" size={36} color="#a1a1aa" />
-            </View>
-            <Text style={styles.emptyTitle}>No voice devotions yet</Text>
-            <Text style={styles.emptySubtitle}>
-              Voice and audio devotions with captions will appear here.
-            </Text>
-          </View>
-        }
-      />
-    </View>
-  );
-
   const renderTabLabel = ({
     route,
     color,
@@ -900,6 +772,7 @@ export default function Devotions() {
   }) => (
     <View style={styles.tabLabelRow}>
       <Text
+        numberOfLines={1}
         style={[
           styles.tabLabelText,
           { color },
@@ -920,18 +793,6 @@ export default function Devotions() {
           </Text>
         </View>
       )}
-      {route.key === "voice" && voiceDevotions.length > 0 && (
-        <View style={[styles.tabBadge, focused && styles.tabBadgeActive]}>
-          <Text
-            style={[
-              styles.tabBadgeText,
-              focused && styles.tabBadgeTextActive,
-            ]}
-          >
-            {voiceDevotions.length}
-          </Text>
-        </View>
-      )}
     </View>
   );
 
@@ -946,16 +807,12 @@ export default function Devotions() {
         showStreak={true}
       />
 
-      {/* 4 Tabs: All / Articles / Voice & Audio / Saved */}
+      {/* 2 Tabs: All / Saved */}
       <TabView
         navigationState={{ index: tabIndex, routes: TAB_ROUTES }}
         onIndexChange={handleTabChange}
         renderScene={({ route }) => {
           switch (route.key) {
-            case "articles":
-              return articlesScene;
-            case "voice":
-              return voiceScene;
             case "saved":
               return savedScene;
             default:
@@ -970,14 +827,13 @@ export default function Devotions() {
             {...tabBarProps}
             indicatorStyle={styles.tabIndicator}
             style={styles.tabBar}
+            tabStyle={styles.tabItem}
             activeColor="#000000"
             inactiveColor="#71717a"
             pressColor="rgba(0, 0, 0, 0.05)"
-            scrollEnabled={viewportWidth < 380}
+            scrollEnabled={false}
             options={{
               all: { label: renderTabLabel },
-              articles: { label: renderTabLabel },
-              voice: { label: renderTabLabel },
               saved: { label: renderTabLabel },
             }}
           />
@@ -1051,19 +907,30 @@ const styles = StyleSheet.create({
     elevation: 0,
     shadowOpacity: 0,
   },
+  tabItem: {
+    minHeight: 46,
+    paddingHorizontal: 0,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   tabIndicator: {
     backgroundColor: "#000000",
-    height: 2,
+    height: 2.5,
+    borderRadius: 2,
   },
   tabLabelRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 16,
+    minWidth: 64,
   },
   tabLabelText: {
     fontSize: 15,
-    letterSpacing: -0.2,
-    fontWeight: "500",
+    fontWeight: "700",
+    letterSpacing: 0,
+    includeFontPadding: false,
+    textAlign: "center",
   },
   tabLabelActive: {
     fontWeight: "700",
@@ -1577,11 +1444,13 @@ const styles = StyleSheet.create({
   },
   // CTA Section
   ctaContainer: {
-    marginHorizontal: 20,
-    marginTop: 16,
-    marginBottom: 40,
+    width: "100%",
+    paddingHorizontal: 24,
+    marginTop: 20,
+    marginBottom: 44,
     alignItems: "center",
     justifyContent: "center",
+    alignSelf: "center",
   },
   ctaIconCircle: {
     width: 44,
@@ -1591,6 +1460,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
+    alignSelf: "center",
   },
   ctaTitle: {
     fontSize: 17,
@@ -1606,36 +1476,34 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 19,
     marginBottom: 18,
-    maxWidth: 280,
+    maxWidth: 290,
   },
   ctaButtonWrapper: {
-    height: 40,
-    minHeight: 40,
-    minWidth: 160,
-    borderRadius: 20,
+    height: 42,
+    minHeight: 42,
+    borderRadius: 21,
     backgroundColor: PRIMARY,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
+    alignSelf: "center",
     shadowColor: "#ff6719",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 5,
-    elevation: 2,
+    elevation: 3,
   },
   ctaButtonInner: {
-    width: "100%",
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 26,
   },
   ctaButtonContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    width: "100%",
+    gap: 8,
   },
   ctaButtonText: {
     color: "#ffffff",
@@ -1643,6 +1511,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 0.1,
     includeFontPadding: false,
-    textAlignVertical: "center",
+    textAlign: "center",
   },
 });
