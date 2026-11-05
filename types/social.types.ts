@@ -26,10 +26,23 @@ export interface UserSummary {
   academicYear?: string | null;
 }
 
+export interface PostableActor {
+  id: string;
+  type: "user" | "team" | "official";
+  displayName: string;
+  handle: string;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  isVerified: boolean;
+  teamId?: string | null;
+}
+
 export interface ApiPost {
   id: string;
   kind: "post" | "reply" | "repost" | "quote";
   author: UserSummary;
+  authorActor?: PostableActor | null;
+  createdByUserId?: string | null;
   body: string | null;
   createdAt: string;
   editedAt?: string | null;

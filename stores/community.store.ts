@@ -1,6 +1,7 @@
 import { socialApi } from "@/services/socialApi";
 import {
   ApiPost,
+  PostableActor,
   ProfileDetail,
   SuggestedUser,
 } from "@/types/social.types";
@@ -608,6 +609,8 @@ interface CommunityStore {
     memberId: string,
     seed?: Partial<MemberProfile>,
   ) => Promise<void>;
+  postableActors: PostableActor[];
+  fetchPostableActors: () => Promise<PostableActor[]>;
   createPost: (payload: {
     body: string;
     kind?: "post" | "reply" | "quote";
@@ -615,6 +618,8 @@ interface CommunityStore {
     quotedId?: string;
     image?: any;
     author?: any;
+    authorActorId?: string;
+    authorActor?: PostableActor;
   }) => Promise<CommunityPost>;
   addComment: (
     postId: string,
@@ -667,6 +672,7 @@ export const useCommunityStore = create<CommunityStore>()(
       isFollowingLoading: false,
       isRefreshing: false,
       searchHistory: [],
+      postableActors: [],
 
       setSelectedCategory: (cat) => set({ selectedCategory: cat }),
       setFeedType: (type) => set({ feedType: type }),
@@ -1045,20 +1051,44 @@ export const useCommunityStore = create<CommunityStore>()(
         }
       },
 
+      fetchPostableActors: async () => {
+        try {
+          const actors = await socialApi.getPostableActors();
+          set({ postableActors: actors });
+          return actors;
+        } catch (err) {
+          console.warn("[fetchPostableActors] error:", err);
+          return [];
+        }
+      },
+
       createPost: async (payload) => {
         const tempId = `temp-${Date.now()}`;
+        const isActor = Boolean(payload.authorActor && payload.authorActor.id !== "me");
+        const authorName = isActor
+          ? payload.authorActor!.displayName
+          : payload.author?.fullName || "Fellowship Member";
+        const authorHandle = isActor
+          ? (payload.authorActor!.handle.startsWith("@") ? payload.authorActor!.handle : `@${payload.authorActor!.handle}`)
+          : payload.author?.telegramUserName
+            ? `@${payload.author.telegramUserName.replace(/^@/, "")}`
+            : `@${(payload.author?.fullName || "member").toLowerCase().replace(/\s+/g, "")}`;
+        const authorAvatar = isActor
+          ? payload.authorActor!.avatarUrl || null
+          : payload.author?.profileImage || null;
+        const authorTeam = isActor
+          ? (payload.authorActor!.type === "official" ? "Official Fellowship" : payload.authorActor!.displayName)
+          : payload.author?.team || "";
+        const isVerified = isActor ? Boolean(payload.authorActor!.isVerified) : false;
+
         const optimisticPost: CommunityPost = {
           id: tempId,
-          authorId: payload.author?.id || "user-current",
-          authorName: payload.author?.fullName || "Fellowship Member",
-          authorHandle: payload.author?.telegramUserName
-            ? `@${payload.author.telegramUserName.replace(/^@/, "")}`
-            : `@${(payload.author?.fullName || "member").toLowerCase().replace(/\s+/g, "")}`,
-          authorAvatar:
-            payload.author?.profileImage ||
-            null,
-          authorTeam: payload.author?.team || "",
-          isVerified: false,
+          authorId: payload.authorActorId || payload.author?.id || "user-current",
+          authorName,
+          authorHandle,
+          authorAvatar,
+          authorTeam,
+          isVerified,
           timestamp: "Just now",
           content: payload.body,
           image: payload.image || null,
@@ -1108,6 +1138,7 @@ export const useCommunityStore = create<CommunityStore>()(
             parentId: payload.parentId,
             quotedId: payload.quotedId,
             mediaAssetIds,
+            authorActorId: payload.authorActorId,
           });
 
           const realPost = apiPostToCommunityPost(apiResult);

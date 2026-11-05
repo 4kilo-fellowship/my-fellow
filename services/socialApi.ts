@@ -3,6 +3,7 @@ import {
   ApiPost,
   FeedResponse,
   MutualFollowersData,
+  PostableActor,
   ProfileDetail,
   SocialSearchResult,
   StoryHighlight,
@@ -118,9 +119,24 @@ export const socialApi = {
     parentId?: string;
     quotedId?: string;
     mediaAssetIds?: string[];
+    authorActorId?: string;
   }): Promise<ApiPost> {
     const res = await api.post("/v1/posts", payload);
     return unwrap<ApiPost>(res);
+  },
+
+  /**
+   * Get actors the authenticated member can post on behalf of
+   */
+  async getPostableActors(): Promise<PostableActor[]> {
+    try {
+      const res = await api.get("/v1/me/postable-actors");
+      const data = unwrap<{ actors: PostableActor[] }>(res);
+      return data?.actors || [];
+    } catch (err) {
+      console.warn("[getPostableActors] failed:", err);
+      return [];
+    }
   },
 
   /**
