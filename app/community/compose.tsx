@@ -260,24 +260,26 @@ export default function ComposePostScreen() {
 
             <View style={styles.audienceCol}>
               <Pressable
-                onPress={handleAudiencePicker}
+                onPress={showComingSoonToast}
+                accessibilityRole="button"
+                accessibilityLabel="Audience selector, coming soon"
                 android_ripple={{
-                  color: isDark ? "rgba(255, 103, 25, 0.2)" : "rgba(255, 103, 25, 0.12)",
+                  color: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
                   borderless: false,
                   radius: 14,
                 }}
                 style={[
                   styles.audiencePill,
                   {
-                    borderColor: PRIMARY,
-                    backgroundColor: isDark ? "rgba(255, 103, 25, 0.1)" : "#fff7ed",
+                    borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#cbd5e1",
+                    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#f1f5f9",
                   },
                 ]}
               >
-                <Text style={[styles.audienceText, { color: PRIMARY }]}>
+                <Text style={[styles.audienceText, { color: mutedColor }]}>
                   {currentAudienceObj.label}
                 </Text>
-                <Ionicons name="chevron-down" size={14} color={PRIMARY} />
+                <Ionicons name="chevron-down" size={14} color={mutedColor} />
               </Pressable>
             </View>
           </View>
@@ -335,17 +337,17 @@ export default function ComposePostScreen() {
 
         {/* Reply Permission Hint Row matching screenshot */}
         <Pressable
-          onPress={() => {
-            Haptics.selectionAsync().catch(() => {});
-            Alert.alert(
-              "Reply Settings",
-              "Who can reply to this post?\n\nCurrently, all 4 Kilo Fellowship students and members can join the conversation."
-            );
+          onPress={showComingSoonToast}
+          accessibilityRole="button"
+          accessibilityLabel="Reply permissions, coming soon"
+          android_ripple={{
+            color: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.06)",
+            borderless: false,
           }}
           style={styles.replyHintRow}
         >
-          <Ionicons name="globe-outline" size={15} color={PRIMARY} />
-          <Text style={[styles.replyHintText, { color: PRIMARY }]}>
+          <Ionicons name="globe-outline" size={15} color={mutedColor} />
+          <Text style={[styles.replyHintText, { color: mutedColor }]}>
             Everyone can reply
           </Text>
         </Pressable>
@@ -357,10 +359,12 @@ export default function ComposePostScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.toolbarIconsRow}
           >
-            {/* 1. Gallery */}
+            {/* 1. Gallery (Active) */}
             <Pressable
               onPress={handlePickImage}
               hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Attach photo from gallery"
               android_ripple={{
                 color: isDark ? "rgba(255, 103, 25, 0.25)" : "rgba(255, 102, 25, 0.15)",
                 borderless: true,
@@ -371,10 +375,12 @@ export default function ComposePostScreen() {
               <Ionicons name="image-outline" size={22} color={PRIMARY} />
             </Pressable>
 
-            {/* 2. Camera */}
+            {/* 2. Camera (Active) */}
             <Pressable
               onPress={handleCameraCapture}
               hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Take photo with camera"
               android_ripple={{
                 color: isDark ? "rgba(255, 103, 25, 0.25)" : "rgba(255, 102, 25, 0.15)",
                 borderless: true,
@@ -385,98 +391,110 @@ export default function ComposePostScreen() {
               <Ionicons name="camera-outline" size={22} color={PRIMARY} />
             </Pressable>
 
-            {/* 3. Audio / Devotion Scripture */}
+            {/* 3. Audio / Devotion Scripture (Muted / Coming soon) */}
             <Pressable
               onPress={showComingSoonToast}
               hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Audio notes, coming soon"
               android_ripple={{
-                color: isDark ? "rgba(255, 103, 25, 0.25)" : "rgba(255, 102, 25, 0.15)",
+                color: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
                 borderless: true,
                 radius: 18,
               }}
               style={styles.toolIconBtn}
             >
-              <Ionicons name="stats-chart-outline" size={21} color={PRIMARY} />
+              <Ionicons name="stats-chart-outline" size={21} color={mutedColor} />
             </Pressable>
 
-            {/* 4. GIF badge */}
+            {/* 4. GIF badge (Muted / Coming soon) */}
             <Pressable
               onPress={showComingSoonToast}
               hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Attach GIF, coming soon"
               android_ripple={{
-                color: isDark ? "rgba(255, 103, 25, 0.25)" : "rgba(255, 102, 25, 0.15)",
+                color: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
                 borderless: false,
                 radius: 12,
               }}
               style={[
                 styles.gifBadgeBtn,
                 {
-                  borderColor: PRIMARY,
-                  backgroundColor: isDark ? "rgba(255, 103, 25, 0.12)" : "#fff7ed",
+                  borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#cbd5e1",
+                  backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#f1f5f9",
                 },
               ]}
             >
-              <Text style={[styles.gifBadgeText, { color: PRIMARY }]}>GIF</Text>
+              <Text style={[styles.gifBadgeText, { color: mutedColor }]}>GIF</Text>
             </Pressable>
 
-            {/* 5. Poll / Questionnaire */}
+            {/* 5. Poll / Questionnaire (Muted / Coming soon) */}
             <Pressable
               onPress={showComingSoonToast}
               hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Create poll, coming soon"
               android_ripple={{
-                color: isDark ? "rgba(255, 103, 25, 0.25)" : "rgba(255, 102, 25, 0.15)",
+                color: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
                 borderless: true,
                 radius: 18,
               }}
               style={styles.toolIconBtn}
             >
-              <Ionicons name="list-outline" size={22} color={PRIMARY} />
+              <Ionicons name="list-outline" size={22} color={mutedColor} />
             </Pressable>
 
-            {/* 6. Location Pin */}
+            {/* 6. Location Pin (Muted / Coming soon) */}
             <Pressable
               onPress={showComingSoonToast}
               hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Tag location, coming soon"
               android_ripple={{
-                color: isDark ? "rgba(255, 103, 25, 0.25)" : "rgba(255, 102, 25, 0.15)",
+                color: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
                 borderless: true,
                 radius: 18,
               }}
               style={styles.toolIconBtn}
             >
               <Ionicons
-                name={hasLocation ? "location" : "location-outline"}
+                name="location-outline"
                 size={22}
-                color={PRIMARY}
+                color={mutedColor}
               />
             </Pressable>
 
-            {/* 7. Bookmark / Tag */}
+            {/* 7. Bookmark / Tag (Muted / Coming soon) */}
             <Pressable
               onPress={showComingSoonToast}
               hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Add bookmark tag, coming soon"
               android_ripple={{
-                color: isDark ? "rgba(255, 103, 25, 0.25)" : "rgba(255, 102, 25, 0.15)",
+                color: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
                 borderless: true,
                 radius: 18,
               }}
               style={styles.toolIconBtn}
             >
-              <Ionicons name="bookmark-outline" size={21} color={PRIMARY} />
+              <Ionicons name="bookmark-outline" size={21} color={mutedColor} />
             </Pressable>
 
-            {/* 8. Plus Chip button */}
+            {/* 8. Plus Chip button (Muted / Coming soon) */}
             <Pressable
               onPress={showComingSoonToast}
               hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="More attachments, coming soon"
               android_ripple={{
-                color: isDark ? "rgba(255, 103, 25, 0.25)" : "rgba(255, 102, 25, 0.15)",
+                color: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
                 borderless: true,
                 radius: 18,
               }}
               style={styles.toolIconBtn}
             >
-              <Ionicons name="add-circle-outline" size={22} color={PRIMARY} />
+              <Ionicons name="add-circle-outline" size={22} color={mutedColor} />
             </Pressable>
           </ScrollView>
 
