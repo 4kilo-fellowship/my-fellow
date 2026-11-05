@@ -16,6 +16,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   { id: "pcs", label: "PCS", icon: "shield-checkmark", isNew: true },
   { id: "5", label: "Telegram", icon: "telegram" },
   { id: "6", label: "Tik Tok", icon: "tiktok" },
+  { id: "reminders", label: "Reminders", icon: "alarm" },
   { id: "7", label: "Gifts", icon: "gift" },
   { id: "8", label: "Instagram", icon: "instagram" },
 ];

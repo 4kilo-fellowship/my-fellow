@@ -7,7 +7,8 @@ import { ProfileLink } from "@/components/profile/ProfileLink";
 import { PRIMARY } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
+import api from "@/services/api";
+import { authService } from "@/services/authService";
 import { socialApi } from "@/services/socialApi";
 import {
   apiPostToCommunityPost,
@@ -15,18 +16,22 @@ import {
   useCommunityStore,
 } from "@/stores/community.store";
 import { useDevotionsStore } from "@/stores/devotions.store";
+import { useProgramsStore } from "@/stores/programs.store";
 import { useStreakStore } from "@/stores/streak.store";
+import { useTeamsStore } from "@/stores/teams.store";
 import { useUserStore } from "@/stores/user.store";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image as ExpoImage } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
+import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   Linking,
+  Modal,
   Platform,
   Pressable,
   RefreshControl,
@@ -36,26 +41,21 @@ import {
   Switch,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { TabBar, TabView } from "react-native-tab-view";
+import Toast from "react-native-toast-message";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-type ProfileTabKey = "posts" | "media" | "ministry" | "likes" | "account";
-
-interface ProfileTabItem {
-  key: ProfileTabKey;
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-}
-
-const PROFILE_TABS: ProfileTabItem[] = [
-  { key: "posts", label: "Reflections", icon: "chatbubble-ellipses-outline" },
-  { key: "media", label: "Media", icon: "images-outline" },
-  { key: "ministry", label: "Ministry", icon: "flame-outline" },
-  { key: "likes", label: "Likes", icon: "heart-outline" },
-  { key: "account", label: "Account", icon: "person-circle-outline" },
+const TAB_ROUTES = [
+  { key: "posts", title: "Reflections" },
+  { key: "media", title: "Media" },
+  { key: "ministry", title: "Ministry" },
+  { key: "likes", title: "Likes" },
+  { key: "account", title: "Account" },
 ];
 
 function formatEthiopianPhone(phone?: string) {
@@ -77,9 +77,9 @@ function formatEthiopianPhone(phone?: string) {
 }
 
 function formatJoinedDate(dateStr?: string | Date | null): string {
-  if (!dateStr) return "Joined Fellowship";
+  if (!dateStr) return "";
   const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return "Joined Fellowship";
+  if (isNaN(date.getTime())) return "";
   const months = [
     "January",
     "February",
@@ -102,9 +102,11 @@ export default function ProfileScreen() {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
   const { authState, logout, getCurrentUser } = useAuth();
-  const { user } = useUserStore();
-  const isAdmin = useIsAdmin();
+  const { user, setUser } = useUserStore();
   const router = useRouter();
+
+  // Tab View state (react-native-tab-view)
+  const [tabIndex, setTabIndex] = useState(0);
 
   // Modals state
   const [signOutConfirm, setSignOutConfirm] = useState(false);
@@ -115,8 +117,11 @@ export default function ProfileScreen() {
     author?: string;
   } | null>(null);
 
-  // Active Tab state (Twitter style: Reflections / Media / Ministry / Likes / Account)
-  const [activeTab, setActiveTab] = useState<ProfileTabKey>("posts");
+  // Image Sheet state for native bottom sheet image selection
+  const [imageSheetTarget, setImageSheetTarget] = useState<"avatar" | "banner" | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [localBanner, setLocalBanner] = useState<string | null>(null);
+
   const [refreshing, setRefreshing] = useState(false);
 
   // Community Store
@@ -131,7 +136,15 @@ export default function ProfileScreen() {
 
   // Devotions Store
   const readDevotions = useDevotionsStore((s) => s.readDevotions);
-  const readCount = readDevotions.length > 0 ? readDevotions.length : 24;
+  const readCount = readDevotions.length;
+
+  // Programs Store (Weekly Campus Gatherings)
+  const programs = useProgramsStore((s) => s.programs);
+  const loadPrograms = useProgramsStore((s) => s.loadPrograms);
+
+  // Teams Store (Ministry Teams)
+  const teams = useTeamsStore((s) => s.teams);
+  const loadTeams = useTeamsStore((s) => s.loadTeams);
 
   // Current Member details from community cache
   const currentMember = useCommunityStore((s) =>
@@ -192,10 +205,13 @@ export default function ProfileScreen() {
           })
           .catch(() => {});
       }
+      // Dynamically load active campus programs and teams
+      loadPrograms().catch(() => {});
+      loadTeams().catch(() => {});
     } catch {
       // Ignore network errors gracefully
     }
-  }, [authState.authenticated, fetchUserProfile, getCurrentUser, user]);
+  }, [authState.authenticated, fetchUserProfile, getCurrentUser, loadPrograms, loadTeams, user]);
 
   useEffect(() => {
     loadProfileData();
@@ -205,10 +221,141 @@ export default function ProfileScreen() {
     setRefreshing(true);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-      await loadProfileData();
-      await syncServerStreak().catch(() => {});
+      await Promise.allSettled([
+        loadProfileData(),
+        syncServerStreak(),
+        loadPrograms(true),
+        loadTeams(true),
+      ]);
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  // Image Selection Handler (Camera or Gallery with strict Aspect Ratio handling)
+  const handlePickImage = async (
+    target: "avatar" | "banner",
+    source: "camera" | "library"
+  ) => {
+    try {
+      setImageSheetTarget(null);
+
+      if (source === "camera") {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== "granted") {
+          Toast.show({
+            type: "error",
+            text1: "Permission Required",
+            text2: "Camera access is needed to capture photos.",
+          });
+          return;
+        }
+      } else {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+          Toast.show({
+            type: "error",
+            text1: "Permission Required",
+            text2: "Media library access is needed to select photos.",
+          });
+          return;
+        }
+      }
+
+      // Senior engineer aspect ratio standard: 1:1 for Avatar, 3:1 for Banner
+      const aspect: [number, number] = target === "avatar" ? [1, 1] : [3, 1];
+      const launchFn =
+        source === "camera"
+          ? ImagePicker.launchCameraAsync
+          : ImagePicker.launchImageLibraryAsync;
+
+      const result = await launchFn({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect,
+        quality: 0.85,
+      });
+
+      if (result.canceled || !result.assets || !result.assets[0]?.uri) {
+        return;
+      }
+
+      const pickedUri = result.assets[0].uri;
+      setIsUploading(true);
+
+      if (target === "avatar") {
+        // Optimistic preview
+        if (user) {
+          setUser({ ...user, profileImage: pickedUri });
+        }
+        try {
+          const updated = await authService.updateProfile({
+            profileImage: pickedUri,
+          });
+          setUser(updated);
+          Toast.show({
+            type: "success",
+            text1: "Profile Photo Updated",
+            text2: "Your new avatar has been saved successfully.",
+          });
+        } catch (err: any) {
+          Toast.show({
+            type: "error",
+            text1: "Upload Failed",
+            text2: err.message || "Failed to save profile photo.",
+          });
+        }
+      } else {
+        // Banner update
+        setLocalBanner(pickedUri);
+        try {
+          const uploaded = await socialApi.uploadMediaFile(pickedUri, "cover");
+          if (uploaded.assetId) {
+            await api.patch("/v1/me/profile", {
+              coverAssetId: uploaded.assetId,
+            });
+          }
+          if (user) {
+            setUser({ ...user, coverImage: uploaded.url || pickedUri });
+          }
+          if (user?.id) {
+            useCommunityStore.setState((state) => {
+              const member = state.members[user.id];
+              if (member) {
+                return {
+                  members: {
+                    ...state.members,
+                    [user.id]: {
+                      ...member,
+                      banner: uploaded.url || pickedUri,
+                    },
+                  },
+                };
+              }
+              return state;
+            });
+          }
+          Toast.show({
+            type: "success",
+            text1: "Banner Updated",
+            text2: "Your fellowship profile banner has been saved.",
+          });
+        } catch (err: any) {
+          Toast.show({
+            type: "error",
+            text1: "Upload Failed",
+            text2: err.message || "Could not update cover banner.",
+          });
+        }
+      }
+    } catch (err: any) {
+      Toast.show({
+        type: "error",
+        text1: "Image Selection Error",
+        text2: err.message || "Something went wrong.",
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -220,7 +367,6 @@ export default function ProfileScreen() {
     }
 
     const merged = new Map<string, CommunityPost>();
-    // First include posts from community store where author is current user
     for (const p of posts) {
       if (
         (user?.id && p.authorId === user.id) ||
@@ -232,7 +378,6 @@ export default function ProfileScreen() {
         merged.set(p.id, p);
       }
     }
-    // Then merge fetched posts with live state overrides
     for (const p of fetchedAuthorPosts) {
       const live = livePostMap.get(p.id);
       merged.set(p.id, live ? { ...p, ...live } : p);
@@ -309,40 +454,59 @@ export default function ProfileScreen() {
     toggleTheme();
   };
 
-  // Profile data derivations
-  const avatarInitial = user?.fullName
-    ? user.fullName.trim().charAt(0).toUpperCase()
-    : "M";
+  // Profile data derivations (completely dynamic - zero hardcoded data)
+  const avatarInitial = (
+    user?.fullName?.trim() ||
+    currentMember?.fullName?.trim() ||
+    user?.username?.trim() ||
+    "?"
+  )
+    .replace(/^@/, "")
+    .charAt(0)
+    .toUpperCase() || "?";
 
   const teamName =
     typeof user?.team === "string"
       ? user.team
       : (user?.team as any)?.name ||
         currentMember?.team ||
-        "Fellowship Member";
+        "";
 
-  const isAssignedTeam =
-    Boolean(teamName) && teamName !== "Fellowship Member";
+  const isAssignedTeam = Boolean(teamName);
 
   const department =
-    user?.department || currentMember?.department || "Computer Science";
+    user?.department?.trim() || currentMember?.department?.trim() || "";
+
   const academicYear =
-    user?.yearOfStudy || currentMember?.academicYear || "3rd Year";
-  const formattedPhone =
-    formatEthiopianPhone(user?.phoneNumber) || "0900 000 001";
+    user?.yearOfStudy?.trim() || currentMember?.academicYear?.trim() || "";
+
+  const formattedPhone = formatEthiopianPhone(user?.phoneNumber) || "";
+
+  const systemHandle = user?.username
+    ? `@${user.username.replace(/^@/, "")}`
+    : currentMember?.handle
+    ? (currentMember.handle.startsWith("@")
+        ? currentMember.handle
+        : `@${currentMember.handle}`)
+    : user?.telegramUserName
+    ? `@${user.telegramUserName.replace(/^@/, "")}`
+    : user?.fullName
+    ? `@${user.fullName.toLowerCase().replace(/[^a-z0-9_]/g, "")}`
+    : "";
+
   const telegramHandle = user?.telegramUserName
     ? `@${user.telegramUserName.replace(/^@/, "")}`
     : currentMember?.telegramUsername
     ? `@${currentMember.telegramUsername.replace(/^@/, "")}`
-    : "@fellowship_member";
+    : undefined;
 
-  const connectsCount = currentMember?.followersCount ?? 480;
-  const followingCount = currentMember?.followingCount ?? 35;
+  const connectsCount = currentMember?.followersCount ?? 0;
+  const followingCount = currentMember?.followingCount ?? 0;
   const memberBio =
-    currentMember?.bio ||
-    "Walking with Christ, growing in grace, and serving faithfully at AAU 4 Kilo Fellowship.";
+    currentMember?.bio?.trim() || (user as any)?.bio?.trim() || "";
   const joinedDate = formatJoinedDate(user?.createdAt || currentMember?.joinedDate);
-  const location = currentMember?.location || "AAU 4 Kilo Campus, Addis Ababa";
+  const location =
+    currentMember?.location?.trim() || (user as any)?.location?.trim() || "";
 
   // Palette matching design system
   const bgColor = isDark ? "#09090b" : "#f8fafc";
@@ -354,6 +518,9 @@ export default function ProfileScreen() {
   const pillBg = isDark ? "#27272a" : "#f1f5f9";
   const dividerColor = isDark ? "#27272a" : "#f1f5f9";
   const iconMuted = isDark ? "#a1a1aa" : "#475569";
+
+  const bannerUri =
+    localBanner || user?.coverImage || currentMember?.banner || null;
 
   // Render Twitter-style Reflection Feed Card
   const renderPostCard = (item: CommunityPost) => {
@@ -369,7 +536,6 @@ export default function ProfileScreen() {
         ]}
       >
         <View style={styles.postCardRow}>
-          {/* Author Avatar with ProfileLink */}
           <ProfileLink
             user={{
               id: item.authorId || user?.id || "me",
@@ -383,7 +549,6 @@ export default function ProfileScreen() {
           />
 
           <View style={styles.postBody}>
-            {/* Header: Name · Handle · Time */}
             <View style={styles.postAuthorLine}>
               <Text
                 style={[styles.postAuthorName, { color: textPrimary }]}
@@ -408,7 +573,6 @@ export default function ProfileScreen() {
               </Text>
             </View>
 
-            {/* Post Content */}
             <Pressable
               onPress={() => router.push(`/community/${item.id}` as any)}
             >
@@ -417,7 +581,6 @@ export default function ProfileScreen() {
               </Text>
             </Pressable>
 
-            {/* Attached Photo */}
             {item.image ? (
               <Pressable
                 onPress={() =>
@@ -442,9 +605,7 @@ export default function ProfileScreen() {
               </Pressable>
             ) : null}
 
-            {/* Twitter Action Bar: Reply, Like, Bookmark, Share */}
             <View style={styles.postActionsRow}>
-              {/* Reply */}
               <Pressable
                 onPress={() => router.push(`/community/${item.id}` as any)}
                 hitSlop={6}
@@ -460,7 +621,6 @@ export default function ProfileScreen() {
                 </Text>
               </Pressable>
 
-              {/* Like */}
               <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
@@ -486,7 +646,6 @@ export default function ProfileScreen() {
                 </Text>
               </Pressable>
 
-              {/* Bookmark */}
               <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
@@ -504,7 +663,6 @@ export default function ProfileScreen() {
                 />
               </Pressable>
 
-              {/* Share */}
               <Pressable
                 onPress={() => {
                   Haptics.selectionAsync().catch(() => {});
@@ -528,557 +686,634 @@ export default function ProfileScreen() {
     );
   };
 
-  // Render Active Tab Content
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "posts":
-        if (authorPosts.length === 0) {
-          return (
-            <View
-              style={[
-                styles.emptyStateCard,
-                { backgroundColor: cardBg, borderColor: cardBorder },
-              ]}
-            >
-              <Ionicons
-                name="chatbubble-ellipses-outline"
-                size={42}
-                color={PRIMARY}
-              />
-              <Text style={[styles.emptyTitle, { color: textPrimary }]}>
-                Share Your First Reflection
-              </Text>
-              <Text style={[styles.emptySubtitle, { color: textSecondary }]}>
-                Inspire your fellow campus brothers and sisters by sharing what
-                the Lord is ministering to your heart today.
-              </Text>
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                  router.push("/community/compose" as any);
-                }}
-                style={[styles.emptyCtaBtn, { backgroundColor: PRIMARY }]}
-              >
-                <Ionicons name="create-outline" size={17} color="#ffffff" />
-                <Text style={styles.emptyCtaText}>Write Reflection</Text>
-              </Pressable>
+  // Pager Tab Views
+  const renderPostsTab = () => {
+    if (authorPosts.length === 0) {
+      return (
+        <View
+          style={[
+            styles.emptyStateCard,
+            { backgroundColor: cardBg, borderColor: cardBorder },
+          ]}
+        >
+          <Ionicons
+            name="chatbubble-ellipses-outline"
+            size={42}
+            color={PRIMARY}
+          />
+          <Text style={[styles.emptyTitle, { color: textPrimary }]}>
+            Share Your First Reflection
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: textSecondary }]}>
+            Inspire your fellow campus brothers and sisters by sharing what
+            the Lord is ministering to your heart today.
+          </Text>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              router.push("/community/compose" as any);
+            }}
+            style={[styles.emptyCtaBtn, { backgroundColor: PRIMARY }]}
+          >
+            <Ionicons name="create-outline" size={17} color="#ffffff" />
+            <Text style={styles.emptyCtaText}>Write Reflection</Text>
+          </Pressable>
+        </View>
+      );
+    }
+    return <View style={styles.postsList}>{authorPosts.map(renderPostCard)}</View>;
+  };
+
+  const renderMediaTab = () => {
+    if (mediaPosts.length === 0) {
+      return (
+        <View
+          style={[
+            styles.emptyStateCard,
+            { backgroundColor: cardBg, borderColor: cardBorder },
+          ]}
+        >
+          <Ionicons name="images-outline" size={42} color={PRIMARY} />
+          <Text style={[styles.emptyTitle, { color: textPrimary }]}>
+            No Fellowship Media Yet
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: textSecondary }]}>
+            Photos and images you share with your reflections will appear here.
+          </Text>
+        </View>
+      );
+    }
+    const gridItemSize = (SCREEN_WIDTH - 36) / 3;
+    return (
+      <View style={styles.mediaGrid}>
+        {mediaPosts.map((post) => (
+          <TouchableOpacity
+            key={post.id}
+            activeOpacity={0.88}
+            onPress={() =>
+              setLightboxImage({
+                uri:
+                  typeof post.image === "string"
+                    ? post.image
+                    : post.image?.uri,
+                caption: post.content,
+                author: post.authorName,
+              })
+            }
+            style={[
+              styles.mediaGridCell,
+              {
+                width: gridItemSize,
+                height: gridItemSize,
+                backgroundColor: cardBg,
+                borderColor: cardBorder,
+              },
+            ]}
+          >
+            <ExpoImage
+              source={
+                typeof post.image === "string"
+                  ? { uri: post.image }
+                  : post.image
+              }
+              style={styles.mediaGridImage}
+              contentFit="cover"
+            />
+            <View style={styles.mediaLikesBadge}>
+              <Ionicons name="heart" size={11} color="#ffffff" />
+              <Text style={styles.mediaLikesText}>{post.likesCount}</Text>
             </View>
-          );
-        }
-        return (
-          <View style={styles.postsList}>
-            {authorPosts.map(renderPostCard)}
-          </View>
-        );
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
 
-      case "media":
-        if (mediaPosts.length === 0) {
-          return (
+  const renderMinistryTab = () => {
+    const matchingTeam = teams.find(
+      (t) =>
+        (teamName && t.name.toLowerCase() === teamName.toLowerCase()) ||
+        t.id === teamName ||
+        (t as any)._id === teamName
+    );
+
+    return (
+      <View style={styles.ministryTabWrap}>
+        {userMinistries.length > 0 ? (
+          userMinistries.map((m: any) => (
             <View
-              style={[
-                styles.emptyStateCard,
-                { backgroundColor: cardBg, borderColor: cardBorder },
-              ]}
-            >
-              <Ionicons name="images-outline" size={42} color={PRIMARY} />
-              <Text style={[styles.emptyTitle, { color: textPrimary }]}>
-                No Fellowship Media Yet
-              </Text>
-              <Text style={[styles.emptySubtitle, { color: textSecondary }]}>
-                Photos from fellowship gatherings, acoustic worship sessions, and
-                campus prayers you share will appear here.
-              </Text>
-            </View>
-          );
-        }
-        const gridItemSize = (SCREEN_WIDTH - 36) / 3;
-        return (
-          <View style={styles.mediaGrid}>
-            {mediaPosts.map((post) => (
-              <TouchableOpacity
-                key={post.id}
-                activeOpacity={0.88}
-                onPress={() =>
-                  setLightboxImage({
-                    uri:
-                      typeof post.image === "string"
-                        ? post.image
-                        : post.image?.uri,
-                    caption: post.content,
-                    author: post.authorName,
-                  })
-                }
-                style={[
-                  styles.mediaGridCell,
-                  {
-                    width: gridItemSize,
-                    height: gridItemSize,
-                    backgroundColor: cardBg,
-                    borderColor: cardBorder,
-                  },
-                ]}
-              >
-                <ExpoImage
-                  source={
-                    typeof post.image === "string"
-                      ? { uri: post.image }
-                      : post.image
-                  }
-                  style={styles.mediaGridImage}
-                  contentFit="cover"
-                />
-                <View style={styles.mediaLikesBadge}>
-                  <Ionicons name="heart" size={11} color="#ffffff" />
-                  <Text style={styles.mediaLikesText}>{post.likesCount}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        );
-
-      case "ministry":
-        return (
-          <View style={styles.ministryTabWrap}>
-            {userMinistries.length > 0 ? (
-              userMinistries.map((m: any) => (
-                <View
-                  key={m.id || m.name}
-                  style={[
-                    styles.infoCard,
-                    { backgroundColor: cardBg, borderColor: cardBorder },
-                  ]}
-                >
-                  <View style={styles.ministryHeaderRow}>
-                    <View
-                      style={[
-                        styles.ministryIconWrap,
-                        { backgroundColor: `${PRIMARY}18` },
-                      ]}
-                    >
-                      <Ionicons name="flame" size={20} color={PRIMARY} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.ministryTitle, { color: textPrimary }]}>
-                        {m.name}
-                      </Text>
-                      <Text style={[styles.ministrySub, { color: textSecondary }]}>
-                        {m.role || "Active Fellowship Ministry"}
-                      </Text>
-                    </View>
-                  </View>
-                  {m.badge ? (
-                    <Text
-                      style={[
-                        styles.teamActionText,
-                        { color: PRIMARY, fontWeight: "600" },
-                      ]}
-                    >
-                      {m.badge}
-                    </Text>
-                  ) : null}
-                </View>
-              ))
-            ) : (
-              /* Ministry Team Involvements */
-              <View
-                style={[
-                  styles.infoCard,
-                  { backgroundColor: cardBg, borderColor: cardBorder },
-                ]}
-              >
-                <View style={styles.ministryHeaderRow}>
-                  <View
-                    style={[
-                      styles.ministryIconWrap,
-                      { backgroundColor: `${PRIMARY}18` },
-                    ]}
-                  >
-                    <Ionicons name="flame" size={20} color={PRIMARY} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.ministryTitle, { color: textPrimary }]}>
-                      {isAssignedTeam ? teamName : "General Fellowship"}
-                    </Text>
-                    <Text style={[styles.ministrySub, { color: textSecondary }]}>
-                      Active Ministry Assignment
-                    </Text>
-                  </View>
-                  <Pressable
-                    onPress={() => {
-                      Haptics.selectionAsync().catch(() => {});
-                      router.push("/teams" as any);
-                    }}
-                    style={styles.teamActionBadge}
-                  >
-                    <Text style={styles.teamActionText}>
-                      {isAssignedTeam ? "View Team" : "Join Team"}
-                    </Text>
-                    <Ionicons name="chevron-forward" size={13} color={PRIMARY} />
-                  </Pressable>
-                </View>
-
-                <Text style={[styles.ministryDesc, { color: textSecondary }]}>
-                  Serving Christ faithfully at Addis Ababa University (AAU 4 Kilo
-                  Campus), participating in fellowship discipleship, prayer, and
-                  outreach.
-                </Text>
-              </View>
-            )}
-
-            {/* Weekly Campus Schedule */}
-            <View
+              key={m.id || m.name}
               style={[
                 styles.infoCard,
                 { backgroundColor: cardBg, borderColor: cardBorder },
               ]}
             >
-              <Text style={[styles.sectionHeading, { color: textTertiary }]}>
-                WEEKLY CAMPUS GATHERINGS
-              </Text>
-              <View style={[styles.scheduleRow, { borderBottomColor: dividerColor }]}>
-                <Ionicons name="calendar-outline" size={16} color={PRIMARY} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.scheduleName, { color: textPrimary }]}>
-                    Midweek Campus Prayer
-                  </Text>
-                  <Text style={[styles.scheduleMeta, { color: textSecondary }]}>
-                    Wednesday · 5:30 PM (Sidist Kilo Chapel)
-                  </Text>
-                </View>
-              </View>
-
-              <View style={[styles.scheduleRow, { borderBottomColor: dividerColor }]}>
-                <Ionicons name="musical-notes-outline" size={16} color={PRIMARY} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.scheduleName, { color: textPrimary }]}>
-                    Acoustic Worship & Bible Study
-                  </Text>
-                  <Text style={[styles.scheduleMeta, { color: textSecondary }]}>
-                    Friday · 6:00 PM (4 Kilo Hall)
-                  </Text>
-                </View>
-              </View>
-
-              <View style={[styles.scheduleRow, { borderBottomWidth: 0 }]}>
-                <Ionicons name="heart-outline" size={16} color={PRIMARY} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.scheduleName, { color: textPrimary }]}>
-                    Dormitory Fellowship Circles
-                  </Text>
-                  <Text style={[styles.scheduleMeta, { color: textSecondary }]}>
-                    Sunday Evening · 7:30 PM (Campus Blocks)
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </View>
-        );
-
-      case "likes":
-        if (likedPosts.length === 0) {
-          return (
-            <View
-              style={[
-                styles.emptyStateCard,
-                { backgroundColor: cardBg, borderColor: cardBorder },
-              ]}
-            >
-              <Ionicons
-                name="heart-dislike-outline"
-                size={42}
-                color={PRIMARY}
-              />
-              <Text style={[styles.emptyTitle, { color: textPrimary }]}>
-                No Liked Reflections
-              </Text>
-              <Text style={[styles.emptySubtitle, { color: textSecondary }]}>
-                Reflections you like in the fellowship community feed will appear
-                here for quick access.
-              </Text>
-            </View>
-          );
-        }
-        return (
-          <View style={styles.postsList}>
-            {likedPosts.map(renderPostCard)}
-          </View>
-        );
-
-      case "account":
-        return (
-          <View style={styles.accountTabWrap}>
-            {/* Preferences & App Settings */}
-            <View
-              style={[
-                styles.menuCard,
-                { backgroundColor: cardBg, borderColor: cardBorder },
-              ]}
-            >
-              {/* Dark Theme Native Switch */}
-              <View style={[styles.menuItem, { borderBottomColor: dividerColor }]}>
+              <View style={styles.ministryHeaderRow}>
                 <View
                   style={[
-                    styles.menuItemIcon,
-                    { backgroundColor: pillBg, borderColor: cardBorder },
+                    styles.ministryIconWrap,
+                    { backgroundColor: `${PRIMARY}18` },
                   ]}
                 >
-                  <Ionicons
-                    name={isDark ? "moon-outline" : "sunny-outline"}
-                    size={18}
-                    color={iconMuted}
-                  />
+                  <Ionicons name="flame" size={20} color={PRIMARY} />
                 </View>
-                <Text style={[styles.menuItemLabel, { color: textPrimary }]}>
-                  Dark Theme
-                </Text>
-                <Switch
-                  value={isDark}
-                  onValueChange={handleThemeChange}
-                  thumbColor={
-                    Platform.OS === "android"
-                      ? isDark
-                        ? PRIMARY
-                        : "#f4f3f4"
-                      : undefined
-                  }
-                  trackColor={{ false: "#e4e4e7", true: `${PRIMARY}99` }}
-                />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.ministryTitle, { color: textPrimary }]}>
+                    {m.name}
+                  </Text>
+                  <Text style={[styles.ministrySub, { color: textSecondary }]}>
+                    {m.role || "Active Fellowship Ministry"}
+                  </Text>
+                </View>
               </View>
-
-              {/* Edit Profile */}
-              <Pressable
-                onPress={() => {
-                  Haptics.selectionAsync().catch(() => {});
-                  router.push("/edit-profile" as any);
-                }}
-                style={({ pressed }) => [
-                  styles.menuItem,
-                  {
-                    borderBottomColor: dividerColor,
-                    opacity: pressed ? 0.65 : 1,
-                  },
+              {m.description ? (
+                <Text style={[styles.ministryDesc, { color: textSecondary }]}>
+                  {m.description}
+                </Text>
+              ) : null}
+              {m.badge ? (
+                <Text
+                  style={[
+                    styles.teamActionText,
+                    { color: PRIMARY, fontWeight: "600" },
+                  ]}
+                >
+                  {m.badge}
+                </Text>
+              ) : null}
+            </View>
+          ))
+        ) : isAssignedTeam ? (
+          <View
+            style={[
+              styles.infoCard,
+              { backgroundColor: cardBg, borderColor: cardBorder },
+            ]}
+          >
+            <View style={styles.ministryHeaderRow}>
+              <View
+                style={[
+                  styles.ministryIconWrap,
+                  { backgroundColor: `${PRIMARY}18` },
                 ]}
               >
-                <View
-                  style={[
-                    styles.menuItemIcon,
-                    { backgroundColor: pillBg, borderColor: cardBorder },
-                  ]}
-                >
-                  <Ionicons name="create-outline" size={18} color={iconMuted} />
-                </View>
-                <Text style={[styles.menuItemLabel, { color: textPrimary }]}>
-                  Edit Profile Information
+                <Ionicons name="flame" size={20} color={PRIMARY} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.ministryTitle, { color: textPrimary }]}>
+                  {teamName}
                 </Text>
-                <Ionicons name="chevron-forward" size={18} color={textTertiary} />
-              </Pressable>
-
-              {/* Ministry Teams */}
+                <Text style={[styles.ministrySub, { color: textSecondary }]}>
+                  Active Ministry Assignment
+                </Text>
+              </View>
               <Pressable
                 onPress={() => {
                   Haptics.selectionAsync().catch(() => {});
                   router.push("/teams" as any);
                 }}
-                style={({ pressed }) => [
-                  styles.menuItem,
-                  {
-                    borderBottomColor: dividerColor,
-                    opacity: pressed ? 0.65 : 1,
-                  },
-                ]}
+                style={styles.teamActionBadge}
               >
-                <View
-                  style={[
-                    styles.menuItemIcon,
-                    { backgroundColor: pillBg, borderColor: cardBorder },
-                  ]}
-                >
-                  <Ionicons name="people-outline" size={18} color={iconMuted} />
-                </View>
-                <Text style={[styles.menuItemLabel, { color: textPrimary }]}>
-                  Fellowship Ministry Teams
-                </Text>
-                <Ionicons name="chevron-forward" size={18} color={textTertiary} />
-              </Pressable>
-
-              {/* Settings & Preferences */}
-              <Pressable
-                onPress={() => {
-                  Haptics.selectionAsync().catch(() => {});
-                  router.push("/settings" as any);
-                }}
-                style={({ pressed }) => [
-                  styles.menuItem,
-                  {
-                    borderBottomColor: dividerColor,
-                    opacity: pressed ? 0.65 : 1,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.menuItemIcon,
-                    { backgroundColor: pillBg, borderColor: cardBorder },
-                  ]}
-                >
-                  <Ionicons name="options-outline" size={18} color={iconMuted} />
-                </View>
-                <Text style={[styles.menuItemLabel, { color: textPrimary }]}>
-                  Settings & Preferences
-                </Text>
-                <Ionicons name="chevron-forward" size={18} color={textTertiary} />
-              </Pressable>
-
-              {/* Help & Support */}
-              <Pressable
-                onPress={() => {
-                  Haptics.selectionAsync().catch(() => {});
-                  router.push("/help" as any);
-                }}
-                style={({ pressed }) => [
-                  styles.menuItem,
-                  {
-                    borderBottomColor: dividerColor,
-                    opacity: pressed ? 0.65 : 1,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.menuItemIcon,
-                    { backgroundColor: pillBg, borderColor: cardBorder },
-                  ]}
-                >
-                  <Ionicons
-                    name="help-circle-outline"
-                    size={18}
-                    color={iconMuted}
-                  />
-                </View>
-                <Text style={[styles.menuItemLabel, { color: textPrimary }]}>
-                  Help & Support
-                </Text>
-                <Ionicons name="chevron-forward" size={18} color={textTertiary} />
-              </Pressable>
-
-              {/* About Fellowship */}
-              <Pressable
-                onPress={() => {
-                  Haptics.selectionAsync().catch(() => {});
-                  router.push("/about" as any);
-                }}
-                style={({ pressed }) => [
-                  styles.menuItem,
-                  { borderBottomWidth: 0, opacity: pressed ? 0.65 : 1 },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.menuItemIcon,
-                    { backgroundColor: pillBg, borderColor: cardBorder },
-                  ]}
-                >
-                  <Ionicons
-                    name="information-circle-outline"
-                    size={18}
-                    color={iconMuted}
-                  />
-                </View>
-                <Text style={[styles.menuItemLabel, { color: textPrimary }]}>
-                  About 4 Kilo Fellowship
-                </Text>
-                <Ionicons name="chevron-forward" size={18} color={textTertiary} />
+                <Text style={styles.teamActionText}>View Team</Text>
+                <Ionicons name="chevron-forward" size={13} color={PRIMARY} />
               </Pressable>
             </View>
 
-            {/* Sign Out Button */}
+            {matchingTeam?.description || matchingTeam?.about ? (
+              <Text style={[styles.ministryDesc, { color: textSecondary }]}>
+                {matchingTeam.description || matchingTeam.about}
+              </Text>
+            ) : null}
+
+            {matchingTeam?.meetingDay ? (
+              <View style={[styles.scheduleRow, { borderBottomWidth: 0, paddingTop: 4 }]}>
+                <Ionicons name="time-outline" size={14} color={PRIMARY} />
+                <Text style={[styles.scheduleMeta, { color: textSecondary }]}>
+                  Team Meeting: {matchingTeam.meetingDay}
+                  {matchingTeam.time ? ` · ${matchingTeam.time}` : ""}
+                  {matchingTeam.location ? ` (${matchingTeam.location})` : ""}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        ) : (
+          <View
+            style={[
+              styles.infoCard,
+              { backgroundColor: cardBg, borderColor: cardBorder },
+            ]}
+          >
+            <View style={styles.ministryHeaderRow}>
+              <View
+                style={[
+                  styles.ministryIconWrap,
+                  { backgroundColor: `${PRIMARY}18` },
+                ]}
+              >
+                <Ionicons name="people-outline" size={20} color={PRIMARY} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.ministryTitle, { color: textPrimary }]}>
+                  Ministry Teams
+                </Text>
+                <Text style={[styles.ministrySub, { color: textSecondary }]}>
+                  Not yet assigned to a team
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync().catch(() => {});
+                  router.push("/teams" as any);
+                }}
+                style={styles.teamActionBadge}
+              >
+                <Text style={styles.teamActionText}>Join Team</Text>
+                <Ionicons name="chevron-forward" size={13} color={PRIMARY} />
+              </Pressable>
+            </View>
+
+            <Text style={[styles.ministryDesc, { color: textSecondary }]}>
+              Join a ministry team to serve alongside fellowship brothers and sisters in prayer, worship, discipleship, and campus outreach.
+            </Text>
+          </View>
+        )}
+
+        {/* Dynamic Campus Gatherings & Programs */}
+        <View
+          style={[
+            styles.infoCard,
+            { backgroundColor: cardBg, borderColor: cardBorder },
+          ]}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 4,
+            }}
+          >
+            <Text style={[styles.sectionHeading, { color: textTertiary, marginBottom: 0 }]}>
+              CAMPUS GATHERINGS & PROGRAMS
+            </Text>
             <Pressable
               onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
-                  () => {}
-                );
-                setSignOutConfirm(true);
+                Haptics.selectionAsync().catch(() => {});
+                router.push("/programs" as any);
               }}
-              accessibilityRole="button"
-              accessibilityLabel="Sign Out of Account"
-              style={({ pressed }) => [
-                styles.signOutBtn,
-                {
-                  backgroundColor: isDark
-                    ? "rgba(239, 68, 68, 0.12)"
-                    : "#fef2f2",
-                  borderColor: isDark
-                    ? "rgba(239, 68, 68, 0.3)"
-                    : "#fecaca",
-                  opacity: pressed ? 0.75 : 1,
-                },
-              ]}
+              hitSlop={8}
             >
-              <Ionicons name="log-out-outline" size={18} color="#ef4444" />
-              <Text style={styles.signOutText}>Sign Out</Text>
+              <Text style={{ fontSize: 12, color: PRIMARY, fontWeight: "600" }}>
+                See All
+              </Text>
             </Pressable>
           </View>
-        );
+
+          {programs.length > 0 ? (
+            programs.map((prog, index) => {
+              const isLast = index === programs.length - 1;
+              const isPrayer = prog.category?.toLowerCase().includes("prayer") || prog.title?.toLowerCase().includes("prayer");
+              const isWorship = prog.category?.toLowerCase().includes("worship") || prog.title?.toLowerCase().includes("worship");
+              const iconName = isPrayer ? "calendar-outline" : isWorship ? "musical-notes-outline" : "flame-outline";
+
+              return (
+                <Pressable
+                  key={prog.id || index}
+                  onPress={() => {
+                    Haptics.selectionAsync().catch(() => {});
+                    router.push(`/programs/${prog.id}` as any);
+                  }}
+                  style={[
+                    styles.scheduleRow,
+                    {
+                      borderBottomColor: dividerColor,
+                      borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth,
+                    },
+                  ]}
+                >
+                  <Ionicons name={iconName} size={16} color={PRIMARY} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.scheduleName, { color: textPrimary }]}>
+                      {prog.title}
+                    </Text>
+                    <Text style={[styles.scheduleMeta, { color: textSecondary }]}>
+                      {prog.day ? `${prog.day}` : ""}
+                      {prog.time ? ` · ${prog.time}` : ""}
+                      {prog.location ? ` (${prog.location})` : ""}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={14} color={textTertiary} />
+                </Pressable>
+              );
+            })
+          ) : (
+            <Text style={[styles.scheduleMeta, { color: textSecondary, paddingVertical: 6 }]}>
+              No campus gatherings scheduled at this time.
+            </Text>
+          )}
+        </View>
+      </View>
+    );
+  };
+
+  const renderLikesTab = () => {
+    if (likedPosts.length === 0) {
+      return (
+        <View
+          style={[
+            styles.emptyStateCard,
+            { backgroundColor: cardBg, borderColor: cardBorder },
+          ]}
+        >
+          <Ionicons
+            name="heart-dislike-outline"
+            size={42}
+            color={PRIMARY}
+          />
+          <Text style={[styles.emptyTitle, { color: textPrimary }]}>
+            No Liked Reflections
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: textSecondary }]}>
+            Reflections you like in the fellowship community feed will appear
+            here for quick access.
+          </Text>
+        </View>
+      );
+    }
+    return <View style={styles.postsList}>{likedPosts.map(renderPostCard)}</View>;
+  };
+
+  const renderAccountTab = () => {
+    return (
+      <View style={styles.accountTabWrap}>
+        <View
+          style={[
+            styles.menuCard,
+            { backgroundColor: cardBg, borderColor: cardBorder },
+          ]}
+        >
+          {/* Dark Theme Native Switch */}
+          <View style={[styles.menuItem, { borderBottomColor: dividerColor }]}>
+            <View
+              style={[
+                styles.menuItemIcon,
+                { backgroundColor: pillBg, borderColor: cardBorder },
+              ]}
+            >
+              <Ionicons
+                name={isDark ? "moon-outline" : "sunny-outline"}
+                size={18}
+                color={iconMuted}
+              />
+            </View>
+            <Text style={[styles.menuItemLabel, { color: textPrimary }]}>
+              Dark Theme
+            </Text>
+            <Switch
+              value={isDark}
+              onValueChange={handleThemeChange}
+              thumbColor={
+                Platform.OS === "android"
+                  ? isDark
+                    ? PRIMARY
+                    : "#f4f3f4"
+                  : undefined
+              }
+              trackColor={{ false: "#e4e4e7", true: `${PRIMARY}99` }}
+            />
+          </View>
+
+          {/* Edit Profile */}
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync().catch(() => {});
+              router.push("/edit-profile" as any);
+            }}
+            style={({ pressed }) => [
+              styles.menuItem,
+              {
+                borderBottomColor: dividerColor,
+                opacity: pressed ? 0.65 : 1,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.menuItemIcon,
+                { backgroundColor: pillBg, borderColor: cardBorder },
+              ]}
+            >
+              <Ionicons name="create-outline" size={18} color={iconMuted} />
+            </View>
+            <Text style={[styles.menuItemLabel, { color: textPrimary }]}>
+              Edit Profile Information
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={textTertiary} />
+          </Pressable>
+
+          {/* Ministry Teams */}
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync().catch(() => {});
+              router.push("/teams" as any);
+            }}
+            style={({ pressed }) => [
+              styles.menuItem,
+              {
+                borderBottomColor: dividerColor,
+                opacity: pressed ? 0.65 : 1,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.menuItemIcon,
+                { backgroundColor: pillBg, borderColor: cardBorder },
+              ]}
+            >
+              <Ionicons name="people-outline" size={18} color={iconMuted} />
+            </View>
+            <Text style={[styles.menuItemLabel, { color: textPrimary }]}>
+              Fellowship Ministry Teams
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={textTertiary} />
+          </Pressable>
+
+          {/* Settings & Preferences */}
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync().catch(() => {});
+              router.push("/settings" as any);
+            }}
+            style={({ pressed }) => [
+              styles.menuItem,
+              {
+                borderBottomColor: dividerColor,
+                opacity: pressed ? 0.65 : 1,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.menuItemIcon,
+                { backgroundColor: pillBg, borderColor: cardBorder },
+              ]}
+            >
+              <Ionicons name="options-outline" size={18} color={iconMuted} />
+            </View>
+            <Text style={[styles.menuItemLabel, { color: textPrimary }]}>
+              Settings & Preferences
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={textTertiary} />
+          </Pressable>
+
+          {/* Help & Support */}
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync().catch(() => {});
+              router.push("/help" as any);
+            }}
+            style={({ pressed }) => [
+              styles.menuItem,
+              {
+                borderBottomColor: dividerColor,
+                opacity: pressed ? 0.65 : 1,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.menuItemIcon,
+                { backgroundColor: pillBg, borderColor: cardBorder },
+              ]}
+            >
+              <Ionicons
+                name="help-circle-outline"
+                size={18}
+                color={iconMuted}
+              />
+            </View>
+            <Text style={[styles.menuItemLabel, { color: textPrimary }]}>
+              Help & Support
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={textTertiary} />
+          </Pressable>
+
+          {/* About Fellowship */}
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync().catch(() => {});
+              router.push("/about" as any);
+            }}
+            style={({ pressed }) => [
+              styles.menuItem,
+              { borderBottomWidth: 0, opacity: pressed ? 0.65 : 1 },
+            ]}
+          >
+            <View
+              style={[
+                styles.menuItemIcon,
+                { backgroundColor: pillBg, borderColor: cardBorder },
+              ]}
+            >
+              <Ionicons
+                name="information-circle-outline"
+                size={18}
+                color={iconMuted}
+              />
+            </View>
+            <Text style={[styles.menuItemLabel, { color: textPrimary }]}>
+              About 4 Kilo Fellowship
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={textTertiary} />
+          </Pressable>
+        </View>
+
+        {/* Sign Out Button */}
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+              () => {}
+            );
+            setSignOutConfirm(true);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Sign Out of Account"
+          style={({ pressed }) => [
+            styles.signOutBtn,
+            {
+              backgroundColor: isDark
+                ? "rgba(239, 68, 68, 0.12)"
+                : "#fef2f2",
+              borderColor: isDark
+                ? "rgba(239, 68, 68, 0.3)"
+                : "#fecaca",
+              opacity: pressed ? 0.75 : 1,
+            },
+          ]}
+        >
+          <Ionicons name="log-out-outline" size={18} color="#ef4444" />
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </Pressable>
+      </View>
+    );
+  };
+
+  const renderScene = ({ route }: { route: { key: string } }) => {
+    switch (route.key) {
+      case "posts":
+        return renderPostsTab();
+      case "media":
+        return renderMediaTab();
+      case "ministry":
+        return renderMinistryTab();
+      case "likes":
+        return renderLikesTab();
+      case "account":
+        return renderAccountTab();
+      default:
+        return null;
     }
   };
+
+  const renderTabBar = (props: any) => (
+    <TabBar
+      {...props}
+      scrollEnabled
+      tabStyle={styles.tabBarItem}
+      indicatorStyle={{
+        backgroundColor: PRIMARY,
+        height: 3,
+        borderRadius: 1.5,
+      }}
+      style={[
+        styles.tabBarStyle,
+        {
+          backgroundColor: cardBg,
+          borderBottomColor: cardBorder,
+          borderTopColor: cardBorder,
+        },
+      ]}
+      activeColor={textPrimary}
+      inactiveColor={textTertiary}
+      labelStyle={styles.tabBarLabel}
+      pressColor={isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"}
+    />
+  );
 
   return (
     <View style={[styles.screen, { backgroundColor: bgColor }]}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      {/* MainTabHeader — Consistent with the application design system */}
+      {/* MainTabHeader — Notification on left, centered title, settings on right */}
       <MainTabHeader
         showAvatar={false}
-        showStreak={true}
+        showStreak={false}
         showNotification={true}
+        notificationPosition="left"
+        showSettings={true}
         borderBottom={false}
         title="Profile"
-        rightExtra={
-          <View style={styles.headerRightGroup}>
-            <Pressable
-              hitSlop={8}
-              onPress={handleShareApp}
-              accessibilityRole="button"
-              accessibilityLabel="Share Profile"
-              style={({ pressed }) => [
-                styles.headerIconBtn,
-                {
-                  backgroundColor: isDark ? "#18181b" : "#ffffff",
-                  borderColor: cardBorder,
-                  opacity: pressed ? 0.7 : 1,
-                },
-              ]}
-            >
-              <Ionicons
-                name="share-social-outline"
-                size={18}
-                color={iconMuted}
-              />
-            </Pressable>
-
-            <Pressable
-              hitSlop={8}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
-                  () => {}
-                );
-                router.push("/settings" as any);
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Settings and Preferences"
-              style={({ pressed }) => [
-                styles.headerIconBtn,
-                {
-                  backgroundColor: isDark ? "#18181b" : "#ffffff",
-                  borderColor: cardBorder,
-                  opacity: pressed ? 0.7 : 1,
-                },
-              ]}
-            >
-              <Ionicons name="settings-outline" size={18} color={iconMuted} />
-            </Pressable>
-          </View>
-        }
       />
 
       <ScrollView
@@ -1096,46 +1331,69 @@ export default function ProfileScreen() {
           />
         }
       >
-        {/* Cover Hero Banner (Twitter/X style) */}
+        {/* Cover Hero Banner with Doom Color Fallback & Edit Cover Button */}
         <View style={styles.bannerWrap}>
-          {currentMember?.banner ? (
+          {bannerUri ? (
             <ExpoImage
-              source={
-                typeof currentMember.banner === "string"
-                  ? { uri: currentMember.banner }
-                  : currentMember.banner
-              }
+              source={typeof bannerUri === "string" ? { uri: bannerUri } : bannerUri}
               style={styles.bannerImage}
               contentFit="cover"
+              transition={200}
             />
           ) : (
-            <LinearGradient
-              colors={
-                isDark
-                  ? ["#2a1409", "#18181b", "#09090b"]
-                  : ["#fed7aa", "#ffedd5", "#fff7ed"]
-              }
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.bannerGradient}
-            >
-              <View style={styles.bannerDecorPattern}>
-                <Ionicons
-                  name="shield-checkmark"
-                  size={90}
-                  color={isDark ? "rgba(255,103,25,0.08)" : "rgba(255,103,25,0.14)"}
-                  style={styles.bannerDecorIcon}
-                />
-              </View>
-            </LinearGradient>
+            /* Solid Doom Color showing nothing has been selected */
+            <View
+              style={[
+                styles.bannerEmptyDoom,
+                { backgroundColor: isDark ? "#18181b" : "#cbd5e1" },
+              ]}
+            />
           )}
+
           <View style={styles.bannerOverlay} />
+
+          {/* Floating 'Edit Cover' Button on Banner */}
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+                () => {}
+              );
+              setImageSheetTarget("banner");
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Change profile header banner"
+            style={({ pressed }) => [
+              styles.bannerEditBtn,
+              { opacity: pressed ? 0.75 : 1 },
+            ]}
+          >
+            <Ionicons name="camera-outline" size={14} color="#ffffff" />
+            <Text style={styles.bannerEditText}>Edit cover</Text>
+          </Pressable>
+
+          {/* Uploading Status Overlay */}
+          {isUploading && (
+            <View style={styles.bannerLoadingOverlay}>
+              <ActivityIndicator size="small" color="#ffffff" />
+              <Text style={styles.bannerLoadingText}>Saving photo...</Text>
+            </View>
+          )}
         </View>
 
         {/* Profile Overlapping Avatar & Action Buttons Bar */}
         <View style={styles.profileActionRow}>
-          {/* Overlapping Avatar with Camera Badge */}
-          <View style={styles.avatarWrap}>
+          {/* Overlapping Avatar with Click-to-Edit Photo Action */}
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+                () => {}
+              );
+              setImageSheetTarget("avatar");
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Change profile photo"
+            style={styles.avatarWrap}
+          >
             <View
               style={[
                 styles.avatarRing,
@@ -1168,47 +1426,45 @@ export default function ProfileScreen() {
             </View>
 
             {/* Camera Edit Badge */}
-            <Pressable
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
-                  () => {}
-                );
-                router.push("/edit-profile" as any);
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Change Profile Photo"
-              style={({ pressed }) => [
-                styles.avatarCameraBadge,
-                { borderColor: bgColor, opacity: pressed ? 0.8 : 1 },
-              ]}
-            >
+            <View style={[styles.avatarCameraBadge, { borderColor: bgColor }]}>
               <Ionicons name="camera" size={13} color="#ffffff" />
-            </Pressable>
-          </View>
+            </View>
+          </Pressable>
 
-          {/* Action Buttons: Share, Edit Profile */}
+          {/* Action Buttons: Share, Edit Profile (High-contrast Native Buttons) */}
           <View style={styles.topActionBtnsGroup}>
-            {/* Share Button (Twitter style) */}
             <Pressable
               onPress={handleShareApp}
               accessibilityRole="button"
               accessibilityLabel="Share Profile"
+              android_ripple={{
+                color: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.1)",
+                borderless: false,
+              }}
               style={({ pressed }) => [
                 styles.secondaryPillBtn,
                 {
-                  backgroundColor: cardBg,
-                  borderColor: cardBorder,
-                  opacity: pressed ? 0.75 : 1,
+                  backgroundColor: isDark ? "#27272a" : "#ffffff",
+                  borderColor: isDark ? "#3f3f46" : "#cbd5e1",
+                  opacity: Platform.OS === "ios" && pressed ? 0.75 : 1,
                 },
               ]}
             >
-              <Ionicons name="share-outline" size={16} color={textPrimary} />
-              <Text style={[styles.secondaryPillText, { color: textPrimary }]}>
+              <Ionicons
+                name="share-outline"
+                size={16}
+                color={isDark ? "#ffffff" : "#0f172a"}
+              />
+              <Text
+                style={[
+                  styles.secondaryPillText,
+                  { color: isDark ? "#ffffff" : "#0f172a" },
+                ]}
+              >
                 Share
               </Text>
             </Pressable>
 
-            {/* Edit Profile Button (Twitter prominent high-contrast pill) */}
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
@@ -1218,24 +1474,28 @@ export default function ProfileScreen() {
               }}
               accessibilityRole="button"
               accessibilityLabel="Edit Profile"
+              android_ripple={{
+                color: "rgba(255, 255, 255, 0.2)",
+                borderless: false,
+              }}
               style={({ pressed }) => [
                 styles.primaryPillBtn,
                 {
-                  backgroundColor: isDark ? "#27272a" : "#0f172a",
-                  borderColor: isDark ? "#3f3f46" : "#0f172a",
-                  opacity: pressed ? 0.8 : 1,
+                  backgroundColor: PRIMARY,
+                  borderColor: PRIMARY,
+                  opacity: Platform.OS === "ios" && pressed ? 0.8 : 1,
                 },
               ]}
             >
               <Ionicons
                 name="create-outline"
                 size={15}
-                color={isDark ? "#ffffff" : "#ffffff"}
+                color="#ffffff"
               />
               <Text
                 style={[
                   styles.primaryPillText,
-                  { color: isDark ? "#ffffff" : "#ffffff" },
+                  { color: "#ffffff" },
                 ]}
               >
                 Edit profile
@@ -1262,141 +1522,144 @@ export default function ProfileScreen() {
           </View>
 
           <Text style={[styles.handleLine, { color: textSecondary }]}>
-            {telegramHandle}
+            {systemHandle}
           </Text>
 
-          {/* Status Badges Strip: Active Member, Team, Streak */}
+          {/* Status Badges Strip: Active Member, Team, Streak (Dynamic) */}
           <View style={styles.badgesWrap}>
-            {/* Active Member / Admin Status */}
             <View
               style={[
                 styles.badgePill,
-                isAdmin
-                  ? {
-                      backgroundColor: isDark ? "rgba(147, 51, 234, 0.15)" : "#faf5ff",
-                      borderColor: isDark ? "#7e22ce" : "#d8b4fe",
-                    }
-                  : {
-                      backgroundColor: isDark ? "#052e16" : "#f0fdf4",
-                      borderColor: isDark ? "#14532d" : "#bbf7d0",
-                    },
+                {
+                  backgroundColor: isDark ? "#052e16" : "#f0fdf4",
+                  borderColor: isDark ? "#14532d" : "#bbf7d0",
+                },
               ]}
             >
-              <View
-                style={[
-                  styles.greenDot,
-                  isAdmin && { backgroundColor: "#a855f7" },
-                ]}
-              />
+              <View style={styles.greenDot} />
               <Text
                 style={[
                   styles.badgePillText,
-                  isAdmin
-                    ? { color: isDark ? "#c084fc" : "#7e22ce" }
-                    : { color: isDark ? "#4ade80" : "#16a34a" },
+                  { color: isDark ? "#4ade80" : "#16a34a" },
                 ]}
               >
-                {user?.role === "super_admin"
-                  ? "Super Admin"
-                  : user?.role === "admin"
-                  ? "Admin"
-                  : user?.role === "leader"
-                  ? "Leader"
-                  : "Active Member"}
+                {user?.role ? user.role.toUpperCase() : "Active Member"}
               </Text>
             </View>
 
-            {/* Fellowship Team */}
+            {isAssignedTeam ? (
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync().catch(() => {});
+                  router.push("/teams" as any);
+                }}
+                style={[
+                  styles.badgePill,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(255, 103, 25, 0.12)"
+                      : "#fff7ed",
+                    borderColor: `${PRIMARY}40`,
+                  },
+                ]}
+              >
+                <Ionicons name="heart" size={11} color={PRIMARY} />
+                <Text style={[styles.badgePillText, { color: PRIMARY }]}>
+                  {teamName}
+                </Text>
+              </Pressable>
+            ) : null}
+
+            {currentStreak > 0 ? (
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+                    () => {}
+                  );
+                  setStreakModalVisible(true);
+                }}
+                style={[
+                  styles.badgePill,
+                  {
+                    backgroundColor: isDark ? "#451a03" : "#fff7ed",
+                    borderColor: isDark ? "#7c2d12" : "#fed7aa",
+                  },
+                ]}
+              >
+                <Ionicons name="flame" size={12} color="#f97316" />
+                <Text
+                  style={[
+                    styles.badgePillText,
+                    { color: "#f97316", fontWeight: "700" },
+                  ]}
+                >
+                  {currentStreak}d Streak
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+
+          {/* Bio (Dynamic - never hardcoded) */}
+          {memberBio ? (
+            <Text style={[styles.bioText, { color: textPrimary }]}>
+              {memberBio}
+            </Text>
+          ) : (
             <Pressable
               onPress={() => {
                 Haptics.selectionAsync().catch(() => {});
-                router.push("/teams" as any);
+                router.push("/edit-profile" as any);
               }}
-              style={[
-                styles.badgePill,
-                {
-                  backgroundColor: isDark
-                    ? "rgba(255, 103, 25, 0.12)"
-                    : "#fff7ed",
-                  borderColor: `${PRIMARY}40`,
-                },
-              ]}
+              style={styles.bioPlaceholderBtn}
             >
-              <Ionicons name="heart" size={11} color={PRIMARY} />
-              <Text style={[styles.badgePillText, { color: PRIMARY }]}>
-                {isAssignedTeam ? teamName : "General Fellowship"}
+              <Ionicons name="create-outline" size={13} color={textTertiary} />
+              <Text style={[styles.bioPlaceholderText, { color: textTertiary }]}>
+                Add a bio to your profile...
               </Text>
             </Pressable>
+          )}
 
-            {/* Streak Badge */}
-            <Pressable
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
-                  () => {}
-                );
-                setStreakModalVisible(true);
-              }}
-              style={[
-                styles.badgePill,
-                {
-                  backgroundColor: isDark ? "#451a03" : "#fff7ed",
-                  borderColor: isDark ? "#7c2d12" : "#fed7aa",
-                },
-              ]}
-            >
-              <Ionicons name="flame" size={12} color="#f97316" />
-              <Text
-                style={[
-                  styles.badgePillText,
-                  { color: "#f97316", fontWeight: "700" },
-                ]}
-              >
-                {currentStreak}d Streak
-              </Text>
-            </Pressable>
-          </View>
-
-          {/* Bio */}
-          <Text style={[styles.bioText, { color: textPrimary }]}>
-            {memberBio}
-          </Text>
-
-          {/* Twitter-Inspired Metadata Strip with Icons */}
+          {/* Dynamic Metadata Strip with Icons (render only existing attributes) */}
           <View style={styles.metadataList}>
-            {/* Ministry Team & Department */}
-            <View style={styles.metaRow}>
-              <Ionicons name="briefcase-outline" size={14} color={iconMuted} />
-              <Text style={[styles.metaText, { color: textSecondary }]}>
-                {teamName} · {department}
-              </Text>
-            </View>
+            {Boolean(teamName || department) && (
+              <View style={styles.metaRow}>
+                <Ionicons name="briefcase-outline" size={14} color={iconMuted} />
+                <Text style={[styles.metaText, { color: textSecondary }]}>
+                  {teamName && department
+                    ? `${teamName} · ${department}`
+                    : teamName || department}
+                </Text>
+              </View>
+            )}
 
-            {/* Academic Year */}
-            <View style={styles.metaRow}>
-              <Ionicons name="school-outline" size={14} color={iconMuted} />
-              <Text style={[styles.metaText, { color: textSecondary }]}>
-                Academic Year: {academicYear}
-              </Text>
-            </View>
+            {Boolean(academicYear) && (
+              <View style={styles.metaRow}>
+                <Ionicons name="school-outline" size={14} color={iconMuted} />
+                <Text style={[styles.metaText, { color: textSecondary }]}>
+                  Academic Year: {academicYear}
+                </Text>
+              </View>
+            )}
 
-            {/* Campus Location */}
-            <View style={styles.metaRow}>
-              <Ionicons name="location-outline" size={14} color={iconMuted} />
-              <Text style={[styles.metaText, { color: textSecondary }]}>
-                {location}
-              </Text>
-            </View>
+            {Boolean(location) && (
+              <View style={styles.metaRow}>
+                <Ionicons name="location-outline" size={14} color={iconMuted} />
+                <Text style={[styles.metaText, { color: textSecondary }]}>
+                  {location}
+                </Text>
+              </View>
+            )}
 
-            {/* Joined Date */}
-            <View style={styles.metaRow}>
-              <Ionicons name="calendar-outline" size={14} color={iconMuted} />
-              <Text style={[styles.metaText, { color: textSecondary }]}>
-                {joinedDate}
-              </Text>
-            </View>
+            {Boolean(joinedDate) && (
+              <View style={styles.metaRow}>
+                <Ionicons name="calendar-outline" size={14} color={iconMuted} />
+                <Text style={[styles.metaText, { color: textSecondary }]}>
+                  {joinedDate}
+                </Text>
+              </View>
+            )}
 
-            {/* Telegram Deep Link */}
-            {telegramHandle && (
+            {Boolean(telegramHandle) && (
               <Pressable onPress={handleTelegramPress} style={styles.metaRow}>
                 <Ionicons name="paper-plane" size={13} color={PRIMARY} />
                 <Text
@@ -1411,18 +1674,18 @@ export default function ProfileScreen() {
               </Pressable>
             )}
 
-            {/* Ethiopian Phone */}
-            <View style={styles.metaRow}>
-              <Ionicons name="call-outline" size={13} color={iconMuted} />
-              <Text style={[styles.metaText, { color: textSecondary }]}>
-                {formattedPhone}
-              </Text>
-            </View>
+            {Boolean(formattedPhone) && (
+              <View style={styles.metaRow}>
+                <Ionicons name="call-outline" size={13} color={iconMuted} />
+                <Text style={[styles.metaText, { color: textSecondary }]}>
+                  {formattedPhone}
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Twitter Social & Devotional Stats Row */}
           <View style={styles.statsStripRow}>
-            {/* Following */}
             <Pressable
               onPress={() => {
                 Haptics.selectionAsync().catch(() => {});
@@ -1445,7 +1708,6 @@ export default function ProfileScreen() {
               </Text>
             </Pressable>
 
-            {/* Followers / Connects */}
             <Pressable
               onPress={() => {
                 Haptics.selectionAsync().catch(() => {});
@@ -1468,9 +1730,8 @@ export default function ProfileScreen() {
               </Text>
             </Pressable>
 
-            {/* Reflections */}
             <Pressable
-              onPress={() => setActiveTab("posts")}
+              onPress={() => setTabIndex(0)}
               style={styles.statCounterItem}
             >
               <Text style={[styles.statBold, { color: textPrimary }]}>
@@ -1481,7 +1742,6 @@ export default function ProfileScreen() {
               </Text>
             </Pressable>
 
-            {/* Devotions Completed */}
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
@@ -1501,74 +1761,22 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Twitter Sub-Navigation Tab Bar */}
-        <View
-          style={[
-            styles.tabsBarWrap,
-            {
-              backgroundColor: cardBg,
-              borderColor: cardBorder,
-            },
-          ]}
-        >
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.tabsScroll}
-          >
-            {PROFILE_TABS.map((tab) => {
-              const isActive = activeTab === tab.key;
-              return (
-                <Pressable
-                  key={tab.key}
-                  onPress={() => {
-                    Haptics.selectionAsync().catch(() => {});
-                    setActiveTab(tab.key);
-                  }}
-                  style={[
-                    styles.tabButton,
-                    isActive && styles.tabButtonActive,
-                  ]}
-                >
-                  <View style={styles.tabContentRow}>
-                    <Ionicons
-                      name={tab.icon}
-                      size={15}
-                      color={isActive ? PRIMARY : textTertiary}
-                      style={{ marginRight: 5 }}
-                    />
-                    <Text
-                      style={[
-                        styles.tabLabelText,
-                        {
-                          color: isActive ? textPrimary : textTertiary,
-                          fontWeight: isActive ? "800" : "600",
-                        },
-                      ]}
-                    >
-                      {tab.label}
-                    </Text>
-                  </View>
-                  {isActive && (
-                    <View
-                      style={[
-                        styles.activeTabIndicator,
-                        { backgroundColor: PRIMARY },
-                      ]}
-                    />
-                  )}
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        {/* Active Tab View Body */}
-        <View style={styles.tabBodyWrap}>{renderTabContent()}</View>
+        {/* Swipeable Native Pager TabView Powered by react-native-tab-view and react-native-pager-view */}
+        <TabView
+          navigationState={{ index: tabIndex, routes: TAB_ROUTES }}
+          renderScene={renderScene}
+          onIndexChange={(index) => {
+            Haptics.selectionAsync().catch(() => {});
+            setTabIndex(index);
+          }}
+          initialLayout={{ width: SCREEN_WIDTH }}
+          renderTabBar={renderTabBar}
+          style={{ minHeight: Math.max(SCREEN_HEIGHT - insets.top - 120, 650) }}
+        />
       </ScrollView>
 
       {/* Floating Action Button (Twitter style: Write Reflection) */}
-      {activeTab === "posts" && (
+      {tabIndex === 0 && (
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(
@@ -1590,6 +1798,223 @@ export default function ProfileScreen() {
           <Ionicons name="add" size={26} color="#ffffff" />
         </Pressable>
       )}
+
+      {/* Senior-Engineered Native Bottom Action Sheet for Avatar & Banner */}
+      <Modal
+        visible={imageSheetTarget !== null}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setImageSheetTarget(null)}
+        statusBarTranslucent
+      >
+        <TouchableWithoutFeedback onPress={() => setImageSheetTarget(null)}>
+          <View style={styles.sheetBackdrop}>
+            <TouchableWithoutFeedback>
+              <View
+                style={[
+                  styles.sheetContainer,
+                  {
+                    backgroundColor: isDark ? "#18181b" : "#ffffff",
+                    borderColor: isDark ? "#27272a" : "#e4e4e7",
+                    paddingBottom: Math.max(insets.bottom, 20),
+                  },
+                ]}
+              >
+                {/* Drag Indicator */}
+                <View style={styles.sheetHandleWrap}>
+                  <View
+                    style={[
+                      styles.sheetHandle,
+                      { backgroundColor: isDark ? "#3f3f46" : "#d4d4d8" },
+                    ]}
+                  />
+                </View>
+
+                {/* Title & Description */}
+                <Text style={[styles.sheetTitle, { color: textPrimary }]}>
+                  {imageSheetTarget === "avatar"
+                    ? "Profile Photo"
+                    : "Header Banner"}
+                </Text>
+                <Text style={[styles.sheetSubtitle, { color: textSecondary }]}>
+                  {imageSheetTarget === "avatar"
+                    ? "Capture a new 1:1 picture or select from your gallery"
+                    : "Select a 3:1 panoramic photo for your profile header"}
+                </Text>
+
+                {/* Options List */}
+                <View style={styles.sheetOptionsList}>
+                  {/* Take Photo */}
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      if (imageSheetTarget) {
+                        handlePickImage(imageSheetTarget, "camera");
+                      }
+                    }}
+                    style={[
+                      styles.sheetOptionBtn,
+                      {
+                        backgroundColor: isDark ? "#27272a" : "#f4f4f5",
+                        borderColor: isDark ? "#3f3f46" : "#e4e4e7",
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.sheetOptionIconWrap,
+                        { backgroundColor: `${PRIMARY}18` },
+                      ]}
+                    >
+                      <Ionicons name="camera-outline" size={20} color={PRIMARY} />
+                    </View>
+                    <View style={styles.sheetOptionTextCol}>
+                      <Text
+                        style={[styles.sheetOptionLabel, { color: textPrimary }]}
+                      >
+                        Take Photo
+                      </Text>
+                      <Text
+                        style={[styles.sheetOptionHint, { color: textSecondary }]}
+                      >
+                        {imageSheetTarget === "avatar"
+                          ? "Take a photo with 1:1 square crop"
+                          : "Take a photo with 3:1 panoramic crop"}
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color={textTertiary}
+                    />
+                  </TouchableOpacity>
+
+                  {/* Choose from Library */}
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      if (imageSheetTarget) {
+                        handlePickImage(imageSheetTarget, "library");
+                      }
+                    }}
+                    style={[
+                      styles.sheetOptionBtn,
+                      {
+                        backgroundColor: isDark ? "#27272a" : "#f4f4f5",
+                        borderColor: isDark ? "#3f3f46" : "#e4e4e7",
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.sheetOptionIconWrap,
+                        { backgroundColor: `${PRIMARY}18` },
+                      ]}
+                    >
+                      <Ionicons name="images-outline" size={20} color={PRIMARY} />
+                    </View>
+                    <View style={styles.sheetOptionTextCol}>
+                      <Text
+                        style={[styles.sheetOptionLabel, { color: textPrimary }]}
+                      >
+                        Choose from Library
+                      </Text>
+                      <Text
+                        style={[styles.sheetOptionHint, { color: textSecondary }]}
+                      >
+                        Select from your device and crop
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color={textTertiary}
+                    />
+                  </TouchableOpacity>
+
+                  {/* View Full Photo (Avatar only) */}
+                  {imageSheetTarget === "avatar" && user?.profileImage && (
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() => {
+                        const img = user.profileImage;
+                        setImageSheetTarget(null);
+                        setLightboxImage({
+                          uri: img!,
+                          caption: user.fullName,
+                          author: user.fullName,
+                        });
+                      }}
+                      style={[
+                        styles.sheetOptionBtn,
+                        {
+                          backgroundColor: isDark ? "#27272a" : "#f4f4f5",
+                          borderColor: isDark ? "#3f3f46" : "#e4e4e7",
+                        },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.sheetOptionIconWrap,
+                          {
+                            backgroundColor: isDark ? "#3f3f46" : "#e2e8f0",
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name="eye-outline"
+                          size={20}
+                          color={textPrimary}
+                        />
+                      </View>
+                      <View style={styles.sheetOptionTextCol}>
+                        <Text
+                          style={[
+                            styles.sheetOptionLabel,
+                            { color: textPrimary },
+                          ]}
+                        >
+                          View Profile Photo
+                        </Text>
+                        <Text
+                          style={[
+                            styles.sheetOptionHint,
+                            { color: textSecondary },
+                          ]}
+                        >
+                          Preview full-resolution avatar
+                        </Text>
+                      </View>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={16}
+                        color={textTertiary}
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* Cancel Button */}
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => setImageSheetTarget(null)}
+                  style={[
+                    styles.sheetCancelBtn,
+                    {
+                      backgroundColor: isDark ? "#27272a" : "#f1f5f9",
+                      borderColor: isDark ? "#3f3f46" : "#e2e8f0",
+                    },
+                  ]}
+                >
+                  <Text style={[styles.sheetCancelText, { color: textPrimary }]}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
 
       {/* Full Resolution Image Lightbox Modal */}
       <ImageViewerModal
@@ -1632,19 +2057,6 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
-  headerRightGroup: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  headerIconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   scrollContent: {
     paddingBottom: 40,
   },
@@ -1657,23 +2069,57 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  bannerGradient: {
+  bannerEmptyDoom: {
     width: "100%",
     height: "100%",
-    position: "relative",
-  },
-  bannerDecorPattern: {
-    ...StyleSheet.absoluteFill,
-    alignItems: "flex-end",
-    justifyContent: "center",
-    paddingRight: 24,
-  },
-  bannerDecorIcon: {
-    transform: [{ rotate: "15deg" }],
   },
   bannerOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(0, 0, 0, 0.18)",
+    backgroundColor: "rgba(0, 0, 0, 0.12)",
+  },
+  bannerEditBtn: {
+    position: "absolute",
+    top: 12,
+    right: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(0, 0, 0, 0.65)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    paddingHorizontal: 11,
+    paddingVertical: 5.5,
+    borderRadius: 20,
+    zIndex: 10,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  bannerEditText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  bannerLoadingOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(0, 0, 0, 0.65)",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    zIndex: 20,
+  },
+  bannerLoadingText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "700",
   },
   profileActionRow: {
     flexDirection: "row",
@@ -1735,32 +2181,61 @@ const styles = StyleSheet.create({
   secondaryPillBtn: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 6,
     paddingHorizontal: 16,
     height: 38,
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: 1.5,
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1.5 },
+        shadowOpacity: 0.12,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   secondaryPillText: {
     fontSize: 13,
     fontWeight: "700",
+    letterSpacing: -0.2,
   },
   primaryPillBtn: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 6,
     paddingHorizontal: 18,
     height: 38,
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: 1.5,
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   primaryPillText: {
     fontSize: 13,
     fontWeight: "700",
+    letterSpacing: -0.2,
   },
   identityContainer: {
     paddingHorizontal: 16,
     marginTop: 6,
+    marginBottom: 10,
   },
   nameLine: {
     flexDirection: "row",
@@ -1809,6 +2284,17 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 10,
   },
+  bioPlaceholderBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 6,
+    marginBottom: 8,
+  },
+  bioPlaceholderText: {
+    fontSize: 13,
+    fontStyle: "italic",
+  },
   metadataList: {
     gap: 6,
     marginBottom: 14,
@@ -1844,42 +2330,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
   },
-  tabsBarWrap: {
+  tabBarStyle: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderTopWidth: StyleSheet.hairlineWidth,
-    marginTop: 6,
+    elevation: 0,
+    shadowOpacity: 0,
   },
-  tabsScroll: {
-    flexDirection: "row",
-    paddingHorizontal: 8,
+  tabBarItem: {
+    width: "auto",
+    minWidth: 78,
+    paddingHorizontal: 12,
   },
-  tabButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    position: "relative",
-    alignItems: "center",
-  },
-  tabButtonActive: {},
-  tabContentRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  tabLabelText: {
-    fontSize: 14,
-  },
-  activeTabIndicator: {
-    position: "absolute",
-    bottom: 0,
-    left: 14,
-    right: 14,
-    height: 3,
-    borderRadius: 1.5,
-  },
-  tabBodyWrap: {
-    paddingTop: 12,
-    paddingHorizontal: 16,
+  tabBarLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    textTransform: "capitalize",
   },
   postsList: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
     gap: 12,
   },
   postCard: {
@@ -1962,7 +2431,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     textAlign: "center",
     gap: 8,
-    marginVertical: 12,
+    marginHorizontal: 16,
+    marginVertical: 16,
   },
   emptyTitle: {
     fontSize: 16,
@@ -1992,6 +2462,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 2,
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   mediaGridCell: {
     position: "relative",
@@ -2021,6 +2493,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   ministryTabWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
     gap: 12,
   },
   infoCard: {
@@ -2100,6 +2574,8 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   accountTabWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
     gap: 14,
   },
   menuCard: {
@@ -2163,5 +2639,79 @@ const styles = StyleSheet.create({
       },
     }),
     zIndex: 20,
+  },
+  sheetBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "flex-end",
+  },
+  sheetContainer: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+  },
+  sheetHandleWrap: {
+    alignItems: "center",
+    paddingVertical: 6,
+    marginBottom: 8,
+  },
+  sheetHandle: {
+    width: 38,
+    height: 4.5,
+    borderRadius: 2.5,
+  },
+  sheetTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+  sheetSubtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  sheetOptionsList: {
+    gap: 10,
+    marginBottom: 16,
+  },
+  sheetOptionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 12,
+  },
+  sheetOptionIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sheetOptionTextCol: {
+    flex: 1,
+  },
+  sheetOptionLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  sheetOptionHint: {
+    fontSize: 12,
+  },
+  sheetCancelBtn: {
+    height: 46,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sheetCancelText: {
+    fontSize: 14,
+    fontWeight: "700",
   },
 });

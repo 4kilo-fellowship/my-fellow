@@ -390,6 +390,19 @@ const Home = () => {
   const router = useRouter();
 
   const { eventsList: events, setEventsList } = useEventsStore();
+
+  const upcomingEvents = useMemo(() => {
+    const now = new Date();
+    return (events || []).filter((item: any) => {
+      if (!item) return false;
+      if (item.isPublished === false) return false;
+      if (item.endDate) {
+        const end = new Date(item.endDate);
+        if (!isNaN(end.getTime()) && end < now) return false;
+      }
+      return true;
+    });
+  }, [events]);
   const { devotionsList, setDevotionsList } = useDevotionsStore();
   const { isConnected } = useNetwork();
   const { user } = useUserStore();
@@ -534,7 +547,7 @@ const Home = () => {
           }
         >
           <UpcomingEventsSection
-            events={events}
+            events={upcomingEvents}
             loading={loading}
             refreshing={refreshing}
             hasSeenFeatures={hasSeenFeatures}
@@ -622,6 +635,8 @@ const Home = () => {
                         Linking.openURL("https://t.me/AAU_4Killo_Fellowship");
                       } else if (action.id === "6") {
                         Linking.openURL("https://tiktok.com/@4kilofellowship");
+                      } else if (action.id === "reminders") {
+                        router.push("/reminders");
                       } else if (action.id === "7") {
                         router.push("/gifts");
                       } else if (action.id === "8") {

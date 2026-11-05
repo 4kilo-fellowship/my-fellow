@@ -24,8 +24,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export interface MainTabHeaderProps {
   showAvatar?: boolean;
   showNotification?: boolean;
+  notificationPosition?: "left" | "right";
   onNotificationPress?: () => void;
   onStreakPress?: () => void;
+  showSettings?: boolean;
+  onSettingsPress?: () => void;
   rightExtra?: React.ReactNode;
   showStreak?: boolean;
   borderBottom?: boolean;
@@ -37,8 +40,11 @@ export interface MainTabHeaderProps {
 export function MainTabHeader({
   showAvatar = true,
   showNotification = true,
+  notificationPosition = "right",
   onNotificationPress,
   onStreakPress,
+  showSettings = false,
+  onSettingsPress,
   rightExtra,
   showStreak = false,
   borderBottom = false,
@@ -116,8 +122,54 @@ export function MainTabHeader({
         ]}
       >
         <View style={styles.navBarRow}>
-          {/* Left: User Avatar (Hidden on Profile Tab) */}
-          {showAvatar ? (
+          {/* Left: Notification (if notificationPosition is 'left') or User Avatar */}
+          {notificationPosition === "left" && showNotification ? (
+            <TouchableOpacity
+              onPress={handleNotificationPress}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Notifications"
+              style={[
+                styles.notificationBtn,
+                {
+                  backgroundColor: elementBg,
+                  borderColor: elementBorder,
+                  marginLeft: 0,
+                },
+              ]}
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={19}
+                color={
+                  unreadCount > 0
+                    ? isDark
+                      ? "#ffffff"
+                      : "#09090b"
+                    : isDark
+                      ? "#a1a1aa"
+                      : "#52525b"
+                }
+              />
+
+              {unreadCount > 0 && (
+                <View
+                  style={[
+                    styles.notificationBadge,
+                    {
+                      backgroundColor: PRIMARY,
+                      borderColor: headerBg,
+                    },
+                  ]}
+                  pointerEvents="none"
+                >
+                  <Text style={styles.notificationBadgeText}>
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          ) : showAvatar ? (
             <TouchableOpacity
               onPress={() => router.push("/(tabs)/profile")}
               activeOpacity={0.8}
@@ -222,8 +274,8 @@ export function MainTabHeader({
               </TouchableOpacity>
             )}
 
-            {/* Notification Bell Button (36x36 circle, Radius 18) */}
-            {showNotification && (
+            {/* Notification Bell Button (only if not on the left) */}
+            {showNotification && notificationPosition !== "left" && (
               <TouchableOpacity
                 onPress={handleNotificationPress}
                 activeOpacity={0.8}
@@ -268,6 +320,38 @@ export function MainTabHeader({
                     </Text>
                   </View>
                 )}
+              </TouchableOpacity>
+            )}
+
+            {/* Settings Button (Identical 36x36 circle, Radius 18) */}
+            {showSettings && (
+              <TouchableOpacity
+                onPress={() => {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  } catch {}
+                  if (onSettingsPress) {
+                    onSettingsPress();
+                  } else {
+                    router.push("/settings" as any);
+                  }
+                }}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Settings"
+                style={[
+                  styles.notificationBtn,
+                  {
+                    backgroundColor: elementBg,
+                    borderColor: elementBorder,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="settings-outline"
+                  size={19}
+                  color={isDark ? "#a1a1aa" : "#52525b"}
+                />
               </TouchableOpacity>
             )}
 

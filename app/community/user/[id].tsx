@@ -12,6 +12,7 @@ import {
   CommunityPost,
   useCommunityStore,
 } from "@/stores/community.store";
+import { useProgramsStore } from "@/stores/programs.store";
 import { useUserStore } from "@/stores/user.store";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -72,6 +73,8 @@ export default function MemberProfileScreen() {
   const fetchUserProfile = useCommunityStore((s) => s.fetchUserProfile);
   const toggleLike = useCommunityStore((s) => s.toggleLike);
   const toggleBookmark = useCommunityStore((s) => s.toggleBookmark);
+  const programs = useProgramsStore((s) => s.programs);
+  const loadPrograms = useProgramsStore((s) => s.loadPrograms);
 
   const [tabIndex, setTabIndex] = useState(0);
   const [lightboxImage, setLightboxImage] = useState<any | null>(null);
@@ -91,6 +94,7 @@ export default function MemberProfileScreen() {
   useEffect(() => {
     const memberId = params.id;
     if (memberId) {
+      loadPrograms().catch(() => {});
       fetchUserProfile(memberId);
 
       socialApi
@@ -571,18 +575,32 @@ export default function MemberProfileScreen() {
               <Text style={[styles.ministrySub, { color: mutedColor }]}>Campus Gathering Points</Text>
             </View>
           </View>
-          <View style={styles.scheduleRow}>
-            <Ionicons name="calendar-outline" size={14} color={PRIMARY} />
-            <Text style={[styles.scheduleText, { color: textColor }]}>Wednesday Midweek Prayer · 5:30 PM (Sidist Kilo Chapel)</Text>
-          </View>
-          <View style={styles.scheduleRow}>
-            <Ionicons name="musical-notes-outline" size={14} color={PRIMARY} />
-            <Text style={[styles.scheduleText, { color: textColor }]}>Friday Acoustic Worship & Bible Study · 6:00 PM (4 Kilo Hall)</Text>
-          </View>
+          {programs.length > 0 ? (
+            programs.map((prog, idx) => (
+              <View key={prog.id || idx} style={styles.scheduleRow}>
+                <Ionicons
+                  name={
+                    prog.category?.toLowerCase().includes("worship")
+                      ? "musical-notes-outline"
+                      : "calendar-outline"
+                  }
+                  size={14}
+                  color={PRIMARY}
+                />
+                <Text style={[styles.scheduleText, { color: textColor }]}>
+                  {prog.title} · {prog.day} {prog.time ? `${prog.time}` : ""} {prog.location ? `(${prog.location})` : ""}
+                </Text>
+              </View>
+            ))
+          ) : (
+            <Text style={[styles.scheduleText, { color: mutedColor, paddingVertical: 4 }]}>
+              No campus gatherings scheduled at this time.
+            </Text>
+          )}
         </View>
       </View>
     );
-  }, [ministries, cardBg, borderColor, currentMember.team, textColor, mutedColor, isDark]);
+  }, [ministries, cardBg, borderColor, currentMember.team, textColor, mutedColor, isDark, programs]);
 
   const renderLikesTab = useCallback(() => {
     if (likedPosts.length === 0) {

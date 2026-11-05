@@ -46,10 +46,12 @@ export function resolveProfileSeed(
     id: memberId,
     fullName: displayName,
     handle,
-    avatar: seed.avatar || null,
+    avatar:
+      seed.avatar ||
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
     banner: null,
-    team: seed.team || "",
-    department: seed.department || "",
+    team: seed.team || "Campus Ministry",
+    department: seed.department || "Addis Ababa University",
     academicYear: "",
     bio: "",
     streakDays: 0,

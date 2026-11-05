@@ -12,11 +12,15 @@ export interface User {
   phoneNumber: string;
   role?: string;
   profileImage?: string | null;
+  coverImage?: string | null;
   team?: string;
   department?: string;
   yearOfStudy?: string;
   telegramUserName?: string;
+  username?: string;
   createdAt?: string;
+  bio?: string;
+  location?: string;
 }
 
 import { ApiResponse } from "./api.types";
@@ -38,6 +42,8 @@ export interface SignUpData {
   yearOfStudy?: string;
   telegramUserName?: string;
   profileImage?: string | null;
+  bio?: string;
+  location?: string;
 }
 
 export interface ChangePasswordData {

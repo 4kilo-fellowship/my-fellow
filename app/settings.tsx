@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { JoinRequest, joinRequestService } from "@/services/joinRequestService";
 import { useUserStore } from "@/stores/user.store";
+import { Host, Switch as NativeSwitch } from "@expo/ui";
 import {
   Ionicons,
   MaterialCommunityIcons,
@@ -17,7 +18,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TouchableOpacity,
   View,
@@ -502,13 +502,12 @@ export default function Settings() {
       </View>
       {item.type === "toggle" && (
         <View pointerEvents="none">
-          <Switch
-            value={item.value}
-            onValueChange={item.onToggle}
-            trackColor={{ false: "#d1d5db", true: "#ff6619" }}
-            thumbColor="#ffffff"
-            ios_backgroundColor="#d1d5db"
-          />
+          <Host matchContents style={{ minWidth: 48, minHeight: 32, justifyContent: "center" }}>
+            <NativeSwitch
+              value={Boolean(item.value)}
+              onValueChange={item.onToggle || (() => {})}
+            />
+          </Host>
         </View>
       )}
       {item.type === "navigation" && (

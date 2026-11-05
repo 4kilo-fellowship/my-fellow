@@ -179,7 +179,7 @@ export default function CommunitySearchScreen() {
   const mutedColor = isDark ? "#94a3b8" : "#64748b";
   const borderColor = isDark ? "#27272a" : "#e2e8f0";
   const bg = isDark ? "#09090b" : "#ffffff";
-  const searchInputBg = isDark ? "#202327" : "#edf0f3";
+  const searchInputBg = isDark ? "#202327" : "#e2e8f0";
   const searchPlaceholderColor = isDark ? "#71767b" : "#536471";
   const cardBg = isDark ? "#18181b" : "#f8fafc";
 
@@ -670,8 +670,8 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    height: 42,
-    borderRadius: 21,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 1,
     paddingHorizontal: 14,
     gap: 10,

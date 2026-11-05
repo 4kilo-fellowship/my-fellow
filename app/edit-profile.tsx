@@ -2,6 +2,8 @@ import { InfoModal, ScreenHeader } from "@/components";
 import { useConfirmUnsavedChanges } from "@/hooks/useConfirmUnsavedChanges";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import api from "@/services/api";
+import { useCommunityStore } from "@/stores/community.store";
 import { useUserStore } from "@/stores/user.store";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,6 +30,8 @@ import { z } from "zod";
 
 const editProfileSchema = z.object({
   fullName: z.string().min(3, "Full name must be at least 3 characters"),
+  bio: z.string().max(300, "Bio cannot exceed 300 characters").optional(),
+  location: z.string().max(80, "Location cannot exceed 80 characters").optional(),
   department: z.string().optional(),
   yearOfStudy: z.string().optional(),
   telegramUserName: z.string().optional(),
@@ -41,6 +45,9 @@ export default function EditProfileScreen() {
   const { theme } = useTheme();
   const { updateProfile } = useAuth();
   const { user } = useUserStore();
+  const currentMember = useCommunityStore((s) =>
+    user?.id ? s.members[user.id] : undefined
+  );
   const router = useRouter();
   const isDark = theme === "dark";
 
@@ -65,13 +72,15 @@ export default function EditProfileScreen() {
     resolver: zodResolver(editProfileSchema),
     defaultValues: {
       fullName: user?.fullName || "",
-      department: user?.department || "",
-      yearOfStudy: user?.yearOfStudy || "",
-      telegramUserName: user?.telegramUserName || "",
+      bio: currentMember?.bio || (user as any)?.bio || "",
+      location: currentMember?.location || (user as any)?.location || "",
+      department: user?.department || currentMember?.department || "",
+      yearOfStudy: user?.yearOfStudy || currentMember?.academicYear || "",
+      telegramUserName: user?.telegramUserName || currentMember?.telegramUsername || "",
       team:
         typeof user?.team === "string"
           ? user.team
-          : (user?.team as any)?.name || (user?.team as any)?.fullName || "",
+          : (user?.team as any)?.name || (user?.team as any)?.fullName || currentMember?.team || "",
     },
   });
 
@@ -105,6 +114,25 @@ export default function EditProfileScreen() {
         ...data,
         profileImage,
       });
+
+      // Synchronize bio, location, and department with social profile API
+      try {
+        await api.patch("/v1/me/profile", {
+          bio: data.bio,
+          location: data.location,
+          department: data.department,
+        });
+      } catch {}
+
+      if (user?.id) {
+        useCommunityStore.getState().updateMemberProfile(user.id, {
+          bio: data.bio,
+          location: data.location,
+          department: data.department,
+          academicYear: data.yearOfStudy,
+        });
+      }
+
       setModalConfig({
         title: "Success",
         message: "Profile updated.",
@@ -221,6 +249,89 @@ export default function EditProfileScreen() {
               />
               {errors.fullName && (
                 <Text style={styles.errorText}>{errors.fullName.message}</Text>
+              )}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text
+                style={[
+                  styles.inputLabel,
+                  { color: isDark ? "#9ca3af" : "#666" },
+                ]}
+              >
+                Bio
+              </Text>
+              <Controller
+                control={control}
+                name="bio"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        color: isDark ? "#fff" : "#000",
+                        borderColor: errors.bio
+                          ? "#ef4444"
+                          : isDark
+                            ? "#333"
+                            : "#e5e7eb",
+                        minHeight: 64,
+                        textAlignVertical: "top",
+                        paddingTop: 10,
+                      },
+                    ]}
+                    multiline
+                    numberOfLines={3}
+                    maxLength={300}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    placeholder="Tell fellowship members about yourself"
+                    placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+                  />
+                )}
+              />
+              {errors.bio && (
+                <Text style={styles.errorText}>{errors.bio.message}</Text>
+              )}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text
+                style={[
+                  styles.inputLabel,
+                  { color: isDark ? "#9ca3af" : "#666" },
+                ]}
+              >
+                Campus Location
+              </Text>
+              <Controller
+                control={control}
+                name="location"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        color: isDark ? "#fff" : "#000",
+                        borderColor: errors.location
+                          ? "#ef4444"
+                          : isDark
+                            ? "#333"
+                            : "#e5e7eb",
+                      },
+                    ]}
+                    maxLength={80}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    placeholder="e.g. AAU 4 Kilo Campus, Block 54"
+                    placeholderTextColor={isDark ? "#4b5563" : "#9ca3af"}
+                  />
+                )}
+              />
+              {errors.location && (
+                <Text style={styles.errorText}>{errors.location.message}</Text>
               )}
             </View>
 
