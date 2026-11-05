@@ -99,6 +99,9 @@ export default function ManageEventScreen() {
   const [endDate, setEndDate] = useState<Date>(defaultEnd);
   const [buttonText, setButtonText] = useState<string>("Register Now");
   const [registrationLimit, setRegistrationLimit] = useState<string>("");
+  const [isPublished, setIsPublished] = useState<boolean>(true);
+  const [isAutoUnpublished, setIsAutoUnpublished] = useState<boolean>(false);
+  const [registrationsCount, setRegistrationsCount] = useState<number>(0);
   const [enableScheduling, setEnableScheduling] = useState<boolean>(false);
   const [scheduledAt, setScheduledAt] = useState<Date>(new Date());
 
@@ -149,6 +152,15 @@ export default function ManageEventScreen() {
           existing.registrationLimit !== null
         ) {
           setRegistrationLimit(String(existing.registrationLimit));
+        }
+        if (existing.isPublished !== undefined) {
+          setIsPublished(existing.isPublished);
+        }
+        if (existing.autoUnpublished) {
+          setIsAutoUnpublished(true);
+        }
+        if (existing.registrationsCount !== undefined) {
+          setRegistrationsCount(existing.registrationsCount);
         }
         if (existing.scheduledAt) {
           setEnableScheduling(true);
@@ -292,13 +304,19 @@ export default function ManageEventScreen() {
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         buttonText: buttonText.trim() || "Register Now",
+        isPublished,
       };
 
       if (registrationLimit.trim()) {
         const parsedLimit = parseInt(registrationLimit.trim(), 10);
         if (!isNaN(parsedLimit) && parsedLimit > 0) {
           payload.registrationLimit = parsedLimit;
+          payload.maxRegistrations = parsedLimit;
+        } else {
+          payload.registrationLimit = null;
         }
+      } else {
+        payload.registrationLimit = null;
       }
 
       if (enableScheduling && scheduledAt) {
@@ -961,15 +979,122 @@ export default function ManageEventScreen() {
             />
           </View>
 
-          {/* Registration Limit */}
+          {/* Event Publishing & Visibility Switch */}
           <View style={styles.section}>
+            <View style={styles.switchRow}>
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Text
+                    style={[
+                      styles.label,
+                      { color: isDark ? "#e4e4e7" : "#0f172a", marginBottom: 2 },
+                    ]}
+                  >
+                    Publish Event
+                  </Text>
+                  <View
+                    style={{
+                      paddingHorizontal: 6,
+                      paddingVertical: 2,
+                      borderRadius: 6,
+                      backgroundColor: isPublished
+                        ? "rgba(34, 197, 94, 0.15)"
+                        : "rgba(239, 68, 68, 0.15)",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        fontWeight: "700",
+                        color: isPublished ? "#22c55e" : "#ef4444",
+                      }}
+                    >
+                      {isPublished ? "PUBLIC" : "UNPUBLISHED"}
+                    </Text>
+                  </View>
+                </View>
+                <Text
+                  style={[
+                    styles.switchDesc,
+                    { color: isDark ? "#a1a1aa" : "#64748b" },
+                  ]}
+                >
+                  When enabled, event is publicly visible to all members. When disabled, only leaders and admins can track registrations.
+                </Text>
+              </View>
+
+              <Host matchContents>
+                <Switch
+                  value={isPublished}
+                  onValueChange={(val) => {
+                    Haptics.impactAsync(
+                      Haptics.ImpactFeedbackStyle.Light,
+                    ).catch(() => {});
+                    setIsPublished(val);
+                  }}
+                />
+              </Host>
+            </View>
+
+            {isAutoUnpublished && !isPublished && (
+              <View
+                style={{
+                  marginTop: 10,
+                  padding: 10,
+                  borderRadius: 10,
+                  backgroundColor: isDark ? "rgba(245, 158, 11, 0.12)" : "#fef3c7",
+                  borderWidth: 1,
+                  borderColor: isDark ? "rgba(245, 158, 11, 0.3)" : "#fde68a",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <Ionicons name="information-circle" size={18} color="#d97706" />
+                <Text
+                  style={{
+                    flex: 1,
+                    fontSize: 12,
+                    color: isDark ? "#fbbf24" : "#92400e",
+                    lineHeight: 16,
+                  }}
+                >
+                  This event was automatically unpublished because the registration limit ({registrationsCount} attendees) was reached.
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Registration Limit / Max Capacity */}
+          <View style={styles.section}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <Text
+                style={[
+                  styles.label,
+                  { color: isDark ? "#e4e4e7" : "#0f172a" },
+                ]}
+              >
+                Max Number of Registrations
+              </Text>
+              {isEditing && registrationsCount > 0 && (
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "700",
+                    color: PRIMARY,
+                  }}
+                >
+                  {registrationsCount} registered
+                </Text>
+              )}
+            </View>
             <Text
               style={[
-                styles.label,
-                { color: isDark ? "#e4e4e7" : "#0f172a" },
+                styles.switchDesc,
+                { color: isDark ? "#a1a1aa" : "#64748b", marginBottom: 8 },
               ]}
             >
-              Attendee Limit (Optional)
+              When this capacity is reached, the event automatically unpublishes so members cannot over-register, while admins can still track all attendees.
             </Text>
             <TextInput
               value={registrationLimit}
@@ -977,7 +1102,7 @@ export default function ManageEventScreen() {
               onFocus={() => setFocusedField("registrationLimit")}
               onBlur={() => setFocusedField(null)}
               keyboardType="numeric"
-              placeholder="Leave blank for unlimited attendees"
+              placeholder="e.g. 50 (leave blank for unlimited)"
               placeholderTextColor={isDark ? "#52525b" : "#94a3b8"}
               style={[
                 styles.input,

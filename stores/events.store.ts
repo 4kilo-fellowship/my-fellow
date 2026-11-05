@@ -6,6 +6,7 @@ import {
   checkRegistrationStatusApi,
   createEventApi,
   updateEventApi,
+  togglePublishEventApi,
   deleteEventApi,
 } from "@/services/events.api";
 import { AppEvent, EventRegistrationData } from "@/types/events.types";
@@ -26,7 +27,12 @@ type EventsState = {
   pendingGeneratedPoster: string | null;
   error?: string | null;
 
-  fetchEvents: (sort?: "asc" | "desc") => Promise<void>;
+  fetchEvents: (
+    optionsOrSort?:
+      | "asc"
+      | "desc"
+      | { sort?: "asc" | "desc"; scope?: string; status?: string },
+  ) => Promise<void>;
   fetchEventById: (id: string) => Promise<void>;
   registerForEvent: (data: EventRegistrationData) => Promise<void>;
   unregisterFromEvent: (data: { eventId: string }) => Promise<void>;
@@ -34,6 +40,7 @@ type EventsState = {
   toggleLikeEvent: (eventId: string) => void;
   createEvent: (data: FormData | any) => Promise<AppEvent | null>;
   updateEvent: (id: string, data: FormData | any) => Promise<AppEvent | null>;
+  togglePublishEvent: (id: string, isPublished?: boolean) => Promise<AppEvent | null>;
   deleteEvent: (id: string) => Promise<boolean>;
   setEventsList: (events: AppEvent[]) => void;
   setError: (error: string | null) => void;
@@ -81,12 +88,29 @@ export const useEventsStore = create<EventsState>()(
         }));
       },
 
-      fetchEvents: async (sort = "asc") => {
+      fetchEvents: async (optionsOrSort = "asc") => {
         set({ loading: true, error: null });
         try {
-          const response = await fetchEventsApi(sort);
+          const response = await fetchEventsApi(optionsOrSort as any);
           if (response.success) {
-            set({ eventsList: response.data, loading: false });
+            const isScopeAdmin =
+              typeof optionsOrSort === "object" &&
+              optionsOrSort?.scope === "admin";
+            const data = response.data || [];
+            const now = new Date();
+            const filteredData = isScopeAdmin
+              ? data
+              : data.filter((e) => {
+                  if (!e || e.isPublished === false) return false;
+                  if (e.endDate) {
+                    const end = new Date(e.endDate);
+                    if (!isNaN(end.getTime()) && end < now) {
+                      return false;
+                    }
+                  }
+                  return true;
+                });
+            set({ eventsList: filteredData, loading: false });
           } else {
             set({
               error: response.message || "Failed to fetch events",
@@ -122,7 +146,18 @@ export const useEventsStore = create<EventsState>()(
         }
       },
 
-      setEventsList: (events) => set({ eventsList: events }),
+      setEventsList: (events) => {
+        const now = new Date();
+        const upcomingOnly = (events || []).filter((e) => {
+          if (!e || e.isPublished === false) return false;
+          if (e.endDate) {
+            const end = new Date(e.endDate);
+            if (!isNaN(end.getTime()) && end < now) return false;
+          }
+          return true;
+        });
+        set({ eventsList: upcomingOnly });
+      },
 
       registerForEvent: async (data: EventRegistrationData) => {
         set({ registering: true, error: null });
@@ -267,6 +302,30 @@ export const useEventsStore = create<EventsState>()(
         }
       },
 
+      togglePublishEvent: async (id: string, isPublished?: boolean) => {
+        set({ loading: true, error: null });
+        try {
+          const res = await togglePublishEventApi(id, isPublished);
+          if (res.success && res.data) {
+            const updatedEvent = res.data;
+            set((state) => ({
+              eventsList: state.eventsList.map((e) =>
+                (e._id === id || (e as any).id === id) ? updatedEvent : e
+              ),
+              currentEvent: updatedEvent,
+              loading: false,
+            }));
+            return updatedEvent;
+          }
+          set({ loading: false, error: res.message || "Failed to toggle event visibility" });
+          return null;
+        } catch (err: any) {
+          const msg = err?.response?.data?.message || err?.message || "Error toggling event publish status";
+          set({ loading: false, error: msg });
+          return null;
+        }
+      },
+
       deleteEvent: async (id: string) => {
         set({ loading: true, error: null });
         try {
@@ -291,7 +350,14 @@ export const useEventsStore = create<EventsState>()(
       name: "events-storage",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
-        eventsList: state.eventsList,
+        eventsList: (state.eventsList || []).filter((e) => {
+          if (!e || e.isPublished === false) return false;
+          if (e.endDate) {
+            const end = new Date(e.endDate);
+            if (!isNaN(end.getTime()) && end < new Date()) return false;
+          }
+          return true;
+        }),
         registeredEvents: state.registeredEvents,
       }),
     },

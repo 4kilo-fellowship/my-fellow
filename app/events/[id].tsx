@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useReminder, ReminderTarget } from "@/notifications";
 import { useAlerts } from "@/hooks/useAlerts";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { eventsService } from "@/services/eventsService";
 import { useEventsStore } from "@/stores/events.store";
 
@@ -84,6 +85,7 @@ export default function EventDetails() {
   const {
     registerForEvent,
     unregisterFromEvent,
+    togglePublishEvent,
     registering,
     unregistering,
     registeredEvents,
@@ -91,11 +93,15 @@ export default function EventDetails() {
   } = useEventsStore((s: any) => ({
     registerForEvent: s.registerForEvent,
     unregisterFromEvent: s.unregisterFromEvent,
+    togglePublishEvent: s.togglePublishEvent,
     registering: s.registering,
     unregistering: s.unregistering,
     registeredEvents: s.registeredEvents,
     checkRegistrationStatus: s.checkRegistrationStatus,
   }));
+
+  const isAdmin = useIsAdmin();
+  const [togglingPublish, setTogglingPublish] = useState(false);
 
   const isRegisteredForThisEvent = id ? !!registeredEvents[id] : false;
 
@@ -199,7 +205,13 @@ export default function EventDetails() {
   const isRegisterCta =
     ctaLabel.toLowerCase().trim().includes("register") ||
     ctaLabel.toLowerCase().trim().includes("join");
-  const buttonDisabled = registering || unregistering;
+
+  const isCapacityFull =
+    ev?.registrationLimit !== null &&
+    ev?.registrationLimit !== undefined &&
+    (ev?.registrationsCount || 0) >= ev?.registrationLimit;
+
+  const isEventUnpublished = ev?.isPublished === false;
 
   const displayLabel = getEventDisplayLabel({
     ev,
@@ -207,6 +219,11 @@ export default function EventDetails() {
     isRegisterCta,
     isRegisteredForThisEvent,
   });
+
+  const buttonDisabled =
+    registering ||
+    unregistering ||
+    (!isRegisteredForThisEvent && isRegisterCta && (isCapacityFull || isEventUnpublished));
 
   const isNotifyCta =
     ctaLabel.toLowerCase().trim().includes("notify") ||
@@ -225,18 +242,59 @@ export default function EventDetails() {
 
   const reminder = useReminder(reminderTarget);
 
+  const isExpired = ev?.endDate ? new Date(ev.endDate) < new Date() : false;
+
   const isButtonDisabled =
+    isExpired ||
     buttonDisabled ||
     (isNotifyCta &&
       (reminder.status === "unavailable" || reminder.status === "loading"));
 
-  const resolvedDisplayLabel = isNotifyCta
+  const isClicked =
+    (isRegisterCta && isRegisteredForThisEvent) ||
+    (isNotifyCta && reminder.status === "active");
+
+  const resolvedDisplayLabel = isExpired
+    ? "Event Ended"
+    : isNotifyCta
     ? reminder.status === "active"
-      ? "Reminder on"
+      ? "Reminder Set"
       : reminder.status === "permission"
       ? "Enable notifications"
       : displayLabel
+    : !isRegisteredForThisEvent && isRegisterCta && isCapacityFull
+    ? "Registration Full"
+    : !isRegisteredForThisEvent && isRegisterCta && isEventUnpublished
+    ? "Registration Closed"
     : displayLabel;
+
+  const handleTogglePublish = async () => {
+    if (!ev || togglingPublish) return;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      setTogglingPublish(true);
+      const eventId = ev._id || ev.id;
+      const updated = await togglePublishEvent(eventId);
+      if (updated) {
+        setSelectedEvent(updated);
+        showInfoModalFn(
+          updated.isPublished !== false ? "Event Published" : "Event Unpublished",
+          updated.isPublished !== false
+            ? "This event is now publicly visible to fellowship members."
+            : "This event is now unpublished. Only administrators can track it.",
+          "success",
+        );
+      }
+    } catch {
+      showInfoModalFn(
+        "Update Failed",
+        "Could not update event visibility.",
+        "error",
+      );
+    } finally {
+      setTogglingPublish(false);
+    }
+  };
 
   const handleShare = async () => {
     if (!ev || isSharing) return;
@@ -601,6 +659,17 @@ export default function EventDetails() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
 
+        {isAdmin && (
+          <TouchableOpacity
+            onPress={() => router.push(`/events/manage?id=${ev._id || ev.id}`)}
+            activeOpacity={0.7}
+            className="absolute right-16 w-10 h-10 rounded-full bg-black/40 items-center justify-center z-20"
+            style={{ top: top + 10 }}
+          >
+            <Ionicons name="create-outline" size={20} color="#fff" />
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
           onPress={handleShare}
           activeOpacity={0.7}
@@ -664,6 +733,232 @@ export default function EventDetails() {
           }}
         >
           <View style={{ flex: 1 }}>
+            {/* Admin Management & Registration Tracking Card */}
+            {isAdmin && (
+              <View
+                style={{
+                  padding: 16,
+                  borderRadius: 16,
+                  marginBottom: 20,
+                  backgroundColor: isDark ? "#202022" : "#f8fafc",
+                  borderWidth: 1.5,
+                  borderColor: isDark ? "#2e2e32" : "#e2e8f0",
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: 10,
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                    <Ionicons name="shield-checkmark" size={16} color={PRIMARY} />
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "800",
+                        letterSpacing: 0.5,
+                        textTransform: "uppercase",
+                        color: PRIMARY,
+                      }}
+                    >
+                      Admin Controls
+                    </Text>
+                  </View>
+
+                  <View
+                    style={{
+                      paddingHorizontal: 8,
+                      paddingVertical: 3,
+                      borderRadius: 12,
+                      backgroundColor:
+                        ev.isPublished !== false
+                          ? "rgba(34, 197, 94, 0.15)"
+                          : "rgba(239, 68, 68, 0.15)",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        fontWeight: "800",
+                        color: ev.isPublished !== false ? "#22c55e" : "#ef4444",
+                      }}
+                    >
+                      {ev.isPublished !== false ? "PUBLISHED" : "UNPUBLISHED"}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Capacity & Registrations Counter */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    paddingVertical: 10,
+                    borderTopWidth: 1,
+                    borderBottomWidth: 1,
+                    borderColor: isDark ? "#2e2e32" : "#e2e8f0",
+                    marginVertical: 4,
+                  }}
+                >
+                  <View>
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        color: isDark ? "#9ca3af" : "#64748b",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Registered Attendees
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        fontWeight: "800",
+                        color: isDark ? "#ffffff" : "#0f172a",
+                        marginTop: 2,
+                      }}
+                    >
+                      {ev.registrationsCount || 0}
+                      <Text style={{ fontSize: 13, color: isDark ? "#71717a" : "#94a3b8", fontWeight: "600" }}>
+                        {" "}
+                        / {ev.registrationLimit ? `${ev.registrationLimit} max` : "unlimited"}
+                      </Text>
+                    </Text>
+                  </View>
+
+                  {ev.autoUnpublished && (
+                    <View
+                      style={{
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        borderRadius: 8,
+                        backgroundColor: isDark ? "rgba(245, 158, 11, 0.2)" : "#fef3c7",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontWeight: "700",
+                          color: isDark ? "#fbbf24" : "#b45309",
+                        }}
+                      >
+                        {isExpired ? "Auto-Unpublished (Expired)" : "Auto-Unpublished (Limit)"}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Quick Admin Actions: Toggle Publish & Edit */}
+                <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
+                  <Pressable
+                    onPress={handleTogglePublish}
+                    disabled={togglingPublish}
+                    style={{
+                      flex: 1,
+                      paddingVertical: 10,
+                      borderRadius: 12,
+                      backgroundColor:
+                        ev.isPublished !== false
+                          ? isDark
+                            ? "rgba(239, 68, 68, 0.15)"
+                            : "#fee2e2"
+                          : isDark
+                          ? "rgba(34, 197, 94, 0.15)"
+                          : "#dcfce7",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexDirection: "row",
+                      gap: 6,
+                    }}
+                  >
+                    {togglingPublish ? (
+                      <ActivityIndicator size="small" color={PRIMARY} />
+                    ) : (
+                      <>
+                        <Ionicons
+                          name={
+                            ev.isPublished !== false
+                              ? "eye-off-outline"
+                              : "eye-outline"
+                          }
+                          size={16}
+                          color={ev.isPublished !== false ? "#ef4444" : "#16a34a"}
+                        />
+                        <Text
+                          style={{
+                            fontSize: 13,
+                            fontWeight: "700",
+                            color: ev.isPublished !== false ? "#ef4444" : "#16a34a",
+                          }}
+                        >
+                          {ev.isPublished !== false ? "Unpublish Event" : "Publish Event"}
+                        </Text>
+                      </>
+                    )}
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => router.push(`/events/manage?id=${ev._id || ev.id}`)}
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 10,
+                      borderRadius: 12,
+                      backgroundColor: isDark ? "#27272a" : "#e2e8f0",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexDirection: "row",
+                      gap: 6,
+                    }}
+                  >
+                    <Ionicons name="pencil" size={14} color={isDark ? "#ffffff" : "#0f172a"} />
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: "700",
+                        color: isDark ? "#ffffff" : "#0f172a",
+                      }}
+                    >
+                      Edit
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            )}
+
+            {/* Non-admin Capacity / Closed Notice */}
+            {!isAdmin && isCapacityFull && !isRegisteredForThisEvent && (
+              <View
+                style={{
+                  padding: 14,
+                  borderRadius: 14,
+                  marginBottom: 16,
+                  backgroundColor: isDark ? "rgba(239, 68, 68, 0.12)" : "#fee2e2",
+                  borderWidth: 1,
+                  borderColor: isDark ? "rgba(239, 68, 68, 0.25)" : "#fecaca",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <Ionicons name="alert-circle" size={20} color="#ef4444" />
+                <Text
+                  style={{
+                    flex: 1,
+                    fontSize: 13,
+                    fontWeight: "600",
+                    color: isDark ? "#fca5a5" : "#b91c1c",
+                    lineHeight: 18,
+                  }}
+                >
+                  Registration for this event is currently full ({ev.registrationLimit} attendees limit reached).
+                </Text>
+              </View>
+            )}
+
             <View className="mb-6">
               <Text
                 className={`text-lg font-bold mb-3 ${isDark ? "text-white" : "text-gray-900"}`}
@@ -710,8 +1005,12 @@ export default function EventDetails() {
           {/* Action Button at the very bottom of the event page */}
           <TouchableOpacity
             activeOpacity={1}
-            disabled={buttonDisabled}
+            disabled={isButtonDisabled}
             onPress={() => {
+              if (isExpired) {
+                Alert.alert("Event Ended", "This event has already ended. Registration and reminders are closed.");
+                return;
+              }
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
               if (isNotifyCta) {
                 if (reminder.status === "active") {
@@ -734,22 +1033,23 @@ export default function EventDetails() {
               alignItems: "center",
               justifyContent: "center",
               gap: 8,
-              backgroundColor:
-                isRegisterCta && isRegisteredForThisEvent
-                  ? isDark
-                    ? "#27272a"
-                    : "#e2e8f0"
-                  : PRIMARY,
-              opacity: buttonDisabled ? 0.65 : 1,
-              shadowColor: isRegisterCta && isRegisteredForThisEvent ? "transparent" : PRIMARY,
+              backgroundColor: isClicked ? "transparent" : isExpired ? (isDark ? "#3f3f46" : "#cbd5e1") : PRIMARY,
+              borderWidth: isClicked ? 1.5 : 0,
+              borderColor: isClicked
+                ? isDark
+                  ? "#52525b"
+                  : "#cbd5e1"
+                : "transparent",
+              opacity: isButtonDisabled ? 0.65 : 1,
+              shadowColor: isClicked ? "transparent" : PRIMARY,
               shadowOffset: { width: 0, height: 3 },
-              shadowOpacity: isRegisterCta && isRegisteredForThisEvent ? 0 : 0.3,
+              shadowOpacity: isClicked ? 0 : 0.3,
               shadowRadius: 6,
-              elevation: isRegisterCta && isRegisteredForThisEvent ? 0 : 3,
+              elevation: isClicked ? 0 : 3,
             }}
           >
             {registering || unregistering || (isNotifyCta && reminder.status === "loading") ? (
-              <ActivityIndicator color="white" size="small" />
+              <ActivityIndicator color={isClicked ? (isDark ? "#a1a1aa" : "#64748b") : "white"} size="small" />
             ) : (
               <View
                 style={{
@@ -764,12 +1064,11 @@ export default function EventDetails() {
                     fontSize: 16,
                     fontWeight: "700",
                     letterSpacing: -0.2,
-                    color:
-                      isRegisterCta && isRegisteredForThisEvent
-                        ? isDark
-                          ? "#a1a1aa"
-                          : "#64748b"
-                        : "#ffffff",
+                    color: isClicked
+                      ? isDark
+                        ? "#a1a1aa"
+                        : "#64748b"
+                      : "#ffffff",
                     includeFontPadding: false,
                     textAlignVertical: "center",
                   }}
@@ -792,7 +1091,13 @@ export default function EventDetails() {
                         : "notifications-outline"
                     }
                     size={20}
-                    color="white"
+                    color={
+                      isClicked
+                        ? isDark
+                          ? "#a1a1aa"
+                          : "#64748b"
+                        : "white"
+                    }
                   />
                 ) : (
                   <Ionicons name="arrow-forward" size={20} color="white" />
@@ -807,7 +1112,10 @@ export default function EventDetails() {
         onClose={() => setModalVisible(false)}
         onConfirm={onConfirmRegistration}
         loading={registering}
-        eventTitle={ev.title}
+        eventTitle={ev?.title || ""}
+        eventDate={ev?.startDate ? formatEventDate(ev.startDate, ev.endDate) : undefined}
+        location={ev?.location}
+        isDark={isDark}
       />
 
       {isNotifyCta && (

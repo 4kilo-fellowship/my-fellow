@@ -108,7 +108,7 @@ export function NotifyMeButton({
   const getLabel = () => {
     switch (status) {
       case "active":
-        return "Reminder on";
+        return "Reminder Set";
       case "loading":
         return "Setting...";
       case "permission":
@@ -127,8 +127,9 @@ export function NotifyMeButton({
   const btnHeight = size === "sm" ? 44 : size === "lg" ? 62 : 52;
   const iconSize = size === "sm" ? 18 : size === "lg" ? 22 : 20;
 
-  const activeBg = isDark ? "rgba(255, 103, 25, 0.18)" : "#fff7ed";
-  const activeBorder = PRIMARY;
+  const activeBg = "transparent";
+  const activeBorder = isDark ? "#52525b" : "#cbd5e1";
+  const activeMutedColor = isDark ? "#a1a1aa" : "#64748b";
   const defaultBg = isDark ? "#27272a" : "#f4f4f5";
   const defaultBorder = isDark ? "#3f3f46" : "#e4e4e7";
 
@@ -197,7 +198,7 @@ export function NotifyMeButton({
                 size={iconSize}
                 color={
                   status === "active"
-                    ? PRIMARY
+                    ? activeMutedColor
                     : status === "permission"
                     ? "#ef4444"
                     : isDark
@@ -216,7 +217,7 @@ export function NotifyMeButton({
                   fontSize: size === "sm" ? 13 : size === "lg" ? 16 : 14.5,
                   color:
                     status === "active"
-                      ? PRIMARY
+                      ? activeMutedColor
                       : isDark
                       ? "#ffffff"
                       : "#09090b",

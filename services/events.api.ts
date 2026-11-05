@@ -6,11 +6,25 @@ import {
 } from "@/types/events.types";
 import api from "./api";
 
+export interface FetchEventsOptions {
+  sort?: "asc" | "desc";
+  scope?: string;
+  status?: string;
+}
+
 export const fetchEventsApi = async (
-  sort: "asc" | "desc" = "asc",
+  optionsOrSort: "asc" | "desc" | FetchEventsOptions = "asc",
 ): Promise<ApiResponse<AppEvent[]>> => {
+  const params: Record<string, string> = {};
+  if (typeof optionsOrSort === "string") {
+    params.sort = optionsOrSort;
+  } else if (optionsOrSort) {
+    if (optionsOrSort.sort) params.sort = optionsOrSort.sort;
+    if (optionsOrSort.scope) params.scope = optionsOrSort.scope;
+    if (optionsOrSort.status) params.status = optionsOrSort.status;
+  }
   const res = await api.get<ApiResponse<AppEvent[]>>("/events", {
-    params: { sort },
+    params,
   });
   return res.data;
 };
@@ -68,6 +82,16 @@ export const deleteEventApi = async (
   id: string,
 ): Promise<ApiResponse<{ message: string }>> => {
   const res = await api.delete<ApiResponse<{ message: string }>>(`/events/${id}`);
+  return res.data;
+};
+
+export const togglePublishEventApi = async (
+  id: string,
+  isPublished?: boolean,
+): Promise<ApiResponse<AppEvent>> => {
+  const res = await api.patch<ApiResponse<AppEvent>>(`/events/${id}/publish`, {
+    isPublished,
+  });
   return res.data;
 };
 

@@ -9,8 +9,10 @@ import {
   scheduleReminders,
   sendConfirmationNotification,
   buildConfirmationCopy,
+  useReminder,
   type ReminderTarget,
 } from "@/notifications";
+import { ReminderSheet } from "../ReminderSheet";
 
 import { useAuth } from "@/context/AuthContext";
 import { useAlerts } from "@/hooks/useAlerts";
@@ -141,6 +143,32 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     ctaText?.toLowerCase()?.includes("register") ||
     ctaText?.toLowerCase()?.includes("join");
 
+  const isNotifyCta = ctaText?.toLowerCase()?.includes("notify");
+
+  const reminderTarget: ReminderTarget | null = React.useMemo(() => {
+    const startTime = (item as any).startDate;
+    if (!startTime) return null;
+    const startsAt = new Date(startTime).getTime();
+    if (isNaN(startsAt) || startsAt <= Date.now()) return null;
+    const id = String((item as any)._id || (item as any).id || eventId || "");
+    return {
+      eventId: id,
+      title: item.title || "Fellowship Event",
+      startsAt,
+      url: `events/${id}`,
+      shortDescription: item.subtitle,
+    };
+  }, [item, eventId]);
+
+  const isScheduled = Boolean(
+    (item as any).scheduledAt &&
+    new Date((item as any).scheduledAt).getTime() > Date.now()
+  );
+  const reminder = useReminder(reminderTarget);
+  const isNotified = isNotifyCta && reminder.status === "active";
+  const isRegistered = isRegisterCta && isRegisteredForThisEvent;
+  const isClicked = isRegistered || isNotified;
+
   React.useEffect(() => {
     if (imageUri && typeof imageUri === "string" && imageUri.startsWith("http")) {
       ExpoImage.prefetch(imageUri, "memory-disk").catch(() => {});
@@ -153,7 +181,20 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     }
   }, [eventId, authState.authenticated, isRegisterCta]);
 
+  const isOutdated = (item as any)?.endDate
+    ? new Date((item as any).endDate) < new Date()
+    : false;
+
   const handlePrimary = async () => {
+    if (isOutdated) {
+      showInfoModal(
+        "Event Ended",
+        "This event has already ended. Registration and reminders are closed.",
+        "info",
+      );
+      return;
+    }
+
     const text = ctaText.toLowerCase().trim();
 
     if (text.includes("register") || text.includes("join")) {
@@ -170,6 +211,16 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
     }
 
     if (text.includes("notify")) {
+      if (reminderTarget) {
+        if (reminder.status === "active") {
+          reminder.openSheet();
+        } else if (reminder.status === "permission") {
+          reminder.openNotificationSettings();
+        } else {
+          reminder.enable();
+        }
+        return;
+      }
       const startTime = (item as any).startDate;
       if (!startTime) {
         showInfoModal(
@@ -357,6 +408,36 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
       </Pressable>
 
       <View style={styles.content} pointerEvents="box-none">
+        {isAdmin && isScheduled && (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              alignSelf: "flex-start",
+              gap: 5,
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+              borderRadius: 6,
+              backgroundColor: "rgba(0, 0, 0, 0.55)",
+              borderWidth: 1,
+              borderColor: "rgba(255, 255, 255, 0.25)",
+              marginBottom: 8,
+            }}
+          >
+            <Ionicons name="time-outline" size={12} color="#e4e4e7" />
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "600",
+                color: "#e4e4e7",
+                letterSpacing: 0.2,
+              }}
+            >
+              Scheduled
+            </Text>
+          </View>
+        )}
+
         <Text
           numberOfLines={2}
           style={[styles.title, { fontSize: titleFontSize }]}
@@ -376,14 +457,17 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
           <View
             style={[
               styles.primaryBtnWrap,
-              {
-                backgroundColor:
-                  isRegisterCta && isRegisteredForThisEvent
-                    ? isDark
-                      ? "#27272a"
-                      : "#d1d5db"
-                    : PRIMARY,
-              },
+              isClicked
+                ? {
+                    backgroundColor: "transparent",
+                    borderWidth: 1.5,
+                    borderColor: "rgba(255, 255, 255, 0.45)",
+                    shadowOpacity: 0,
+                    elevation: 0,
+                  }
+                : {
+                    backgroundColor: PRIMARY,
+                  },
             ]}
           >
             <Pressable
@@ -391,12 +475,15 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
               disabled={
                 registering ||
                 unregistering ||
-                (isRegisterCta && isCheckingThisEvent)
+                (isRegisterCta && isCheckingThisEvent) ||
+                (isNotifyCta && reminder.status === "loading")
               }
               accessibilityRole="button"
               accessibilityLabel={`Primary action for ${item.title}`}
               android_ripple={{
-                color: "rgba(255, 255, 255, 0.28)",
+                color: isClicked
+                  ? "rgba(255, 255, 255, 0.15)"
+                  : "rgba(255, 255, 255, 0.28)",
                 borderless: false,
                 foreground: true,
               }}
@@ -404,8 +491,12 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
             >
               {registering ||
               unregistering ||
-              (isRegisterCta && isCheckingThisEvent) ? (
-                <ActivityIndicator color="white" size="small" />
+              (isRegisterCta && isCheckingThisEvent) ||
+              (isNotifyCta && reminder.status === "loading") ? (
+                <ActivityIndicator
+                  color="white"
+                  size="small"
+                />
               ) : (
                 <View style={styles.primaryBtnContent}>
                   <Text
@@ -416,31 +507,36 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
                     style={[
                       styles.primaryBtnText,
                       {
-                        color:
-                          isRegisterCta && isRegisteredForThisEvent
-                            ? isDark
-                              ? "#9ca3af"
-                              : "#6b7280"
-                            : "#ffffff",
+                        color: isClicked
+                          ? "rgba(255, 255, 255, 0.9)"
+                          : "#ffffff",
                       },
                     ]}
                   >
-                    {isRegisterCta && isRegisteredForThisEvent
+                    {isOutdated
+                      ? "Event Ended"
+                      : isRegistered
                       ? "Registered"
+                      : isNotified
+                      ? "Reminder Set"
                       : ctaText}
                   </Text>
-                  {isRegisterCta && isRegisteredForThisEvent ? (
+                  {isRegistered ? (
                     <Ionicons
                       name="checkmark-circle"
                       size={17}
-                      color={isDark ? "#4ade80" : "#16a34a"}
+                      color="#4ade80"
                       style={styles.primaryBtnIcon}
                     />
-                  ) : ctaText?.toLowerCase()?.includes("notify") ? (
+                  ) : isNotifyCta ? (
                     <Ionicons
-                      name="notifications"
+                      name={isNotified ? "notifications" : "notifications-outline"}
                       size={17}
-                      color="white"
+                      color={
+                        isNotified
+                          ? "rgba(255, 255, 255, 0.9)"
+                          : "white"
+                      }
                       style={styles.primaryBtnIcon}
                     />
                   ) : (
@@ -526,6 +622,7 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         onConfirm={onConfirmRegistration}
         loading={registering}
         eventTitle={item.title}
+        isDark={!!isDark}
       />
 
       <ConfirmModal
@@ -590,6 +687,18 @@ const AnnouncementCard = ({ item, isDark, onPress }: AnnouncementCardProps) => {
         type={infoModal.type}
         isDark={!!isDark}
       />
+
+      {reminderTarget && (
+        <ReminderSheet
+          visible={reminder.isSheetOpen}
+          target={reminderTarget}
+          activeOffsets={reminder.offsets}
+          onToggleOffset={reminder.toggleOffset}
+          onDisableAll={reminder.disable}
+          onClose={reminder.closeSheet}
+          isDark={!!isDark}
+        />
+      )}
     </View>
   );
 };

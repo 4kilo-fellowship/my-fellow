@@ -7,6 +7,18 @@ const CACHE_KEYS = {
   EVENT_DETAIL: (id: string) => `event_detail_${id}`,
 };
 
+export const isEventUpcoming = (event: any): boolean => {
+  if (!event) return false;
+  if (event.isPublished === false) return false;
+  if (event.endDate) {
+    const end = new Date(event.endDate);
+    if (!isNaN(end.getTime()) && end < new Date()) {
+      return false;
+    }
+  }
+  return true;
+};
+
 export const eventsService = {
   fetchEvents: async (): Promise<EventSummary[]> => {
     try {
@@ -18,7 +30,10 @@ export const eventsService = {
         return [];
       }
 
-      const mappedEvents = events.map((event: any) => ({
+      // Filter out outdated/expired and unpublished events
+      const activeEvents = events.filter(isEventUpcoming);
+
+      const mappedEvents = activeEvents.map((event: any) => ({
         ...event,
         id: event.id || event._id || "unknown",
       })) as EventSummary[];
@@ -32,7 +47,7 @@ export const eventsService = {
         CACHE_KEYS.EVENTS_LIST,
       );
       if (cachedEvents) {
-        return cachedEvents;
+        return cachedEvents.filter(isEventUpcoming);
       }
 
       throw error;
