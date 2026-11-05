@@ -168,7 +168,7 @@ export default function ManageEventScreen() {
         }
         setLoadingInitial(false);
       } else {
-        fetchEvents().finally(() => setLoadingInitial(false));
+        fetchEvents({ scope: "admin" }).finally(() => setLoadingInitial(false));
       }
     }
   }, [id, isEditing, eventsList, fetchEvents]);
