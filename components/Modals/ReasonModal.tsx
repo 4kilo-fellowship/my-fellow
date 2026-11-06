@@ -5,10 +5,8 @@ import * as Haptics from "expo-haptics";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Keyboard,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -37,11 +35,12 @@ export const ReasonModal = ({
     if (visible) {
       setReason("Gift");
       setIsFocused(true);
-      // Slight delay so the native bottom sheet entrance animation finishes before requesting focus
-      const timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 250);
-      return () => clearTimeout(timer);
+      const t1 = setTimeout(() => inputRef.current?.focus(), 120);
+      const t2 = setTimeout(() => inputRef.current?.focus(), 350);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
     }
   }, [visible]);
 
@@ -61,84 +60,83 @@ export const ReasonModal = ({
       visible={visible}
       onClose={onClose}
       isDark={isDark}
-      snapPoints={["full"]}
+      snapPoints={["half", "full"]}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.keyboardAvoid}
-      >
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-          contentContainerStyle={styles.scrollContent}
+      <View style={styles.sheetContainer}>
+        {/* Header */}
+        <View style={styles.headerRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.title, { color: textColor }]}>
+              Provide a Reason
+            </Text>
+            <Text style={[styles.subtitle, { color: subTextColor }]}>
+              What is this payment or contribution for?
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={onClose}
+            style={[styles.closeBtn, { backgroundColor: cardBg }]}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="close" size={18} color={subTextColor} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Input Box */}
+        <View
+          style={[
+            styles.inputContainer,
+            {
+              backgroundColor: cardBg,
+              borderColor: isFocused ? PRIMARY : borderColor,
+              borderWidth: isFocused ? 1.5 : 1,
+            },
+          ]}
         >
-          {/* Header */}
-          <View style={styles.headerRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.title, { color: textColor }]}>
-                Provide a Reason
-              </Text>
-              <Text style={[styles.subtitle, { color: subTextColor }]}>
-                What is this payment or contribution for?
-              </Text>
-            </View>
+          <Ionicons
+            name="create-outline"
+            size={20}
+            color={isFocused ? PRIMARY : subTextColor}
+            style={{ marginRight: 10 }}
+          />
+          <TextInput
+            ref={inputRef}
+            style={[styles.input, { color: textColor }]}
+            placeholder="e.g. Gift, Tithe, Offering..."
+            placeholderTextColor={isDark ? "#71717A" : "#A1A1AA"}
+            value={reason}
+            onChangeText={setReason}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            returnKeyType="done"
+            onSubmitEditing={handleSubmit}
+            selectionColor={PRIMARY}
+            autoFocus={true}
+          />
+          {reason.length > 0 && (
             <TouchableOpacity
-              onPress={onClose}
-              style={[styles.closeBtn, { backgroundColor: cardBg }]}
-              activeOpacity={0.7}
+              onPress={() => setReason("")}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Ionicons name="close" size={18} color={subTextColor} />
+              <Ionicons
+                name="close-circle"
+                size={18}
+                color={subTextColor}
+              />
             </TouchableOpacity>
-          </View>
+          )}
+        </View>
 
-          {/* Text Input Box */}
+        {/* Action Button */}
+        <View style={styles.actionSection}>
           <View
             style={[
-              styles.inputContainer,
-              {
-                backgroundColor: cardBg,
-                borderColor: isFocused ? PRIMARY : borderColor,
-                borderWidth: isFocused ? 1.5 : 1,
-              },
+              styles.nativeButtonOuter,
+              { backgroundColor: PRIMARY },
+              styles.buttonShadow,
             ]}
           >
-            <Ionicons
-              name="create-outline"
-              size={20}
-              color={isFocused ? PRIMARY : subTextColor}
-              style={{ marginRight: 10 }}
-            />
-            <TextInput
-              ref={inputRef}
-              style={[styles.input, { color: textColor }]}
-              placeholder="e.g. Gift, Tithe, Offering..."
-              placeholderTextColor={isDark ? "#71717A" : "#A1A1AA"}
-              value={reason}
-              onChangeText={setReason}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              returnKeyType="done"
-              onSubmitEditing={handleSubmit}
-              selectionColor={PRIMARY}
-            />
-            {reason.length > 0 && (
-              <TouchableOpacity
-                onPress={() => setReason("")}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons
-                  name="close-circle"
-                  size={18}
-                  color={subTextColor}
-                />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Continue Button */}
-          <View style={styles.buttonOuter}>
             <Pressable
               onPress={() => {
                 if (Platform.OS !== "web") {
@@ -150,15 +148,14 @@ export const ReasonModal = ({
               }}
               unstable_pressDelay={0}
               accessibilityRole="button"
-              accessibilityLabel="Continue to payment"
+              accessibilityLabel="Continue to Payment"
               android_ripple={{
                 color: "rgba(255, 255, 255, 0.28)",
                 borderless: false,
                 foreground: true,
               }}
               style={({ pressed }) => [
-                styles.button,
-                { backgroundColor: PRIMARY },
+                styles.nativeButtonInner,
                 Platform.OS === "ios" &&
                   pressed && {
                     opacity: 0.88,
@@ -171,12 +168,11 @@ export const ReasonModal = ({
                 name="arrow-forward"
                 size={18}
                 color="#FFFFFF"
-                style={{ marginLeft: 8 }}
               />
             </Pressable>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </View>
+      </View>
     </AppBottomSheet>
   );
 };
@@ -184,18 +180,16 @@ export const ReasonModal = ({
 export default ReasonModal;
 
 const styles = StyleSheet.create({
-  keyboardAvoid: {
+  sheetContainer: {
     width: "100%",
-  },
-  scrollContent: {
-    paddingTop: 8,
-    paddingBottom: 24,
+    paddingTop: 4,
+    paddingBottom: Platform.OS === "ios" ? 16 : 8,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: 16,
   },
   title: {
     fontSize: 20,
@@ -217,10 +211,10 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    height: 54,
+    height: 52,
     borderRadius: 16,
     paddingHorizontal: 16,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   input: {
     flex: 1,
@@ -229,22 +223,40 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     paddingVertical: 0,
   },
-  buttonOuter: {
+  actionSection: {
     width: "100%",
+    marginTop: 4,
+  },
+  nativeButtonOuter: {
+    width: "100%",
+    height: 52,
     borderRadius: 16,
     overflow: "hidden",
   },
-  button: {
-    width: "100%",
-    height: 54,
-    borderRadius: 16,
+  nativeButtonInner: {
+    flex: 1,
     flexDirection: "row",
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 16,
   },
   buttonText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "700",
+  },
+  buttonShadow: {
+    ...Platform.select({
+      ios: {
+        shadowColor: "#ff6719",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
 });
