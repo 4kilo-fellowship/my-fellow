@@ -32,8 +32,6 @@ export const ReasonModal = ({
     }
   }, [visible, reasonState]);
 
-  if (!visible) return null;
-
   const handleConfirm = () => {
     const raw = reasonState.get?.() ?? (reasonState as any).value ?? "Gift";
     const trimmed = typeof raw === "string" ? raw.trim() : "Gift";
@@ -43,31 +41,33 @@ export const ReasonModal = ({
   return (
     <Host
       matchContents
-      style={StyleSheet.absoluteFill}
-      pointerEvents="box-none"
+      style={visible ? StyleSheet.absoluteFill : { width: 0, height: 0 }}
+      pointerEvents={visible ? "box-none" : "none"}
     >
-      <AlertDialog onDismissRequest={onClose}>
-        <AlertDialog.Title>
-          <Text>Provide a Reason</Text>
-        </AlertDialog.Title>
-        <AlertDialog.Text>
-          <TextField
-            value={reasonState}
-            singleLine
-            autoFocus
-          />
-        </AlertDialog.Text>
-        <AlertDialog.ConfirmButton>
-          <TextButton onClick={handleConfirm}>
-            <Text>Continue</Text>
-          </TextButton>
-        </AlertDialog.ConfirmButton>
-        <AlertDialog.DismissButton>
-          <TextButton onClick={onClose}>
-            <Text>Cancel</Text>
-          </TextButton>
-        </AlertDialog.DismissButton>
-      </AlertDialog>
+      {visible && (
+        <AlertDialog onDismissRequest={onClose}>
+          <AlertDialog.Title>
+            <Text>Provide a Reason</Text>
+          </AlertDialog.Title>
+          <AlertDialog.Text>
+            <TextField
+              value={reasonState}
+              singleLine
+              autoFocus
+            />
+          </AlertDialog.Text>
+          <AlertDialog.ConfirmButton>
+            <TextButton onClick={handleConfirm}>
+              <Text>Continue</Text>
+            </TextButton>
+          </AlertDialog.ConfirmButton>
+          <AlertDialog.DismissButton>
+            <TextButton onClick={onClose}>
+              <Text>Cancel</Text>
+            </TextButton>
+          </AlertDialog.DismissButton>
+        </AlertDialog>
+      )}
     </Host>
   );
 };
