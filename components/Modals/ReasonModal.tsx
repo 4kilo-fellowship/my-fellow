@@ -2,11 +2,13 @@ import { AppBottomSheet } from "@/components/AppBottomSheet";
 import { PRIMARY } from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Keyboard,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -28,12 +30,18 @@ export const ReasonModal = ({
   isDark = false,
 }: ReasonModalProps) => {
   const [reason, setReason] = useState<string>("Gift");
-  const [isFocused, setIsFocused] = useState<boolean>(false);
+  const [isFocused, setIsFocused] = useState<boolean>(true);
+  const inputRef = useRef<any>(null);
 
   useEffect(() => {
     if (visible) {
       setReason("Gift");
-      setIsFocused(false);
+      setIsFocused(true);
+      // Slight delay so the native bottom sheet entrance animation finishes before requesting focus
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 250);
+      return () => clearTimeout(timer);
     }
   }, [visible]);
 
@@ -53,115 +61,122 @@ export const ReasonModal = ({
       visible={visible}
       onClose={onClose}
       isDark={isDark}
-      snapPoints={["half", "full"]}
+      snapPoints={["full"]}
     >
-      <View style={styles.sheetContainer}>
-        {/* Header */}
-        <View style={styles.headerRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.title, { color: textColor }]}>
-              Provide a Reason
-            </Text>
-            <Text style={[styles.subtitle, { color: subTextColor }]}>
-              What is this payment or contribution for?
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={onClose}
-            style={[styles.closeBtn, { backgroundColor: cardBg }]}
-            activeOpacity={0.7}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="close" size={18} color={subTextColor} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Text Input Box */}
-        <View
-          style={[
-            styles.inputContainer,
-            {
-              backgroundColor: cardBg,
-              borderColor: isFocused ? PRIMARY : borderColor,
-              borderWidth: isFocused ? 1.5 : 1,
-            },
-          ]}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.keyboardAvoid}
+      >
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          contentContainerStyle={styles.scrollContent}
         >
-          <Ionicons
-            name="create-outline"
-            size={20}
-            color={isFocused ? PRIMARY : subTextColor}
-            style={{ marginRight: 10 }}
-          />
-          <TextInput
-            style={[
-              styles.input,
-              { color: textColor },
-            ]}
-            placeholder="e.g. Gift, Tithe, Offering..."
-            placeholderTextColor={isDark ? "#71717A" : "#A1A1AA"}
-            value={reason}
-            onChangeText={setReason}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            returnKeyType="done"
-            onSubmitEditing={handleSubmit}
-            selectionColor={PRIMARY}
-            autoFocus={true}
-          />
-          {reason.length > 0 && (
+          {/* Header */}
+          <View style={styles.headerRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.title, { color: textColor }]}>
+                Provide a Reason
+              </Text>
+              <Text style={[styles.subtitle, { color: subTextColor }]}>
+                What is this payment or contribution for?
+              </Text>
+            </View>
             <TouchableOpacity
-              onPress={() => setReason("")}
+              onPress={onClose}
+              style={[styles.closeBtn, { backgroundColor: cardBg }]}
+              activeOpacity={0.7}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Ionicons
-                name="close-circle"
-                size={18}
-                color={subTextColor}
-              />
+              <Ionicons name="close" size={18} color={subTextColor} />
             </TouchableOpacity>
-          )}
-        </View>
+          </View>
 
-        {/* Continue Button */}
-        <View style={styles.buttonOuter}>
-          <Pressable
-            onPress={() => {
-              if (Platform.OS !== "web") {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
-                  () => {},
-                );
-              }
-              handleSubmit();
-            }}
-            unstable_pressDelay={0}
-            accessibilityRole="button"
-            accessibilityLabel="Continue to payment"
-            android_ripple={{
-              color: "rgba(255, 255, 255, 0.28)",
-              borderless: false,
-              foreground: true,
-            }}
-            style={({ pressed }) => [
-              styles.button,
-              { backgroundColor: PRIMARY },
-              Platform.OS === "ios" &&
-                pressed && {
-                  opacity: 0.88,
-                  transform: [{ scale: 0.99 }],
-                },
+          {/* Text Input Box */}
+          <View
+            style={[
+              styles.inputContainer,
+              {
+                backgroundColor: cardBg,
+                borderColor: isFocused ? PRIMARY : borderColor,
+                borderWidth: isFocused ? 1.5 : 1,
+              },
             ]}
           >
-            <Text style={styles.buttonText}>Continue to Payment</Text>
             <Ionicons
-              name="arrow-forward"
-              size={18}
-              color="#FFFFFF"
-              style={{ marginLeft: 8 }}
+              name="create-outline"
+              size={20}
+              color={isFocused ? PRIMARY : subTextColor}
+              style={{ marginRight: 10 }}
             />
-          </Pressable>
-        </View>
-      </View>
+            <TextInput
+              ref={inputRef}
+              style={[styles.input, { color: textColor }]}
+              placeholder="e.g. Gift, Tithe, Offering..."
+              placeholderTextColor={isDark ? "#71717A" : "#A1A1AA"}
+              value={reason}
+              onChangeText={setReason}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              returnKeyType="done"
+              onSubmitEditing={handleSubmit}
+              selectionColor={PRIMARY}
+            />
+            {reason.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setReason("")}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons
+                  name="close-circle"
+                  size={18}
+                  color={subTextColor}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Continue Button */}
+          <View style={styles.buttonOuter}>
+            <Pressable
+              onPress={() => {
+                if (Platform.OS !== "web") {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+                    () => {},
+                  );
+                }
+                handleSubmit();
+              }}
+              unstable_pressDelay={0}
+              accessibilityRole="button"
+              accessibilityLabel="Continue to payment"
+              android_ripple={{
+                color: "rgba(255, 255, 255, 0.28)",
+                borderless: false,
+                foreground: true,
+              }}
+              style={({ pressed }) => [
+                styles.button,
+                { backgroundColor: PRIMARY },
+                Platform.OS === "ios" &&
+                  pressed && {
+                    opacity: 0.88,
+                    transform: [{ scale: 0.99 }],
+                  },
+              ]}
+            >
+              <Text style={styles.buttonText}>Continue to Payment</Text>
+              <Ionicons
+                name="arrow-forward"
+                size={18}
+                color="#FFFFFF"
+                style={{ marginLeft: 8 }}
+              />
+            </Pressable>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </AppBottomSheet>
   );
 };
@@ -169,7 +184,10 @@ export const ReasonModal = ({
 export default ReasonModal;
 
 const styles = StyleSheet.create({
-  sheetContainer: {
+  keyboardAvoid: {
+    width: "100%",
+  },
+  scrollContent: {
     paddingTop: 8,
     paddingBottom: 24,
   },
