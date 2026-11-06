@@ -1,3 +1,4 @@
+import AppButton from "@/components/AppButton";
 import { AppBottomSheet } from "@/components/AppBottomSheet";
 import { PRIMARY } from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
@@ -6,7 +7,6 @@ import React, { useEffect, useState } from "react";
 import {
   Keyboard,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -169,42 +169,17 @@ export const ReasonModal = ({
         </View>
 
         {/* Continue Button */}
-        <View style={styles.buttonOuter}>
-          <Pressable
-            onPress={() => {
-              if (Platform.OS !== "web") {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
-                  () => {},
-                );
-              }
-              handleSubmit();
-            }}
-            unstable_pressDelay={0}
-            accessibilityRole="button"
-            accessibilityLabel="Continue to payment"
-            android_ripple={{
-              color: "rgba(255, 255, 255, 0.28)",
-              borderless: false,
-              foreground: true,
-            }}
-            style={({ pressed }) => [
-              styles.button,
-              { backgroundColor: PRIMARY },
-              Platform.OS === "ios" &&
-                pressed && {
-                  opacity: 0.88,
-                  transform: [{ scale: 0.99 }],
-                },
-            ]}
-          >
-            <Text style={styles.buttonText}>Continue to Payment</Text>
-            <Ionicons
-              name="arrow-forward"
-              size={18}
-              color="#FFFFFF"
-              style={{ marginLeft: 8 }}
-            />
-          </Pressable>
+        <View style={{ width: "100%", marginTop: 4 }}>
+          <AppButton
+            title="Continue to Payment"
+            onPress={handleSubmit}
+            variant="primary"
+            size="lg"
+            icon="arrow-forward"
+            iconPosition="right"
+            isDark={isDark}
+            fullWidth={true}
+          />
         </View>
       </View>
     </AppBottomSheet>
@@ -270,23 +245,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     paddingVertical: 0,
-  },
-  buttonOuter: {
-    width: "100%",
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  button: {
-    width: "100%",
-    height: 54,
-    borderRadius: 16,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
   },
 });
