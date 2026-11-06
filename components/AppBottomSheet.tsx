@@ -6,6 +6,8 @@ import {
   Platform,
   Modal,
   TouchableWithoutFeedback,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 
 export interface AppBottomSheetProps {
@@ -14,6 +16,7 @@ export interface AppBottomSheetProps {
   children: React.ReactNode;
   isDark?: boolean;
   snapPoints?: ("half" | "full")[];
+  contentStyle?: StyleProp<ViewStyle>;
 }
 
 export const AppBottomSheet: React.FC<AppBottomSheetProps> = ({
@@ -22,8 +25,10 @@ export const AppBottomSheet: React.FC<AppBottomSheetProps> = ({
   children,
   isDark = false,
   snapPoints = ["half", "full"],
+  contentStyle,
 }) => {
   const containerBg = isDark ? "#18181B" : "#FFFFFF";
+  const isFullScreen = snapPoints.length === 1 && snapPoints[0] === "full";
 
   if (Platform.OS !== "web") {
     if (!visible) return null;
@@ -42,8 +47,17 @@ export const AppBottomSheet: React.FC<AppBottomSheetProps> = ({
           contentPadding={0}
           snapPoints={snapPoints}
         >
-          <RNHostView style={{ width: "100%" }}>
-            <View style={[styles.sheetContent, { backgroundColor: containerBg }]}>
+          <RNHostView
+            matchContents={isFullScreen ? false : { vertical: true, horizontal: true }}
+          >
+            <View
+              style={[
+                styles.sheetContentBase,
+                isFullScreen ? styles.sheetContentFull : styles.sheetContentAuto,
+                { backgroundColor: containerBg },
+                contentStyle,
+              ]}
+            >
               {children}
             </View>
           </RNHostView>
@@ -76,7 +90,14 @@ export const AppBottomSheet: React.FC<AppBottomSheetProps> = ({
               ]}
             />
           </View>
-          <View style={[styles.sheetContent, { backgroundColor: containerBg }]}>
+          <View
+            style={[
+              styles.sheetContentBase,
+              styles.sheetContentAuto,
+              { backgroundColor: containerBg },
+              contentStyle,
+            ]}
+          >
             {children}
           </View>
         </View>
@@ -86,11 +107,17 @@ export const AppBottomSheet: React.FC<AppBottomSheetProps> = ({
 };
 
 const styles = StyleSheet.create({
-  sheetContent: {
+  sheetContentBase: {
     width: "100%",
-    flex: 1,
     paddingHorizontal: 20,
     paddingTop: 8,
+  },
+  sheetContentAuto: {
+    paddingBottom: Platform.OS === "ios" ? 36 : 24,
+  },
+  sheetContentFull: {
+    flex: 1,
+    justifyContent: "flex-end",
     paddingBottom: Platform.OS === "ios" ? 36 : 24,
   },
   webOverlay: {

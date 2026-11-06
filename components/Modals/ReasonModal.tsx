@@ -6,13 +6,22 @@ import * as Haptics from "expo-haptics";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Keyboard,
+  LayoutAnimation,
   Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  UIManager,
   View,
 } from "react-native";
+
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 interface ReasonModalProps {
   visible: boolean;
@@ -29,18 +38,43 @@ export const ReasonModal = ({
 }: ReasonModalProps) => {
   const [reason, setReason] = useState<string>("Gift");
   const [isFocused, setIsFocused] = useState<boolean>(true);
-  const inputRef = useRef<any>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
+  const inputRef = useRef<React.ComponentRef<typeof TextInput>>(null);
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (visible) {
       setReason("Gift");
       setIsFocused(true);
-      const t1 = setTimeout(() => inputRef.current?.focus(), 120);
-      const t2 = setTimeout(() => inputRef.current?.focus(), 350);
+      const t1 = setTimeout(() => inputRef.current?.focus(), 150);
+      const t2 = setTimeout(() => inputRef.current?.focus(), 400);
       return () => {
         clearTimeout(t1);
         clearTimeout(t2);
       };
+    } else {
+      setKeyboardHeight(0);
     }
   }, [visible]);
 
@@ -60,10 +94,22 @@ export const ReasonModal = ({
       visible={visible}
       onClose={onClose}
       isDark={isDark}
-      snapPoints={["half", "full"]}
+      snapPoints={["full"]}
     >
-      <View style={styles.sheetContainer}>
-        {/* Header */}
+      <View
+        style={[
+          styles.sheetContainer,
+          {
+            paddingBottom:
+              keyboardHeight > 0
+                ? keyboardHeight + 12
+                : Platform.OS === "ios"
+                  ? 36
+                  : 24,
+          },
+        ]}
+      >
+        {/* Header Row */}
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.title, { color: textColor }]}>
@@ -83,14 +129,14 @@ export const ReasonModal = ({
           </TouchableOpacity>
         </View>
 
-        {/* Input Box */}
+        {/* Input Box - styled like Auth input */}
         <View
           style={[
             styles.inputContainer,
             {
               backgroundColor: cardBg,
               borderColor: isFocused ? PRIMARY : borderColor,
-              borderWidth: isFocused ? 1.5 : 1,
+              borderWidth: isFocused ? 2 : 1,
             },
           ]}
         >
@@ -128,10 +174,10 @@ export const ReasonModal = ({
           )}
         </View>
 
-        {/* Action Button - Exact same as Auth screens via AppButton */}
+        {/* Auth-styled Primary CTA Button */}
         <View style={styles.actionSection}>
           <AppButton
-            label="Continue to Payment"
+            title="Continue to Payment"
             onPress={() => {
               if (Platform.OS !== "web") {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
@@ -140,9 +186,10 @@ export const ReasonModal = ({
               }
               handleSubmit();
             }}
+            variant="primary"
+            size="lg"
             icon="arrow-forward"
             iconPosition="right"
-            size="lg"
             fullWidth={true}
             isDark={isDark}
           />
@@ -158,7 +205,6 @@ const styles = StyleSheet.create({
   sheetContainer: {
     width: "100%",
     paddingTop: 4,
-    paddingBottom: Platform.OS === "ios" ? 16 : 8,
   },
   headerRow: {
     flexDirection: "row",
@@ -186,8 +232,8 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    height: 52,
-    borderRadius: 16,
+    height: 54,
+    borderRadius: 18,
     paddingHorizontal: 16,
     marginBottom: 18,
   },
