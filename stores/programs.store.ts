@@ -1,3 +1,4 @@
+import { WEEKLY_PROGRAMS } from "@/constants/programs";
 import { programService } from "@/services/programService";
 import { Program } from "@/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -19,7 +20,7 @@ interface ProgramsState {
 export const useProgramsStore = create<ProgramsState>()(
   persist(
     (set, get) => ({
-      programs: [],
+      programs: WEEKLY_PROGRAMS,
       loading: false,
       refreshing: false,
       error: null,
@@ -37,18 +38,25 @@ export const useProgramsStore = create<ProgramsState>()(
 
         try {
           const data = await programService.fetchPrograms();
+          const programsToUse =
+            data && data.length > 0 ? data : WEEKLY_PROGRAMS;
 
-          const sortedData = data.sort((a: Program, b: Program) => {
-            if (a.title === "Monday Service") return -1;
-            if (b.title === "Monday Service") return 1;
-            return 0;
-          });
+          const sortedData = [...programsToUse].sort(
+            (a: Program, b: Program) => {
+              if (a.title.includes("Monday")) return -1;
+              if (b.title.includes("Monday")) return 1;
+              return 0;
+            },
+          );
 
           set({ programs: sortedData, error: null });
         } catch (error: any) {
           console.error("Failed to sync programs:", error);
           if (!hasData) {
-            set({ error: error.message || "Failed to fetch programs" });
+            set({
+              programs: WEEKLY_PROGRAMS,
+              error: error.message || "Failed to fetch programs",
+            });
           }
         } finally {
           set({ loading: false, refreshing: false });

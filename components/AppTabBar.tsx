@@ -233,18 +233,27 @@ export default function AppTabBar(props: any) {
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   useEffect(() => {
-    const showSub = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      () => setIsKeyboardVisible(true),
-    );
-    const hideSub = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => setIsKeyboardVisible(false),
-    );
+    // Listen to both show and hide events across Android and iOS
+    const showEvents =
+      Platform.OS === "ios"
+        ? (["keyboardWillShow", "keyboardDidShow"] as const)
+        : (["keyboardDidShow", "keyboardWillShow"] as const);
+    const hideEvents =
+      Platform.OS === "ios"
+        ? (["keyboardWillHide", "keyboardDidHide"] as const)
+        : (["keyboardDidHide", "keyboardWillHide"] as const);
+
+    const subscriptions = [
+      ...showEvents.map((evt) =>
+        Keyboard.addListener(evt, () => setIsKeyboardVisible(true)),
+      ),
+      ...hideEvents.map((evt) =>
+        Keyboard.addListener(evt, () => setIsKeyboardVisible(false)),
+      ),
+    ];
 
     return () => {
-      showSub.remove();
-      hideSub.remove();
+      subscriptions.forEach((sub) => sub.remove());
     };
   }, []);
 

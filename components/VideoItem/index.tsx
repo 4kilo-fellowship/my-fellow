@@ -36,17 +36,24 @@ const VideoItem: React.FC<VideoItemProps> = ({
     ? "rgba(255, 255, 255, 0.12)"
     : "rgba(0, 0, 0, 0.08)";
 
-  const cleanTitle = (item.title || "")
+  let cleanTitle = (item.title || "")
     .replace(/‼️/g, "")
     .replace(/!!/g, "")
     .replace(/\s{2,}/g, " ")
     .trim();
 
-  const cleanDesc = (item.desc || "")
-    .replace(/‼️/g, "")
-    .replace(/!!/g, "")
-    .replace(/\s{2,}/g, " ")
-    .trim();
+  if (item.id === "living-hope" || cleanTitle.toLowerCase().includes("living hope")) {
+    cleanTitle = "Living Hope";
+  }
+
+  const cleanDesc =
+    item.id === "living-hope"
+      ? "Because of God’s great mercy, Jesus rose from the dead to give us a new life and a hope that never dies (1 Peter 1:3-4). A powerful Easter reflection on the living hope we have through Christ's resurrection."
+      : (item.desc || "")
+          .replace(/‼️/g, "")
+          .replace(/!!/g, "")
+          .replace(/\s{2,}/g, " ")
+          .trim();
 
   return (
     <View

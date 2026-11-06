@@ -25,7 +25,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
   LayoutAnimation,
   Platform,
   Pressable,
@@ -395,27 +394,22 @@ const Gifts = () => {
     <View className={`flex-1 ${isDark ? "bg-dark" : "bg-background"}`}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-      >
-        <MainTabHeader borderBottom={true} title="Gifts" />
+      <MainTabHeader borderBottom={true} title="Gifts" />
 
-        <View style={{ flex: 1 }}>
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 140 }}
-            keyboardShouldPersistTaps="handled"
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tintColor={PRIMARY}
-                colors={[PRIMARY]}
-              />
-            }
-          >
+      <View style={{ flex: 1 }}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 140 }}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={PRIMARY}
+              colors={[PRIMARY]}
+            />
+          }
+        >
             {/* donation header section */}
             <View className="px-5 mb-10 pt-4 items-center">
               <View className="flex-row items-center justify-center">
@@ -948,7 +942,6 @@ const Gifts = () => {
             </View>
           </ScrollView>
         </View>
-      </KeyboardAvoidingView>
       <InfoModal
         visible={infoModal.visible}
         onClose={() => setInfoModal((prev) => ({ ...prev, visible: false }))}

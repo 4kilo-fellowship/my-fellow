@@ -699,9 +699,9 @@ const Home = () => {
                 {[1, 2, 3].map((_, i) => (
                   <Placeholder
                     key={i}
-                    width={180}
-                    height={220}
-                    borderRadius={16}
+                    width={224}
+                    height={264}
+                    borderRadius={18}
                     style={{ marginRight: 16 }}
                   />
                 ))}
@@ -802,7 +802,7 @@ const Home = () => {
                 )}
               </View>
             ) : (
-              videos.slice(0, 3).map((v) => (
+              videos.slice(0, 4).map((v) => (
                 <VideoItem
                   key={v.id}
                   item={v}

@@ -71,6 +71,7 @@ const DevotionDetail = () => {
     setAudioModeAsync({
       playsInSilentMode: true,
       shouldPlayInBackground: true,
+      interruptionMode: "doNotMix",
     }).catch((err) => console.log("Audio mode set error:", err));
   }, []);
 
@@ -78,20 +79,14 @@ const DevotionDetail = () => {
   const status = useAudioPlayerStatus(player);
 
   useEffect(() => {
-    if (devotion && player && devotion.type === "voice") {
-      player.setActiveForLockScreen(true, {
-        title: devotion.title,
-        artist: devotion.author,
-        artworkUrl: devotion.image,
-      });
-    }
-
     return () => {
       try {
+        player.pause();
+        player.setActiveForLockScreen(false);
         player.clearLockScreenControls();
       } catch {}
     };
-  }, [devotion, player]);
+  }, [player]);
 
   const togglePlayPause = () => {
     try {
@@ -99,7 +94,16 @@ const DevotionDetail = () => {
     } catch {}
     if (status.playing) {
       player.pause();
+      player.setActiveForLockScreen(false);
     } else {
+      if (devotion && devotion.type === "voice") {
+        player.setActiveForLockScreen(true, {
+          title: devotion.title,
+          artist: devotion.author,
+          albumTitle: "4 Kilo Fellowship Devotions",
+          artworkUrl: devotion.image,
+        });
+      }
       player.play();
     }
   };
@@ -287,23 +291,21 @@ const DevotionDetail = () => {
     const isOfficial =
       !devotion.authorId ||
       authorLower.includes("fellowship") ||
-      authorLower.includes("counseling") ||
-      authorLower.includes("team") ||
-      devotion.authorRole?.toLowerCase().includes("leadership");
+      authorLower.includes("4 kilo") ||
+      authorLower.includes("official") ||
+      !devotion.authorRole ||
+      devotion.authorRole.includes("Official") ||
+      devotion.authorRole.includes("Ministry");
 
-    const targetAuthorId =
-      devotion.authorId || (isOfficial ? "4kilofellowship" : "fellowship-author");
-    const targetName = devotion.author || "4 Kilo Fellowship";
-    const targetHandle =
-      devotion.authorUsername ||
-      (isOfficial ? "aau4kilofellowship" : targetName.toLowerCase().replace(/\s+/g, "_"));
+    const targetAuthorId = isOfficial
+      ? "user-fellowship"
+      : devotion.authorId || "user-fellowship";
+    const targetName = isOfficial ? "4 Kilo Fellowship" : devotion.author;
+    const targetHandle = isOfficial ? "@4kilo_fellowship" : (devotion.authorUsername || "4kilo_fellowship");
     const targetAvatar =
       devotion.authorAvatar ||
-      (isOfficial
-        ? "https://images.unsplash.com/photo-1544427920-c49ccfb85579?auto=format&fit=crop&w=400&q=80"
-        : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80");
-    const targetRole =
-      devotion.authorRole || (isOfficial ? "Counseling & Fellowship Leadership" : "Devotional Writer");
+      "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=400&q=80";
+    const targetRole = isOfficial ? "Executive Ministry" : (devotion.authorRole || "Executive Ministry");
 
     router.push({
       pathname: `/community/user/${targetAuthorId}`,
@@ -313,7 +315,7 @@ const DevotionDetail = () => {
         username: targetHandle,
         avatar: targetAvatar,
         team: targetRole,
-        department: isOfficial ? "Campus Ministry & Counseling" : "Addis Ababa University",
+        department: "Campus Ministry Leadership",
       },
     });
   };
@@ -364,18 +366,18 @@ const DevotionDetail = () => {
 
             {/* Author Row Placeholder */}
             <View
-              className={`flex-row items-center justify-between pb-5 mb-6 border-b ${
+              className={`flex-row items-center justify-between pb-4 mb-6 border-b ${
                 isDark ? "border-[#1a1a1a]" : "border-gray-100"
               }`}
             >
               <View className="flex-row items-center flex-1">
                 <Placeholder width={40} height={40} borderRadius={20} />
-                <View style={{ marginLeft: 10, flex: 1, gap: 6 }}>
+                <View style={{ marginLeft: 10, flex: 1, gap: 5 }}>
                   <Placeholder width={110} height={14} borderRadius={4} />
-                  <Placeholder width={75} height={12} borderRadius={4} />
+                  <Placeholder width={70} height={11} borderRadius={4} />
                 </View>
               </View>
-              <Placeholder width={80} height={16} borderRadius={4} />
+              <Placeholder width={56} height={32} borderRadius={16} />
             </View>
 
             {/* Body Text Lines Placeholder */}
@@ -491,22 +493,19 @@ const DevotionDetail = () => {
           </Text>
 
           <View
-            className={`flex-row items-center justify-between pb-5 mb-5 border-b ${
+            className={`flex-row items-center justify-between pb-4 mb-6 border-b ${
               isDark ? "border-[#1a1a1a]" : "border-gray-100"
             }`}
           >
+            {/* Author Profile */}
             <TouchableOpacity
-              activeOpacity={0.7}
+              activeOpacity={1}
               onPress={handleAuthorPress}
-              accessibilityRole="button"
-              accessibilityLabel={`View ${devotion.author}'s profile`}
-              className="flex-row items-center flex-1 mr-3"
+              className="flex-row items-center flex-1 mr-4"
             >
               <View
-                className={`w-11 h-11 rounded-full overflow-hidden items-center justify-center border ${
-                  isDark
-                    ? "bg-[#18181b] border-[#27272a]"
-                    : "bg-gray-100 border-gray-200"
+                className={`w-10 h-10 rounded-full overflow-hidden items-center justify-center ${
+                  isDark ? "bg-[#1f1f23]" : "bg-gray-100"
                 }`}
               >
                 {devotion.authorAvatar ? (
@@ -514,121 +513,63 @@ const DevotionDetail = () => {
                     source={{ uri: devotion.authorAvatar }}
                     style={{ width: "100%", height: "100%" }}
                     contentFit="cover"
-                    transition={200}
                   />
                 ) : (
-                  <Ionicons name="person" size={20} color={PRIMARY} />
+                  <Ionicons name="person" size={18} color={PRIMARY} />
                 )}
               </View>
 
-              <View style={{ marginLeft: 10, flex: 1 }}>
+              <View style={{ marginLeft: 11, flex: 1, justifyContent: "center" }}>
                 <View className="flex-row items-center">
                   <Text
-                    className={`text-[14px] font-bold ${
+                    className={`text-[15px] font-bold ${
                       isDark ? "text-white" : "text-gray-900"
                     }`}
                     numberOfLines={1}
                   >
-                    {devotion.author}
+                    {devotion.author || "4 Kilo Fellowship"}
                   </Text>
                   <Ionicons
                     name="checkmark-circle"
-                    size={13}
-                    color={PRIMARY}
+                    size={15}
+                    color="#0284c7"
                     style={{ marginLeft: 4 }}
                   />
                 </View>
-                <View className="flex-row items-center mt-0.5">
-                  <Text
-                    className={`text-[11px] font-medium ${
-                      isDark ? "text-primary" : "text-primary"
-                    }`}
-                    numberOfLines={1}
-                  >
-                    {devotion.authorRole || "Fellowship Leadership"}
-                  </Text>
-                  <Text
-                    className={`text-[11px] mx-1 ${
-                      isDark ? "text-gray-500" : "text-gray-400"
-                    }`}
-                  >
-                    •
-                  </Text>
-                  <Text
-                    className={`text-[11px] ${
-                      isDark ? "text-gray-500" : "text-gray-400"
-                    }`}
-                  >
-                    {new Date(devotion.date).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </Text>
-                </View>
+                <Text
+                  className={`text-[12px] font-medium mt-0.5 ${
+                    isDark ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
+                  Official Fellowship
+                </Text>
               </View>
-
-              <Ionicons
-                name="chevron-forward"
-                size={16}
-                color={isDark ? "#71717a" : "#a1a1aa"}
-                style={{ marginLeft: 2 }}
-              />
             </TouchableOpacity>
 
-            <View className="flex-row items-center" style={{ gap: 14 }}>
-              <TouchableOpacity
-                onPress={handleLike}
-                className="flex-row items-center"
+            {/* Like Button */}
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={handleLike}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              className="flex-row items-center py-1.5 px-2"
+            >
+              <Ionicons
+                name={isLiked ? "heart" : "heart-outline"}
+                size={22}
+                color={isLiked ? "#ef4444" : isDark ? "#888888" : "#71717a"}
+              />
+              <Text
+                className={`text-[13px] font-semibold ml-1.5 ${
+                  isLiked
+                    ? "text-[#ef4444]"
+                    : isDark
+                      ? "text-gray-400"
+                      : "text-gray-600"
+                }`}
               >
-                <Ionicons
-                  name={isLiked ? "heart" : "heart-outline"}
-                  size={18}
-                  color={isLiked ? "#ef4444" : isDark ? "#555" : "#aaa"}
-                />
-                <Text
-                  className={`text-[11px] font-bold ml-1 ${
-                    isDark ? "text-gray-500" : "text-gray-400"
-                  }`}
-                >
-                  {likesCount}
-                </Text>
-              </TouchableOpacity>
-
-              <View className="flex-row items-center">
-                <Ionicons
-                  name="eye-outline"
-                  size={18}
-                  color={isDark ? "#555" : "#aaa"}
-                />
-                <Text
-                  className={`text-[11px] font-bold ml-1 ${
-                    isDark ? "text-gray-500" : "text-gray-400"
-                  }`}
-                >
-                  {viewsCount}
-                </Text>
-              </View>
-
-              <View className="flex-row items-center">
-                {isDownloading ? (
-                  <View className="flex-row items-center">
-                    <Text
-                      className={`text-[10px] font-bold mr-2 ${isDark ? "text-primary" : "text-primary"}`}
-                    >
-                      {Math.round(downloadProgress)}%
-                    </Text>
-                    <ActivityIndicator size="small" color={PRIMARY} />
-                  </View>
-                ) : (
-                  <Ionicons
-                    name="cloud-done-outline"
-                    size={16}
-                    color="#10b981"
-                  />
-                )}
-              </View>
-            </View>
+                {likesCount}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {devotion.type === "voice" && (
@@ -774,29 +715,29 @@ const DevotionDetail = () => {
           {/* Devotion Content & Caption */}
           <View className="mb-8">
             {devotion.type === "voice" && (
-              <View className="flex-row items-center mb-3">
-                <Ionicons name="chatbox-ellipses-outline" size={17} color={PRIMARY} />
+              <View className="flex-row items-center mb-4 pb-2 border-b border-gray-100 dark:border-neutral-800">
+                <Ionicons name="document-text-outline" size={17} color={PRIMARY} />
                 <Text
                   className={`text-[15px] font-bold ml-2 ${
                     isDark ? "text-white" : "text-gray-900"
                   }`}
                 >
-                  Voice Caption & Message
+                  Full Message & Reflection
                 </Text>
               </View>
             )}
 
-            {/* Display voice caption or article text */}
-            {(devotion.caption || devotion.content) && (
+            {/* Always display the full devotion text */}
+            {(devotion.content || devotion.caption) && (
               <Markdown
                 style={{
                   body: {
                     color: isDark ? "#d1d5db" : "#374151",
-                    fontSize: 16,
-                    lineHeight: 28,
+                    fontSize: 16.5,
+                    lineHeight: 29,
                   },
                   paragraph: {
-                    marginBottom: 16,
+                    marginBottom: 18,
                   },
                   heading2: {
                     color: isDark ? "#f9fafb" : "#111827",
@@ -847,29 +788,9 @@ const DevotionDetail = () => {
                   },
                 }}
               >
-                {devotion.caption || devotion.content || ""}
+                {devotion.content || devotion.caption || ""}
               </Markdown>
             )}
-
-            {/* If devotion has both distinct content and caption */}
-            {devotion.type === "voice" &&
-              devotion.content &&
-              devotion.caption &&
-              devotion.content !== devotion.caption && (
-                <View className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-800">
-                  <Markdown
-                    style={{
-                      body: {
-                        color: isDark ? "#d1d5db" : "#374151",
-                        fontSize: 16,
-                        lineHeight: 28,
-                      },
-                    }}
-                  >
-                    {devotion.content}
-                  </Markdown>
-                </View>
-              )}
           </View>
 
           {relatedDevotions.length > 0 && (

@@ -28,8 +28,8 @@ type DevotionCardProps = {
   onPress?: () => void;
 };
 
-const CARD_WIDTH = 180;
-const CARD_HEIGHT = 220;
+const CARD_WIDTH = 224;
+const CARD_HEIGHT = 264;
 
 function DevotionCard({ item, isDark, onPress }: DevotionCardProps) {
   const handlePress = () => {
@@ -52,7 +52,7 @@ function DevotionCard({ item, isDark, onPress }: DevotionCardProps) {
       style={[
         styles.cardContainer,
         {
-          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.07)",
           backgroundColor: isDark ? "#18181b" : "#ffffff",
         },
       ]}
@@ -94,7 +94,7 @@ function DevotionCard({ item, isDark, onPress }: DevotionCardProps) {
               <View style={styles.statItem}>
                 <Ionicons
                   name="eye-outline"
-                  size={14}
+                  size={15}
                   color={isDark ? "#94a3b8" : "#64748b"}
                 />
                 <Text
@@ -107,24 +107,22 @@ function DevotionCard({ item, isDark, onPress }: DevotionCardProps) {
                 </Text>
               </View>
 
-              {item.author ? (
-                <View style={styles.authorItem}>
-                  <Ionicons
-                    name="person-outline"
-                    size={14}
-                    color={isDark ? "#94a3b8" : "#64748b"}
-                  />
-                  <Text
-                    numberOfLines={1}
-                    style={[
-                      styles.authorText,
-                      { color: isDark ? "#94a3b8" : "#64748b" },
-                    ]}
-                  >
-                    {item.author}
-                  </Text>
-                </View>
-              ) : null}
+              <View style={styles.authorItem}>
+                <Ionicons
+                  name="person-outline"
+                  size={15}
+                  color={isDark ? "#94a3b8" : "#64748b"}
+                />
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    styles.authorText,
+                    { color: isDark ? "#94a3b8" : "#64748b" },
+                  ]}
+                >
+                  {item.author || "4 Kilo Fellowship"}
+                </Text>
+              </View>
             </View>
           </View>
         </View>
@@ -136,16 +134,16 @@ function DevotionCard({ item, isDark, onPress }: DevotionCardProps) {
 const styles = StyleSheet.create({
   cardContainer: {
     marginRight: 16,
-    borderRadius: 16,
+    borderRadius: 18,
     overflow: "hidden",
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
     borderWidth: 1,
     shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
+    shadowOpacity: 0.01,
+    shadowRadius: 2,
     shadowOffset: { width: 0, height: 1 },
-    elevation: 1.5,
+    elevation: 0.5,
   },
   cardPressable: {
     width: "100%",
@@ -153,10 +151,10 @@ const styles = StyleSheet.create({
   },
   cardImage: {
     width: "100%",
-    height: 120,
+    height: 144,
   },
   cardContent: {
-    padding: 12,
+    padding: 14,
     flex: 1,
     justifyContent: "space-between",
   },
@@ -165,15 +163,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   cardTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "700",
-    lineHeight: 18,
+    lineHeight: 22,
     letterSpacing: -0.2,
     marginBottom: 4,
   },
   cardDate: {
     color: "#ff6719",
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "600",
     marginBottom: 6,
   },
@@ -188,7 +186,7 @@ const styles = StyleSheet.create({
   },
   statText: {
     marginLeft: 5,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "500",
   },
   authorItem: {
@@ -199,7 +197,7 @@ const styles = StyleSheet.create({
   },
   authorText: {
     marginLeft: 4,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "500",
     flexShrink: 1,
   },

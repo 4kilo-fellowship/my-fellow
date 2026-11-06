@@ -13,55 +13,49 @@ export type Video = {
 export const DEFAULT_VIDEOS: Video[] = [
   {
     id: "living-hope",
-    title: "Living Hope — Because Jesus Lives, We Have Hope",
-    desc: "Because of God’s great mercy, Jesus rose from the dead to give us a new life and a hope that never dies (1 Peter 1:3-4). A powerful Easter resurrection reflection by 4 Kilo Fellowship.",
+    title: "Living Hope",
+    desc: "Because of God’s great mercy, Jesus rose from the dead to give us a new life and a hope that never dies (1 Peter 1:3-4). A powerful Easter reflection on the living hope we have through Christ's resurrection.",
     duration: "1:59",
     thumbnail:
       "https://res.cloudinary.com/doi9bg69o/image/upload/v1793867306/my-fellow/video-thumbnails/zskekkbkswokugnfveaf.jpg",
     videoUrl:
       "https://res.cloudinary.com/doi9bg69o/video/upload/v1793867387/my-fellow/videos/jglnmemtd46ucpurb4qd.mp4",
-    speaker: "4 Kilo Fellowship Media & Ministry",
-    views: "1.2k views",
-    publishedAt: "Recently",
   },
   {
-    id: "sunday-service-highlights",
-    title: "Sunday Service Highlights — The Unshakable Kingdom",
-    desc: "A powerful recap of Sunday worship, scripture meditation, and practical spiritual guidance for campus life.",
-    duration: "10:04",
+    id: "following-the-king",
+    title: "ንጉሱን እንዴት እንከተለው",
+    desc: "በብሔራዊ የአመራር ሥልጠና (NLS 2024) ላይ በእዮስያስ ፀጋዬ የተሰጠ ጥልቅ ትምህርት — ንጉሱን ክርስቶስን በሕይወታችንና በዩኒቨርሲቲ ቆይታችን በታማኝነት እንዴት እንደምንከተል።",
+    duration: "42:42",
     thumbnail:
-      "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+      "https://res.cloudinary.com/doi9bg69o/image/upload/v1793871738/my-fellow/video-thumbnails/following-the-king-thumb.jpg",
     videoUrl:
-      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    speaker: "Pastor Dawit & Worship Team",
-    views: "1.4k views",
-    publishedAt: "2 days ago",
+      "https://res.cloudinary.com/doi9bg69o/video/upload/my-fellow/videos/following-the-king-video.mp4",
+    speaker: "እዮስያስ ፀጋዬ",
+    publishedAt: "NLS 2024",
   },
   {
-    id: "acoustic-worship-night",
-    title: "Live Acoustic Worship Night — 4 Kilo Fellowship",
-    desc: "Intimate acoustic worship moments and intercession with the fellowship choir.",
-    duration: "10:53",
+    id: "amelkewalew-worship",
+    title: "አመልከዋለው | መልሕቅ ኳየር",
+    desc: "የመልሕቅ ኳየር ድንቅ የአምልኮና የምስጋና ዝማሬ — ልብን ወደ እግዚአብሔር ክብርና ጸጋ የሚያቀርብ መንፈሳዊ ህብረት።",
+    duration: "20:20",
     thumbnail:
-      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+      "https://res.cloudinary.com/doi9bg69o/image/upload/v1793874015/my-fellow/video-thumbnails/amelkewalew-thumb.jpg",
     videoUrl:
-      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    speaker: "Fellowship Choir",
-    views: "2.1k views",
-    publishedAt: "5 days ago",
+      "https://res.cloudinary.com/doi9bg69o/video/upload/my-fellow/videos/amelkewalew-video.mp4",
+    speaker: "መልሕቅ ኳየር",
+    publishedAt: "EvaSUE Worship",
   },
   {
-    id: "freshman-orientation",
-    title: "Freshman Orientation & Campus Walk of Faith",
-    desc: "Encouragement, university tips, and elder student testimonies for new 4 Kilo campus students.",
-    duration: "15:00",
+    id: "mere-christianity-review",
+    title: "Mere Christianity Book Review — Part 7",
+    desc: "A thoughtful and enriching study on C.S. Lewis's classic 'Mere Christianity' (Part 7) exploring the Christian foundation of faith, virtue, and eternity with Ebenezer Tadese.",
+    duration: "10:27",
     thumbnail:
-      "https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+      "https://res.cloudinary.com/doi9bg69o/image/upload/v1793873493/my-fellow/video-thumbnails/mere-christianity-thumb.jpg",
     videoUrl:
-      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    speaker: "Elder Committee",
-    views: "890 views",
-    publishedAt: "1 week ago",
+      "https://res.cloudinary.com/doi9bg69o/video/upload/v1793874491/my-fellow/videos/mere-christianity-video.mp4",
+    speaker: "Ebenezer Tadese",
+    publishedAt: "Book Review Series",
   },
 ];
 

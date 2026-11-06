@@ -42,31 +42,44 @@ export function resolveProfileSeed(
     handle = `@${handle}`;
   }
 
+  const isOfficial =
+    memberId === "user-fellowship" ||
+    memberId === "4kilofellowship" ||
+    memberId === "6aec43ef64e7e1d073d0bc1c" ||
+    displayName.toLowerCase().includes("4 kilo") ||
+    handle.toLowerCase().includes("4kilo");
+
   const profile: MemberProfile = {
-    id: memberId,
-    fullName: displayName,
-    handle,
+    id: isOfficial ? "user-fellowship" : memberId,
+    fullName: isOfficial ? "4 Kilo Fellowship" : displayName,
+    handle: isOfficial ? "@4kilo_fellowship" : handle,
     avatar:
       seed.avatar ||
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
-    banner: null,
-    team: seed.team || "Campus Ministry",
-    department: seed.department || "Addis Ababa University",
-    academicYear: "",
-    bio: "",
-    streakDays: 0,
-    followersCount: 0,
-    followingCount: 0,
-    postsCount: 0,
-    isFollowing: false,
-    location: undefined,
+      (isOfficial
+        ? "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=400&q=80"
+        : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80"),
+    banner: isOfficial
+      ? "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=1200&q=80"
+      : null,
+    team: isOfficial ? "Executive Ministry" : (seed.team || "Campus Ministry"),
+    department: isOfficial ? "Campus Ministry Leadership" : (seed.department || "Addis Ababa University"),
+    academicYear: isOfficial ? "AAU ECSF" : "",
+    bio: isOfficial
+      ? "Official digital home of Addis Ababa University 4 Kilo Christian Students Fellowship. 'Rooted & Built Up in Him.' Col 2:7 ✝️"
+      : "",
+    streakDays: isOfficial ? 142 : 0,
+    followersCount: isOfficial ? 1240 : 0,
+    followingCount: isOfficial ? 38 : 0,
+    postsCount: isOfficial ? 56 : 0,
+    isFollowing: isOfficial ? true : false,
+    location: isOfficial ? "Addis Ababa University 4 Kilo Campus" : undefined,
     joinedDate: undefined,
     mutualFollowers: undefined,
   };
 
   return {
     data: profile,
-    isPlaceholder: true,
+    isPlaceholder: !isOfficial,
   };
 }
 
@@ -83,7 +96,14 @@ export function resolveProfileSeed(
  */
 export function useProfile(seed: ProfileSeedParams): UseProfileResult {
   const memberId = seed.id || "user-unknown";
-  const storeMember = useCommunityStore((s) => s.members[memberId]);
+  const storeMember = useCommunityStore((s) =>
+    s.members[memberId] ||
+    (memberId === "user-fellowship" ||
+    memberId === "4kilofellowship" ||
+    memberId === "6aec43ef64e7e1d073d0bc1c"
+      ? s.members["user-fellowship"]
+      : undefined)
+  );
 
   return useMemo(() => {
     return resolveProfileSeed(seed, storeMember);

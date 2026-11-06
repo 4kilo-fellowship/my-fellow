@@ -27,9 +27,9 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Animated,
+  FlatList,
   Linking,
   Platform,
   Pressable,
@@ -39,16 +39,16 @@ import {
   Text,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ProgramProps {
   item: Program;
   isDark: boolean;
-  isAlertActive: (item: Program) => boolean;
+  isAlertActive: boolean;
   onToggleAlert: (item: Program) => void;
   isAdmin?: boolean;
   onEdit?: (item: Program) => void;
 }
+
 const openGoogleMaps = (lat: number, lng: number, label: string) => {
   const scheme = Platform.select({
     ios: "maps:0,0?q=",
@@ -69,275 +69,263 @@ const openGoogleMaps = (lat: number, lng: number, label: string) => {
   }
 };
 
-const ProgramCard = ({
-  item,
-  isDark,
-  isAlertActive,
-  onToggleAlert,
-  isAdmin,
-  onEdit,
-}: ProgramProps) => {
-  const isAlertSet = isAlertActive(item);
+const ProgramCard = React.memo(
+  ({
+    item,
+    isDark,
+    isAlertActive,
+    onToggleAlert,
+    isAdmin,
+    onEdit,
+  }: ProgramProps) => {
+    const imageSource =
+      typeof item.image === "string" ? { uri: item.image } : item.image;
 
-  return (
-    <View className="flex-1">
-      <View
-        style={[
-          styles.card,
-          isDark ? styles.cardDark : styles.cardLight,
-        ]}
-      >
-        <Pressable
-          onPress={() =>
-            openGoogleMaps(
-              item.coordinates.lat,
-              item.coordinates.lng,
-              item.location,
-            )
-          }
-          accessibilityRole="button"
-          accessibilityLabel={`${item.title}, tap to view map directions`}
-          android_ripple={{
-            color: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)",
-            borderless: false,
-            foreground: true,
-          }}
-          style={{ width: "100%" }}
+    return (
+      <View className="flex-1">
+        <View
+          style={[
+            styles.card,
+            isDark ? styles.cardDark : styles.cardLight,
+          ]}
         >
-          <View className="h-52 w-full relative">
-            <Image
-              source={item.image}
-              style={{ width: "100%", height: "100%" }}
-              contentFit="cover"
-              transition={400}
-            />
-            <LinearGradient
-              colors={["transparent", "rgba(0,0,0,0.7)"]}
-              style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 100,
-              }}
-            />
+          <Pressable
+            onPress={() =>
+              openGoogleMaps(
+                item.coordinates.lat,
+                item.coordinates.lng,
+                item.location,
+              )
+            }
+            accessibilityRole="button"
+            accessibilityLabel={`${item.title}, tap to view map directions`}
+            android_ripple={{
+              color: isDark
+                ? "rgba(255, 255, 255, 0.08)"
+                : "rgba(0, 0, 0, 0.04)",
+              borderless: false,
+              foreground: true,
+            }}
+            style={{ width: "100%" }}
+          >
+            <View className="h-52 w-full relative">
+              <Image
+                source={imageSource}
+                style={{ width: "100%", height: "100%" }}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+              />
+              <LinearGradient
+                colors={["transparent", "rgba(0,0,0,0.7)"]}
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 100,
+                }}
+              />
 
-            <View
-              style={{
-                position: "absolute",
-                top: 16,
-                right: 16,
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 8,
-                zIndex: 10,
-              }}
-            >
-              {isAdmin && onEdit && (
-                <AdminEditTrigger
-                  size={40}
-                  onPress={() => onEdit(item)}
-                />
-              )}
-              <View style={styles.alertBtnWrap}>
+              <View
+                style={{
+                  position: "absolute",
+                  top: 16,
+                  right: 16,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                  zIndex: 10,
+                }}
+              >
+                {isAdmin && onEdit && (
+                  <AdminEditTrigger
+                    size={40}
+                    onPress={() => onEdit(item)}
+                  />
+                )}
+                <View style={styles.alertBtnWrap}>
+                  <Pressable
+                    onPress={() => onToggleAlert(item)}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      isAlertActive ? "Remove reminder" : "Set reminder"
+                    }
+                    android_ripple={{
+                      color: "rgba(255, 255, 255, 0.35)",
+                      borderless: false,
+                      foreground: true,
+                    }}
+                    style={styles.alertBtnInner}
+                  >
+                    <Ionicons
+                      name={
+                        isAlertActive
+                          ? "notifications"
+                          : "notifications-outline"
+                      }
+                      size={20}
+                      color={isAlertActive ? "#f97316" : "white"}
+                    />
+                  </Pressable>
+                </View>
+              </View>
+
+              <View className="absolute bottom-4 left-5 right-5">
+                <Text
+                  className="text-white text-2xl font-extrabold"
+                  style={{
+                    textShadowColor: "rgba(0,0,0,0.5)",
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 4,
+                  }}
+                >
+                  {item.title}
+                </Text>
+              </View>
+            </View>
+
+            <View className="p-5">
+              <Text
+                className={`text-[14px] mb-4 leading-[22px] ${
+                  isDark ? "text-gray-400" : "text-gray-500"
+                }`}
+                numberOfLines={2}
+              >
+                {item.description}
+              </Text>
+
+              <View className="flex-row items-center justify-between mb-4">
+                <View
+                  className={`flex-row items-center px-3.5 py-2 rounded-lg border ${
+                    isDark
+                      ? "bg-[#1a1a1a] border-[#222]"
+                      : "bg-white border-gray-100"
+                  }`}
+                >
+                  <Ionicons
+                    name="calendar-outline"
+                    size={14}
+                    color={PRIMARY}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text
+                    className={`font-bold text-xs ${
+                      isDark ? "text-gray-300" : "text-gray-700"
+                    }`}
+                  >
+                    {item.day}
+                  </Text>
+                </View>
+
+                <View
+                  className={`flex-row items-center px-3.5 py-2 rounded-lg border ${
+                    isDark
+                      ? "bg-[#1a1a1a] border-[#222]"
+                      : "bg-white border-gray-100"
+                  }`}
+                >
+                  <Ionicons
+                    name="time-outline"
+                    size={14}
+                    color={isDark ? "#9ca3af" : "#6b7280"}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text
+                    className={`text-xs font-semibold ${
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
+                    {item.time}
+                  </Text>
+                </View>
+              </View>
+
+              <View
+                className={`h-[1px] w-full mb-4 ${
+                  isDark ? "bg-[#222]" : "bg-gray-100"
+                }`}
+              />
+
+              <View
+                style={[
+                  styles.locationBtnWrap,
+                  isDark ? styles.locationDark : styles.locationLight,
+                ]}
+              >
                 <Pressable
-                  onPress={() => onToggleAlert(item)}
+                  onPress={() =>
+                    openGoogleMaps(
+                      item.coordinates.lat,
+                      item.coordinates.lng,
+                      item.location,
+                    )
+                  }
                   accessibilityRole="button"
-                  accessibilityLabel={isAlertSet ? "Remove reminder" : "Set reminder"}
+                  accessibilityLabel={`Get directions to ${item.location}`}
                   android_ripple={{
-                    color: "rgba(255, 255, 255, 0.35)",
+                    color: isDark
+                      ? "rgba(255, 255, 255, 0.12)"
+                      : "rgba(255, 103, 25, 0.12)",
                     borderless: false,
                     foreground: true,
                   }}
-                  style={styles.alertBtnInner}
+                  style={styles.locationBtnInner}
                 >
-                  <Ionicons
-                    name={isAlertSet ? "notifications" : "notifications-outline"}
-                    size={20}
-                    color={isAlertSet ? "#f97316" : "white"}
-                  />
+                  <View className="flex-row items-center flex-1">
+                    <View
+                      className={`w-9 h-9 rounded-full items-center justify-center mr-3 ${
+                        isDark ? "bg-[#222]" : "bg-orange-50"
+                      }`}
+                    >
+                      <Ionicons name="location" size={18} color={PRIMARY} />
+                    </View>
+                    <View className="flex-1">
+                      <Text
+                        className={`text-[11px] font-medium mb-0.5 ${
+                          isDark ? "text-gray-500" : "text-gray-400"
+                        }`}
+                      >
+                        Location
+                      </Text>
+                      <Text
+                        className={`text-[13px] font-bold ${
+                          isDark ? "text-white" : "text-gray-800"
+                        }`}
+                        numberOfLines={1}
+                      >
+                        {item.location}
+                      </Text>
+                    </View>
+                  </View>
+                  <View
+                    className={`w-8 h-8 rounded-full items-center justify-center border ${
+                      isDark
+                        ? "bg-[#222] border-[#333]"
+                        : "bg-gray-50 border-gray-200"
+                    }`}
+                  >
+                    <Ionicons name="navigate" size={14} color={PRIMARY} />
+                  </View>
                 </Pressable>
               </View>
             </View>
-
-            <View className="absolute bottom-4 left-5 right-5">
-              <Text
-                className="text-white text-2xl font-extrabold"
-                style={{
-                  textShadowColor: "rgba(0,0,0,0.5)",
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 4,
-                }}
-              >
-                {item.title}
-              </Text>
-            </View>
-          </View>
-
-          <View className="p-5">
-            <Text
-              className={`text-[14px] mb-4 leading-[22px] ${
-                isDark ? "text-gray-400" : "text-gray-500"
-              }`}
-              numberOfLines={2}
-            >
-              {item.description}
-            </Text>
-
-            <View className="flex-row items-center justify-between mb-4">
-              <View
-                className={`flex-row items-center px-3.5 py-2 rounded-lg border ${
-                  isDark
-                    ? "bg-[#1a1a1a] border-[#222]"
-                    : "bg-white border-gray-100"
-                }`}
-              >
-                <Ionicons
-                  name="calendar-outline"
-                  size={14}
-                  color={PRIMARY}
-                  style={{ marginRight: 6 }}
-                />
-                <Text
-                  className={`font-bold text-xs ${
-                    isDark ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  {item.day}
-                </Text>
-              </View>
-
-              <View
-                className={`flex-row items-center px-3.5 py-2 rounded-lg border ${
-                  isDark
-                    ? "bg-[#1a1a1a] border-[#222]"
-                    : "bg-white border-gray-100"
-                }`}
-              >
-                <Ionicons
-                  name="time-outline"
-                  size={14}
-                  color={isDark ? "#9ca3af" : "#6b7280"}
-                  style={{ marginRight: 6 }}
-                />
-                <Text
-                  className={`text-xs font-semibold ${
-                    isDark ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  {item.time}
-                </Text>
-              </View>
-            </View>
-
-            <View
-              className={`h-[1px] w-full mb-4 ${isDark ? "bg-[#222]" : "bg-gray-100"}`}
-            />
-
-            <View
-              style={[
-                styles.locationBtnWrap,
-                isDark ? styles.locationDark : styles.locationLight,
-              ]}
-            >
-              <Pressable
-                onPress={() =>
-                  openGoogleMaps(
-                    item.coordinates.lat,
-                    item.coordinates.lng,
-                    item.location,
-                  )
-                }
-                accessibilityRole="button"
-                accessibilityLabel={`Get directions to ${item.location}`}
-                android_ripple={{
-                  color: isDark
-                    ? "rgba(255, 255, 255, 0.12)"
-                    : "rgba(255, 103, 25, 0.12)",
-                  borderless: false,
-                  foreground: true,
-                }}
-                style={styles.locationBtnInner}
-              >
-                <View className="flex-row items-center flex-1">
-                  <View
-                    className={`w-9 h-9 rounded-full items-center justify-center mr-3 ${
-                      isDark ? "bg-[#222]" : "bg-orange-50"
-                    }`}
-                  >
-                    <Ionicons name="location" size={18} color={PRIMARY} />
-                  </View>
-                  <View className="flex-1">
-                    <Text
-                      className={`text-[11px] font-medium mb-0.5 ${
-                        isDark ? "text-gray-500" : "text-gray-400"
-                      }`}
-                    >
-                      Location
-                    </Text>
-                    <Text
-                      className={`text-[13px] font-bold ${
-                        isDark ? "text-white" : "text-gray-800"
-                      }`}
-                      numberOfLines={1}
-                    >
-                      {item.location}
-                    </Text>
-                  </View>
-                </View>
-                <View
-                  className={`w-8 h-8 rounded-full items-center justify-center border ${
-                    isDark
-                      ? "bg-[#222] border-[#333]"
-                      : "bg-gray-50 border-gray-200"
-                  }`}
-                >
-                  <Ionicons name="navigate" size={14} color={PRIMARY} />
-                </View>
-              </Pressable>
-            </View>
-          </View>
-        </Pressable>
+          </Pressable>
+        </View>
       </View>
-    </View>
-  );
-};
+    );
+  },
+);
+
+ProgramCard.displayName = "ProgramCard";
+
+const FILTERS = ["All", "General", "Team"] as const;
+type ProgramFilter = (typeof FILTERS)[number];
 
 export default function WeeklyPrograms() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const router = useRouter();
-  const { top } = useSafeAreaInsets();
   const isAdmin = useIsAdmin();
-
-  // Header Heights
-  const STATIC_HEADER_HEIGHT = top + 80;
-  const FILTER_SECTION_HEIGHT = 100;
-  const TOTAL_HEADER_HEIGHT = STATIC_HEADER_HEIGHT + FILTER_SECTION_HEIGHT;
-
-  const scrollY = useRef(new Animated.Value(0)).current;
-
-  // Use a clamped value for diffClamp to prevent glitches during scroll bouncing
-  const clampedScrollY = scrollY.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-    extrapolateLeft: "clamp",
-  });
-
-  const diffClamp = Animated.diffClamp(
-    clampedScrollY,
-    0,
-    FILTER_SECTION_HEIGHT,
-  );
-
-  const translateY = diffClamp.interpolate({
-    inputRange: [0, FILTER_SECTION_HEIGHT],
-    outputRange: [0, -FILTER_SECTION_HEIGHT],
-    extrapolate: "clamp",
-  });
-
-  const FILTERS = ["All", "General", "Team"] as const;
-  type ProgramFilter = (typeof FILTERS)[number];
 
   const [selectedFilter, setSelectedFilter] = useState<ProgramFilter>("All");
 
@@ -355,7 +343,7 @@ export default function WeeklyPrograms() {
 
   useEffect(() => {
     loadPrograms();
-  }, []);
+  }, [loadPrograms]);
 
   // Keep the bell icons in sync with what is actually scheduled on the device
   useEffect(() => {
@@ -376,9 +364,9 @@ export default function WeeklyPrograms() {
     };
   }, []);
 
-  const onRefresh = () => {
+  const onRefresh = useCallback(() => {
     loadPrograms(true);
-  };
+  }, [loadPrograms]);
 
   const parseProgramDate = (dayStr: string, timeStr: string): Date => {
     const now = new Date();
@@ -419,94 +407,96 @@ export default function WeeklyPrograms() {
 
   const programReminderId = (program: Program) => `program_${program.id}`;
 
-  const handleToggleAlert = async (program: Program) => {
-    if (isScheduling) return;
+  const handleToggleAlert = useCallback(
+    async (program: Program) => {
+      if (isScheduling) return;
 
-    const eventId = programReminderId(program);
+      const eventId = programReminderId(program);
 
-    // Turning an existing reminder off
-    if (activeReminderIds.has(eventId)) {
-      await cancelReminders(eventId);
-      return;
-    }
-
-    setIsScheduling(true);
-    try {
-      // Ask for permission in context, only when a reminder is created
-      const permission = await ensurePermission();
-      if (permission !== "granted") {
-        setInfoModal({
-          title: "Notifications Off",
-          message:
-            "Enable notifications in your device settings to receive program reminders.",
-          type: "info",
-        });
+      // Turning an existing reminder off
+      if (activeReminderIds.has(eventId)) {
+        await cancelReminders(eventId);
         return;
       }
 
-      // Android 12+: without exact alarms the OS may delay delivery
-      await ensureExactAlarmPermission();
+      setIsScheduling(true);
+      try {
+        const permission = await ensurePermission();
+        if (permission !== "granted") {
+          setInfoModal({
+            title: "Notifications Off",
+            message:
+              "Enable notifications in your device settings to receive program reminders.",
+            type: "info",
+          });
+          return;
+        }
 
-      const startsAt = parseProgramDate(program.day, program.time).getTime();
-      if (!Number.isFinite(startsAt) || startsAt <= Date.now()) {
+        await ensureExactAlarmPermission();
+
+        const startsAt = parseProgramDate(program.day, program.time).getTime();
+        if (!Number.isFinite(startsAt) || startsAt <= Date.now()) {
+          setInfoModal({
+            title: "Program Unavailable",
+            message:
+              "This program has already started or has an invalid schedule.",
+            type: "info",
+          });
+          return;
+        }
+
+        const target: ReminderTarget = {
+          eventId,
+          title: program.title,
+          startsAt,
+          url: "/programs",
+          shortDescription: program.location,
+          categoryId: PROGRAM_CATEGORY_ID,
+        };
+
+        const scheduledOffsets = await scheduleReminders(
+          target,
+          PROGRAM_OFFSETS_MIN,
+          { repeats: "weekly" },
+        );
+
+        if (scheduledOffsets.length === 0) {
+          setInfoModal({
+            title: "Reminder Error",
+            message:
+              "Could not schedule the reminder. Please try again from the Programs screen.",
+            type: "error",
+          });
+          return;
+        }
+
+        await sendConfirmationNotification(target, scheduledOffsets);
+
         setInfoModal({
-          title: "Program Unavailable",
-          message:
-            "This program has already started or has an invalid schedule.",
-          type: "info",
+          title: "Reminder Set 🔔",
+          message: `We'll notify you 30 minutes before and when ${program.title} starts — every week.`,
+          type: "success",
         });
-        return;
-      }
-
-      const target: ReminderTarget = {
-        eventId,
-        title: program.title,
-        startsAt,
-        url: "/programs",
-        shortDescription: program.location,
-        categoryId: PROGRAM_CATEGORY_ID,
-      };
-
-      // 30 minutes before + at the start time, repeating every week.
-      // All of this is local: it works with zero internet.
-      const scheduledOffsets = await scheduleReminders(
-        target,
-        PROGRAM_OFFSETS_MIN,
-        { repeats: "weekly" },
-      );
-
-      if (scheduledOffsets.length === 0) {
+      } catch (err) {
+        console.warn("[programs] Failed toggling reminder:", err);
         setInfoModal({
           title: "Reminder Error",
-          message:
-            "Could not schedule the reminder. Please try again from the Programs screen.",
+          message: "Could not schedule the reminder. Please try again.",
           type: "error",
         });
-        return;
+      } finally {
+        setIsScheduling(false);
       }
+    },
+    [activeReminderIds, isScheduling],
+  );
 
-      await sendConfirmationNotification(target, scheduledOffsets);
-
-      setInfoModal({
-        title: "Reminder Set 🔔",
-        message: `We'll notify you 30 minutes before and when ${program.title} starts — every week.`,
-        type: "success",
-      });
-    } catch (err) {
-      console.warn("[programs] Failed toggling reminder:", err);
-      setInfoModal({
-        title: "Reminder Error",
-        message: "Could not schedule the reminder. Please try again.",
-        type: "error",
-      });
-    } finally {
-      setIsScheduling(false);
-    }
-  };
-
-  const isAlertActive = (program: Program) => {
-    return activeReminderIds.has(programReminderId(program));
-  };
+  const isAlertActive = useCallback(
+    (program: Program) => {
+      return activeReminderIds.has(programReminderId(program));
+    },
+    [activeReminderIds],
+  );
 
   const isGeneralProgram = (program: Program) => {
     const cat = (program.category || "").toLowerCase().trim();
@@ -545,12 +535,107 @@ export default function WeeklyPrograms() {
     );
   };
 
-  const filteredPrograms = programs.filter((program) => {
-    if (selectedFilter === "All") return true;
-    if (selectedFilter === "General") return isGeneralProgram(program);
-    if (selectedFilter === "Team") return isTeamProgram(program);
-    return true;
-  });
+  const filteredPrograms = useMemo(() => {
+    return programs.filter((program) => {
+      if (selectedFilter === "All") return true;
+      if (selectedFilter === "General") return isGeneralProgram(program);
+      if (selectedFilter === "Team") return isTeamProgram(program);
+      return true;
+    });
+  }, [programs, selectedFilter]);
+
+  const handleEdit = useCallback(
+    (prog: Program) => {
+      router.push(`/programs/manage?id=${prog.id}`);
+    },
+    [router],
+  );
+
+  const keyExtractor = useCallback((item: Program) => {
+    return String(item.id || (item as any)._id || item.title);
+  }, []);
+
+  const renderItem = useCallback(
+    ({ item }: { item: Program }) => (
+      <ProgramCard
+        item={item}
+        isDark={isDark}
+        isAlertActive={isAlertActive(item)}
+        onToggleAlert={handleToggleAlert}
+        isAdmin={isAdmin}
+        onEdit={handleEdit}
+      />
+    ),
+    [isDark, isAlertActive, handleToggleAlert, isAdmin, handleEdit],
+  );
+
+  const ListHeader = useMemo(
+    () => (
+      <View style={{ paddingTop: 16, paddingBottom: 16 }}>
+        <Text
+          className={`text-base leading-6 mb-4 ${
+            isDark ? "text-gray-400" : "text-gray-500"
+          }`}
+        >
+          Discover our weekly gatherings. Tap the location to get directions.
+        </Text>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: 20 }}
+        >
+          {FILTERS.map((filter) => {
+            const isSelected = selectedFilter === filter;
+            return (
+              <View
+                key={filter}
+                style={[
+                  styles.filterPillWrap,
+                  isSelected
+                    ? styles.filterPillSelected
+                    : isDark
+                      ? styles.filterPillDark
+                      : styles.filterPillLight,
+                ]}
+              >
+                <Pressable
+                  onPress={() => setSelectedFilter(filter)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                  accessibilityLabel={`Filter by ${filter}`}
+                  android_ripple={{
+                    color: isSelected
+                      ? "rgba(255, 255, 255, 0.3)"
+                      : isDark
+                        ? "rgba(255, 255, 255, 0.12)"
+                        : "rgba(0, 0, 0, 0.08)",
+                    borderless: false,
+                    foreground: true,
+                  }}
+                  style={styles.filterPillInner}
+                >
+                  <Text
+                    style={[
+                      styles.filterPillText,
+                      isSelected
+                        ? styles.filterPillTextSelected
+                        : isDark
+                          ? styles.filterPillTextDark
+                          : styles.filterPillTextLight,
+                    ]}
+                  >
+                    {filter}
+                  </Text>
+                </Pressable>
+              </View>
+            );
+          })}
+        </ScrollView>
+      </View>
+    ),
+    [isDark, selectedFilter],
+  );
 
   return (
     <>
@@ -562,11 +647,24 @@ export default function WeeklyPrograms() {
       <StatusBar style={isDark ? "light" : "dark"} />
 
       <View className={`flex-1 ${isDark ? "bg-[#0A0A0A]" : "bg-[#f8fafc]"}`}>
+        {/* Fixed, rock-solid ScreenHeader */}
+        <ScreenHeader
+          title="Programs"
+          rightAction={
+            isAdmin ? (
+              <AdminActionButton
+                label="Add"
+                onPress={() => router.push("/programs/manage")}
+              />
+            ) : null
+          }
+        />
+
         {loading && programs.length === 0 ? (
           <ScrollView
             style={{ flex: 1 }}
             contentContainerStyle={{
-              paddingTop: TOTAL_HEADER_HEIGHT + 20,
+              paddingTop: 16,
               paddingHorizontal: 20,
               paddingBottom: 40,
             }}
@@ -605,7 +703,9 @@ export default function WeeklyPrograms() {
                   </View>
 
                   <View
-                    className={`h-[1px] w-full mb-4 ${isDark ? "bg-[#222]" : "bg-gray-100"}`}
+                    className={`h-[1px] w-full mb-4 ${
+                      isDark ? "bg-[#222]" : "bg-gray-100"
+                    }`}
                   />
 
                   <View
@@ -647,29 +747,11 @@ export default function WeeklyPrograms() {
             ))}
           </ScrollView>
         ) : (
-          <Animated.FlatList
+          <FlatList
             data={filteredPrograms}
-            keyExtractor={(item) => item.id}
-            onScroll={Animated.event(
-              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-              { useNativeDriver: true },
-            )}
-            scrollEventThrottle={16}
-            ListHeaderComponent={
-              <View style={{ height: TOTAL_HEADER_HEIGHT }} />
-            }
-            renderItem={({ item }) => (
-              <View style={{ paddingTop: 20 }}>
-                <ProgramCard
-                  item={item}
-                  isDark={isDark}
-                  isAlertActive={isAlertActive}
-                  onToggleAlert={handleToggleAlert}
-                  isAdmin={isAdmin}
-                  onEdit={(prog) => router.push(`/programs/manage?id=${prog.id}`)}
-                />
-              </View>
-            )}
+            keyExtractor={keyExtractor}
+            renderItem={renderItem}
+            ListHeaderComponent={ListHeader}
             contentContainerStyle={{
               paddingHorizontal: 20,
               paddingBottom: 40,
@@ -708,108 +790,15 @@ export default function WeeklyPrograms() {
                 onRefresh={onRefresh}
                 tintColor={PRIMARY}
                 colors={[PRIMARY]}
-                progressViewOffset={TOTAL_HEADER_HEIGHT}
               />
             }
             showsVerticalScrollIndicator={false}
+            initialNumToRender={5}
+            maxToRenderPerBatch={5}
+            windowSize={7}
+            removeClippedSubviews={Platform.OS === "android"}
           />
         )}
-
-        {/* Static Header: Back and Title */}
-        <ScreenHeader
-          title="Programs"
-          rightAction={
-            isAdmin ? (
-              <AdminActionButton
-                label="Add"
-                onPress={() => router.push("/programs/manage")}
-              />
-            ) : null
-          }
-          containerStyle={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: isDark ? "#0A0A0A" : "#f8fafc",
-            borderBottomColor: isDark ? "#1f2937" : "#e5e7eb",
-          }}
-        />
-
-        {/* Animated Filters and Description */}
-        <Animated.View
-          style={{
-            position: "absolute",
-            top: STATIC_HEADER_HEIGHT,
-            left: 0,
-            right: 0,
-            zIndex: 5,
-            height: FILTER_SECTION_HEIGHT,
-            backgroundColor: isDark ? "#0A0A0A" : "#f8fafc",
-            transform: [{ translateY }],
-          }}
-        >
-          <Text
-            className={`text-base leading-6 pr-4 ${isDark ? "text-gray-400" : "text-gray-500"}`}
-            style={{ paddingHorizontal: 20 }}
-          >
-            Discover our weekly gatherings. Tap the location to get directions.
-          </Text>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            className="mt-4"
-            contentContainerStyle={{ paddingHorizontal: 20 }}
-          >
-            {FILTERS.map((filter) => {
-              const isSelected = selectedFilter === filter;
-              return (
-                <View
-                  key={filter}
-                  style={[
-                    styles.filterPillWrap,
-                    isSelected
-                      ? styles.filterPillSelected
-                      : isDark
-                        ? styles.filterPillDark
-                        : styles.filterPillLight,
-                  ]}
-                >
-                  <Pressable
-                    onPress={() => setSelectedFilter(filter)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: isSelected }}
-                    accessibilityLabel={`Filter by ${filter}`}
-                    android_ripple={{
-                      color: isSelected
-                        ? "rgba(255, 255, 255, 0.3)"
-                        : isDark
-                          ? "rgba(255, 255, 255, 0.12)"
-                          : "rgba(0, 0, 0, 0.08)",
-                      borderless: false,
-                      foreground: true,
-                    }}
-                    style={styles.filterPillInner}
-                  >
-                    <Text
-                      style={[
-                        styles.filterPillText,
-                        isSelected
-                          ? styles.filterPillTextSelected
-                          : isDark
-                            ? styles.filterPillTextDark
-                            : styles.filterPillTextLight,
-                      ]}
-                    >
-                      {filter}
-                    </Text>
-                  </Pressable>
-                </View>
-              );
-            })}
-          </ScrollView>
-        </Animated.View>
       </View>
 
       <InfoModal

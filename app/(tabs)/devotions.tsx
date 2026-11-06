@@ -143,7 +143,7 @@ const CompactArticleCard = React.memo<CompactArticleCardProps>(
             {/* Single meta row: author · views · bookmark */}
             <View style={styles.compactMetaRow}>
               <Text style={styles.compactAuthor} numberOfLines={1}>
-                {item.author || "Fellowship"}
+                {item.author || "4 Kilo Fellowship"}
               </Text>
 
               <View style={styles.compactMetaActions}>
@@ -239,7 +239,7 @@ const MinimalDevotionCard = React.memo<MinimalDevotionCardProps>(
               <View style={styles.authorMeta}>
                 <View style={styles.authorNameRow}>
                   <Text style={styles.authorName} numberOfLines={1}>
-                    {item.author}
+                    {item.author || "4 Kilo Fellowship"}
                   </Text>
                   <Ionicons
                     name="checkmark-circle"
@@ -248,9 +248,7 @@ const MinimalDevotionCard = React.memo<MinimalDevotionCardProps>(
                     style={{ marginLeft: 3, marginRight: 4 }}
                   />
                   <View style={styles.fellowBadge}>
-                    <Text style={styles.fellowBadgeText}>
-                      {item.authorRole ? (item.authorRole.includes("Counseling") ? "Counseling" : "Fellowship") : "Fellowship"}
-                    </Text>
+                    <Text style={styles.fellowBadgeText}>Official</Text>
                   </View>
                 </View>
                 <View style={styles.metaSubRow}>
@@ -479,29 +477,27 @@ export default function Devotions() {
     }
   }, []);
 
-  const handleAuthorPress = useCallback((item: Devotion) => {
+  const handleAuthorPress = useCallback((item?: Devotion) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    const authorLower = (item.author || "").toLowerCase();
+    const authorLower = (item?.author || "").toLowerCase();
     const isOfficial =
-      !item.authorId ||
+      !item?.authorId ||
       authorLower.includes("fellowship") ||
-      authorLower.includes("counseling") ||
-      authorLower.includes("team") ||
-      item.authorRole?.toLowerCase().includes("leadership");
+      authorLower.includes("4 kilo") ||
+      authorLower.includes("official") ||
+      !item?.authorRole ||
+      item.authorRole.includes("Official") ||
+      item.authorRole.includes("Ministry");
 
-    const targetAuthorId =
-      item.authorId || (isOfficial ? "4kilofellowship" : "fellowship-author");
-    const targetName = item.author || "4 Kilo Fellowship";
-    const targetHandle =
-      item.authorUsername ||
-      (isOfficial ? "aau4kilofellowship" : targetName.toLowerCase().replace(/\s+/g, "_"));
+    const targetAuthorId = isOfficial
+      ? "user-fellowship"
+      : item?.authorId || "user-fellowship";
+    const targetName = isOfficial ? "4 Kilo Fellowship" : item!.author;
+    const targetHandle = isOfficial ? "@4kilo_fellowship" : (item?.authorUsername || "4kilo_fellowship");
     const targetAvatar =
-      item.authorAvatar ||
-      (isOfficial
-        ? "https://images.unsplash.com/photo-1544427920-c49ccfb85579?auto=format&fit=crop&w=400&q=80"
-        : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80");
-    const targetRole =
-      item.authorRole || (isOfficial ? "Counseling & Fellowship Leadership" : "Devotional Writer");
+      item?.authorAvatar ||
+      "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=400&q=80";
+    const targetRole = isOfficial ? "Executive Ministry" : (item?.authorRole || "Executive Ministry");
 
     router.push({
       pathname: `/community/user/${targetAuthorId}`,
@@ -511,7 +507,7 @@ export default function Devotions() {
         username: targetHandle,
         avatar: targetAvatar,
         team: targetRole,
-        department: isOfficial ? "Campus Ministry & Counseling" : "Addis Ababa University",
+        department: "Campus Ministry Leadership",
       },
     });
   }, []);
@@ -685,7 +681,7 @@ export default function Devotions() {
                         )}
                       </View>
                       <Text style={styles.heroAuthor} numberOfLines={1}>
-                        {latestDevotion.author}
+                        {latestDevotion.author || "4 Kilo Fellowship"}
                       </Text>
                       <Ionicons
                         name="checkmark-circle"
@@ -766,33 +762,7 @@ export default function Devotions() {
             </View>
           )}
 
-          {/* 4. ALL ARTICLES & DEVOTIONS (Vertical Feed) */}
-          {devotions.length > 0 && (
-            <View style={styles.allDevotionsSection}>
-              <View style={[styles.sectionHeader, { paddingHorizontal: 16, marginBottom: 14 }]}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                  <Ionicons name="reader-outline" size={17} color={PRIMARY} />
-                  <Text style={styles.sectionTitle}>All Articles & Devotions</Text>
-                </View>
-              </View>
-              <View style={styles.allDevotionsList}>
-                {devotions.map((item: Devotion) => (
-                  <MinimalDevotionCard
-                    key={`feed-${item._id}`}
-                    item={item}
-                    isSaved={isDevotionSaved(item._id)}
-                    isRead={isDevotionRead(item._id)}
-                    onPress={() => router.push(`/devotion/${item._id}`)}
-                    onAuthorPress={() => handleAuthorPress(item)}
-                    onToggleSave={() => handleToggleSave(item)}
-                    onShare={() => handleShare(item)}
-                  />
-                ))}
-              </View>
-            </View>
-          )}
-
-          {/* 5. CTA: Apply to Write */}
+          {/* 4. CTA: Apply to Write */}
           <View style={styles.ctaContainer}>
             <View style={styles.ctaIconCircle}>
               <Ionicons name="create-outline" size={22} color={PRIMARY} />
@@ -1551,12 +1521,6 @@ const styles = StyleSheet.create({
     color: "#71717a",
     textAlign: "center",
     lineHeight: 18,
-  },
-  allDevotionsSection: {
-    marginBottom: 28,
-  },
-  allDevotionsList: {
-    paddingHorizontal: 16,
   },
   // CTA Section
   ctaContainer: {
