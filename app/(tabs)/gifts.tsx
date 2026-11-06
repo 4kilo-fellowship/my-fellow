@@ -18,7 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
-import { useRouter } from "expo-router";
+import { useNavigation, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -62,6 +62,7 @@ const Gifts = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const router = useRouter();
+  const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
@@ -71,6 +72,14 @@ const Gifts = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [pendingDonationData, setPendingDonationData] =
     useState<DonationForm | null>(null);
+
+  const isTyping = isAmountFocused || isEmailFocused;
+
+  useEffect(() => {
+    navigation.setOptions({
+      tabBarStyle: isTyping ? { display: "none" } : undefined,
+    });
+  }, [navigation, isTyping]);
 
   const [infoModal, setInfoModal] = useState<{
     visible: boolean;

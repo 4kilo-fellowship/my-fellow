@@ -230,30 +230,35 @@ export default function AppTabBar(props: any) {
     }
   }, []);
 
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(
+    () => Keyboard.isVisible?.() ?? false
+  );
 
   useEffect(() => {
-    // Listen to both show and hide events across Android and iOS
-    const showEvents =
-      Platform.OS === "ios"
-        ? (["keyboardWillShow", "keyboardDidShow"] as const)
-        : (["keyboardDidShow", "keyboardWillShow"] as const);
-    const hideEvents =
-      Platform.OS === "ios"
-        ? (["keyboardWillHide", "keyboardDidHide"] as const)
-        : (["keyboardDidHide", "keyboardWillHide"] as const);
+    // Follow official React Navigation keyboard handling:
+    // iOS: keyboardWillShow / keyboardWillHide for instantaneous frame-accurate response
+    // Android: keyboardDidShow / keyboardDidHide (reliable native events)
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
-    const subscriptions = [
-      ...showEvents.map((evt) =>
-        Keyboard.addListener(evt, () => setIsKeyboardVisible(true)),
-      ),
-      ...hideEvents.map((evt) =>
-        Keyboard.addListener(evt, () => setIsKeyboardVisible(false)),
-      ),
-    ];
+    const showSub = Keyboard.addListener(showEvent, () => {
+      setIsKeyboardVisible(true);
+    });
+
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      // Guard: On Android, keyboards can fire temporary hide events while typing
+      // or updating candidate suggestions. If Keyboard.isVisible() is still true, don't unhide.
+      if (Keyboard.isVisible?.()) {
+        return;
+      }
+      setIsKeyboardVisible(false);
+    });
 
     return () => {
-      subscriptions.forEach((sub) => sub.remove());
+      showSub.remove();
+      hideSub.remove();
     };
   }, []);
 
@@ -283,7 +288,20 @@ export default function AppTabBar(props: any) {
     transform: [{ translateX: translateX.value }],
   }));
 
-  if (isKeyboardVisible || !state || !routes.length) {
+  const focusedRoute = state?.routes?.[currentIndex];
+  const focusedDescriptor = descriptors?.[focusedRoute?.key];
+  const focusedOptions = focusedDescriptor?.options;
+
+  // Respect tabBarStyle: { display: 'none' } if set by any screen
+  const isHiddenByStyle = focusedOptions?.tabBarStyle?.display === "none";
+  const shouldHideOnKeyboard = focusedOptions?.tabBarHideOnKeyboard ?? true;
+
+  if (
+    !state ||
+    !routes.length ||
+    isHiddenByStyle ||
+    (shouldHideOnKeyboard && isKeyboardVisible)
+  ) {
     return null;
   }
 
@@ -400,7 +418,10 @@ export default function AppTabBar(props: any) {
 
 const styles = StyleSheet.create({
   tabBarWrapper: {
-    width: "100%",
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
     zIndex: 100,
   },
   iosGlassContainer: {
