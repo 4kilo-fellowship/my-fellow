@@ -1,3 +1,4 @@
+import AppButton from "@/components/AppButton";
 import { AppBottomSheet } from "@/components/AppBottomSheet";
 import { PRIMARY } from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
@@ -6,7 +7,6 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Keyboard,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -128,49 +128,24 @@ export const ReasonModal = ({
           )}
         </View>
 
-        {/* Action Button */}
+        {/* Action Button - Exact same as Auth screens via AppButton */}
         <View style={styles.actionSection}>
-          <View
-            style={[
-              styles.nativeButtonOuter,
-              { backgroundColor: PRIMARY },
-              styles.buttonShadow,
-            ]}
-          >
-            <Pressable
-              onPress={() => {
-                if (Platform.OS !== "web") {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
-                    () => {},
-                  );
-                }
-                handleSubmit();
-              }}
-              unstable_pressDelay={0}
-              accessibilityRole="button"
-              accessibilityLabel="Continue to Payment"
-              android_ripple={{
-                color: "rgba(255, 255, 255, 0.28)",
-                borderless: false,
-                foreground: true,
-              }}
-              style={({ pressed }) => [
-                styles.nativeButtonInner,
-                Platform.OS === "ios" &&
-                  pressed && {
-                    opacity: 0.88,
-                    transform: [{ scale: 0.99 }],
-                  },
-              ]}
-            >
-              <Text style={styles.buttonText}>Continue to Payment</Text>
-              <Ionicons
-                name="arrow-forward"
-                size={18}
-                color="#FFFFFF"
-              />
-            </Pressable>
-          </View>
+          <AppButton
+            label="Continue to Payment"
+            onPress={() => {
+              if (Platform.OS !== "web") {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+                  () => {},
+                );
+              }
+              handleSubmit();
+            }}
+            icon="arrow-forward"
+            iconPosition="right"
+            size="lg"
+            fullWidth={true}
+            isDark={isDark}
+          />
         </View>
       </View>
     </AppBottomSheet>
@@ -214,7 +189,7 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 16,
     paddingHorizontal: 16,
-    marginBottom: 16,
+    marginBottom: 18,
   },
   input: {
     flex: 1,
@@ -225,38 +200,6 @@ const styles = StyleSheet.create({
   },
   actionSection: {
     width: "100%",
-    marginTop: 4,
-  },
-  nativeButtonOuter: {
-    width: "100%",
-    height: 52,
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  nativeButtonInner: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  buttonShadow: {
-    ...Platform.select({
-      ios: {
-        shadowColor: "#ff6719",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.35,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
+    marginTop: 2,
   },
 });
