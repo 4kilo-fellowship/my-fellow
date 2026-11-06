@@ -6,22 +6,13 @@ import * as Haptics from "expo-haptics";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Keyboard,
-  LayoutAnimation,
   Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  UIManager,
   View,
 } from "react-native";
-
-if (
-  Platform.OS === "android" &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 interface ReasonModalProps {
   visible: boolean;
@@ -37,44 +28,13 @@ export const ReasonModal = ({
   isDark = false,
 }: ReasonModalProps) => {
   const [reason, setReason] = useState<string>("Gift");
-  const [isFocused, setIsFocused] = useState<boolean>(true);
-  const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
+  const [isFocused, setIsFocused] = useState<boolean>(false);
   const inputRef = useRef<React.ComponentRef<typeof TextInput>>(null);
-
-  useEffect(() => {
-    const showEvent =
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent =
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const showSub = Keyboard.addListener(showEvent, (e) => {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setKeyboardHeight(e.endCoordinates.height);
-    });
-
-    const hideSub = Keyboard.addListener(hideEvent, () => {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setKeyboardHeight(0);
-    });
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
 
   useEffect(() => {
     if (visible) {
       setReason("Gift");
-      setIsFocused(true);
-      const t1 = setTimeout(() => inputRef.current?.focus(), 150);
-      const t2 = setTimeout(() => inputRef.current?.focus(), 400);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-      };
-    } else {
-      setKeyboardHeight(0);
+      setIsFocused(false);
     }
   }, [visible]);
 
@@ -94,21 +54,9 @@ export const ReasonModal = ({
       visible={visible}
       onClose={onClose}
       isDark={isDark}
-      snapPoints={["full"]}
+      snapPoints={["half", "full"]}
     >
-      <View
-        style={[
-          styles.sheetContainer,
-          {
-            paddingBottom:
-              keyboardHeight > 0
-                ? keyboardHeight + 12
-                : Platform.OS === "ios"
-                  ? 36
-                  : 24,
-          },
-        ]}
-      >
+      <View style={styles.sheetContainer}>
         {/* Header Row */}
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
@@ -129,7 +77,7 @@ export const ReasonModal = ({
           </TouchableOpacity>
         </View>
 
-        {/* Input Box - styled like Auth input */}
+        {/* Input Box - Styled like Auth input, no auto-active keyboard */}
         <View
           style={[
             styles.inputContainer,
@@ -158,7 +106,7 @@ export const ReasonModal = ({
             returnKeyType="done"
             onSubmitEditing={handleSubmit}
             selectionColor={PRIMARY}
-            autoFocus={true}
+            autoFocus={false}
           />
           {reason.length > 0 && (
             <TouchableOpacity
@@ -205,6 +153,7 @@ const styles = StyleSheet.create({
   sheetContainer: {
     width: "100%",
     paddingTop: 4,
+    paddingBottom: Platform.OS === "ios" ? 16 : 8,
   },
   headerRow: {
     flexDirection: "row",
