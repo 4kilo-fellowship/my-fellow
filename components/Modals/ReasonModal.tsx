@@ -1,7 +1,8 @@
 import { AppBottomSheet } from "@/components/AppBottomSheet";
 import { PRIMARY } from "@/constants/colors";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Keyboard,
   Platform,
@@ -9,16 +10,18 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export interface ReasonModalProps {
+interface ReasonModalProps {
   visible: boolean;
   onClose: () => void;
   onSubmit: (reason: string) => void;
   isDark?: boolean;
 }
+
+const QUICK_REASONS = ["Gift", "Tithe", "Offering", "Support"];
 
 export const ReasonModal = ({
   visible,
@@ -26,25 +29,26 @@ export const ReasonModal = ({
   onSubmit,
   isDark = false,
 }: ReasonModalProps) => {
-  const insets = useSafeAreaInsets();
-  const [reason, setReason] = useState("");
+  const [reason, setReason] = useState<string>("Gift");
+  const [isFocused, setIsFocused] = useState<boolean>(false);
 
-  const containerBg = isDark ? "#18181B" : "#FFFFFF";
-  const textColor = isDark ? "#FFFFFF" : "#09090B";
-  const subTextColor = isDark ? "#A1A1AA" : "#888888";
-  const inputBg = isDark ? "#27272A" : "#F2F2F2";
-
-  const handleContinue = () => {
-    const trimmed = reason.trim();
-    if (!trimmed) return;
-    Keyboard.dismiss();
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+  useEffect(() => {
+    if (visible) {
+      setReason("Gift");
+      setIsFocused(false);
     }
-    onSubmit(trimmed);
+  }, [visible]);
+
+  const handleSubmit = () => {
+    Keyboard.dismiss();
+    const trimmed = reason.trim();
+    onSubmit(trimmed || "Gift");
   };
 
-  const isEnabled = reason.trim().length > 0;
+  const cardBg = isDark ? "#27272A" : "#F4F4F5";
+  const textColor = isDark ? "#FFFFFF" : "#09090B";
+  const subTextColor = isDark ? "#A1A1AA" : "#71717A";
+  const borderColor = isDark ? "#3F3F46" : "#E4E4E7";
 
   return (
     <AppBottomSheet
@@ -53,62 +57,155 @@ export const ReasonModal = ({
       isDark={isDark}
       snapPoints={["half", "full"]}
     >
-      <View
-        style={{
-          width: "100%",
-          paddingHorizontal: 4,
-          paddingBottom: Math.max(insets.bottom, 12),
-        }}
-      >
-        <Text style={[styles.title, { color: textColor }]}>
-          Provide a Reason
-        </Text>
-        <Text
-          style={{
-            color: subTextColor,
-            marginTop: 4,
-            marginBottom: 16,
-            fontSize: 13,
-          }}
-        >
-          What is this payment or contribution for?
-        </Text>
+      <View style={styles.sheetContainer}>
+        {/* Header */}
+        <View style={styles.headerRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.title, { color: textColor }]}>
+              Provide a Reason
+            </Text>
+            <Text style={[styles.subtitle, { color: subTextColor }]}>
+              What is this payment or contribution for?
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={onClose}
+            style={[styles.closeBtn, { backgroundColor: cardBg }]}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="close" size={18} color={subTextColor} />
+          </TouchableOpacity>
+        </View>
 
-        <TextInput
-          value={reason}
-          onChangeText={setReason}
-          placeholder="e.g. Gift, Tithe, Offering"
-          placeholderTextColor={isDark ? "#71717A" : "#A1A1AA"}
+        {/* Quick Suggestions Chips */}
+        <View style={styles.chipsRow}>
+          {QUICK_REASONS.map((item) => {
+            const isSelected = reason === item;
+            return (
+              <TouchableOpacity
+                key={item}
+                onPress={() => {
+                  if (Platform.OS !== "web") {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+                      () => {},
+                    );
+                  }
+                  setReason(item);
+                }}
+                activeOpacity={0.7}
+                style={[
+                  styles.chip,
+                  {
+                    backgroundColor: isSelected
+                      ? isDark
+                        ? "rgba(255, 103, 25, 0.2)"
+                        : "rgba(255, 103, 25, 0.12)"
+                      : cardBg,
+                    borderColor: isSelected ? PRIMARY : borderColor,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    {
+                      color: isSelected ? PRIMARY : subTextColor,
+                      fontWeight: isSelected ? "700" : "500",
+                    },
+                  ]}
+                >
+                  {item}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Text Input */}
+        <View
           style={[
-            styles.input,
+            styles.inputContainer,
             {
-              backgroundColor: inputBg,
-              color: textColor,
-            },
-          ]}
-          returnKeyType="done"
-          onSubmitEditing={handleContinue}
-          selectionColor={PRIMARY}
-        />
-
-        <View style={{ height: 20 }} />
-        <Pressable
-          disabled={!isEnabled}
-          onPress={handleContinue}
-          style={({ pressed }) => [
-            styles.button,
-            {
-              backgroundColor: isEnabled
-                ? PRIMARY
-                : isDark
-                  ? "#3F3F46"
-                  : "#FFC9A8",
-              opacity: pressed && isEnabled ? 0.88 : 1,
+              backgroundColor: cardBg,
+              borderColor: isFocused ? PRIMARY : borderColor,
+              borderWidth: isFocused ? 1.5 : 1,
             },
           ]}
         >
-          <Text style={styles.buttonText}>Continue to Payment →</Text>
-        </Pressable>
+          <Ionicons
+            name="create-outline"
+            size={20}
+            color={isFocused ? PRIMARY : subTextColor}
+            style={{ marginRight: 10 }}
+          />
+          <TextInput
+            style={[
+              styles.input,
+              { color: textColor },
+            ]}
+            placeholder="e.g. Fellowship Support, Gift, etc."
+            placeholderTextColor={isDark ? "#71717A" : "#A1A1AA"}
+            value={reason}
+            onChangeText={setReason}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            returnKeyType="done"
+            onSubmitEditing={handleSubmit}
+            selectionColor={PRIMARY}
+          />
+          {reason.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setReason("")}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name="close-circle"
+                size={18}
+                color={subTextColor}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Continue Button */}
+        <View style={styles.buttonOuter}>
+          <Pressable
+            onPress={() => {
+              if (Platform.OS !== "web") {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+                  () => {},
+                );
+              }
+              handleSubmit();
+            }}
+            unstable_pressDelay={0}
+            accessibilityRole="button"
+            accessibilityLabel="Continue to payment"
+            android_ripple={{
+              color: "rgba(255, 255, 255, 0.28)",
+              borderless: false,
+              foreground: true,
+            }}
+            style={({ pressed }) => [
+              styles.button,
+              { backgroundColor: PRIMARY },
+              Platform.OS === "ios" &&
+                pressed && {
+                  opacity: 0.88,
+                  transform: [{ scale: 0.99 }],
+                },
+            ]}
+          >
+            <Text style={styles.buttonText}>Continue to Payment</Text>
+            <Ionicons
+              name="arrow-forward"
+              size={18}
+              color="#FFFFFF"
+              style={{ marginLeft: 8 }}
+            />
+          </Pressable>
+        </View>
       </View>
     </AppBottomSheet>
   );
@@ -117,28 +214,79 @@ export const ReasonModal = ({
 export default ReasonModal;
 
 const styles = StyleSheet.create({
+  sheetContainer: {
+    paddingTop: 8,
+    paddingBottom: 20,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
   title: {
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: 20,
+    fontWeight: "800",
     letterSpacing: -0.3,
   },
-  input: {
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    height: 52,
-    fontSize: 16,
-    fontWeight: "500",
+  subtitle: {
+    fontSize: 13,
+    marginTop: 4,
   },
-  button: {
-    borderRadius: 28,
-    paddingVertical: 16,
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
+    marginLeft: 12,
+  },
+  chipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 16,
+  },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  chipText: {
+    fontSize: 13,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 52,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    marginBottom: 20,
+  },
+  input: {
+    flex: 1,
+    height: "100%",
+    fontSize: 15,
+    fontWeight: "600",
+    paddingVertical: 0,
+  },
+  buttonOuter: {
+    width: "100%",
+    borderRadius: 16,
     overflow: "hidden",
+  },
+  button: {
+    width: "100%",
+    height: 54,
+    borderRadius: 16,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
   },
   buttonText: {
     color: "#FFFFFF",
-    fontWeight: "700",
     fontSize: 16,
+    fontWeight: "700",
   },
 });

@@ -6,11 +6,7 @@ import {
   Platform,
   Modal,
   TouchableWithoutFeedback,
-  StyleProp,
-  ViewStyle,
-  useWindowDimensions,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export interface AppBottomSheetProps {
   visible: boolean;
@@ -18,7 +14,6 @@ export interface AppBottomSheetProps {
   children: React.ReactNode;
   isDark?: boolean;
   snapPoints?: ("half" | "full")[];
-  contentStyle?: StyleProp<ViewStyle>;
 }
 
 export const AppBottomSheet: React.FC<AppBottomSheetProps> = ({
@@ -27,14 +22,8 @@ export const AppBottomSheet: React.FC<AppBottomSheetProps> = ({
   children,
   isDark = false,
   snapPoints = ["half", "full"],
-  contentStyle,
 }) => {
-  const { height: windowHeight } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
   const containerBg = isDark ? "#18181B" : "#FFFFFF";
-  const isFullScreen = snapPoints.length === 1 && snapPoints[0] === "full";
-  const bottomInset = Math.max(insets.bottom, 16) + 16;
-  const minHalfHeight = isFullScreen ? undefined : windowHeight * 0.52;
 
   if (Platform.OS !== "web") {
     if (!visible) return null;
@@ -53,21 +42,8 @@ export const AppBottomSheet: React.FC<AppBottomSheetProps> = ({
           contentPadding={0}
           snapPoints={snapPoints}
         >
-          <RNHostView
-            matchContents={isFullScreen ? false : { vertical: true, horizontal: true }}
-          >
-            <View
-              style={[
-                styles.sheetContentBase,
-                isFullScreen ? styles.sheetContentFull : styles.sheetContentAuto,
-                {
-                  backgroundColor: containerBg,
-                  paddingBottom: bottomInset,
-                  minHeight: minHalfHeight,
-                },
-                contentStyle,
-              ]}
-            >
+          <RNHostView style={{ width: "100%" }}>
+            <View style={[styles.sheetContent, { backgroundColor: containerBg }]}>
               {children}
             </View>
           </RNHostView>
@@ -100,14 +76,7 @@ export const AppBottomSheet: React.FC<AppBottomSheetProps> = ({
               ]}
             />
           </View>
-          <View
-            style={[
-              styles.sheetContentBase,
-              styles.sheetContentAuto,
-              { backgroundColor: containerBg, paddingBottom: bottomInset },
-              contentStyle,
-            ]}
-          >
+          <View style={[styles.sheetContent, { backgroundColor: containerBg }]}>
             {children}
           </View>
         </View>
@@ -117,15 +86,12 @@ export const AppBottomSheet: React.FC<AppBottomSheetProps> = ({
 };
 
 const styles = StyleSheet.create({
-  sheetContentBase: {
+  sheetContent: {
     width: "100%",
+    flex: 1,
     paddingHorizontal: 20,
     paddingTop: 8,
-  },
-  sheetContentAuto: {},
-  sheetContentFull: {
-    flex: 1,
-    justifyContent: "flex-end",
+    paddingBottom: Platform.OS === "ios" ? 36 : 24,
   },
   webOverlay: {
     flex: 1,
