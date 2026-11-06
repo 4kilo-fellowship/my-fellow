@@ -93,16 +93,15 @@ export const ReasonModal = ({
                   }
                   setReason(item);
                 }}
-                activeOpacity={0.7}
+                activeOpacity={1}
                 style={[
                   styles.chip,
                   {
                     backgroundColor: isSelected
-                      ? isDark
-                        ? "rgba(255, 103, 25, 0.2)"
-                        : "rgba(255, 103, 25, 0.12)"
+                      ? PRIMARY
                       : cardBg,
                     borderColor: isSelected ? PRIMARY : borderColor,
+                    opacity: 1,
                   },
                 ]}
               >
@@ -110,8 +109,9 @@ export const ReasonModal = ({
                   style={[
                     styles.chipText,
                     {
-                      color: isSelected ? PRIMARY : subTextColor,
+                      color: isSelected ? "#FFFFFF" : textColor,
                       fontWeight: isSelected ? "700" : "500",
+                      opacity: 1,
                     },
                   ]}
                 >
