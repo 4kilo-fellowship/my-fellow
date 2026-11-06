@@ -21,8 +21,6 @@ interface ReasonModalProps {
   isDark?: boolean;
 }
 
-const QUICK_REASONS = ["Gift", "Tithe", "Offering", "Support"];
-
 export const ReasonModal = ({
   visible,
   onClose,
@@ -78,51 +76,7 @@ export const ReasonModal = ({
           </TouchableOpacity>
         </View>
 
-        {/* Quick Suggestions Chips */}
-        <View style={styles.chipsRow}>
-          {QUICK_REASONS.map((item) => {
-            const isSelected = reason === item;
-            return (
-              <TouchableOpacity
-                key={item}
-                onPress={() => {
-                  if (Platform.OS !== "web") {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
-                      () => {},
-                    );
-                  }
-                  setReason(item);
-                }}
-                activeOpacity={0.7}
-                style={[
-                  styles.chip,
-                  {
-                    backgroundColor: isSelected
-                      ? isDark
-                        ? "rgba(255, 103, 25, 0.2)"
-                        : "rgba(255, 103, 25, 0.12)"
-                      : cardBg,
-                    borderColor: isSelected ? PRIMARY : borderColor,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    {
-                      color: isSelected ? PRIMARY : subTextColor,
-                      fontWeight: isSelected ? "700" : "500",
-                    },
-                  ]}
-                >
-                  {item}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Text Input */}
+        {/* Text Input Box */}
         <View
           style={[
             styles.inputContainer,
@@ -144,7 +98,7 @@ export const ReasonModal = ({
               styles.input,
               { color: textColor },
             ]}
-            placeholder="e.g. Fellowship Support, Gift, etc."
+            placeholder="e.g. Gift, Tithe, Offering..."
             placeholderTextColor={isDark ? "#71717A" : "#A1A1AA"}
             value={reason}
             onChangeText={setReason}
@@ -153,6 +107,7 @@ export const ReasonModal = ({
             returnKeyType="done"
             onSubmitEditing={handleSubmit}
             selectionColor={PRIMARY}
+            autoFocus={true}
           />
           {reason.length > 0 && (
             <TouchableOpacity
@@ -216,13 +171,13 @@ export default ReasonModal;
 const styles = StyleSheet.create({
   sheetContainer: {
     paddingTop: 8,
-    paddingBottom: 20,
+    paddingBottom: 24,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: 20,
   },
   title: {
     fontSize: 20,
@@ -241,33 +196,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginLeft: 12,
   },
-  chipsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 16,
-  },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  chipText: {
-    fontSize: 13,
-  },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    height: 52,
+    height: 54,
     borderRadius: 16,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     marginBottom: 20,
   },
   input: {
     flex: 1,
     height: "100%",
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "600",
     paddingVertical: 0,
   },
