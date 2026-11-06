@@ -1,21 +1,19 @@
-import AppButton from "@/components/AppButton";
 import { AppBottomSheet } from "@/components/AppBottomSheet";
 import { PRIMARY } from "@/constants/colors";
-import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import {
   Keyboard,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-interface ReasonModalProps {
+export interface ReasonModalProps {
   visible: boolean;
   onClose: () => void;
   onSubmit: (reason: string) => void;
@@ -29,27 +27,24 @@ export const ReasonModal = ({
   isDark = false,
 }: ReasonModalProps) => {
   const insets = useSafeAreaInsets();
-  const [reason, setReason] = useState<string>("Gift");
-  const [isFocused, setIsFocused] = useState<boolean>(false);
-  const inputRef = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const [reason, setReason] = useState("");
 
-  useEffect(() => {
-    if (visible) {
-      setReason("Gift");
-      setIsFocused(false);
-    }
-  }, [visible]);
+  const containerBg = isDark ? "#18181B" : "#FFFFFF";
+  const textColor = isDark ? "#FFFFFF" : "#09090B";
+  const subTextColor = isDark ? "#A1A1AA" : "#888888";
+  const inputBg = isDark ? "#27272A" : "#F2F2F2";
 
-  const handleSubmit = () => {
-    Keyboard.dismiss();
+  const handleContinue = () => {
     const trimmed = reason.trim();
-    onSubmit(trimmed || "Gift");
+    if (!trimmed) return;
+    Keyboard.dismiss();
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
+    onSubmit(trimmed);
   };
 
-  const cardBg = isDark ? "#27272A" : "#F4F4F5";
-  const textColor = isDark ? "#FFFFFF" : "#09090B";
-  const subTextColor = isDark ? "#A1A1AA" : "#71717A";
-  const borderColor = isDark ? "#3F3F46" : "#E4E4E7";
+  const isEnabled = reason.trim().length > 0;
 
   return (
     <AppBottomSheet
@@ -59,96 +54,61 @@ export const ReasonModal = ({
       snapPoints={["half", "full"]}
     >
       <View
-        style={[
-          styles.sheetContainer,
-          { paddingBottom: Math.max(insets.bottom, 12) },
-        ]}
+        style={{
+          width: "100%",
+          paddingHorizontal: 4,
+          paddingBottom: Math.max(insets.bottom, 12),
+        }}
       >
-        {/* Header */}
-        <View style={styles.headerRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.title, { color: textColor }]}>
-              Provide a Reason
-            </Text>
-            <Text style={[styles.subtitle, { color: subTextColor }]}>
-              What is this payment or contribution for?
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={onClose}
-            style={[styles.closeBtn, { backgroundColor: cardBg }]}
-            activeOpacity={0.7}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="close" size={18} color={subTextColor} />
-          </TouchableOpacity>
-        </View>
+        <Text style={[styles.title, { color: textColor }]}>
+          Provide a Reason
+        </Text>
+        <Text
+          style={{
+            color: subTextColor,
+            marginTop: 4,
+            marginBottom: 16,
+            fontSize: 13,
+          }}
+        >
+          What is this payment or contribution for?
+        </Text>
 
-        {/* Input Box */}
-        <View
+        <TextInput
+          value={reason}
+          onChangeText={setReason}
+          placeholder="e.g. Gift, Tithe, Offering"
+          placeholderTextColor={isDark ? "#71717A" : "#A1A1AA"}
           style={[
-            styles.inputContainer,
+            styles.input,
             {
-              backgroundColor: cardBg,
-              borderColor: isFocused ? PRIMARY : borderColor,
-              borderWidth: isFocused ? 1.5 : 1,
+              backgroundColor: inputBg,
+              color: textColor,
+            },
+          ]}
+          returnKeyType="done"
+          onSubmitEditing={handleContinue}
+          selectionColor={PRIMARY}
+        />
+
+        <View style={{ height: 20 }} />
+        <Pressable
+          disabled={!isEnabled}
+          onPress={handleContinue}
+          style={({ pressed }) => [
+            styles.button,
+            {
+              backgroundColor: isEnabled
+                ? PRIMARY
+                : isDark
+                  ? "#3F3F46"
+                  : "#FFC9A8",
+              opacity: pressed && isEnabled ? 0.88 : 1,
             },
           ]}
         >
-          <Ionicons
-            name="create-outline"
-            size={20}
-            color={isFocused ? PRIMARY : subTextColor}
-            style={{ marginRight: 10 }}
-          />
-          <TextInput
-            ref={inputRef}
-            style={[styles.input, { color: textColor }]}
-            placeholder="e.g. Gift, Tithe, Offering..."
-            placeholderTextColor={isDark ? "#71717A" : "#A1A1AA"}
-            value={reason}
-            onChangeText={setReason}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            returnKeyType="done"
-            onSubmitEditing={handleSubmit}
-            selectionColor={PRIMARY}
-            autoFocus={false}
-          />
-          {reason.length > 0 && (
-            <TouchableOpacity
-              onPress={() => setReason("")}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons
-                name="close-circle"
-                size={18}
-                color={subTextColor}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Action Button - Exact Auth Screen Rounded AppButton */}
-        <View style={styles.actionSection}>
-          <AppButton
-            label="Continue to Payment"
-            onPress={() => {
-              if (Platform.OS !== "web") {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
-                  () => {},
-                );
-              }
-              handleSubmit();
-            }}
-            icon="arrow-forward"
-            iconPosition="right"
-            size="lg"
-            variant="primary"
-            fullWidth={true}
-            isDark={isDark}
-          />
-        </View>
+          <Text style={styles.buttonText}>Continue to Payment →</Text>
+        </Pressable>
       </View>
     </AppBottomSheet>
   );
@@ -157,50 +117,28 @@ export const ReasonModal = ({
 export default ReasonModal;
 
 const styles = StyleSheet.create({
-  sheetContainer: {
-    width: "100%",
-    paddingTop: 4,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
   title: {
-    fontSize: 20,
-    fontWeight: "800",
+    fontSize: 22,
+    fontWeight: "700",
     letterSpacing: -0.3,
   },
-  subtitle: {
-    fontSize: 13,
-    marginTop: 4,
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 12,
-  },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    height: 52,
+  input: {
     borderRadius: 16,
     paddingHorizontal: 16,
-    marginBottom: 18,
-  },
-  input: {
-    flex: 1,
-    height: "100%",
+    height: 52,
     fontSize: 16,
-    fontWeight: "600",
-    paddingVertical: 0,
+    fontWeight: "500",
   },
-  actionSection: {
-    width: "100%",
-    marginTop: 4,
+  button: {
+    borderRadius: 28,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  buttonText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 16,
   },
 });
