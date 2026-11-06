@@ -538,6 +538,7 @@ const Gifts = () => {
                       name="amount"
                       render={({ field: { onChange, onBlur, value } }) => (
                         <View
+                          onTouchStart={() => setIsAmountFocused(true)}
                           style={{
                             flexDirection: "row",
                             alignItems: "center",
@@ -644,6 +645,7 @@ const Gifts = () => {
                       name="email"
                       render={({ field: { onChange, onBlur, value } }) => (
                         <View
+                          onTouchStart={() => setIsEmailFocused(true)}
                           style={{
                             flexDirection: "row",
                             alignItems: "center",
