@@ -57,7 +57,7 @@ export const ReasonModal = ({
       snapPoints={["half", "full"]}
     >
       <View style={styles.sheetContainer}>
-        {/* Header Row */}
+        {/* Header */}
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.title, { color: textColor }]}>
@@ -77,14 +77,14 @@ export const ReasonModal = ({
           </TouchableOpacity>
         </View>
 
-        {/* Input Box - Styled like Auth input, no auto-active keyboard */}
+        {/* Input Box */}
         <View
           style={[
             styles.inputContainer,
             {
               backgroundColor: cardBg,
               borderColor: isFocused ? PRIMARY : borderColor,
-              borderWidth: isFocused ? 2 : 1,
+              borderWidth: isFocused ? 1.5 : 1,
             },
           ]}
         >
@@ -122,10 +122,10 @@ export const ReasonModal = ({
           )}
         </View>
 
-        {/* Auth-styled Primary CTA Button */}
+        {/* Action Button - Exact same as Auth screens via AppButton */}
         <View style={styles.actionSection}>
           <AppButton
-            title="Continue to Payment"
+            label="Continue to Payment"
             onPress={() => {
               if (Platform.OS !== "web") {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
@@ -134,10 +134,9 @@ export const ReasonModal = ({
               }
               handleSubmit();
             }}
-            variant="primary"
-            size="lg"
             icon="arrow-forward"
             iconPosition="right"
+            size="lg"
             fullWidth={true}
             isDark={isDark}
           />
@@ -181,8 +180,8 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    height: 54,
-    borderRadius: 18,
+    height: 52,
+    borderRadius: 16,
     paddingHorizontal: 16,
     marginBottom: 18,
   },
