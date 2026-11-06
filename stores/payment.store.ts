@@ -40,13 +40,12 @@ export const usePaymentStore = create<PaymentState>()(
           const response = await api.get("/payments/my-givings");
           if (response.data.success) {
             const givings: GivingRecord[] = response.data.data || [];
-            // Calculate total of successful and pending givings
+            // Calculate total of completed/successful givings only
             const total = givings
               .filter(
                 (g) =>
                   g.status === "success" ||
-                  g.status === "completed" ||
-                  g.status === "pending",
+                  g.status === "completed",
               )
               .reduce((sum, g) => sum + (g.amount || 0), 0);
 

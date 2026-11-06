@@ -5,6 +5,7 @@ import ProductSkeleton from "@/components/Marketplace/ProductSkeleton";
 import { InfoModal } from "@/components/Modals/InfoModal";
 import { ProductBottomSheet } from "@/components/Modals/ProductBottomSheet";
 import { ReasonModal } from "@/components/Modals/ReasonModal";
+import { GivingCelebrationModal } from "@/components/Modals/GivingCelebrationModal";
 import { API_URL } from "@/constants/api";
 import { useTheme } from "@/context/ThemeContext";
 import api from "@/services/api";
@@ -67,13 +68,18 @@ const Gifts = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
   const [reasonModalVisible, setReasonModalVisible] = useState(false);
+  const [celebrationVisible, setCelebrationVisible] = useState(false);
+  const [lastSuccessDetails, setLastSuccessDetails] = useState<{
+    amount: number;
+    reason: string;
+    txRef: string;
+  } | null>(null);
   const [isAmountFocused, setIsAmountFocused] = useState(false);
-  const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [pendingDonationData, setPendingDonationData] =
     useState<DonationForm | null>(null);
 
-  const isTyping = isAmountFocused || isEmailFocused;
+  const isTyping = isAmountFocused;
 
   useEffect(() => {
     navigation.setOptions({
@@ -238,21 +244,13 @@ const Gifts = () => {
     resolver: zodResolver(donationSchema),
     defaultValues: {
       amount: 0,
-      email: user?.email || "",
     },
   });
 
   const selectedAmount = watch("amount");
 
   useEffect(() => {
-    const loadSavedEmailAndAmount = async () => {
-      const savedEmail = await AsyncStorage.getItem("last_donation_email");
-      if (savedEmail) {
-        setValue("email", savedEmail);
-      } else if (user?.email) {
-        setValue("email", user.email);
-      }
-
+    const loadSavedAmount = async () => {
       const savedAmount = await AsyncStorage.getItem("last_donation_amount");
       if (savedAmount) {
         const parsed = parseFloat(savedAmount);
@@ -261,8 +259,8 @@ const Gifts = () => {
         }
       }
     };
-    loadSavedEmailAndAmount();
-  }, [user, setValue]);
+    loadSavedAmount();
+  }, [setValue]);
 
   // Handle deep linking for payment return
   useEffect(() => {
@@ -275,43 +273,71 @@ const Gifts = () => {
             queryParams.sessionId) ||
           txRef;
         if (refToVerify) {
-          verifyPayment(refToVerify);
+          verifyPaymentWithRetry(refToVerify);
         }
       }
     };
 
     const subscription = Linking.addEventListener("url", handleDeepLink);
     return () => subscription.remove();
-  }, [txRef]);
+  }, [txRef, pendingDonationData]);
 
-  const verifyPayment = async (ref: string) => {
+  const verifyPaymentWithRetry = async (
+    ref: string,
+    attempt = 1,
+    maxAttempts = 3,
+  ) => {
     setLoading(true);
     try {
       const response = await api.get(`/payments/jami/verify/${ref}`);
       const data = response.data.data || response.data;
       const status = data?.status || response.data.status;
+
       if (status === "success" || status === "completed") {
-        showInfoModal(
-          "Payment Successful",
-          "Thank you for your generous gift to the fellowship!",
-          "success",
-        );
+        const confirmedAmount =
+          data?.amount || pendingDonationData?.amount || selectedAmount || 0;
+        const confirmedReason =
+          data?.reason || (data as any)?.metadata?.reason || "Gift";
+
+        setLastSuccessDetails({
+          amount: confirmedAmount,
+          reason: confirmedReason,
+          txRef: ref,
+        });
+        setCelebrationVisible(true);
         fetchMyGivings();
-      } else {
-        const failureMsg =
-          data?.failure?.message ||
-          "The payment was not completed or was cancelled. Please try again.";
-        showInfoModal("Payment Incomplete", failureMsg, "error");
+        setTxRef(null);
+        return;
       }
+
+      // If still pending after first check, retry with backoff (webhook might be in flight)
+      if (status === "pending" && attempt < maxAttempts) {
+        setTimeout(() => {
+          verifyPaymentWithRetry(ref, attempt + 1, maxAttempts);
+        }, attempt * 1500);
+        return;
+      }
+
+      const failureMsg =
+        data?.failure?.message ||
+        "The payment was not completed or was cancelled. Please try again.";
+      showInfoModal("Payment Incomplete", failureMsg, "error");
+      setTxRef(null);
     } catch (error) {
+      if (attempt < maxAttempts) {
+        setTimeout(() => {
+          verifyPaymentWithRetry(ref, attempt + 1, maxAttempts);
+        }, 1500);
+        return;
+      }
       showInfoModal(
         "Verification Error",
-        "Could not confirm payment status with the server.",
+        "Could not confirm payment status with the server. Please check your givings history.",
         "error",
       );
+      setTxRef(null);
     } finally {
       setLoading(false);
-      setTxRef(null);
     }
   };
 
@@ -321,10 +347,10 @@ const Gifts = () => {
       return;
     }
 
-    if (!data.email) {
+    if (!data.amount || data.amount < 1) {
       showInfoModal(
-        "Missing Information",
-        "Please provide a valid email address for the receipt.",
+        "Invalid Amount",
+        "Please enter an amount of at least 1 ETB to give.",
       );
       return;
     }
@@ -343,7 +369,6 @@ const Gifts = () => {
     try {
       const payload = {
         amount: data.amount,
-        email: data.email.trim(),
         phone: user?.phoneNumber,
         reason: reason,
         returnUrl: `${API_URL}/payments/success`,
@@ -366,10 +391,6 @@ const Gifts = () => {
 
       setTxRef(sessionOrRef);
 
-      // Persist email and amount for future use
-      if (data.email) {
-        await AsyncStorage.setItem("last_donation_email", data.email);
-      }
       if (data.amount) {
         await AsyncStorage.setItem("last_donation_amount", String(data.amount));
       }
@@ -382,7 +403,7 @@ const Gifts = () => {
 
       // Verify payment when browser session finishes or redirects
       if (sessionOrRef) {
-        await verifyPayment(sessionOrRef);
+        await verifyPaymentWithRetry(sessionOrRef);
       }
     } catch (error: any) {
       console.error("Payment initialization failed:", error);
@@ -628,100 +649,6 @@ const Gifts = () => {
                     {errors.amount && (
                       <Text className="text-red-500 text-xs mt-1.5 ml-2 font-bold">
                         {errors.amount.message}
-                      </Text>
-                    )}
-                  </View>
-
-                  <View>
-                    <Text
-                      className={`text-[11px] font-black uppercase tracking-widest mb-2 ml-1 ${
-                        isDark ? "text-white" : "text-black"
-                      }`}
-                    >
-                      Confirmation Email
-                    </Text>
-                    <Controller
-                      control={control}
-                      name="email"
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <View
-                          onTouchStart={() => setIsEmailFocused(true)}
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            height: 54,
-                            paddingHorizontal: 16,
-                            gap: 10,
-                            borderRadius: 16,
-                            borderWidth: isEmailFocused ? 1.5 : 1,
-                            borderColor: errors.email
-                              ? "#ef4444"
-                              : isEmailFocused
-                                ? PRIMARY
-                                : isDark
-                                  ? "#27272a"
-                                  : "#e4e4e7",
-                            backgroundColor: isDark ? "#18181b" : "#fafafa",
-                          }}
-                        >
-                          <Ionicons
-                            name="mail-outline"
-                            size={20}
-                            color={
-                              errors.email
-                                ? "#ef4444"
-                                : isEmailFocused
-                                  ? PRIMARY
-                                  : isDark
-                                    ? "#71717a"
-                                    : "#a1a1aa"
-                            }
-                          />
-                          <TextInput
-                            style={{
-                              flex: 1,
-                              height: "100%",
-                              fontSize: 15,
-                              fontWeight: "500",
-                              color: isDark ? "#ffffff" : "#000000",
-                              paddingVertical: 0,
-                            }}
-                            placeholder="Enter your email"
-                            placeholderTextColor={
-                              isDark ? "#52525b" : "#a1a1aa"
-                            }
-                            selectionColor={PRIMARY}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                            onFocus={() => setIsEmailFocused(true)}
-                            onBlur={() => {
-                              setIsEmailFocused(false);
-                              onBlur();
-                              if (value) {
-                                AsyncStorage.setItem(
-                                  "last_donation_email",
-                                  value,
-                                ).catch(() => {});
-                              }
-                            }}
-                            onChangeText={(text) => {
-                              onChange(text);
-                              if (text) {
-                                AsyncStorage.setItem(
-                                  "last_donation_email",
-                                  text,
-                                ).catch(() => {});
-                              }
-                            }}
-                            value={value}
-                          />
-                        </View>
-                      )}
-                    />
-                    {errors.email && (
-                      <Text className="text-red-500 text-xs mt-1.5 ml-2 font-bold">
-                        {errors.email.message}
                       </Text>
                     )}
                   </View>
@@ -986,6 +913,17 @@ const Gifts = () => {
         visible={reasonModalVisible}
         onClose={() => setReasonModalVisible(false)}
         onSubmit={handleInitializePayment}
+        isDark={isDark}
+      />
+      <GivingCelebrationModal
+        visible={celebrationVisible}
+        onClose={() => {
+          setCelebrationVisible(false);
+          setLastSuccessDetails(null);
+        }}
+        amount={lastSuccessDetails?.amount || 0}
+        reason={lastSuccessDetails?.reason}
+        txRef={lastSuccessDetails?.txRef}
         isDark={isDark}
       />
     </View>
