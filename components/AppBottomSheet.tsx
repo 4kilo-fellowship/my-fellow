@@ -8,6 +8,7 @@ import {
   TouchableWithoutFeedback,
   StyleProp,
   ViewStyle,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -28,10 +29,12 @@ export const AppBottomSheet: React.FC<AppBottomSheetProps> = ({
   snapPoints = ["half", "full"],
   contentStyle,
 }) => {
+  const { height: windowHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const containerBg = isDark ? "#18181B" : "#FFFFFF";
   const isFullScreen = snapPoints.length === 1 && snapPoints[0] === "full";
   const bottomInset = Math.max(insets.bottom, 16) + 16;
+  const minHalfHeight = isFullScreen ? undefined : windowHeight * 0.52;
 
   if (Platform.OS !== "web") {
     if (!visible) return null;
@@ -57,7 +60,11 @@ export const AppBottomSheet: React.FC<AppBottomSheetProps> = ({
               style={[
                 styles.sheetContentBase,
                 isFullScreen ? styles.sheetContentFull : styles.sheetContentAuto,
-                { backgroundColor: containerBg, paddingBottom: bottomInset },
+                {
+                  backgroundColor: containerBg,
+                  paddingBottom: bottomInset,
+                  minHeight: minHalfHeight,
+                },
                 contentStyle,
               ]}
             >
