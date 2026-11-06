@@ -9,6 +9,7 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export interface AppBottomSheetProps {
   visible: boolean;
@@ -27,8 +28,10 @@ export const AppBottomSheet: React.FC<AppBottomSheetProps> = ({
   snapPoints = ["half", "full"],
   contentStyle,
 }) => {
+  const insets = useSafeAreaInsets();
   const containerBg = isDark ? "#18181B" : "#FFFFFF";
   const isFullScreen = snapPoints.length === 1 && snapPoints[0] === "full";
+  const bottomInset = Math.max(insets.bottom, 16) + 16;
 
   if (Platform.OS !== "web") {
     if (!visible) return null;
@@ -54,7 +57,7 @@ export const AppBottomSheet: React.FC<AppBottomSheetProps> = ({
               style={[
                 styles.sheetContentBase,
                 isFullScreen ? styles.sheetContentFull : styles.sheetContentAuto,
-                { backgroundColor: containerBg },
+                { backgroundColor: containerBg, paddingBottom: bottomInset },
                 contentStyle,
               ]}
             >
@@ -94,7 +97,7 @@ export const AppBottomSheet: React.FC<AppBottomSheetProps> = ({
             style={[
               styles.sheetContentBase,
               styles.sheetContentAuto,
-              { backgroundColor: containerBg },
+              { backgroundColor: containerBg, paddingBottom: bottomInset },
               contentStyle,
             ]}
           >
@@ -112,13 +115,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
   },
-  sheetContentAuto: {
-    paddingBottom: Platform.OS === "ios" ? 36 : 24,
-  },
+  sheetContentAuto: {},
   sheetContentFull: {
     flex: 1,
     justifyContent: "flex-end",
-    paddingBottom: Platform.OS === "ios" ? 36 : 24,
   },
   webOverlay: {
     flex: 1,

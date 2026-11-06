@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ReasonModalProps {
   visible: boolean;
@@ -27,6 +28,7 @@ export const ReasonModal = ({
   onSubmit,
   isDark = false,
 }: ReasonModalProps) => {
+  const insets = useSafeAreaInsets();
   const [reason, setReason] = useState<string>("Gift");
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const inputRef = useRef<React.ComponentRef<typeof TextInput>>(null);
@@ -56,7 +58,12 @@ export const ReasonModal = ({
       isDark={isDark}
       snapPoints={["half", "full"]}
     >
-      <View style={styles.sheetContainer}>
+      <View
+        style={[
+          styles.sheetContainer,
+          { paddingBottom: Math.max(insets.bottom, 12) },
+        ]}
+      >
         {/* Header */}
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
@@ -122,7 +129,7 @@ export const ReasonModal = ({
           )}
         </View>
 
-        {/* Action Button - Exact same as Auth screens via AppButton */}
+        {/* Action Button - Exact Auth Screen Rounded AppButton */}
         <View style={styles.actionSection}>
           <AppButton
             label="Continue to Payment"
@@ -137,6 +144,7 @@ export const ReasonModal = ({
             icon="arrow-forward"
             iconPosition="right"
             size="lg"
+            variant="primary"
             fullWidth={true}
             isDark={isDark}
           />
@@ -152,7 +160,6 @@ const styles = StyleSheet.create({
   sheetContainer: {
     width: "100%",
     paddingTop: 4,
-    paddingBottom: Platform.OS === "ios" ? 16 : 8,
   },
   headerRow: {
     flexDirection: "row",
@@ -194,6 +201,6 @@ const styles = StyleSheet.create({
   },
   actionSection: {
     width: "100%",
-    marginTop: 2,
+    marginTop: 4,
   },
 });
