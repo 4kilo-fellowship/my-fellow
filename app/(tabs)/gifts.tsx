@@ -76,6 +76,7 @@ const Gifts = () => {
   } | null>(null);
   const [isAmountFocused, setIsAmountFocused] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const isVerifyingRef = useRef(false);
   const [pendingDonationData, setPendingDonationData] =
     useState<DonationForm | null>(null);
 
@@ -286,8 +287,12 @@ const Gifts = () => {
     ref: string,
     attempt = 1,
     maxAttempts = 3,
+    silentIfPending = false,
   ) => {
+    if (isVerifyingRef.current && attempt === 1) return;
+    isVerifyingRef.current = true;
     setLoading(true);
+
     try {
       const response = await api.get(`/payments/jami/verify/${ref}`);
       const data = response.data.data || response.data;
@@ -313,8 +318,15 @@ const Gifts = () => {
       // If still pending after first check, retry with backoff (webhook might be in flight)
       if (status === "pending" && attempt < maxAttempts) {
         setTimeout(() => {
-          verifyPaymentWithRetry(ref, attempt + 1, maxAttempts);
+          isVerifyingRef.current = false;
+          verifyPaymentWithRetry(ref, attempt + 1, maxAttempts, silentIfPending);
         }, attempt * 1500);
+        return;
+      }
+
+      if (silentIfPending && (status === "pending" || status === "open")) {
+        // User closed browser before completing payment without error
+        setTxRef(null);
         return;
       }
 
@@ -326,17 +338,21 @@ const Gifts = () => {
     } catch (error) {
       if (attempt < maxAttempts) {
         setTimeout(() => {
-          verifyPaymentWithRetry(ref, attempt + 1, maxAttempts);
+          isVerifyingRef.current = false;
+          verifyPaymentWithRetry(ref, attempt + 1, maxAttempts, silentIfPending);
         }, 1500);
         return;
       }
-      showInfoModal(
-        "Verification Error",
-        "Could not confirm payment status with the server. Please check your givings history.",
-        "error",
-      );
+      if (!silentIfPending) {
+        showInfoModal(
+          "Verification Error",
+          "Could not confirm payment status with the server. Please check your givings history.",
+          "error",
+        );
+      }
       setTxRef(null);
     } finally {
+      isVerifyingRef.current = false;
       setLoading(false);
     }
   };
@@ -369,6 +385,7 @@ const Gifts = () => {
     try {
       const payload = {
         amount: data.amount,
+        email: user?.email?.trim() || "natnaeltamiru98@gmail.com",
         phone: user?.phoneNumber,
         reason: reason,
         returnUrl: `${API_URL}/payments/success`,
@@ -396,14 +413,23 @@ const Gifts = () => {
       }
 
       // openAuthSessionAsync catches redirect back to my-fellow://payment-status and auto-dismisses
-      await WebBrowser.openAuthSessionAsync(
+      const authResult = await WebBrowser.openAuthSessionAsync(
         checkout_url,
         "my-fellow://payment-status",
       );
 
-      // Verify payment when browser session finishes or redirects
-      if (sessionOrRef) {
-        await verifyPaymentWithRetry(sessionOrRef);
+      if (authResult.type === "success") {
+        const { queryParams } = Linking.parse(authResult.url);
+        const refToVerify =
+          (typeof queryParams?.sessionId === "string" &&
+            queryParams.sessionId) ||
+          sessionOrRef;
+        if (refToVerify) {
+          await verifyPaymentWithRetry(refToVerify);
+        }
+      } else if (sessionOrRef) {
+        // User closed or dismissed browser: verify quietly in case payment was already submitted
+        await verifyPaymentWithRetry(sessionOrRef, 1, 1, true);
       }
     } catch (error: any) {
       console.error("Payment initialization failed:", error);
